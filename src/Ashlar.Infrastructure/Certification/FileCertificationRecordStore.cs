@@ -32,12 +32,47 @@ public sealed class FileCertificationRecordStore : ICertificationRecordStore
         Directory.CreateDirectory(_directory);
     }
 
-    /// <summary>Save.</summary>
+    /// <summary>
+    /// Writes a record by staging it to a private sibling file and moving that into place.
+    ///
+    /// <para>A direct write truncates first, so a failure partway — full disk, I/O error, process
+    /// death — would leave a half-written file where a signed record used to be, DESTROYING the
+    /// previous verdict rather than preserving it. Staging then moving means a reader sees either
+    /// the old record or the new one, never a shredded one; a crash leaves at most a stray
+    /// staging file, which no reader enumerates (<see cref="All"/> matches <c>*.json</c>, and a
+    /// <c>.tmp</c> suffix is not that).</para>
+    ///
+    /// <para>The staging name carries a GUID because this store is a singleton and two callers may
+    /// certify the same brick at once. A fixed <c>{brick}.json.tmp</c> would put both writers on
+    /// ONE file: the second truncates the first's staged bytes mid-flight and the first then moves
+    /// that partial file over the good record — reintroducing exactly the shredding this method
+    /// exists to prevent — while a failing writer's cleanup deletes a healthy writer's staged file
+    /// out from under it. Each call stages to, and cleans up, only its own file.</para>
+    ///
+    /// <para>Two limits worth stating plainly. Neither the staged bytes nor the directory entry is
+    /// flushed, so this survives PROCESS death, not machine power loss — after a crash the rename
+    /// may be durable while the contents are not. And on Windows the replace is atomic-or-throw
+    /// rather than unconditional: if a concurrent reader holds the destination open, the move
+    /// throws and the old record stands. Both leave the previous verdict intact or absent, never
+    /// forged, which is the property that matters here.</para>
+    /// </summary>
     public void Save(CertificationRecord record)
     {
+        ArgumentNullException.ThrowIfNull(record);
         var path = Path.Combine(_directory, $"{record.BrickId}.json");
+        var tmp = $"{path}.{Guid.NewGuid():N}.tmp";
         var json = JsonSerializer.Serialize(record, JsonOptions);
-        File.WriteAllText(path, json);
+        try
+        {
+            File.WriteAllText(tmp, json);
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch
+        {
+            // Only ever this call's own staging file — never a name another writer could hold.
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* a stray staging file is inert */ }
+            throw;
+        }
     }
 
     /// <summary>

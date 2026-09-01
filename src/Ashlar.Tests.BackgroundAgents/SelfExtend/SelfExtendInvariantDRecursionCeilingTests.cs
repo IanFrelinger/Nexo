@@ -257,4 +257,109 @@ public sealed class SelfExtendInvariantDRecursionCeilingTests
         ledger.Refusal(ceiling, lineageDepth: 0).Should().BeNull("the trailing-hour window has slid past both cycles");
         ledger.Refusal(ceiling, lineageDepth: 2).Should().Contain("MaxLineageDepth", "depth is checked regardless of rate");
     }
+
+    [Fact]
+    public void The_ceiling_holds_when_cycles_race_TryBeginCycle_decides_and_reserves_atomically()
+    {
+        // The round-3 lab finding: Refusal() then RecordCycle() is check-then-act, and the
+        // scheduler may overlap cycles for one agent (timer overlap), so every racing cycle read
+        // the same unspent budget and passed — 16 cycles handed to the runner under a ceiling of
+        // 4. A ceiling that only holds when nothing races is not a ceiling.
+        var now = new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
+        var ledger = new ExtensionLedger(() => now);
+        var ceiling = new ExtensionCeiling(MaxLineageDepth: 1, MaxUnattendedCycles: 1000, MaxCyclesPerHour: 4);
+
+        var admitted = 0;
+        Parallel.For(0, 64, _ =>
+        {
+            if (ledger.TryBeginCycle(ceiling, lineageDepth: 0) is null)
+                Interlocked.Increment(ref admitted);
+        });
+
+        admitted.Should().Be(4, "the hourly ceiling must hold exactly, however many cycles race");
+        ledger.CyclesInWindow.Should().Be(4, "a refused cycle consumes no budget");
+        ledger.TryBeginCycle(ceiling, lineageDepth: 0).Should().Contain("MaxCyclesPerHour");
+    }
+
+    [Fact]
+    public void TryBeginCycle_reserves_only_on_admission_and_refuses_depth_without_spending()
+    {
+        var now = new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
+        var ledger = new ExtensionLedger(() => now);
+        var ceiling = new ExtensionCeiling(MaxLineageDepth: 1, MaxUnattendedCycles: 2, MaxCyclesPerHour: 10);
+
+        ledger.TryBeginCycle(ceiling, lineageDepth: 5).Should().Contain("MaxLineageDepth");
+        ledger.CyclesInWindow.Should().Be(0, "a depth refusal must not consume the rate budget");
+        ledger.UnattendedCycles.Should().Be(0);
+
+        ledger.TryBeginCycle(ceiling, lineageDepth: 0).Should().BeNull();
+        ledger.TryBeginCycle(ceiling, lineageDepth: 0).Should().BeNull();
+        ledger.UnattendedCycles.Should().Be(2);
+        ledger.TryBeginCycle(ceiling, lineageDepth: 0).Should().Contain("MaxUnattendedCycles",
+            "the unattended ceiling is enforced by the same atomic reserve");
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(3, 0, 0)]
+    [InlineData(0, 2, 0)]
+    [InlineData(0, 0, 2)]
+    [InlineData(1, 2, 2)]
+    public void The_observing_and_the_reserving_form_refuse_on_exactly_the_same_policy(
+        int lineageDepth, int priorUnattended, int priorInWindow)
+    {
+        // The two entry points must never drift apart. Production calls only the reserving form,
+        // so a ceiling tightened in the observing copy alone would leave the suite green and
+        // enforce nothing — the reason the policy now lives in one place. This drives both across
+        // the same states and demands the same verdict.
+        var now = new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
+        var ceiling = new ExtensionCeiling(MaxLineageDepth: 1, MaxUnattendedCycles: 2, MaxCyclesPerHour: 2);
+
+        var observing = Seeded(now, priorUnattended, priorInWindow);
+        var reserving = Seeded(now, priorUnattended, priorInWindow);
+
+        var observed = observing.Refusal(ceiling, lineageDepth);
+        var reserved = reserving.TryBeginCycle(ceiling, lineageDepth);
+
+        reserved.Should().Be(observed, "one policy, two entry points");
+
+        if (observed is null)
+        {
+            observing.CyclesInWindow.Should().Be(priorInWindow, "the observing form answers without spending");
+            observing.UnattendedCycles.Should().Be(priorUnattended);
+            reserving.CyclesInWindow.Should().Be(priorInWindow + 1, "the reserving form spends exactly one cycle");
+            reserving.UnattendedCycles.Should().Be(priorUnattended + 1);
+        }
+        else
+        {
+            reserving.CyclesInWindow.Should().Be(priorInWindow, "a refusal spends nothing on either form");
+            reserving.UnattendedCycles.Should().Be(priorUnattended);
+        }
+    }
+
+    /// <summary>
+    /// Puts a ledger into a given (unattended, in-window) state. RecordCycle moves both counters
+    /// at once, so the two are separated the only ways real time and real operators separate
+    /// them: cycles recorded outside the rate window still count as unattended but prune out of
+    /// the rate, and a human re-arm clears the unattended count while leaving the rate standing.
+    /// </summary>
+    private static ExtensionLedger Seeded(DateTimeOffset now, int unattended, int inWindow)
+    {
+        var clock = now - TimeSpan.FromHours(2);
+        var ledger = new ExtensionLedger(() => clock);
+
+        for (var i = 0; i < Math.Max(0, unattended - inWindow); i++)
+            ledger.RecordCycle();
+
+        clock = now;
+        for (var i = 0; i < inWindow; i++)
+            ledger.RecordCycle();
+
+        if (unattended < inWindow)
+            ledger.Rearm();
+
+        ledger.CyclesInWindow.Should().Be(inWindow, "seeding precondition");
+        ledger.UnattendedCycles.Should().Be(unattended, "seeding precondition");
+        return ledger;
+    }
 }
