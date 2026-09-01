@@ -117,7 +117,7 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` |
 | OPEN | `samples/**` |
 | OPEN | `tools/**`, `spikes/**` — repo tools and evidence spikes, same rule |
-| OPEN | `apps/release-manager/` — agent-set config + docs for release-readiness automation; **graduated commercial → open 2026-08-31** (covenant 2), the minimal SDK reference app |
+| OPEN | Release Manager — graduated commercial → open 2026-08-31 (covenant 2), **extracted 2026-09-01** to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) as the minimal SDK reference and first out-of-tree nuget.org consumer |
 | OPEN | `apps/runtime-studio/` — single-node planner/worker agent-set config + docs; **graduated commercial → open 2026-08-31** (covenant 2). Single-node operator tooling belongs open by the headline rule; the open `setup all` lane already seeds from its config |
 
 Open mesh **primitives** (local discovery, capability advertisement, trust middleware) remain under `src/Ashlar.Core.Application/Mesh/**` and `src/Ashlar.Infrastructure/Mesh/**`. Mesh-lab **workers** poll the commercial fleet director via open `src/Ashlar.Infrastructure/MeshLab/**`.
@@ -180,7 +180,7 @@ preserved intact on the archive branch `archive/verticals-2026-08-31` for extrac
 its commercial status travels with it. This removal is not a licensing event: nothing
 open moved behind a paywall (covenant 2 is untouched).
 
-`apps/release-manager/` and `apps/runtime-studio/` were **graduated to Tier 1 OPEN on
+`apps/release-manager/` (since extracted to its own repository, 2026-09-01) and `apps/runtime-studio/` were **graduated to Tier 1 OPEN on
 2026-08-31** — the one-way ratchet (covenant 2) exercised in its trust-building direction.
 Both are single-node agent-set configuration + docs with no fleet capability, so the
 headline rule (single-node + inspectable = open) always applied to them; the Tier 3
@@ -203,9 +203,9 @@ non-production test environments, solely to evaluate Ashlar. You may not deploy 
 production, offer it as a service, or redistribute it (in source or binary form) without a
 separate written agreement. Forking this repository on GitHub, and modifying your fork,
 for the evaluation uses permitted above is not redistribution for purposes of this
-paragraph. The open core under `src/`, `application/`, `apps/release-manager/`,
-`apps/runtime-studio/`, `samples/`, `tools/`, `docs/`, and `spikes/` is Apache-2.0 and
-unaffected by this paragraph.
+paragraph. The open core under `src/`, `application/`, `apps/runtime-studio/`,
+`samples/`, `tools/`, `docs/`, and `spikes/` is Apache-2.0 and unaffected by this
+paragraph.
 
 Production use, or any use beyond evaluation, requires a written commercial agreement:
 contact **icfrelinger@gmail.com** with "Ashlar commercial" in the subject line.
@@ -216,7 +216,7 @@ operations. It never disables running nodes, never withholds or deletes already-
 evidence or audit history, and never changes an answer the admission gate would give.
 Ashlar never ships a kill switch.
 
-The former recommendation to open `apps/release-manager` as the minimal SDK reference was
+The former recommendation to open the release-manager app as the minimal SDK reference was
 **executed on 2026-08-31** — it and `apps/runtime-studio` are now Tier 1 OPEN (see the
 graduation note under Tier 3).
 

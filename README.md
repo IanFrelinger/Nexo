@@ -294,7 +294,7 @@ Run these via `dotnet run --project application/src/Ashlar.CLI -- <command>` (sh
 
 | App | What it is | First doc |
 |-----|------------|-----------|
-| `apps/release-manager` | Release-readiness automation agent set for repo monitoring, tests, SLO evidence, and reports. | [`apps/release-manager/README.md`](apps/release-manager/README.md) |
+| Release Manager | Release-readiness automation agent set — extracted 2026-09-01 as the first out-of-tree nuget.org consumer. | [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) |
 | `apps/runtime-studio` | Planner/worker Runtime Studio agent set and operator scripts hosted by CLI or API. | [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 
 ## Deploy (operators)
@@ -353,7 +353,7 @@ The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it
 Nexo/                             # the repo/clone directory (github.com/IanFrelinger/Nexo; the product is Ashlar)
 ├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
 ├── application/src/              # Ashlar.CLI, Ashlar.API hosts + Ashlar.Tests.CLI (open)
-├── apps/                         # runtime-studio + release-manager configs (extraction scheduled)
+├── apps/                         # runtime-studio config (extraction scheduled; release-manager extracted 2026-09-01)
 ├── commercial/                   # Fleet, MeshDirector + tests (not Apache-2.0; LICENSING.md)
 ├── docs/                         # architecture, operations, mesh, release, SDK, demos/, samples/, runbooks
 ├── samples/                      # hello-brick, brick template, certified-brick-reuse, approval-workflow, autonomy-objectives, aws-sns lambda

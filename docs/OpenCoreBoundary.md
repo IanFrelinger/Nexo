@@ -43,7 +43,7 @@ Commercial concerns include fleet director behavior, fleet-scale mesh orchestrat
 
 The `apps/` directories are agent-set/host **configuration** surfaces with no `.csproj`, so the project-path rule below does not classify them; `LICENSING.md` does, explicitly:
 
-- **Open:** `apps/release-manager/` and `apps/runtime-studio/` — graduated commercial → open on 2026-08-31 (the one-way ratchet's trust-building direction), and scheduled for extraction to their own repositories as the first out-of-tree package consumers.
+- **Open:** `apps/runtime-studio/` — graduated commercial → open on 2026-08-31 (the one-way ratchet's trust-building direction), scheduled for extraction to its own repository. The release-manager app completed that path: graduated 2026-08-31, **extracted 2026-09-01** to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) — the first out-of-tree nuget.org consumer, with CI restoring from nuget.org only.
 - The commercial game vertical (`apps/game-director/`, `apps/ashlar-forge/`, and the nine `commercial/` game projects) was removed in the 2026-08-31 native-responsibility slim; it is preserved on `archive/verticals-2026-08-31` for extraction to its own repository.
 
 ## Tracked boundary follow-ups

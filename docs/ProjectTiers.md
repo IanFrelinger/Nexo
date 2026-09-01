@@ -96,7 +96,7 @@ archive branch `archive/verticals-2026-08-31` for extraction to its own reposito
 | Area | Projects / paths |
 |------|------------------|
 | Fleet | `commercial/src/Ashlar.Commercial.Fleet.Contracts/Ashlar.Commercial.Fleet.Contracts.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Infrastructure/Ashlar.Commercial.Fleet.Infrastructure.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Api/Ashlar.Commercial.Fleet.Api.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Host/Ashlar.Commercial.Fleet.Host.csproj`, `commercial/src/Ashlar.Commercial.MeshDirector/Ashlar.Commercial.MeshDirector.csproj` |
-| App configs (no `.csproj`) | `apps/release-manager` and `apps/runtime-studio` — OPEN (graduated 2026-08-31), scheduled for extraction to their own repos. The commercial game/forge configs were removed with the vertical (archive branch). |
+| App configs (no `.csproj`) | `apps/runtime-studio` — OPEN (graduated 2026-08-31), extraction scheduled. Release Manager was extracted 2026-09-01 to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager); the commercial game/forge configs left with the vertical (archive branch). |
 
 ### Tier 3c — demos, samples, tools, spikes (open)
 
