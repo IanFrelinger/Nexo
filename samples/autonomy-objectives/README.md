@@ -28,8 +28,12 @@ To compose the loop in your own host, every one of these is load-bearing — the
 fail-closed at each step, so leaving one out yields "nothing happens" or an explained
 refusal, never a quiet in-process run:
 
+Seed the store by copying an objective (with its `.witness.json` sibling) into the
+pending folder your `ObjectiveStore` root resolves to:
+
 ```bash
-   .ashlar/runtime-studio/objectives/pending/
+mkdir -p .ashlar/runtime-studio/objectives/pending
+cp samples/autonomy-objectives/door-lock-transition.md    samples/autonomy-objectives/door-lock-transition.witness.json    .ashlar/runtime-studio/objectives/pending/
 ```
 
 ```csharp

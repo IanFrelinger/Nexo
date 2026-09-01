@@ -30,6 +30,8 @@ Starter pins for **ashlar-ai-director**-style repos: authored brick + thin host 
 
 With **central package management**, use `Directory.Packages.props` in this folder instead.
 
+> **Note:** the `0.1.1` graph pins `Microsoft.Extensions.*` at `10.0.11`. If your project explicitly references any `Microsoft.Extensions.*` package below that version, restore fails with `NU1605` (package downgrade) — align your pins to `>= 10.0.11`.
+
 ## Feed and token
 
 1. Edit `nuget.config`: set `ashlar-staging` to your feed URL (see `docs/StagingFeed.md`).
