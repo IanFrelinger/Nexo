@@ -117,4 +117,4 @@ What is exported when the endpoint is set: ASP.NET Core request spans and HttpCl
 | `NUGET_API_KEY` | Optional **fallback** long-lived key if Trusted Publishing is not configured yet |
 | `GITHUB_TOKEN` | Provided by Actions; used for GHCR push in `container-image-publish` |
 
-Configure **Trusted Publishing** on nuget.org per [NuGet trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): register **`release.yml`** for tag releases and **`release-nuget.yml`** if you use NuGet-only dispatch with OIDC. See **`docs/PUBLISHING.md`** for the full matrix and **`docs/RELEASE_RUNBOOK.md`** for operator steps.
+Configure **Trusted Publishing** on nuget.org per [NuGet trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): register the reusable workflow **`reusable-release-nuget.yml`** (nuget.org matches the workflow that runs `NuGet/login`, not the caller); one policy covers both tag releases and NuGet-only dispatch. See **`docs/PUBLISHING.md`** for the full matrix and **`docs/RELEASE_RUNBOOK.md`** for operator steps.
