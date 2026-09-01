@@ -51,7 +51,7 @@ dotnet build Ashlar.LocalDevCore.slnf -v minimal
 | -------- | ----------- |
 | **`Ashlar.sln`** | Full repository build — run locally after **`Ashlar.Hosting`**, **`Ashlar.Infrastructure`** Sdk surface, or registrar phase edits. |
 | **`Ashlar.LocalDevCore.slnf`** | Faster slice (CLI + `Ashlar.Tests.Domain` + `Ashlar.Tests.Infrastructure`, nothing under `commercial/`); **`make restore-core`** / **`make build-core`**. |
-| **`Ashlar.PrimeTime.slnf`** | Eight test assemblies (seven **`Ashlar.Tests.*`** plus `commercial/tests/Ashlar.Commercial.Tests.GameDomain`) — **`make test-prime-time`** runs **`Category=ProdStyle`** across this filter; **`make test-prime-time-full`** runs the full test matrix after that gate. |
+| **`Ashlar.PrimeTime.slnf`** | Seven open **`Ashlar.Tests.*`** assemblies — **`make test-prime-time`** runs **`Category=ProdStyle`** across this filter; **`make test-prime-time-full`** runs the full test matrix after that gate. |
 | **`application/Ashlar.Application.sln`** | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` only (open); what `scripts/application-gate-tier-a.sh` builds. |
 
 Full "which solution do I open" table: [`README.md`](README.md#which-solution-do-i-open) and [`docs/ProjectTiers.md`](docs/ProjectTiers.md).

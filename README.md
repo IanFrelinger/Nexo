@@ -294,7 +294,6 @@ Run these via `dotnet run --project application/src/Ashlar.CLI -- <command>` (sh
 
 | App | What it is | First doc |
 |-----|------------|-----------|
-| `apps/ashlar-forge` | Vertical agent-set configuration for adaptive multiplayer FPS prototyping. | [`apps/ashlar-forge/README.md`](apps/ashlar-forge/README.md) |
 | `apps/release-manager` | Release-readiness automation agent set for repo monitoring, tests, SLO evidence, and reports. | [`apps/release-manager/README.md`](apps/release-manager/README.md) |
 | `apps/runtime-studio` | Planner/worker Runtime Studio agent set and operator scripts hosted by CLI or API. | [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 
@@ -386,7 +385,7 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 | CLI / API / core dev loop | `Ashlar.LocalDevCore.slnf` (`make build-core`) or `Ashlar.Core.slnf` | Fastest restore; no `commercial/`. Add `Ashlar.Kernel.sln` when you edit kernel libraries and their tests without the hosts. |
 | Everything open, one solution | `Ashlar.sln` | Also pulls the Game Director / GameDomain commercial projects that ship in the sln (see [`docs/ProjectTiers.md`](docs/ProjectTiers.md)). |
 | Kernel libraries only | `Ashlar.Kernel.sln` / `Ashlar.Runtime.sln` | Kernel.sln adds kernel test projects; Runtime.sln is the NuGet-publishable graph. |
-| ProdStyle test gate | `Ashlar.PrimeTime.slnf` (`make test-prime-time`) | Eight test assemblies, deliberately including `commercial/tests/Ashlar.Commercial.Tests.GameDomain`. |
+| ProdStyle test gate | `Ashlar.PrimeTime.slnf` (`make test-prime-time`) | Seven open `Ashlar.Tests.*` assemblies. |
 | Hosts as the application gate builds them | `application/Ashlar.Application.sln` | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` — open only. |
 | Demos | `Ashlar.Demos.sln` | Avalonia, Blazor, console clients. |
 | Commercial verticals | project paths under `commercial/` | Not in the quickstart; see [`LICENSING.md`](LICENSING.md). |
