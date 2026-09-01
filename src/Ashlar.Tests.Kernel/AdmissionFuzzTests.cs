@@ -68,6 +68,62 @@ public sealed class AdmissionFuzzTests : IDisposable
         reason.Should().Contain("limit");
     }
 
+    [Fact]
+    public void A_duplicate_mode_key_is_refused_not_resolved_last_wins()
+    {
+        // A merge-conflicted or tampered policy that names `mode` twice must be refused, not
+        // silently armed to the second (more permissive) value. This is the fail-open the
+        // never-list strictness exists to prevent.
+        var dupMode = """
+            apiVersion: ashlar/v1
+            kind: Policy
+            sandbox:
+              root: .
+              writable: []
+            selfExtend:
+              mode: sealed
+              mode: self-extending
+              budget:
+                extensions: 99
+                window: 24h
+              mayAdd: []
+              gatesRequired: [tests]
+            never:
+              - modify_gate
+              - widen_sandbox
+              - access_signing_keys
+              - truncate_ledger
+              - grant_capability
+            """;
+
+        PolicyLoader.TryLoad(dupMode, out var policy, out var reason).Should().BeFalse(
+            "an ambiguous safety document must fail closed, never resolve to the permissive value");
+        policy.Should().BeNull();
+        reason.Should().Contain("more than once");
+    }
+
+    [Fact]
+    public void A_duplicate_top_level_key_is_also_refused()
+    {
+        var dupTop = """
+            apiVersion: ashlar/v1
+            kind: Policy
+            sandbox:
+              root: .
+              writable: []
+            selfExtend:
+              mode: sealed
+              budget: { extensions: 0, window: 24h }
+              mayAdd: []
+              gatesRequired: []
+            never: [modify_gate, widen_sandbox, access_signing_keys, truncate_ledger, grant_capability]
+            never: []
+            """;
+
+        PolicyLoader.TryLoad(dupTop, out _, out var reason).Should().BeFalse();
+        reason.Should().Contain("more than once");
+    }
+
     [Theory]
     [InlineData("\0\x01\x02 binary garbage \xff")]
     [InlineData("{{{{{{{{")]

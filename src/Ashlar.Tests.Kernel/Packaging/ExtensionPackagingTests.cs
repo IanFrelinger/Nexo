@@ -469,4 +469,23 @@ public sealed class ExtensionPackagingTests : IDisposable
     [InlineData("console.cs", true)]
     public void Path_safety_is_an_allowlist(string path, bool ok) =>
         ExtensionPackaging.IsSafeRelativePath(path).Should().Be(ok, $"'{path}'");
+
+    [Fact]
+    public void An_oversized_document_is_refused_before_the_deserializer_touches_it()
+    {
+        // An attacker-controlled peer file must REFUSE, not crash the verifier: an unbounded
+        // JSON document handed straight to the reader is an OOM on the fail-closed path. The
+        // cap sits above the deserializer so a giant document never reaches it.
+        var giant = "{\"FormatVersion\":\"ashpkg/v1\",\"pad\":\""
+                    + new string('x', ExtensionPackage.MaxPackageChars + 1) + "\"}";
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        ExtensionPackaging.TryOpen(giant, out var pkg, out var reason).Should().BeFalse();
+        sw.Stop();
+
+        pkg.Should().BeNull();
+        reason.Should().Contain("limit");
+        sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2),
+            "the rejection is a length check, not a parse of the whole document");
+    }
 }
