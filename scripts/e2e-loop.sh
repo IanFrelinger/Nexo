@@ -415,6 +415,7 @@ claim "pkg-export-keyless-refused" 1 "requires an operator key"
 # Here a STRANGER — a separate key dir — seals a package; receiver B refuses it, naming the
 # fingerprint, until told to trust that key, then holds it. Deleting the trust comparison in
 # PackageImport turns pkg-import-refuses-untrusted-signer red (it becomes HELD, exit 0).
+# The refusal is a verification refusal (exit 65), consistent with pkg pull and pkg show.
 SK="$WORK/strangerkeys"
 XFP=$(ASHLAR_KEY_DIR="$SK" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- keys init 2>&1 | grep -oE 'ed25519:[0-9a-f]{16}' | head -1)
 XA=$(fresh)
@@ -435,7 +436,7 @@ ASHLAR_KEY_DIR="$SK" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- p
 
 # B (pkgkeys) does not trust X: refused before parking, naming X's fingerprint
 run_cli pkg import "$WORK/stranger.ashpkg" --path "$B"
-claim "pkg-import-refuses-untrusted-signer" 1 "not a trusted signer" "$XFP"
+claim "pkg-import-refuses-untrusted-signer" 65 "not a trusted signer" "$XFP"
 [ ! -f "$B/src/Stranger.cs" ] \
   && result "pkg-untrusted-nothing-parks" PASS "an untrusted package parks nothing" \
   || result "pkg-untrusted-nothing-parks" FAIL "untrusted package wrote to disk"

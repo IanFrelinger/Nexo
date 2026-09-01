@@ -179,7 +179,15 @@ public sealed class PolicyCommand : Command
                     ? "\n  NOTE: budget is 0 per window — nothing will auto-admit until you raise selfExtend.budget.extensions."
                     : string.Empty),
             SelfExtendMode.Proposing =>
-                "  Self-extend cycles are now HELD for review (`ashlar gates`); no auto-apply.",
+                "  Self-extend cycles are now HELD for review (`ashlar gates`); no auto-apply."
+                // Mirror the self-extending budget-0 note above (SelfExtendMode.SelfExtending case): a
+                // budget of 0 admits nothing, and `ashlar verify` fails the envelope course on exactly
+                // this state — so the documented staged path (`set self_extend proposing`) lands on a
+                // red wall unless the operator funds the budget. Warn loudly; keep the write.
+                + (current.SelfExtend.Budget.Extensions == 0
+                    ? "\n  WARNING: budget is 0 per window — nothing will be admitted, and `ashlar verify` "
+                      + "flags this state. Fund it (raise selfExtend.budget.extensions) or expect verify to fail."
+                    : string.Empty),
             SelfExtendMode.Sealed =>
                 "  Sealed: no self-extension will be admitted at all.",
             _ => string.Empty,

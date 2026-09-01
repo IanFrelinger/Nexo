@@ -66,7 +66,15 @@ public sealed class MeshCommand : Command
         var healthCmd = new Command("health", "GET /health on a remote Ashlar host (generic probe)");
         healthCmd.Add(healthUrlOpt);
         healthCmd.Add(healthTimeoutOpt);
-        healthCmd.SetHandler(ExecuteHealthAsync, healthUrlOpt, healthTimeoutOpt);
+        // InvocationContext binding (as admitCmd/revokeCmd below): setting ctx.ExitCode is the only
+        // exit code System.CommandLine honours. Environment.ExitCode is overwritten back to 0 after
+        // the handler returns, so a refused connection or a missing --url would otherwise exit 0.
+        healthCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var url = ctx.ParseResult.GetValueForOption(healthUrlOpt);
+            var timeout = ctx.ParseResult.GetValueForOption(healthTimeoutOpt);
+            ctx.ExitCode = await ExecuteHealthAsync(url, timeout).ConfigureAwait(false);
+        });
 
         var admitPeerArg = new Argument<string>("peerId", "Peer id to admit in local instances.json");
         var admitCmd = new Command("admit", "Set admitted=true in local instances.json (not fleet director; use commercial mesh director admit for /api/mesh/fleet)");
@@ -340,17 +348,26 @@ public sealed class MeshCommand : Command
         return 0;
     }
 
-    private static async Task ExecuteHealthAsync(string? baseUrl, int timeoutSeconds)
+    private static async Task<int> ExecuteHealthAsync(string? baseUrl, int timeoutSeconds)
     {
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             Console.Error.WriteLine("--url is required.");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         var root = baseUrl.Trim().TrimEnd('/');
-        var uri = new Uri(root + "/health", UriKind.Absolute);
+        // Guard the parse INSIDE the handler: a malformed --url used to reach `new Uri(..., Absolute)`
+        // unguarded and throw an UriFormatException with a stack trace. Reject it legibly instead, and
+        // require an http(s) scheme so a token like `example:8080` (a valid absolute URI, but not a
+        // reachable host) is refused here rather than blowing up inside HttpClient.
+        if (!Uri.TryCreate(root + "/health", UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            Console.Error.WriteLine($"--url is not a valid URL: {baseUrl}");
+            return 1;
+        }
+
         var client = new HttpClient { Timeout = TimeSpan.FromSeconds(Math.Clamp(timeoutSeconds, 5, 120)) };
         try
         {
@@ -359,12 +376,12 @@ public sealed class MeshCommand : Command
             Console.WriteLine($"{(int)resp.StatusCode} {resp.ReasonPhrase}");
             if (!string.IsNullOrWhiteSpace(body))
                 Console.WriteLine(body);
-            Environment.ExitCode = resp.IsSuccessStatusCode ? 0 : 1;
+            return resp.IsSuccessStatusCode ? 0 : 1;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine(ex.Message);
-            Environment.ExitCode = 1;
+            return 1;
         }
     }
 

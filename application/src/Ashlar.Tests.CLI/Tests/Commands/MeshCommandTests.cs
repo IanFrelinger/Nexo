@@ -15,6 +15,9 @@ public sealed class MeshCommandTests : UnitTestBase
         {
             await TestSetTrustTierPreservesPeerFieldsAsync().ConfigureAwait(false);
             await TestPeersListsLocalInstancesAsync().ConfigureAwait(false);
+            await TestHealthMissingUrlExitsNonZeroAsync().ConfigureAwait(false);
+            await TestHealthMalformedUrlIsLegibleNonZeroAsync().ConfigureAwait(false);
+            await TestHealthRefusedConnectionExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(MeshCommandTests),
@@ -87,6 +90,77 @@ public sealed class MeshCommandTests : UnitTestBase
             Environment.SetEnvironmentVariable("ASHLAR_MESH_INSTANCES_PATH", previousPath);
             if (Directory.Exists(tempRoot))
                 Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    // #455: the exit code must actually stick. The handler used to set Environment.ExitCode, which
+    // System.CommandLine overwrites back to 0 after a handler returns — so a missing --url exited 0.
+    private async Task TestHealthMissingUrlExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();  // not disposed: a disposed writer left on Console poisons later tests
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var exitCode = await root.InvokeAsync("mesh health").ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "A missing --url must exit non-zero, not 0.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    // #455: a malformed --url used to reach `new Uri(..., Absolute)` unguarded and throw an
+    // UriFormatException with a stack trace. It must now be a legible non-zero refusal.
+    private async Task TestHealthMalformedUrlIsLegibleNonZeroAsync()
+    {
+        var writer = new StringWriter();  // not disposed: see note above
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var exitCode = await root.InvokeAsync("mesh health --url not-a-valid-url").ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "A malformed --url must exit non-zero.");
+            var output = writer.ToString();
+            AssertTrue(output.Contains("not a valid URL", StringComparison.OrdinalIgnoreCase),
+                "A malformed --url must be refused legibly.");
+            AssertTrue(!output.Contains("UriFormatException", StringComparison.Ordinal)
+                && !output.Contains("   at ", StringComparison.Ordinal),
+                "A malformed --url must not print a stack trace.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    // #455: a refused connection must exit non-zero (it used to exit 0 for the same reason).
+    private async Task TestHealthRefusedConnectionExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();  // not disposed: see note above
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            // A closed loopback port refuses immediately; the low timeout bounds a stubborn environment.
+            var exitCode = await root
+                .InvokeAsync("mesh health --url http://127.0.0.1:59321 --timeout-seconds 5")
+                .ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "A refused connection must exit non-zero, not 0.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 
