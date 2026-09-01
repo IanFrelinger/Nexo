@@ -25,38 +25,111 @@ public static class ObjectiveArtifacts
         PropertyNameCaseInsensitive = true,
     };
 
-    /// <summary>Witness file for an objective, or null when absent.</summary>
-    public static WitnessSpec? LoadWitness(string objectiveFilePath)
+    /// <summary>Witness file for an objective, or null when absent or unusable.</summary>
+    public static WitnessSpec? LoadWitness(string objectiveFilePath) =>
+        LoadWitness(objectiveFilePath, out _);
+
+    /// <summary>
+    /// Witness file for an objective, distinguishing ABSENT from BROKEN.
+    ///
+    /// <para>Both return null — a witness that cannot be read is never a witness, and the
+    /// objective does not run either way. But they are opposite operator situations: absent is
+    /// the normal state of an objective nobody has written criteria for yet, while broken is a
+    /// file someone DID write and that silently no longer counts. Collapsing them logs "no
+    /// witness beside it" about a witness that is sitting right there, and the objective then
+    /// never runs again with nothing said at any visible level. <paramref name="corruption"/> is
+    /// null in the absent case and carries the reason in the broken one, so the caller can put
+    /// the second in front of a human.</para>
+    /// </summary>
+    public static WitnessSpec? LoadWitness(string objectiveFilePath, out string? corruption)
     {
+        corruption = null;
         var path = SiblingPath(objectiveFilePath, ".witness.json");
         if (path is null || !File.Exists(path))
             return null;
 
-        var dto = JsonSerializer.Deserialize<WitnessDto>(File.ReadAllText(path), Json);
-        if (dto?.Cases is null || dto.Cases.Count == 0 || string.IsNullOrWhiteSpace(dto.BrickId))
+        // A MALFORMED artifact degrades to the same "not eligible" path as an ABSENT one: an
+        // objective's corrupt sibling must not throw out of the sweep and wedge every objective
+        // behind it. It is reported, not swallowed.
+        WitnessDto? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<WitnessDto>(File.ReadAllText(path), Json);
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            corruption = $"{path} could not be read as a witness ({ex.GetType().Name}: {ex.Message})";
             return null;
+        }
+
+        if (dto is null || dto.Cases is null || dto.Cases.Count == 0)
+        {
+            corruption = $"{path} declares no witness cases; a certificate minted against it would prove nothing";
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.BrickId))
+        {
+            corruption = $"{path} names no brickId, so there is nothing to witness against";
+            return null;
+        }
 
         var cases = new List<WitnessCase>(dto.Cases.Count);
-        foreach (var c in dto.Cases)
+        for (var i = 0; i < dto.Cases.Count; i++)
         {
+            var c = dto.Cases[i];
             if (c.Input is null || c.ExpectedOutput is null)
+            {
+                corruption = $"{path} case {i} is missing input or expectedOutput";
                 return null;
-            cases.Add(new WitnessCase(Unwrap(c.Input), Unwrap(c.ExpectedOutput)));
+            }
+
+            try
+            {
+                cases.Add(new WitnessCase(Unwrap(c.Input), Unwrap(c.ExpectedOutput)));
+            }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+            {
+                // A case whose shape cannot be unwrapped is an ineligible objective.
+                corruption = $"{path} case {i} could not be read ({ex.GetType().Name}: {ex.Message})";
+                return null;
+            }
         }
 
         return new WitnessSpec(dto.BrickId!, cases);
     }
 
-    /// <summary>Recorded proposal for an objective, or null when absent.</summary>
-    public static ProposedSource? LoadRecordedProposal(string objectiveFilePath)
+    /// <summary>Recorded proposal for an objective, or null when absent or unusable.</summary>
+    public static ProposedSource? LoadRecordedProposal(string objectiveFilePath) =>
+        LoadRecordedProposal(objectiveFilePath, out _);
+
+    /// <summary>
+    /// Recorded proposal for an objective, distinguishing ABSENT from BROKEN exactly as
+    /// <see cref="LoadWitness(string, out string?)"/> does and for the same reason.
+    /// </summary>
+    public static ProposedSource? LoadRecordedProposal(string objectiveFilePath, out string? corruption)
     {
+        corruption = null;
         var path = SiblingPath(objectiveFilePath, ".proposal.json");
         if (path is null || !File.Exists(path))
             return null;
 
-        var dto = JsonSerializer.Deserialize<ProposalDto>(File.ReadAllText(path), Json);
-        if (dto is null || string.IsNullOrWhiteSpace(dto.SourceCode) || string.IsNullOrWhiteSpace(dto.TypeName))
+        ProposalDto? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<ProposalDto>(File.ReadAllText(path), Json);
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            corruption = $"{path} could not be read as a proposal ({ex.GetType().Name}: {ex.Message})";
             return null;
+        }
+
+        if (dto is null || string.IsNullOrWhiteSpace(dto.SourceCode) || string.IsNullOrWhiteSpace(dto.TypeName))
+        {
+            corruption = $"{path} is missing sourceCode or typeName";
+            return null;
+        }
 
         return new ProposedSource(
             dto.SourceCode!,

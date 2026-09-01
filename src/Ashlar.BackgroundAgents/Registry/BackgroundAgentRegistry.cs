@@ -131,8 +131,20 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
 
     /// <summary>
     /// The invariant-D ledger for an extender: unattended cycles since the last human arm and
-    /// cycles in the trailing hour. Read-only view for operators and digests.
+    /// cycles in the trailing hour. Intended for operators and digests, which should read
+    /// <see cref="ExtensionLedger.UnattendedCycles"/> / <see cref="ExtensionLedger.CyclesInWindow"/>
+    /// and call nothing.
     /// </summary>
+    /// <remarks>
+    /// This returns the LIVE ledger, not a snapshot, so it is a mutation surface as much as a
+    /// reading one: a caller holding the registry can spend an agent's budget through
+    /// <see cref="ExtensionLedger.TryBeginCycle"/> without running anything, or clear its
+    /// unattended count through <see cref="ExtensionLedger.Rearm"/> — bypassing
+    /// <see cref="RearmExtension"/> and the audit entry that makes a re-arm attributable. Narrowing
+    /// this to a read-only projection is issue #481; it is a breaking change to a shipped public
+    /// API, so it waits for the next major. Until then: never register this accessor, or anything
+    /// that returns its result, as an agent tool.
+    /// </remarks>
     public ExtensionLedger GetExtensionLedger(string agentId) =>
         _extensionLedgers.GetOrAdd(agentId, _ => new ExtensionLedger());
 
@@ -552,7 +564,11 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 // held extender is visible, not silent.
                 var ceiling = _extensionCeiling.NarrowedBy(instance.Config);
                 var ledger = GetExtensionLedger(agentId);
-                var refusal = ledger.Refusal(ceiling, LineageDepth(instance.Config));
+                // Decide AND reserve in one lock: the scheduler may overlap cycles for one agent
+                // (see the concurrency note above), and a separate check-then-record let every
+                // racing cycle read the same unspent budget and pass. TryBeginCycle counts the
+                // cycle only when it admits, so a refusal still consumes nothing.
+                var refusal = ledger.TryBeginCycle(ceiling, LineageDepth(instance.Config));
                 if (refusal is not null)
                 {
                     _logStore?.Append(agentId, "Warning", $"Extension refused (invariant D): {refusal}.");
@@ -579,9 +595,9 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                     return;
                 }
 
-                // Count the cycle only once it is actually handed to the runner: a Passive
-                // skip or an approval denial must not consume the agent's extension budget.
-                ledger.RecordCycle();
+                // The cycle was counted by TryBeginCycle above, atomically with the decision that
+                // admitted it. A Passive skip or an approval denial returns before that call, so
+                // it still consumes none of the agent's extension budget.
 
                 // Surface the agent's configured Objective, AgentName, ModelProvider, and ModelName
                 // so the LLM has goal context and the model chain routes to the configured backend.

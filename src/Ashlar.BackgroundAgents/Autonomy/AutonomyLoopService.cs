@@ -190,39 +190,77 @@ public sealed class AutonomyLoopService : BackgroundService
     }
 
     /// <summary>Runs one sweep. Exposed so tests drive it directly instead of on a timer.</summary>
+    /// <returns>The number of objectives actually RUN. Failures are counted separately: they
+    /// charge the same per-sweep budget, but a sweep that only failed did not attempt anything
+    /// in the sense callers and tests mean by the return value.</returns>
     public async Task<int> SweepAsync(CancellationToken cancellationToken = default)
     {
         var pending = _objectives.List(ObjectiveStatus.Pending);
         var attempted = 0;
+        var failed = 0;
 
         foreach (var objective in pending.OrderBy(o => o.Priority).ThenBy(o => o.CreatedAt))
         {
-            if (attempted >= _settings.MaxObjectivesPerSweep || cancellationToken.IsCancellationRequested)
+            // Failures charge the budget too. MaxObjectivesPerSweep exists to bound the work — and
+            // the SPEND — of one sweep, and a failing objective still paid for a proposer call. If
+            // only successes counted, a proposer that is down (429, expired credential) would be
+            // called once per pending objective per sweep instead of once per sweep: the loop would
+            // hammer hardest exactly when the dependency is already refusing, and a sweep over
+            // hundreds of objectives could outrun its own interval.
+            if (attempted + failed >= _settings.MaxObjectivesPerSweep || cancellationToken.IsCancellationRequested)
                 break;
 
             var path = ObjectivePath(objective);
             if (path is null)
                 continue;
 
-            var witness = ObjectiveArtifacts.LoadWitness(path);
-            if (witness is null)
+            // One bad objective must not wedge the sweep (the class contract above). The
+            // session runner is fail-closed by design — "a session that cannot be started is an
+            // exception" — and the harness only catches cancellation, so a missing container
+            // engine, a corrupt artifact, or a proposer fault would otherwise abort the whole
+            // list mid-way and starve every lower-priority objective behind it, on every sweep.
+            try
             {
-                // Not worth shouting about each sweep: an objective simply is not eligible
-                // until a human has written its acceptance criteria.
-                _logger.LogDebug(
-                    "Objective {Id} skipped: no witness beside it ({Path})", objective.Id, path);
-                continue;
-            }
+                var witness = ObjectiveArtifacts.LoadWitness(path, out var witnessCorruption);
+                if (witness is null)
+                {
+                    if (witnessCorruption is not null)
+                    {
+                        // A witness someone WROTE that no longer counts. Silent here means the
+                        // objective is parked forever with nothing said.
+                        _logger.LogWarning(
+                            "Objective {Id} cannot run: its witness is unusable — {Reason}",
+                            objective.Id, witnessCorruption);
+                    }
+                    else
+                    {
+                        // Not worth shouting about each sweep: an objective simply is not eligible
+                        // until a human has written its acceptance criteria.
+                        _logger.LogDebug(
+                            "Objective {Id} skipped: no witness beside it ({Path})", objective.Id, path);
+                    }
 
-            var proposal = await ProposeAsync(objective, path, cancellationToken).ConfigureAwait(false);
-            if (proposal is null)
+                    continue;
+                }
+
+                var proposal = await ProposeAsync(objective, path, cancellationToken).ConfigureAwait(false);
+                if (proposal is null)
+                {
+                    _logger.LogDebug("Objective {Id} skipped: no proposal available", objective.Id);
+                    continue;
+                }
+
+                attempted++;
+                await RunOneAsync(objective, witness, proposal, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger.LogDebug("Objective {Id} skipped: no proposal available", objective.Id);
-                continue;
+                // Explained refusal for THIS objective, then carry on with the rest — but charged,
+                // so a systemic fault cannot turn one budgeted sweep into N calls.
+                failed++;
+                _logger.LogWarning(
+                    ex, "Objective {Id} failed ({Path}); continuing the sweep", objective.Id, path);
             }
-
-            attempted++;
-            await RunOneAsync(objective, witness, proposal, cancellationToken).ConfigureAwait(false);
         }
 
         return attempted;
@@ -254,7 +292,15 @@ public sealed class AutonomyLoopService : BackgroundService
 
         // No live proposer composed: fall back to a recorded proposal beside the objective
         // (the record/replay discipline the dogfood arcs established).
-        return ObjectiveArtifacts.LoadRecordedProposal(path);
+        var recorded = ObjectiveArtifacts.LoadRecordedProposal(path, out var corruption);
+        if (corruption is not null)
+        {
+            _logger.LogWarning(
+                "Objective {Id} has a recorded proposal that cannot be replayed — {Reason}",
+                objective.Id, corruption);
+        }
+
+        return recorded;
     }
 
     /// <summary>
