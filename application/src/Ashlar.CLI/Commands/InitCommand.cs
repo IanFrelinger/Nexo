@@ -42,6 +42,15 @@ public sealed class InitCommand : Command
             return 1;
         }
 
+        // A --path that names an existing FILE (not a directory) would make Directory.CreateDirectory
+        // below throw an IOException, spraying a stack trace that leaks source paths. Refuse it
+        // legibly, the same shape as every other rejection here.
+        if (File.Exists(directory.FullName))
+        {
+            Console.Error.WriteLine($"REJECTED: --path '{directory.FullName}' is not a directory.");
+            return 1;
+        }
+
         var manifestPath = Path.Combine(directory.FullName, "ashlar.yaml");
         var policyPath = Path.Combine(directory.FullName, "ashlar.policy.yaml");
 
@@ -57,9 +66,20 @@ public sealed class InitCommand : Command
             return 1;
         }
 
-        Directory.CreateDirectory(directory.FullName);
-        File.WriteAllText(manifestPath, manifestYaml);
-        File.WriteAllText(policyPath, policyYaml);
+        // Any remaining filesystem failure (a file sitting where a parent directory must go, a
+        // read-only or permission-denied target) becomes a legible rejection rather than an
+        // unhandled IOException/UnauthorizedAccessException stack trace.
+        try
+        {
+            Directory.CreateDirectory(directory.FullName);
+            File.WriteAllText(manifestPath, manifestYaml);
+            File.WriteAllText(policyPath, policyYaml);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"REJECTED: could not write project files under '{directory.FullName}': {ex.Message}");
+            return 1;
+        }
 
         Console.WriteLine($"  ashlar.yaml           project contract for '{name}'");
         Console.WriteLine("  ashlar.policy.yaml    sandbox: .  ·  self-extend: sealed");

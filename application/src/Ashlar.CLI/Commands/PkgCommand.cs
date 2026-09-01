@@ -164,6 +164,30 @@ public sealed class PkgCommand : Command
         return cmd;
     }
 
+    // Read a .ashpkg with a size guard BEFORE the whole file lands in a string. A mesh store
+    // is a plain synced directory (MeshStore's transport-naive model), so a .ashpkg there is
+    // attacker-influenceable; an unbounded read-to-string of a several-hundred-MB planted file
+    // is an OOM before ExtensionPackaging.TryOpen's own char cap ever runs. Refuse fail-closed.
+    // Matches ExtensionPackaging's own parse ceiling: a .ashpkg over this is not a certified
+    // extension. Kept as a local constant so this guard has no cross-package version coupling.
+    private const long MaxPackageBytes = 16L * 1024 * 1024;
+
+    private static bool TryReadPackage(FileInfo file, out string json, out string reason)
+    {
+        json = string.Empty;
+        var length = file.Length;
+        if (length > MaxPackageBytes)
+        {
+            reason = $"REFUSED: {file.Name} is {length:N0} bytes; the limit is "
+                   + $"{MaxPackageBytes:N0}. "
+                   + "A package this large is not a certified extension — refusing before reading it.";
+            return false;
+        }
+        json = File.ReadAllText(file.FullName);
+        reason = string.Empty;
+        return true;
+    }
+
     private static async Task<int> ImportAsync(FileInfo file, DirectoryInfo directory)
     {
         var policyPath = Path.Combine(directory.FullName, "ashlar.policy.yaml");
@@ -180,7 +204,12 @@ public sealed class PkgCommand : Command
 
         // Verify + submit is shared with `mesh pull` — how a package arrived must not change how
         // it is admitted. A peek first, so the operator sees the origin's evidence before the verdict.
-        if (!ExtensionPackaging.TryOpen(await File.ReadAllTextAsync(file.FullName), out var peek, out var peekReason))
+        if (!TryReadPackage(file, out var packageJson, out var readReason))
+        {
+            Console.Error.WriteLine(readReason);
+            return 65;
+        }
+        if (!ExtensionPackaging.TryOpen(packageJson, out var peek, out var peekReason))
         {
             Console.Error.WriteLine(peekReason);
             return 65;
@@ -195,7 +224,7 @@ public sealed class PkgCommand : Command
         }
         Console.WriteLine();
 
-        var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(file.FullName));
+        var result = await PackageImport.SubmitAsync(directory.FullName, packageJson);
         switch (result.Outcome)
         {
             case PackageAdmission.Admitted:
@@ -219,6 +248,14 @@ public sealed class PkgCommand : Command
                 return 0;
             case PackageAdmission.Rejected:
                 Console.WriteLine($"  {Bad($"× REJECTED — {result.Message}")}");
+                Console.WriteLine($"  {Dim("disk untouched")}");
+                return 65;
+            case PackageAdmission.Refused:
+                // A package that does not verify — an untrusted sealer, a policy that won't load — is a
+                // 65 here, exactly as it is for `pkg pull` (PullAsync maps Refused to 65 too) and for the
+                // early TryOpen peek above. How a package arrived must not change its exit code: a lone
+                // import of an untrusted-signer package must not exit 1 while a pull of the same exits 65.
+                Console.WriteLine($"  {Bad($"× REFUSED — {result.Message}")}");
                 Console.WriteLine($"  {Dim("disk untouched")}");
                 return 65;
             default:
@@ -247,7 +284,12 @@ public sealed class PkgCommand : Command
             Console.Error.WriteLine($"no such package: {file.FullName}");
             return 1;
         }
-        if (!ExtensionPackaging.TryOpen(await File.ReadAllTextAsync(file.FullName), out var pkg, out var reason))
+        if (!TryReadPackage(file, out var showJson, out var showReadReason))
+        {
+            Console.Error.WriteLine(showReadReason);
+            return 65;
+        }
+        if (!ExtensionPackaging.TryOpen(showJson, out var pkg, out var reason))
         {
             Console.Error.WriteLine(reason);
             return 65;
@@ -394,7 +436,10 @@ public sealed class PkgCommand : Command
 
     private static Command BuildPull()
     {
-        var fromOpt = new Option<DirectoryInfo>("--from", "A peer's mesh store to pull certified packages from.") { IsRequired = true };
+        // A string, not a DirectoryInfo: an `--from http://…` used to be coerced into a DirectoryInfo,
+        // mangling the URL into a nonsense local path and then reporting "no such peer store: <mangled>".
+        // Taking the raw token lets PullAsync catch the URL and refuse it legibly.
+        var fromOpt = new Option<string>("--from", "A peer's mesh store DIRECTORY to pull certified packages from.") { IsRequired = true };
         var pathOpt = PathOption();
         var cmd = new Command("pull", "Pull certified packages from a peer and run each through THIS project's gate.") { fromOpt, pathOpt };
         cmd.SetHandler(async (InvocationContext ctx) =>
@@ -406,8 +451,22 @@ public sealed class PkgCommand : Command
         return cmd;
     }
 
-    private static async Task<int> PullAsync(DirectoryInfo from, DirectoryInfo directory)
+    private static async Task<int> PullAsync(string fromPath, DirectoryInfo directory)
     {
+        // `pull --from` moves packages off a peer's mesh store, which is a local/synced DIRECTORY —
+        // not an HTTP endpoint. HTTP pull is the daemon's job, driven by ASHLAR_MESH_PEERS. Refuse a
+        // URL up front rather than coercing it into a mangled path that then "does not exist".
+        if (Uri.TryCreate(fromPath, UriKind.Absolute, out var url)
+            && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
+        {
+            Console.Error.WriteLine(
+                $"pull --from takes a directory, not a URL ('{fromPath}'). HTTP pull is the daemon's job — "
+                + "set ASHLAR_MESH_PEERS and let the background agent fetch. For a one-shot, point --from at a "
+                + "local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).");
+            return 1;
+        }
+
+        var from = new DirectoryInfo(fromPath);
         if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml"))
             || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
         {
