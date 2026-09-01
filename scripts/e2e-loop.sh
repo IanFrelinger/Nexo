@@ -160,6 +160,13 @@ D=$(fresh); run_cli init demo --path "$D"; set_proposing "$D"
 run_cli verify --path "$D"
 claim "verify-funded-proposing" 0 "VERIFIED" "mode: proposing"
 
+# --format-json is a GLOBAL option, so it parses on `verify` even though the wall is an ANSI
+# rendering with no JSON form. Accepting it and printing the wall anyway returned 0 (VERIFIED) over
+# text no parser can read; the refusal is what stops a script concluding the project verified. Same
+# project as the claim above, which verifies 0 — so the flag is the only thing that changed.
+run_cli verify --path "$D" --format-json
+claim "verify-refuses-unsupported-format-json" 1 "--format-json" "no JSON rendering"
+
 # ───────────────────────────── gates ─────────────────────────────
 D=$(fresh); run_cli init demo --path "$D"; set_proposing "$D"
 run_cli gates --path "$D"
@@ -498,6 +505,26 @@ else
 fi
 rm -f "$MESH/planted.ashpkg"
 
+# A .ashpkg is refused on SIZE before it is read, on every path that reads one — not only import
+# and show. The mesh store is a plain synced directory, so an oversized file needs no publish to
+# get there, and an unbounded read of one is an OutOfMemoryException, not a refusal.
+GIANT="$WORK/giant.ashpkg"
+truncate -s $((16*1024*1024+1024)) "$GIANT"
+MESH_BEFORE=$(ls "$MESH"/*.ashpkg 2>/dev/null | wc -l)
+run_cli pkg publish "$GIANT" --store "$MESH"
+claim "pkg-publish-refuses-oversized" 65 "refusing before reading it"
+MESH_AFTER=$(ls "$MESH"/*.ashpkg 2>/dev/null | wc -l)
+[ "$MESH_BEFORE" = "$MESH_AFTER" ] \
+  && result "pkg-publish-oversized-not-in-store" PASS "refused at the source" \
+  || result "pkg-publish-oversized-not-in-store" FAIL "an oversized package reached the mesh store"
+
+# Planted FIRST in Ordinal order: a pull that ends on it never reaches the legitimate package
+# behind it, which is the denial of service the guard exists to prevent.
+cp "$GIANT" "$MESH/aaa-planted-giant.ashpkg"
+run_cli pkg pull --from "$MESH" --path "$PP"
+claim "pkg-pull-oversized-refuses-row-and-continues" 65 "refusing before reading it" "already-have 1" "refused/rejected 1"
+rm -f "$MESH/aaa-planted-giant.ashpkg"
+
 # a sealed peer pulls the same store: every package rejected, nothing lands, non-zero exit
 PS=$(fresh); run_cli init sealed-pull --path "$PS"
 run_cli pkg pull --from "$MESH" --path "$PS"
@@ -509,6 +536,19 @@ claim "pkg-pull-sealed-rejects-all" 65 "REJECTED" "refused/rejected 1"
 # pulling from an empty store is a clean no-op
 run_cli pkg pull --from "$WORK/nostore-$RANDOM" --path "$PP"
 claim "pkg-pull-missing-store" 1 "no such peer store"
+
+# A file:// URL names the same folder a plain path does — it is the shape a sync client or a file
+# manager hands an operator who copies the store's location. It must reach the store rather than be
+# coerced into a nonsense DirectoryInfo and reported as missing. $MESH is absolute, so these two
+# slashes plus its own leading one make the empty-authority file:/// form. $PP already decided this
+# package above, so already-have is the honest answer for a store it genuinely reached.
+run_cli pkg pull --from "file://$MESH" --path "$PP"
+claim "pkg-pull-file-url-store" 0 "already have" "already-have 1"
+
+# ftp:/ssh: have no transport behind them here. Naming the scheme back beats "no such peer store",
+# which reads as the operator's own store having vanished.
+run_cli pkg pull --from "ftp://peer.example/store" --path "$PP"
+claim "pkg-pull-unsupported-scheme" 1 "takes a directory" "no ftp transport"
 
 unset ASHLAR_KEY_DIR
 

@@ -39,7 +39,10 @@ public sealed class PolicyCommand : Command
         var pathOpt = PathOption();
         var cmd = new Command("show", "Print the project's self-extend posture (mode, budget, gates, trust).") { pathOpt };
         cmd.SetHandler((InvocationContext ctx) =>
-            ctx.ExitCode = Show(ctx.ParseResult.GetValueForOption(pathOpt)!, Console.Out, Console.Error));
+            // `--format-json` is global, so it parses here even though this command only ever prints
+            // prose. Refuse it rather than hand a caller's parser eight lines of text under exit 0.
+            ctx.ExitCode = CommandExecutionSupport.RefuseJsonFormat(ctx.ParseResult, "policy show", Console.Error)
+                ?? Show(ctx.ParseResult.GetValueForOption(pathOpt)!, Console.Out, Console.Error));
         return cmd;
     }
 
@@ -55,7 +58,10 @@ public sealed class PolicyCommand : Command
             keyArg, valueArg, pathOpt
         };
         cmd.SetHandler((InvocationContext ctx) =>
-            ctx.ExitCode = Set(
+            // Same as `show`, and the worse half of the defect: this one WRITES. An operator's script
+            // reads exit 0 and believes it parsed a result, while the dial moved underneath it.
+            // Refusing before Set() also guarantees the policy is left exactly as it was.
+            ctx.ExitCode = CommandExecutionSupport.RefuseJsonFormat(ctx.ParseResult, "policy set", Console.Error) ?? Set(
                 ctx.ParseResult.GetValueForArgument(keyArg),
                 ctx.ParseResult.GetValueForArgument(valueArg),
                 ctx.ParseResult.GetValueForOption(pathOpt)!,

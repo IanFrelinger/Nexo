@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Ashlar.CLI.Commands;
 using FluentAssertions;
 using Xunit;
 
@@ -109,6 +110,23 @@ public sealed class RootCommandRegistrationTests
         export!.Subcommands.Select(s => s.Name).Should().Contain(new[] { "native", "aws", "azure" });
     }
 
+
+    [Fact(Timeout = 15000)]
+    public async Task GlobalFormatJson_isReachableByAlias_notByOptionName()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+
+        // System.CommandLine strips the leading "--" from Option.Name. Every `o.Name ==
+        // "--format-json"` lookup in Commands/ therefore matches nothing and silently reports "no
+        // JSON asked for" — the flag is read by code that can never see it, which is the same silent
+        // acceptance this wave is fixing. Pin the two facts a correct lookup depends on.
+        var formatJson = root.Options.Single(o => o.HasAlias("--format-json"));
+        formatJson.Name.Should().Be("format-json", "the prefix is stripped — never match on Name alone");
+
+        CommandExecutionSupport.WantsJson(root.Parse("doctor --format-json")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("doctor")).Should().BeFalse();
+    }
 
     [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()

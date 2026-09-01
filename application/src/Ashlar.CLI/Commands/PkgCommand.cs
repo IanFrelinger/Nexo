@@ -172,9 +172,12 @@ public sealed class PkgCommand : Command
     // extension. Kept as a local constant so this guard has no cross-package version coupling.
     private const long MaxPackageBytes = 16L * 1024 * 1024;
 
-    private static bool TryReadPackage(FileInfo file, out string json, out string reason)
+    // The ceiling test on its own, split out from the read. `publish` and `pull` read the file
+    // asynchronously, so a guard welded to the synchronous read is one they cannot call — and a
+    // guard only some read paths can reach is how those two stayed unbounded while `import` and
+    // `show` were safe. One ceiling, one sentence, four callers.
+    private static bool TryCheckPackageSize(FileInfo file, out string reason)
     {
-        json = string.Empty;
         var length = file.Length;
         if (length > MaxPackageBytes)
         {
@@ -183,8 +186,18 @@ public sealed class PkgCommand : Command
                    + "A package this large is not a certified extension — refusing before reading it.";
             return false;
         }
-        json = File.ReadAllText(file.FullName);
         reason = string.Empty;
+        return true;
+    }
+
+    private static bool TryReadPackage(FileInfo file, out string json, out string reason)
+    {
+        json = string.Empty;
+        if (!TryCheckPackageSize(file, out reason))
+        {
+            return false;
+        }
+        json = File.ReadAllText(file.FullName);
         return true;
     }
 
@@ -347,6 +360,17 @@ public sealed class PkgCommand : Command
             Console.Error.WriteLine($"no such package: {file.FullName}");
             return 1;
         }
+        // Bound the file before it is buffered, the same ceiling `import` and `show` apply. A .ashpkg
+        // handed to publish has routinely just arrived off a share — that is what a mesh is — so it is
+        // no more trustworthy here than at import, and a scripted republish of a synced folder hands
+        // this verb attacker-influenced bytes. TryOpen's own char cap is no backstop: it measures a
+        // string that exists only once the unbounded read has already succeeded, or exhausted memory
+        // trying, and an OutOfMemoryException is a crash where a refusal belongs.
+        if (!TryCheckPackageSize(file, out var sizeReason))
+        {
+            Console.Error.WriteLine(sizeReason);
+            return 65;
+        }
         var json = await File.ReadAllTextAsync(file.FullName);
 
         // Never publish what does not verify — the mesh carries certified packages only, so a
@@ -439,7 +463,7 @@ public sealed class PkgCommand : Command
         // A string, not a DirectoryInfo: an `--from http://…` used to be coerced into a DirectoryInfo,
         // mangling the URL into a nonsense local path and then reporting "no such peer store: <mangled>".
         // Taking the raw token lets PullAsync catch the URL and refuse it legibly.
-        var fromOpt = new Option<string>("--from", "A peer's mesh store DIRECTORY to pull certified packages from.") { IsRequired = true };
+        var fromOpt = new Option<string>("--from", "A peer's mesh store DIRECTORY — a path, or a file:// URL naming one.") { IsRequired = true };
         var pathOpt = PathOption();
         var cmd = new Command("pull", "Pull certified packages from a peer and run each through THIS project's gate.") { fromOpt, pathOpt };
         cmd.SetHandler(async (InvocationContext ctx) =>
@@ -451,22 +475,108 @@ public sealed class PkgCommand : Command
         return cmd;
     }
 
+    // A URI scheme is a letter followed by letters, digits, '+', '-' or '.' (RFC 3986). Anything else
+    // ahead of the first colon — a separator out of \?C:store, a space, a path segment — means the
+    // colon belongs to a path and no scheme was written.
+    private static bool LooksLikeUriScheme(string candidate)
+    {
+        if (candidate.Length == 0 || !char.IsAsciiLetter(candidate[0]))
+        {
+            return false;
+        }
+        foreach (var c in candidate)
+        {
+            if (!char.IsAsciiLetterOrDigit(c) && c != '+' && c != '-' && c != '.')
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Resolves the raw <c>--from</c> token to the local directory it names, or refuses it with the
+    /// operator-facing reason already composed.
+    /// </summary>
+    private static bool TryResolveStorePath(string fromPath, out string storePath, out string reason)
+    {
+        storePath = fromPath;
+        reason = string.Empty;
+
+        // An empty token reached `new DirectoryInfo("")`, which throws: the operator got a stack
+        // trace where a refusal belongs.
+        if (string.IsNullOrWhiteSpace(fromPath))
+        {
+            reason = "pull --from takes a directory and was given an empty one. Point --from at a "
+                   + "local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).";
+            return false;
+        }
+
+        // Whether a scheme was written is decided on the RAW TOKEN rather than by asking Uri, because
+        // Uri's verdict is not the same on every host: on Unix an ordinary rooted path ("/srv/mesh")
+        // parses as an absolute file: URI, so resolving every IsFile token through Uri.LocalPath would
+        // quietly rewrite plain directories — a store named "50%20off" comes back percent-decoded and
+        // one named "v1#2" comes back truncated at the fragment, both then reported as missing. That
+        // is a live store silently lost, strictly worse than the bug it would be fixing. A path stays
+        // a path unless a scheme was written; a single letter before the colon is a DOS drive
+        // (C:store), never a scheme.
+        var colon = fromPath.IndexOf(':');
+        if (colon < 2 || !LooksLikeUriScheme(fromPath[..colon]))
+        {
+            return true;
+        }
+        var scheme = fromPath[..colon];
+
+        // A file: URL names a directory, so it is the one URL shape this verb can honour — and the
+        // shape an operator gets for free from a sync client or a file manager's "copy location".
+        // Falling through left them holding `new DirectoryInfo("file:///srv/mesh")` and being told
+        // their own store did not exist.
+        if (string.Equals(scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+        {
+            if (Uri.TryCreate(fromPath, UriKind.Absolute, out var fileUrl)
+                && fileUrl.IsFile
+                && !string.IsNullOrWhiteSpace(fileUrl.LocalPath))
+            {
+                storePath = fileUrl.LocalPath;
+                return true;
+            }
+            reason = $"pull --from takes a directory, and '{fromPath}' is not a file URL that names one. "
+                   + "Point --from at a local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).";
+            return false;
+        }
+
+        // `pull --from` moves packages off a peer's mesh store, which is a local/synced DIRECTORY —
+        // not an HTTP endpoint. HTTP pull is the daemon's job, driven by ASHLAR_MESH_PEERS.
+        if (string.Equals(scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            reason = $"pull --from takes a directory, not a URL ('{fromPath}'). HTTP pull is the daemon's job — "
+                   + "set ASHLAR_MESH_PEERS and let the background agent fetch. For a one-shot, point --from at a "
+                   + "local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).";
+            return false;
+        }
+
+        // ftp:, ssh:, s3: — nothing stands behind any of them here. Naming the scheme back beats
+        // coercing the token into a nonsense DirectoryInfo and reporting it as a peer store that does
+        // not exist, which reads to the operator as their own store having vanished.
+        reason = $"pull --from takes a directory, not a '{scheme}:' URL ('{fromPath}'). There is no {scheme} "
+               + "transport in this verb; point --from at a local mesh store directory (e.g. the folder "
+               + "`ashlar pkg publish` wrote to).";
+        return false;
+    }
+
     private static async Task<int> PullAsync(string fromPath, DirectoryInfo directory)
     {
-        // `pull --from` moves packages off a peer's mesh store, which is a local/synced DIRECTORY —
-        // not an HTTP endpoint. HTTP pull is the daemon's job, driven by ASHLAR_MESH_PEERS. Refuse a
-        // URL up front rather than coercing it into a mangled path that then "does not exist".
-        if (Uri.TryCreate(fromPath, UriKind.Absolute, out var url)
-            && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
+        // Refuse a URL this verb cannot serve rather than coercing it into a mangled path that then
+        // "does not exist" — and resolve the one URL shape that does name a directory, file://,
+        // instead of mangling that too.
+        if (!TryResolveStorePath(fromPath, out var storePath, out var storeReason))
         {
-            Console.Error.WriteLine(
-                $"pull --from takes a directory, not a URL ('{fromPath}'). HTTP pull is the daemon's job — "
-                + "set ASHLAR_MESH_PEERS and let the background agent fetch. For a one-shot, point --from at a "
-                + "local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).");
+            Console.Error.WriteLine(storeReason);
             return 1;
         }
 
-        var from = new DirectoryInfo(fromPath);
+        var from = new DirectoryInfo(storePath);
         if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml"))
             || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
         {
@@ -511,7 +621,34 @@ public sealed class PkgCommand : Command
         int admitted = 0, held = 0, refused = 0, skipped = 0, warned = 0;
         foreach (var path in packages)
         {
-            var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(path));
+            // A file this pass cannot read refuses its own ROW; the pass continues. A mesh store is
+            // a plain synced directory, so anyone who can write to the share can drop one file into
+            // it — and a sync client leaves half-arrived files and dangling links there without
+            // anyone's help. Ending the pass on one of them lets a single file deny every legitimate
+            // package behind it, which is the denial the size guard exists to prevent, moved up one
+            // level. The row counts as refused, so the pass still exits 65 and the summary names it:
+            // a refusal must never quietly become a skip.
+            string packageJson;
+            try
+            {
+                if (!TryCheckPackageSize(new FileInfo(path), out var sizeReason))
+                {
+                    refused++;
+                    // No sealer fingerprint on this line: nothing was opened, so there is no verified
+                    // signer to name — the same reason the parse refusals below leave it blank.
+                    Console.WriteLine($"  {Bad("× REFUSED")}  {Path.GetFileName(path)} {Dim(" · " + sizeReason)}");
+                    continue;
+                }
+                packageJson = await File.ReadAllTextAsync(path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                refused++;
+                Console.WriteLine($"  {Bad("× REFUSED")}  {Path.GetFileName(path)} {Dim($" · unreadable: {ex.Message}")}");
+                continue;
+            }
+
+            var result = await PackageImport.SubmitAsync(directory.FullName, packageJson);
             var summary = result.Package?.Record.Proposal.Summary ?? Path.GetFileName(path);
 
             // WHO SEALED THIS. The summary beside it is attacker-chosen text — it is whatever the
