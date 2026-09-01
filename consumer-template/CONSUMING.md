@@ -2,11 +2,11 @@
 
 Starter pins for **ashlar-ai-director**-style repos: authored brick + thin host + HTTP client. Copy `nuget.config` and `Directory.Packages.props` from this folder into your solution root.
 
-**Package version:** `0.1.0` — must match a published release on your staging (or production) feed. In the Ashlar repo, `VERSION` at the root is the single source of truth.
+**Package version:** `0.1.1` — the current nuget.org release. In the Ashlar repo, `VERSION` at the root is the single source of truth.
 
-**Not yet on nuget.org.** No Ashlar package (including `Ashlar.CLI`, `Ashlar.Authoring`, `Ashlar.Hosting.Bundle`) has been published to nuget.org yet, so these pins only restore from a feed you supply: a staging feed you have pushed to (below), or a local folder feed packed from a checkout (`scripts/verify-external-product-shape.sh` builds one; `docs/AuthoringBricks.md`, section "Restoring Ashlar.Authoring", has the hand recipe). Inside a checkout, a `ProjectReference` into `src/` (as in `samples/hello-brick/`) needs no feed at all.
+**On nuget.org since v0.1.1 (2026-09-01).** The full `Ashlar.*` graph (including `Ashlar.CLI`, `Ashlar.Authoring`, `Ashlar.Hosting.Bundle`) restores from plain nuget.org — no staging feed needed. The living proof is [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager), whose CI restores from nuget.org and nothing else. A staging feed (below) remains an option for pre-release testing; inside a checkout, a `ProjectReference` into `src/` (as in `samples/hello-brick/`) needs no feed at all.
 
-## Package pins (`0.1.0`)
+## Package pins (`0.1.1`)
 
 | Package | Role |
 |---------|------|
@@ -20,11 +20,11 @@ Starter pins for **ashlar-ai-director**-style repos: authored brick + thin host 
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.0" />
-  <PackageReference Include="Ashlar.Authoring" Version="0.1.0" />
-  <PackageReference Include="Ashlar.Hosting.Bundle" Version="0.1.0" />
-  <PackageReference Include="Ashlar.Sdk" Version="0.1.0" />
-  <PackageReference Include="Ashlar.Client" Version="0.1.0" />
+  <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.1" />
+  <PackageReference Include="Ashlar.Authoring" Version="0.1.1" />
+  <PackageReference Include="Ashlar.Hosting.Bundle" Version="0.1.1" />
+  <PackageReference Include="Ashlar.Sdk" Version="0.1.1" />
+  <PackageReference Include="Ashlar.Client" Version="0.1.1" />
 </ItemGroup>
 ```
 

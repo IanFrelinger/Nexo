@@ -53,7 +53,7 @@ case "$LAYER" in
     # Mirrors CI for this layer: optimize-agent-cluster-gate.yml is the ONLY
     # CI workflow owning apps/ paths (it exercises apps/runtime-studio's
     # optimize_agent_cluster.sh). scripts/apps-gate-checks.sh reproduces its
-    # five jobs. ashlar-forge, game-director and release-manager have no CI
+    # five jobs. Extracted/removed apps have no CI here
     # coverage and no csproj — what "ready" means for them is parked in the
     # ledger as a product question, not guessed here.
     GATE_NAMES=(apps-cli-build apps-script-interface apps-bootstrap apps-scaffold-optimize apps-daemon-launch apps-flag-combinations)

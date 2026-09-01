@@ -8,7 +8,9 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
-_Nothing yet — the tree is at 0.1.1._
+### Changed
+
+- **Release Manager extracted** to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) — the first out-of-tree consumer of the published packages (CI restores from nuget.org only; smoke-verified: all four deterministic agents register, run, and drain). Completes the graduation→extraction path LICENSING.md promised. `consumer-template/` refreshed to `0.1.1` and no longer claims the packages are unpublished.
 
 ## [0.1.1] - 2026-09-01
 
