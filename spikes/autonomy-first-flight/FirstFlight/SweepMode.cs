@@ -70,9 +70,6 @@ public static class SweepMode
             {
                 typeof(DomainBrick).Assembly.Location,
                 typeof(BrickInput).Assembly.Location,
-                // The candidate delegates to the physical-atom codec, so its assembly
-                // has to travel into the session with the rest of the references.
-                typeof(Ashlar.Certification.Physical.Tagging.PhysicalAtomQrTagCodec).Assembly.Location,
             },
         };
 

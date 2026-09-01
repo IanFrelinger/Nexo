@@ -109,6 +109,7 @@ public sealed class RootCommandRegistrationTests
         export!.Subcommands.Select(s => s.Name).Should().Contain(new[] { "native", "aws", "azure" });
     }
 
+
     [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {

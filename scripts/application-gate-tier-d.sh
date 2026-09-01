@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Application Tier D: agent-server Compose dry run + optional GameDomain smoke.
+# Application Tier D: agent-server Compose dry run.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -13,12 +13,8 @@ else
   echo "== Application Tier D: agent-server dry run skipped (no Docker) =="
 fi
 
-if [ "${APPLICATION_GATE_GAMEDOMAIN:-0}" = "1" ]; then
-  echo "== Application Tier D: GameDomain tests =="
-  dotnet test commercial/tests/Ashlar.Commercial.Tests.GameDomain/Ashlar.Commercial.Tests.GameDomain.csproj -f net8.0 \
     --blame-hang-timeout 120s --blame-hang-dump-type none
 else
-  echo "== Application Tier D: GameDomain skipped (APPLICATION_GATE_GAMEDOMAIN=1 to enable) =="
 fi
 
 echo ""

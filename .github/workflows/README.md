@@ -7,7 +7,7 @@ the summary of the 62 files is:
 
 - **14 run on `pull_request`** — only `cert-gate` and `layer-boundary` on every PR, the
   rest path-filtered (kernel/application/security/coverage/docs/testing-strategy/shell-lint/
-  provenance-graph gates) plus the label-driven `release-staging-on-label`.
+  other path-scoped gates) plus the label-driven `release-staging-on-label`.
 - **20 run on `push` only** (path-filtered, `master`/`main`/`cursor/**`), all with
   `workflow_dispatch` as well — post-merge signals such as `mcp-a2a-gate`, `grpc-transport-gate`,
   `onboarding-docs-guard`, `container-image-publish`.

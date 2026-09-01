@@ -208,86 +208,13 @@ CI: [run 28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224
 
 **v0 boundary:** Single task (damage→health), one provider (cursor), record/replay batch.
 
-## Physical-atom certification (Phase 0 — Prototype)
+## Physical-atom and spatial evidence (removed with the vertical, 2026-08-31)
 
-Headless cert + verifier core for binding physical objects to hosted digital-twin assets. Spec: `docs/physical-atom-phase0-spec.md`. Test report: `docs/physical-atom-phase0-test-report.md`.
-
-| Proof | Result |
-|-------|--------|
-| `PhysicalAtomCertificateVerifierTests` (R1–R7 refusal + A1–A4 admission) | **PASS** — forged sig, hash mismatch, binding-scope violations, geo H3 inconsistency, tampered extensions all refused |
-| `BundleCertificationBrickTests` | **PASS** — Design/Instance/Batch issuance; inconsistent inputs refused at issuance |
-| `PhysicalAtomSampleCertTests` | **PASS** — committed sample at `samples/physical-atom-cert/` verifies headless |
-
-**Design decision:** `Design` binding_scope with populated `manufacture_meta` is an explicit error (`binding-scope-manufacture-meta-forbidden`), not silently ignored.
-
-**Crypto:** Ed25519 issuer signatures via `Ashlar.Certification.Physical` (NSec 25.4.0). Sample issuer key is documentation-only.
-
-cert-gate: **69 tests** @ [run 28486193636](https://github.com/IanFrelinger/Nexo/actions/runs/28486193636) (`conclusion: success`, PR #210).
-
-## Physical-atom asset resolution (Phase 1 — Prototype)
-
-Headless hosting/resolution loop: register assets + certs, resolve by atom/hash, verify bundles. Spec: `docs/physical-atom-phase1-spec.md`.
-
-| Proof | Result |
-|-------|--------|
-| `PhysicalAtomResolutionVerifierTests` (R1–R4 + A1–A2) | **PASS** — unresolved atom/asset, store byte mismatch, tampered bundle manifest refused |
-| `AssetBundleCertificationPipelineTests` | **PASS** — certify/register/resolve end-to-end |
-| `PhysicalAtomCertBundleManifestTests` | **PASS** — sample `design-scope.bundle.json` round-trips and verifies |
-
-Sample bundle: `samples/physical-atom-cert/design-scope.bundle.json`.
-
-## Physical-atom tag encoding (Phase 2 — Prototype)
-
-QR/NFC reference encoding for certified atoms. Spec: `docs/physical-atom-phase2-spec.md`.
-
-| Proof | Result |
-|-------|--------|
-| `PhysicalAtomTagCodecTests` (R1–R6 + A1–A2) | **PASS** — malformed prefix/base64/CRC/version/NDEF type refused |
-| `PhysicalAtomTagIssuingTests` | **PASS** — bundle → QR + NFC; missing issuer key refused |
-| `PhysicalAtomTagSampleTests` | **PASS** — `design-scope.tag-qr.txt` decodes headless |
-
-Sample QR: `samples/physical-atom-cert/design-scope.tag-qr.txt`.
-
-## Physical-atom orchestration (Phase 3 — Prototype)
-
-HTTP resolution routing + tag→verify orchestration. Spec: `docs/physical-atom-phase3-spec.md`.
-
-| Proof | Result |
-|-------|--------|
-| `PhysicalAtomTagVerifyOrchestratorTests` | **PASS** — malformed tag, unresolved atom, reference/fingerprint mismatch refused |
-| `HttpAssetResolutionRouterTests` | **PASS** — headless GET routes for cert + asset |
-| `PhysicalAtomEndToEndFlowTests` | **PASS** — pipeline → HTTP → tag verify |
-
-## Spatial pose arc (P1 — Prototype, #220)
-
-Identity/pose seam landed on `master` via squash merge `4f550b03`. Duplicate `Ashlar.Certification.PhysicalAtom` dropped; spatial runtime binds through `TagVerifyResolverAdapter` → `PhysicalAtomTagVerifyOrchestrator`.
-
-| Proof | Result |
-|-------|--------|
-| `SpatialBindingServiceRejectionTests` + `TagVerifyResolverAdapterSeamTests` | **PASS** — uncertified atom, issuer mismatch, mid-stream asset-hash change refused |
-| `ScopedPoseRelayRejectionTests` | **PASS** — host-only publish, non-member subscribe refused, no pose replay for late joiners |
-| `PoseStreamConsumerRejectionTests` | **PASS** — confidence/gap/velocity policies downstream of provider |
-| `dependency-boundary-gate` | **PASS** — only `Ashlar.Spatial.Runtime` references `Ashlar.Certification.Physical` |
-
-Projects: `Ashlar.Spatial.Contracts`, `Ashlar.Spatial.Runtime`, `Ashlar.Spatial.Multiplayer`. Doc: `docs/spatial-multiplayer.md`.
-
-**Deferred:** 0c8b hash-chained bundle transitions (use `PhysicalAtomCertBundleVerifier` instead). Native SDK binding on device hosts (ARKit/NRSDK/RealityKit frame delegates) remains a manual hardware follow-up.
-
-## Spatial platform providers (P2 — Prototype)
-
-Real platform shells wired through injectable native-interop seams; headless CI exercises fail-closed paths only.
-
-| Proof | Result |
-|-------|--------|
-| `ArKitSpatialAnchorProviderRejectionTests` | **PASS** — non-iOS/uninitialized fail-closed; limited→`Occluded`; interruption→`Lost`; unknown atom→`null` |
-| `XrealSpatialAnchorProviderRejectionTests` | **PASS** — unsupported host, tether disconnect→`Lost`, unknown atom→`null` |
-| `VisionProSpatialAnchorProviderRejectionTests` | **PASS** — pre-immersive-space fail-closed; limited→`Occluded` |
-| `SpatialAnchorProviderSelectorRejectionTests` | **PASS** — unsupported host explicit unavailable; deterministic priority tie-break |
-| `dependency-boundary-gate` | **PASS** — zero `Ashlar.Certification.*` in `Ashlar.Spatial.Platform.*`; no sibling platform refs |
-
-Projects: `Ashlar.Spatial.Platform.ARKit`, `Ashlar.Spatial.Platform.XREAL`, `Ashlar.Spatial.Platform.VisionPro`. Selection glue: `SpatialAnchorProviderSelector` in `Ashlar.Spatial.Runtime`.
-
-**Architecture notes:** ARKit session lifecycle is host-owned via `IArKitNativeSession`. Vision Pro is a separate package (not an ARKit variant) for visionOS consumer isolation + immersive-space gating. Provider priority: `visionpro` → `arkit` → `xreal` (ordinal tie-break).
+The physical-atom certification (Phases 0-3) and spatial pose/provider (P1-P2) evidence
+sections documented `applications/` products removed in the native-responsibility slim.
+Their code, tests, and this ledger's full sections are preserved verbatim on the archive
+branch `archive/verticals-2026-08-31` and in git history; the evidence travels with the
+vertical to its own repository.
 
 ## Autonomy first flight (P2)
 

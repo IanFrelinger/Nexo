@@ -17,13 +17,11 @@ Build contexts and repo bind mounts inside these files point at the repository r
 | `docker-compose.mesh-lab-tls.override.yml` | Override: TLS fronting (Caddy) for the mesh lab | `docs/MeshVirtualLab.md` |
 | `docker-compose.mesh-lab-stress.override.yml` | Override: stress-test profile for the mesh lab | `docs/MeshVirtualLab.md` |
 | `docker-compose.friend-mesh.yml` | Friend-mesh prefab | `docs/FriendMeshPrefab.md` |
-| `docker-compose.game-director.yml` | Game Director studio app | `docs/GameDirectorStudio.md` |
 | `docker-compose.ollama.yml` | Local Ollama model runtime | `docs/Configuration.md` |
 | `docker-compose.ollama.gpu.override.yml` | Override: GPU acceleration for Ollama | `docs/Configuration.md` |
 | `docker-compose.cloud-multi-tenant.yml` | Cloud multi-tenant deployment shape | `docs/DistributionModels.md` |
 | `docker-compose.private-single-tenant.yml` | Private single-tenant deployment shape | `docs/DistributionModels.md` |
 | `docker-compose.ephemeral.yml` | Disposable Ollama (+ optional Postgres, `--profile db`) plus a `ashlar` CLI service built from `.docker/Dockerfile.cli` (`run --rm ashlar ...`) | `docs/DistributionModels.md` |
-| `docker-compose.provenance.yml` | Provenance graph demo | `scripts/demo-provenance-graph.sh` |
 | `docker-compose.test.yml` | Cached test-runner image | `.docker/Dockerfile.test-caching` |
 
 > **Looking for a node to deploy?** None of these is one. `deploy/node.yml` is THE node — pinned by digest, state on a named volume, restart-durable. The stacks here are labs, demos and development stacks.

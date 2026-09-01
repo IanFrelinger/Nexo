@@ -20,14 +20,9 @@
       '$(MSBuildProjectName)' == 'Ashlar.Tests.Kernel' OR
       '$(MSBuildProjectName)' == 'Ashlar.CLI' OR
       '$(MSBuildProjectName)' == 'Ashlar.API' OR
-      '$(MSBuildProjectName)' == 'GameDirector.Mcp' OR
-      '$(MSBuildProjectName)' == 'GameDirector.Bricks' OR
-      '$(MSBuildProjectName)' == 'GameDirector.Agents' OR
-      '$(MSBuildProjectName)' == 'Ashlar.Commercial.GameDomain' OR
       '$(MSBuildProjectName)' == 'Ashlar.Commercial.Fleet.Infrastructure' OR
       '$(MSBuildProjectName)' == 'Ashlar.Commercial.Fleet.Contracts' OR
       '$(MSBuildProjectName)' == 'Ashlar.Commercial.Tests.Fleet' OR
-      '$(MSBuildProjectName)' == 'Ashlar.Tests.GameDirector' OR
       '$(MSBuildProjectName)' == 'HelloBrick' OR
       '$(MSBuildProjectName)' == 'Ashlar.Certified.DamageResolver'
       ">true</AshlarIncludeDomainBrickGlobalUsing>

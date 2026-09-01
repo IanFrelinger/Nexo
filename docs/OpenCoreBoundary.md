@@ -36,9 +36,6 @@ Commercial code covers:
 - `Ashlar.Commercial.Fleet.Api`
 - `Ashlar.Commercial.Fleet.Host`
 - `Ashlar.Commercial.MeshDirector`
-- Game Director / Forge commercial verticals under `commercial/src/Ashlar.Commercial.GameDirector.*`
-- `Ashlar.Commercial.GameDomain`
-- two `apps/` configuration surfaces (no `.csproj`): `apps/game-director/` and `apps/ashlar-forge/`
 
 Commercial concerns include fleet director behavior, fleet-scale mesh orchestration, commercial governance/RBAC, organization-scale control plane, leases/checkpoints, commercial worker execution, commercial API packaging, and vertical commercial app packaging.
 
@@ -46,10 +43,12 @@ Commercial concerns include fleet director behavior, fleet-scale mesh orchestrat
 
 The `apps/` directories are agent-set/host **configuration** surfaces with no `.csproj`, so the project-path rule below does not classify them; `LICENSING.md` does, explicitly:
 
-- **Open:** `apps/release-manager/` and `apps/runtime-studio/` — graduated commercial → open on 2026-08-31 (the one-way ratchet's trust-building direction). The game-director run-mode config and launcher moved to `apps/game-director/` as part of that graduation.
-- **Commercial:** `apps/game-director/` and `apps/ashlar-forge/` — each carries a `COMMERCIAL-LICENSE.md` with the in-force evaluation grant.
+- **Open:** `apps/release-manager/` and `apps/runtime-studio/` — graduated commercial → open on 2026-08-31 (the one-way ratchet's trust-building direction), and scheduled for extraction to their own repositories as the first out-of-tree package consumers.
+- The commercial game vertical (`apps/game-director/`, `apps/ashlar-forge/`, and the nine `commercial/` game projects) was removed in the 2026-08-31 native-responsibility slim; it is preserved on `archive/verticals-2026-08-31` for extraction to its own repository.
 
 ## Tracked boundary follow-ups
+
+- **Extract the game/spatial residue still inside core projects.** The 2026-08-31 slim removed vertical *directories*; vertical *vocabulary* still compiled into core remains and should move out with the vertical's repo: `src/Ashlar.Core.Application/Environments/**` (MapData/MapVerification/MaterialIntelligence/VoxelChunkKey), `src/Ashlar.Infrastructure/Environments/ModelBackedMaterialIntelligenceService.cs`, `src/Ashlar.Infrastructure/Workflows/QuestPdfWorkflowExporter.cs`, the game-engine rows in `src/Ashlar.Core.Domain` (Export/ExportTarget.cs, Agents/Platform.cs), and the `/api/director/*` "dailies" vocabulary in the open API (generically implemented; rename or extract).
 
 - **Extract the private-license gate from the open API host.** `application/src/Ashlar.API/Security/PrivateLicense*` is the default-off license-enforcement seam commercial deployments enable. It restricts nothing unless configured, and its lapsed floor (expired = read-only) is pinned in code — but per covenant 3 the wall should be architectural, so the gate belongs in the commercial host, behind an open extension seam.
 - **Move commercial license files to Ed25519.** License signatures are HMAC-SHA256 today, so the verification key is also a signing key and can never be published. Re-signing licenses with the Ed25519 pattern from `src/Ashlar.Certification.Contracts/` lets the open tooling verify license files too, completing covenant 1's enumeration.

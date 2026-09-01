@@ -32,7 +32,7 @@ release-staging-and-verify:
 	$(MAKE) release-staging VERSION="$(VERSION)" DRY_RUN="$(DRY_RUN)"
 	@if [ "$(DRY_RUN)" != "1" ]; then $(MAKE) verify-staging VERSION="$(VERSION)"; fi
 
-# All automated test projects in Ashlar.PrimeTime.slnf (eight assemblies: seven Ashlar.Tests.* + commercial Tests.GameDomain).
+# All automated test projects in Ashlar.PrimeTime.slnf (seven Ashlar.Tests.* assemblies).
 PRIME_TIME_SLNF := Ashlar.PrimeTime.slnf
 
 # Build the solution (root holds several .sln/.slnf; a bare `dotnet build` fails with MSB1011)
@@ -120,7 +120,7 @@ test-all-platforms-ephemeral:
 
 # Run tests on all platforms (C#-driven; works on Windows, macOS, Linux, mobile)
 test-all:
-	dotnet run --project application/src/Ashlar.CLI -- test --platforms ubuntu alpine debian android ios unity windows
+	dotnet run --project application/src/Ashlar.CLI -- test --platforms ubuntu alpine debian android ios windows
 
 # Run tests on specific platform
 test-platform:

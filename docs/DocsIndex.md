@@ -79,21 +79,10 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 ## Demo / Rollout Walkthroughs
 
 - `scripts/oh-shit-demo.sh` — high-signal end-to-end demo script (bootstrap, chat, orchestration, dogfood).
-- `scripts/unity-sidecar-demo.sh` — Unity sidecar demo entrypoint.
-- `docs/UnitySidecarDemo.md` — sidecar demo behavior and commands.
 
 ## Security / Trust
 
-- `docs/physical-atom-phase0-spec.md` — **Phase 0 (Prototype):** physical-atom certificate schema, Ed25519 verifier, binding-scope policy (headless, cert-gate tested).
-- `docs/physical-atom-phase1-spec.md` — **Phase 1 (Prototype):** asset resolution store, certified bundle manifest, resolution verifier (headless).
-- `docs/physical-atom-phase2-spec.md` — **Phase 2 (Prototype):** QR/NFC tag reference encoding (headless byte codecs).
-- `docs/physical-atom-phase3-spec.md` — **Phase 3 (Prototype):** HTTP resolution router + tag verify orchestration (headless).
-- `docs/physical-atom-phase0-test-report.md` — rejection-first test coverage report for Phase 0.
-- `docs/physical-atom-phase1-test-report.md` — Phase 1 resolution/bundle test report.
-- `docs/physical-atom-phase2-test-report.md` — Phase 2 QR/NFC tag encoding test report.
-- `docs/spatial-multiplayer.md` — **Spatial P1:** single host authority per match scope (v1 decision).
-- `samples/physical-atom-cert/` — signed sample certificate + issuer public key for headless verification replay.
-- `samples/README.md` — index of every tracked sample (`hello-brick`, `certified-brick-reuse`, `provenance-graph`, `physical-atom-cert`, `autonomy-objectives`, ...): what each shows, run command, prerequisites.
+- `samples/README.md` — index of every tracked sample (`hello-brick`, `certified-brick-reuse`, `autonomy-objectives`, ...): what each shows, run command, prerequisites.
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Ashlar.API** hub (friends / tailnet).
 - `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `ashlar mesh peers` / `mesh health` / `dotnet run --project commercial/src/Ashlar.Commercial.MeshDirector -- director ...`, TLS example.
 - `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Ashlar.API nodes in Docker + verify script (no extra hardware); **`scripts/bootstrap-cloud-mesh-lab.sh`** for Ubuntu/Debian cloud VMs.
@@ -119,7 +108,6 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
 - `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-ashlar-api).
-- `docs/SelfHostedGameServerPortal.md` — `deploy/compose/docker-compose.portal.yml`: Director portal + dailies API (lighter stack).
 - `docs/SelfHostedAgentServer.md` — `deploy/compose/docker-compose.agent-server.yml`: mounted workspace + env template `docs/config/agent-server.env.example`.
 - **`docs/Federation.md`** — hub-less **peer-to-peer sharing** of signed `.ashpkg` extensions (F1–F4): serve (`/mesh/v1/…`), pull from configured peers / a tailnet / LAN multicast discovery (`ashlar mesh lan`), and TLS/mTLS for a private fleet. Distinct from the commercial director/hub mesh. Config lives in `deploy/node.yml`.
 - `docs/GrpcHost.md` — `src/Ashlar.Transport.Grpc.Server.Host`: listen address, HTTP/2 (h2c vs TLS), the client-side `Ashlar:GrpcTransport` `/run/secrets/*` defaults, compose secrets shape.
