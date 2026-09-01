@@ -37,6 +37,7 @@ public sealed class MediatedWritePathTests : IDisposable
         "nested/dir/Directory.Build.targets", "build/custom.props", "x/y/z.targets",
         "nuget.config", "global.json", "Makefile", "GNUmakefile",
         ".editorconfig", "src/.editorconfig", ".pre-commit-config.yaml",
+        ".globalconfig", ".config/dotnet-tools.json",
         "src/Foo/Foo.csproj", "src/Foo/Foo.fsproj", "src/Foo/Foo.vbproj", "tools/x.proj",
         "Ashlar.sln", "Ashlar.slnx",
         ".git/config", ".github/workflows/ci.yml", ".vscode/tasks.json",
