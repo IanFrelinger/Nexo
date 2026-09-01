@@ -26,7 +26,17 @@ try:
     raw = urllib.request.urlopen(url, timeout=60).read()
 except Exception:
     sys.exit(1)
-data = json.loads(raw.decode('utf-8'))
+# The registration5-gz-semver2 blobs are stored gzip-compressed and served with
+# Content-Encoding: gzip regardless of Accept-Encoding; urllib does not
+# decompress. Verified on the first real v0.1.1 publish: without this, every
+# poll reads as 'not listed' forever while nuget.org has the version indexed.
+try:
+    import gzip
+    if raw[:2] == bytes([31, 139]):
+        raw = gzip.decompress(raw)
+    data = json.loads(raw.decode('utf-8'))
+except Exception:
+    sys.exit(1)
 versions = set()
 
 def walk(o):
