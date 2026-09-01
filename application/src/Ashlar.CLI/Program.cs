@@ -45,8 +45,29 @@ namespace Ashlar.CLI;
 /// </summary>
 static partial class Program
 {
+    /// <summary>
+    /// Set once in <see cref="Main"/> from the global <c>--format-json</c> flag. When true, the host's
+    /// console logger is routed to STDERR so STDOUT carries only the machine-readable JSON the flag
+    /// promises — otherwise the framework's default console provider interleaves <c>info:</c> log lines
+    /// with the JSON on STDOUT and the result is not parseable.
+    /// </summary>
+    internal static bool JsonOutputMode { get; private set; }
+
     private static readonly Lazy<IHost> Host = new(() =>
         Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+            .ConfigureLogging(logging =>
+            {
+                if (!JsonOutputMode)
+                {
+                    return;
+                }
+
+                // `--format-json` documents "stderr still carries logs". CreateDefaultBuilder wires a
+                // console provider that writes to STDOUT; replace it with one whose stderr threshold is
+                // Trace, so every log line (info included) goes to STDERR and STDOUT is clean JSON.
+                logging.ClearProviders();
+                logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
+            })
             .ConfigureServices(ConfigureServices)
             .Build());
 
@@ -59,6 +80,9 @@ static partial class Program
     /// <returns>Exit code (0 for success, non-zero for errors)</returns>
     static async Task<int> Main(string[] args)
     {
+        // Read the flag before the host is built (the host is lazy, and its logging config below
+        // reads this). A global option, so it can appear anywhere in the token stream.
+        JsonOutputMode = args.Contains("--format-json");
         var root = BuildRootCommand();
         return await root.InvokeAsync(args);
     }

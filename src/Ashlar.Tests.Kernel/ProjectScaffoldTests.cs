@@ -88,6 +88,37 @@ public sealed class ProjectScaffoldTests
     }
 
     [Fact]
+    public void A_name_at_the_length_cap_is_accepted()
+    {
+        // The boundary: exactly MaxNameLength characters (all valid) still scaffolds.
+        var name = "a" + new string('b', ProjectScaffold.MaxNameLength - 1);
+        name.Length.Should().Be(ProjectScaffold.MaxNameLength);
+
+        ProjectScaffold.TryScaffold(name, out _, out _, out var reason).Should().BeTrue(reason);
+    }
+
+    [Fact]
+    public void An_over_long_name_is_refused_even_when_the_charset_is_valid()
+    {
+        // Charset-valid but pathological: the charset check alone accepted a 100k-char name, which
+        // then became a metadata.name and a directory. The length cap refuses it up front.
+        var name = "a" + new string('b', ProjectScaffold.MaxNameLength);
+        name.Length.Should().Be(ProjectScaffold.MaxNameLength + 1);
+
+        ProjectScaffold.TryScaffold(name, out _, out _, out var reason).Should().BeFalse();
+        reason.Should().Contain("REJECTED").And.Contain("maximum");
+    }
+
+    [Fact]
+    public void A_hundred_thousand_char_name_is_refused()
+    {
+        var name = new string('a', 100_000);
+
+        ProjectScaffold.TryScaffold(name, out _, out _, out var reason).Should().BeFalse();
+        reason.Should().Contain("REJECTED");
+    }
+
+    [Fact]
     public void Emitted_documents_use_lf_line_endings_regardless_of_source_checkout()
     {
         // The templates normalize at initialization, so what init writes to disk does not
