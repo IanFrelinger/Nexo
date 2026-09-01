@@ -84,7 +84,27 @@ internal static class AstMutationCatalog
         CollectSwapLogicalOperators(root, mutations);
         CollectDegradeCoalesceAssignments(root, mutations);
 
-        return mutations;
+        return DisambiguateIds(mutations);
+    }
+
+    /// <summary>
+    /// The base id is <c>{kind}-{line}</c>, so two mutations of one kind on one line (e.g. both
+    /// arms of a binary expression) would collide — and a colliding id makes the SIGNED
+    /// survivor/killed ledger ambiguous. Append <c>#2</c>, <c>#3</c>… to the second and later
+    /// occurrences of a repeated id so every mutant in the evidence is uniquely named, without
+    /// changing the common (non-colliding) id.
+    /// </summary>
+    private static IReadOnlyList<AstMutation> DisambiguateIds(List<AstMutation> mutations)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var result = new List<AstMutation>(mutations.Count);
+        foreach (var mutation in mutations)
+        {
+            var seen = counts.TryGetValue(mutation.Id, out var n) ? n : 0;
+            counts[mutation.Id] = seen + 1;
+            result.Add(seen == 0 ? mutation : mutation with { Id = $"{mutation.Id}#{seen + 1}" });
+        }
+        return result;
     }
 
     private static void CollectFlipBinaryComparisons(SyntaxNode root, List<AstMutation> mutations)

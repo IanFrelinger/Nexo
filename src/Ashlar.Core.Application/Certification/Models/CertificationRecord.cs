@@ -3,11 +3,11 @@ using Ashlar.Certification.Contracts;
 namespace Ashlar.Core.Application.Certification.Models;
 
 /// <summary>
-/// Signed certification admission record emitted on ADMIT.
+/// Signed certification record emitted when the gate runs. Status is PASS (admitted) or FAIL (refused).
 /// </summary>
 public sealed record CertificationRecord
 {
-    /// <summary>Certification status label (e.g. ADMIT, REJECT).</summary>
+    /// <summary>Certification status label: <c>PASS</c> when the gate admitted the candidate, <c>FAIL</c> when it refused. (Distinct from the CLI-facing admit/refuse vocabulary.)</summary>
     public required string Status { get; init; }
 
     /// <summary>Certification stage that produced this record.</summary>

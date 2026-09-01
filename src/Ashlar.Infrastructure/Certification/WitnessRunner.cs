@@ -219,16 +219,24 @@ internal static class WitnessRunner
         if (actual is JsonElement actualEl && expected is not JsonElement)
             return ValuesEqual(expected, FromJsonElement(actualEl));
 
-        if (expected is int or long or short or byte)
+        // A witness pins EXACT output — no coercion across kinds. Integer and boolean are
+        // matched type-first (if either side is integral/boolean, both must be), so a double
+        // never rounds into an int (2.4 == 2) and an int never equals its decimal string or a
+        // bool. Mirror of WitnessValueComparer.AreEqual.
+        var expectedIsInt = expected is int or long or short or byte;
+        var actualIsInt = actual is int or long or short or byte;
+        if (expectedIsInt || actualIsInt)
         {
-            try
-            {
-                return Convert.ToInt64(expected) == Convert.ToInt64(actual);
-            }
-            catch
+            if (!(expectedIsInt && actualIsInt))
             {
                 return false;
             }
+            return Convert.ToInt64(expected) == Convert.ToInt64(actual);
+        }
+
+        if (expected is bool || actual is bool)
+        {
+            return expected is bool eb && actual is bool ab && eb == ab;
         }
 
         return string.Equals(

@@ -1,7 +1,7 @@
 namespace Ashlar.Core.Application.Certification.Models;
 
 /// <summary>
-/// Result of running the certification gate (ADMIT or REJECT).
+/// Result of running the certification gate. The record's Status field is PASS (admitted) or FAIL (refused).
 /// </summary>
 public sealed record CertificationDecision
 {
