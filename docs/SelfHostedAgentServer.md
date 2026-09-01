@@ -35,10 +35,10 @@ docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 
 No `ASHLAR_REPO_ROOT` is needed for the default layout: relative host paths in a compose file resolve against the compose file's own directory (`deploy/compose/`), and the mount default is `../..` — the repo root — regardless of your shell CWD. Set `ASHLAR_REPO_ROOT` only to mount a different tree.
 
-Pull the model referenced by your agent config (Runtime Studio default is **llama3.1:latest**):
+Pull the model referenced by your agent config (the shipped `agent_set.local.json` uses **qwen2.5:7b**; `OLLAMA_MODEL` defaults to `llama3.1:latest` for provider fallbacks):
 
 ```bash
-docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
+docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull qwen2.5:7b
 ```
 
 Smoke check:
@@ -51,7 +51,7 @@ curl -s "http://localhost:${ASHLAR_AGENT_SERVER_HTTP_PORT:-8080}/api/status"
 
 ```powershell
 docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
-docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
+docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull qwen2.5:7b
 Invoke-RestMethod "http://localhost:8080/api/status"
 ```
 
@@ -159,4 +159,4 @@ For anything beyond a trusted LAN, put **TLS + authentication** in front of the 
 docker compose -f deploy/compose/docker-compose.agent-server.yml down
 ```
 
-Named volumes (`ollama-models`, `ashlar-dailies`) are kept unless you `down -v`.
+Named volumes (`ollama-models`, `ashlar-dailies`, `ashlar-state`) are kept unless you `down -v` — which also deletes runtime state (LiteDB stores, snapshots), not just models and dailies.

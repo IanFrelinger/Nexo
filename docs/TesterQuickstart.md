@@ -13,7 +13,7 @@ Every command below was last run end to end on 2026-08-17 against a clean clone 
 ## 1. Clone and build the kernel
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Ashlar
+git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
 dotnet build Ashlar.Kernel.sln
 ```
 
@@ -90,7 +90,7 @@ Invoke-RestMethod "http://localhost:5000/api/copilot/tasks/$($r.taskId)"
   Select-Object eventType, disposition, sourceId
 ```
 
-That is the whole claim in one screen: the task ran, its record is stored under a task id, and the trust log carries a `CopilotTask` entry whose `sourceId` is that id. The portal at `http://localhost:5000` and Swagger at `http://localhost:5000/swagger` show the same data. Stop the API with Ctrl+C when done.
+That is the whole claim in one screen: the task ran, its record is stored under a task id, and the trust log carries a `CopilotTask` entry whose `sourceId` is that id. The portal at `http://localhost:5000` shows the same data (for Swagger at `/swagger`, restart the API with `Ashlar__Api__EnableSwagger=true` — it is off outside Development). Stop the API with Ctrl+C when done.
 
 ## 4. See it certify
 

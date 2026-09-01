@@ -2,7 +2,7 @@
 
 This plan records the commercial-boundary work after the open-core licensing sprint.
 
-**Status (2026-06):** Phases **A–F** are **complete** (F = networking extraction to commercial fleet). GameDomain, Game Director, fleet/mesh governance, licensing metadata (Phase D), and the dependency-boundary CI gate (Phase E) are in place on `master`. The authoritative current boundary is [`OpenCoreBoundary.md`](OpenCoreBoundary.md). Optional follow-ups (CLI mesh-hub split, `Ashlar.Commercial.Governance`) are tracked under [Open questions](#open-questions-post-extraction) in [`LICENSING.md`](../LICENSING.md).
+**Status (2026-08-31):** Phases **A–F** are **complete** (F = networking extraction to commercial fleet). Fleet/mesh governance, licensing metadata (Phase D), and the dependency-boundary CI gate (Phase E) are in place on `master`; the GameDomain / Game Director vertical was subsequently **removed from the monorepo** in the 2026-08-31 native-responsibility slim (preserved on `archive/verticals-2026-08-31` for extraction to its own repository). The authoritative current boundary is [`OpenCoreBoundary.md`](OpenCoreBoundary.md). Optional follow-ups (CLI mesh-hub split, `Ashlar.Commercial.Governance`) are tracked under [Open questions](#open-questions-post-extraction) in [`LICENSING.md`](../LICENSING.md).
 
 ## Goal
 

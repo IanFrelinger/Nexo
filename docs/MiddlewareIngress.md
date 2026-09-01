@@ -10,7 +10,7 @@ This document closes the operational gaps around **multi-transport middleware**:
 | Ingress envelope | `X-Ashlar-Tenant`, `X-Ashlar-App-Id`, `X-Idempotency-Key`, `X-Ashlar-Payload-Version` | Adapter-agnostic metadata on HTTP requests. |
 | Operator echo | `GET /api/middleware/correlation-echo` | Quick sanity check. |
 | Operator snapshot | `GET /api/middleware/ingress-context` | JSON view of mapped ingress (tests + debugging). |
-| Catalog | `GET /api/middleware/ingress-catalog` | Static list of ingress seams (HTTP, Forge, WS lab, SMS lab, Swagger). |
+| Catalog | `GET /api/middleware/ingress-catalog` | Static list of ingress seams (HTTP API, health/ready, OpenAPI, WS lab, SMS lab, AWS SNS, gRPC host, MCP, A2A). |
 | OpenAPI | `/swagger/v1/swagger.json`, Swagger UI | Contract visibility for integrators. Served only in `Development` or with `Ashlar__Api__EnableSwagger=true` (`docs/Configuration.md`, "Ashlar.API host"). |
 | WebSocket lab | `GET /ws/v1/echo` | Feature-flagged echo (JSON hello + text echo). |
 | SMS lab | `POST /api/ingress/sms/simulate` | Parses `YES <token>`; in-memory idempotent store. **Not** signed AWS callbacks. |

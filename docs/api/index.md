@@ -46,6 +46,18 @@ Endpoints are registered via `MapAshlarEndpoints()` in `Ashlar.API`. Most live u
 | GET | `/api/activity/feed` | Recent background agent + audit activity |
 | POST | `/api/changelog/generate` | Generate project changelog summary |
 | GET | `/api/onboarding/status` | First-run setup status (provider availability) |
+| GET | `/ready` | Readiness (host started; root, not under `/api`) |
+| GET | `/api/bricks` | List authored bricks |
+| GET | `/api/bricks/{brickId}` | Get an authored brick |
+| POST | `/api/bricks/{brickId}/execute` | Execute an authored brick |
+| GET | `/api/copilot/tasks/{taskId}` | Get one copilot task |
+| POST | `/api/orgs` · GET `/api/orgs/{orgId}` | Create / read an organization |
+| GET/POST | `/api/orgs/{orgId}/members` | List / add organization members |
+| GET | `/api/runtime-studio/metrics` | Runtime Studio objective metrics |
+| GET | `/api/support/diagnostics` | Support diagnostics bundle |
+| GET | `/api/usage/summary` | Usage summary |
+| GET/PUT | `/api/workloads`, `/api/workloads/{workloadId}/replicas` | Workload scaling (list, read, set replicas) |
+| — | `/api/ide/*` | IDE session surface (models, agents, session, chat, chat/stream, edit, plan, director, runs) |
 
 ## Hosting Quick Start (Embedding)
 

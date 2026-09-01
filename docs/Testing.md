@@ -71,7 +71,6 @@ make application-gate-tier-c    # in-process API WebApplicationFactory tests
 make application-gate-tier-d    # agent-server prod dry run (Docker)
 make application-gate-full      # A–D (skips re-running kernel by default)
 APPLICATION_GATE_SKIP_TIER_D=1 make application-gate-full   # skip Docker agent-server
-APPLICATION_GATE_GAMEDOMAIN=1 make application-gate-tier-d    # include GameDomain tests
 ```
 
 See **`docs/production-readiness/ApplicationHardeningPlan-v1.md`** and **`docs/production-readiness/ApplicationReadiness-v1.md`**.
@@ -136,7 +135,7 @@ See **`docs/production-readiness/SecurityHardeningPlan-v1.md`**.
 **Prime-time (whole automated framework slice):**  
 
 ```bash
-make test-prime-time          # Category=ProdStyle across Ashlar.PrimeTime.slnf (eight test projects)
+make test-prime-time          # Category=ProdStyle across Ashlar.PrimeTime.slnf (seven test projects)
 make test-prime-time-full    # ProdStyle gate then full slice excluding Category=ProdStyle
 ```
 
@@ -165,7 +164,7 @@ make test-prime-time-full    # ProdStyle gate then full slice excluding Category
 No pull-request lane runs `dotnet test Ashlar.sln`. The PR-triggered workflows run these exact commands; reproduce them locally instead of the whole solution:
 
 ```bash
-bash scripts/ci/kernel-coverage-gate.sh   # kernel-coverage-gate.yml — Domain 100%, Infrastructure -f net9.0 --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests&Category!=External" (80% floor), Core.Application 67%
+bash scripts/ci/kernel-coverage-gate.sh   # kernel-coverage-gate.yml — Domain 100%, Infrastructure -f net10.0 --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests&Category!=External" (80% floor), Core.Application 67%
 bash scripts/run-cert-gate.sh             # cert-gate.yml — Certification + GenerationSafety + AstMutationEngine, -f net8.0, zero-test guard
 make kernel-gate                          # kernel-gate.yml — tier A (tier-b..e / kernel-gate-full also dispatchable)
 make application-gate-tier-a              # application-gate.yml — tier-c = in-process Ashlar.API WebApplicationFactory tests

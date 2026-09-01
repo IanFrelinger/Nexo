@@ -93,8 +93,10 @@ plausible-looking implementation introduced, and it catches it because it existe
 
 ## The campaign set
 
-Since dogfood campaign 1 (evidence ledger S4) this directory holds five objectives, chosen for
-state machine), `semver-parse` and `rgb-hex-parse` (parsers with integer outputs), and
+Since dogfood campaign 1 (evidence ledger S4) this directory holds four objectives (a fifth,
+`tag-scan-classifier`, left with the physical-atom vertical in the 2026-08-31 slim), chosen for
+breadth: `door-lock-transition` (a small state machine), `semver-parse` and `rgb-hex-parse`
+(parsers with integer outputs), and
 `text-slug`, which is under-specified **on purpose** — its contract never addresses diacritics
 while its witness pins them, so a run shows the repair channel holding rather than converging on
 a witness the proposer cannot see. Every objective states what a proposer must produce

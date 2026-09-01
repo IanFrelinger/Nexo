@@ -257,7 +257,7 @@ docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pull llama3.1:latest
 ```
 
-Run these from the repo root. Stacks that bind-mount the repository (agent server, Game Director) default `ASHLAR_REPO_ROOT` to `../..` relative to `deploy/compose/` — the repo root — so no extra variables are needed; a `.env` for these stacks belongs in `deploy/compose/` (or pass `--env-file`), not the repo root.
+Run these from the repo root. Stacks that bind-mount the repository (agent server) default `ASHLAR_REPO_ROOT` to `../..` relative to `deploy/compose/` — the repo root — so no extra variables are needed; a `.env` for these stacks belongs in `deploy/compose/` (or pass `--env-file`), not the repo root.
 
 The self-extending agent in these stacks is **Passive by default** (observe only): it is armed by the aggressiveness mode file (`ashlar background-agent mode set --value active`; path `ASHLAR_AGENT_MODE_PATH`), and a missing file or an unrecognised value reads as Passive. See [`docs/SelfHostedAgentServer.md`](docs/SelfHostedAgentServer.md).
 
@@ -286,7 +286,7 @@ Run these via `dotnet run --project application/src/Ashlar.CLI -- <command>` (sh
 | Run the background-agent daemon | `background-agent daemon --duration 10m` |
 | Show / arm the self-extend dial | `policy show` · `policy set self_extend proposing` |
 | Overnight report / emergency stop | `background-agent report` · `background-agent disarm` |
-| Trust a peer, share / pull packages | `keys trust <ed25519:…>` · `pkg share <id>` · `pkg pull --from <dir>` |
+| Trust a peer, share / pull packages | `keys trust <ed25519:…>` · `pkg share --id <id>` · `pkg pull --from <dir>` |
 | Who's on the LAN (federation) | `mesh lan` |
 | Release preflight | `release preflight <semver>` |
 
@@ -354,11 +354,11 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 ├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
 ├── application/src/              # Ashlar.CLI, Ashlar.API hosts + Ashlar.Tests.CLI (open)
 ├── apps/                         # runtime-studio + release-manager configs (extraction scheduled)
-├── commercial/                   # Game Director, GameDomain, Fleet, MeshDirector + tests (not Apache-2.0; LICENSING.md)
+├── commercial/                   # Fleet, MeshDirector + tests (not Apache-2.0; LICENSING.md)
 ├── docs/                         # architecture, operations, mesh, release, SDK, demos/, samples/, runbooks
-├── samples/                      # hello-brick, brick template, certified-brick-reuse, provenance/physical-atom inputs
+├── samples/                      # hello-brick, brick template, certified-brick-reuse, approval-workflow, autonomy-objectives, aws-sns lambda
 ├── spikes/                       # autonomy first-flight, portability spike (evidence, not product)
-├── tools/                        # certify/export brick, provenance demo, sidecar demo, repo tools
+├── tools/                        # certify/export brick, devlog publisher
 ├── deploy/                       # compose/ stacks and k8s/ manifests
 ├── infra/                        # terraform
 ├── extensions/                   # ashlar-vscode
@@ -368,13 +368,13 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 ├── .devcontainer/
 ├── .docker/
 ├── .github/
-├── Ashlar.sln                      # everything open + 9 commercial projects (78 projects)
+├── Ashlar.sln                      # everything open + 3 commercial projects (62 projects)
 ├── Ashlar.Kernel.sln               # kernel libraries + kernel tests (no CLI/API)
 ├── Ashlar.Runtime.sln              # embeddable runtime graph (no application/)
 ├── Ashlar.Demos.sln                # docs/demos/* clients
 ├── Ashlar.Core.slnf                # Tier 0 spine + CLI/API hosts
 ├── Ashlar.LocalDevCore.slnf        # fast local CLI + core test slice
-├── Ashlar.PrimeTime.slnf           # ProdStyle test gate (open + commercial GameDomain tests)
+├── Ashlar.PrimeTime.slnf           # ProdStyle test gate (seven open test assemblies)
 └── application/Ashlar.Application.sln  # CLI, API, Tests.CLI (open only)
 ```
 
@@ -383,7 +383,7 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 | Goal | Open | Notes |
 |------|------|-------|
 | CLI / API / core dev loop | `Ashlar.LocalDevCore.slnf` (`make build-core`) or `Ashlar.Core.slnf` | Fastest restore; no `commercial/`. Add `Ashlar.Kernel.sln` when you edit kernel libraries and their tests without the hosts. |
-| Everything open, one solution | `Ashlar.sln` | Also pulls the Game Director / GameDomain commercial projects that ship in the sln (see [`docs/ProjectTiers.md`](docs/ProjectTiers.md)). |
+| Everything open, one solution | `Ashlar.sln` | Also pulls the commercial MeshDirector project and the Fleet/MeshDirector test projects that ship in the sln (see [`docs/ProjectTiers.md`](docs/ProjectTiers.md)). |
 | Kernel libraries only | `Ashlar.Kernel.sln` / `Ashlar.Runtime.sln` | Kernel.sln adds kernel test projects; Runtime.sln is the NuGet-publishable graph. |
 | ProdStyle test gate | `Ashlar.PrimeTime.slnf` (`make test-prime-time`) | Seven open `Ashlar.Tests.*` assemblies. |
 | Hosts as the application gate builds them | `application/Ashlar.Application.sln` | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` — open only. |

@@ -75,11 +75,12 @@ var provider = services.BuildServiceProvider();
 | `GetStatusAsync` | `GET /api/status` |
 | `BuildImageAsync` | `POST /api/execution/build` |
 | `RunContainerAsync` | `POST /api/execution/run` |
-| `InvokeAsync` | Any path (escape hatch; same `HttpClient`, base URL, and `X-Api-Key` as typed methods) |
+| `QueryKnowledgeAsync` | `GET /api/knowledge/query` |
+| `InvokeAsync` | Any path (escape hatch; same `HttpClient`, base URL, and `X-Ashlar-Api-Key` as typed methods) |
 
-Endpoints not yet wrapped as typed methods (copilot, director, trust mutation, knowledge query, capabilities, etc.) can be called with **`InvokeAsync`** using the paths in `docs/api/index.md`, or with your own `HttpClient` against the same base URL.
+Endpoints not yet wrapped as typed methods (copilot, director, trust mutation, capabilities, etc.) can be called with **`InvokeAsync`** using the paths in `docs/api/index.md`, or with your own `HttpClient` against the same base URL.
 
-`AddAshlarClient` accepts `BaseUrl`, optional `ApiKey` (sent as `X-Api-Key` header), and `Timeout`.
+`AddAshlarClient` accepts `BaseUrl`, optional `ApiKey` (sent as `X-Ashlar-Api-Key` header), and `Timeout`.
 
 ### `InvokeAsync` example
 

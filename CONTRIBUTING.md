@@ -109,7 +109,7 @@ dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 Run the lanes CI actually runs on pull requests — the same scripts, filters and target frameworks — not `dotnet test Ashlar.sln` (`make test`), which no CI lane executes and which drags in Docker/Ollama/GPU suites that only report as **Skipped** on a plain workstation:
 
 ```bash
-bash scripts/ci/kernel-coverage-gate.sh   # kernel-coverage-gate.yml: Domain (100%), Infrastructure net9.0 (Category!=External), Core.Application coverage floors
+bash scripts/ci/kernel-coverage-gate.sh   # kernel-coverage-gate.yml: Domain (100%), Infrastructure net10.0 (Category!=External), Core.Application coverage floors
 bash scripts/run-cert-gate.sh             # cert-gate.yml: hermetic certification + generation-safety tests (net8.0)
 make kernel-gate                          # kernel-gate.yml tier A (runtime graph build + hosting matrix + pipeline lifecycle)
 make application-gate-tier-a              # application-gate.yml: product sln build + CLI smoke (tier-c for the in-process API tests)
@@ -158,7 +158,7 @@ Optional [pre-commit](https://pre-commit.com/): `pip install pre-commit && pre-c
 ## Command style and paths in docs
 
 - Prefer **`dotnet run --project application/src/Ashlar.CLI -- <subcommand>`** so commands work without a global `ashlar` tool. The CLI project lives only under **`application/src/Ashlar.CLI`** (not `src/Ashlar.CLI`).
-- For **`Ashlar.API`**, prefer **`dotnet run --project application/src/Ashlar.API -f net10.0`** (the project multi-targets `net8.0;net10.0`, so `dotnet run` needs the framework; see **`docs/architecture/runtime-vs-application.md`**).
+- For **`Ashlar.API`**, **`dotnet run --project application/src/Ashlar.API`** works as-is (the project targets `net10.0` alone; see **`docs/architecture/runtime-vs-application.md`**).
 - If using `ashlar <subcommand>`, include a `dotnet run --project application/src/Ashlar.CLI -- …` equivalent when the audience is contributors cloning the repo.
 - Canonical doc index: **`docs/DocsIndex.md`**.
 

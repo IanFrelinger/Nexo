@@ -19,7 +19,7 @@ The endpoints below are the "documented surface" for testers and integrators in 
 
 | Method | Path | Purpose | Notes |
 |--------|------|---------|-------|
-| GET | `/health` | Liveness (`{status, timestamp}`) | Root, not under `/api`; unauthenticated; excluded from the OpenAPI description. There is no separate `/ready` route in `v0.1`: readiness is `GET /api/onboarding/status` (below), which reports provider availability. |
+| GET | `/health` | Liveness (`{status, timestamp}`) | Root, not under `/api`; unauthenticated; excluded from the OpenAPI description. `GET /ready` (also root) reports host readiness; `GET /api/onboarding/status` (below) reports provider availability. |
 | GET | `/api/status` | Background-agent / node status | Also `IAshlarClient.GetStatusAsync` |
 | GET | `/api/onboarding/status` | First-run setup status (provider availability) | The readiness probe for operators and the CLI |
 | POST | `/api/copilot/task` | Submit a copilot task; returns the trust-auditable context (decision, recent audit entries) | Body: `CopilotTaskRequest`; audit context is part of the documented response |

@@ -96,7 +96,6 @@ archive branch `archive/verticals-2026-08-31` for extraction to its own reposito
 | Area | Projects / paths |
 |------|------------------|
 | Fleet | `commercial/src/Ashlar.Commercial.Fleet.Contracts/Ashlar.Commercial.Fleet.Contracts.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Infrastructure/Ashlar.Commercial.Fleet.Infrastructure.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Api/Ashlar.Commercial.Fleet.Api.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Host/Ashlar.Commercial.Fleet.Host.csproj`, `commercial/src/Ashlar.Commercial.MeshDirector/Ashlar.Commercial.MeshDirector.csproj` |
-| Commercial samples | `commercial/samples/ForgeMapHostSample/ForgeMapHostSample.csproj` |
 | App configs (no `.csproj`) | `apps/release-manager` and `apps/runtime-studio` — OPEN (graduated 2026-08-31), scheduled for extraction to their own repos. The commercial game/forge configs were removed with the vertical (archive branch). |
 
 ### Tier 3c — demos, samples, tools, spikes (open)
@@ -115,7 +114,7 @@ archive branch `archive/verticals-2026-08-31` for extraction to its own reposito
 |---------|------|
 | `src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj` | Domain unit tests |
 | `src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj` | Application-layer tests |
-| `src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj` | Infrastructure / pipeline tests; `WebApplicationFactory` tests live under `Tests/VirtualProduction/**` (net9-only) |
+| `src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj` | Infrastructure / pipeline tests; `WebApplicationFactory` tests live under `Tests/VirtualProduction/**` (net10.0-only) |
 | `src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj` | Helper console project used by the infrastructure test scripts (not a test project) |
 | `src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj` | Orchestration tests |
 | `src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj` | Background agent tests |
@@ -139,17 +138,17 @@ archive branch `archive/verticals-2026-08-31` for extraction to its own reposito
 
 ## Which solution do I open?
 
-The root holds several entry points; a bare `dotnet build` fails with MSB1011, so name one. None of the filters below pull `commercial/` except `Ashlar.PrimeTime.slnf` and `Ashlar.sln`.
+The root holds several entry points; a bare `dotnet build` fails with MSB1011, so name one. None of the filters below pull `commercial/` except `Ashlar.sln`.
 
 | File | Open it when | Contains |
 |------|--------------|----------|
-| `Ashlar.Kernel.sln` | Kernel/library development without the hosts | Tier 0 spine, `Ashlar.Runtime`, gRPC transport, brick/policy packs, kernel test projects (23 projects; **no** `Ashlar.CLI` / `Ashlar.API`) |
+| `Ashlar.Kernel.sln` | Kernel/library development without the hosts | Tier 0 spine, `Ashlar.Runtime`, gRPC transport, brick/policy packs, kernel test projects (24 projects; **no** `Ashlar.CLI` / `Ashlar.API`) |
 | `Ashlar.Core.slnf` | First compile of spine + hosts | The 12 original spine libraries + the two hosts (14 projects; `Ashlar.Certification.Contracts`, `Ashlar.AI.Pipeline`, `Ashlar.Analyzers` restore transitively) |
 | `Ashlar.LocalDevCore.slnf` | The CLI dev loop with core tests (`make restore-core` / `make build-core` / `make test-framework-prod-first`) | `Ashlar.CLI`, `Ashlar.Tests.Domain`, `Ashlar.Tests.Infrastructure` |
 | `Ashlar.Runtime.sln` | Publishing the embeddable kernel graph (no `application/`) | Runtime libraries + `Ashlar.Tests.AI.Pipeline` (18 projects) |
 | `application/Ashlar.Application.sln` | Application-gate style builds of the open hosts | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` (open only) |
 | `Ashlar.Demos.sln` | The three demo clients | `docs/demos/*` |
-| `Ashlar.sln` | Everything the CI matrix builds on Linux | `src/` (except `Ashlar.Hosting.Bundle` and the `copy-assemblies` helper) plus `application/`. Samples, spikes, tools, and the commercial Fleet/MeshDirector projects are built from their own paths |
+| `Ashlar.sln` | Everything the CI matrix builds on Linux | `src/` (except `Ashlar.Hosting.Bundle` and the `copy-assemblies` helper) plus `application/`. It also includes the commercial `Ashlar.Commercial.MeshDirector` project and the Fleet/MeshDirector test projects; samples, spikes, tools, and the Fleet src/host projects are built from their own paths |
 
 ## Minimal clone-to-run core
 

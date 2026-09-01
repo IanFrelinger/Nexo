@@ -13,7 +13,7 @@ The **default** path here is **containers + CLI**: develop inside the **Dev Cont
 **Portal in Docker only** (no IDE):
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Ashlar
+git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
 docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart .
 docker run --rm -p 127.0.0.1:8080:8080 ashlar:quickstart
 # Open http://localhost:8080 — mock provider; no API keys needed.
@@ -62,7 +62,7 @@ With workspace mount:
 docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
-The published **`ashlar-cli`** image is **runtime-only** (no `git`/`curl` in the container OS), so **`ashlar doctor --json`** is expected to report missing host tools there. Run **`doctor`** on your workstation or inside the **Dev Container** for a full dependency check; CI validates the image with **`--help`** and **`pipeline validate --help`** instead (see **`docs/DistributionModels.md`**).
+The published **`nexo-cli`** image is **runtime-only** (no `git`/`curl` in the container OS), so **`ashlar doctor --json`** is expected to report missing host tools there. Run **`doctor`** on your workstation or inside the **Dev Container** for a full dependency check; CI validates the image with **`--help`** and **`pipeline validate --help`** instead (see **`docs/DistributionModels.md`**).
 
 ### Lane C (escape hatch): native setup scripts + CLI build
 
@@ -74,14 +74,14 @@ Clone the repo, then run setup and build (same graph CI uses):
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
-cd Ashlar
+cd Nexo
 bash scripts/setup/setup.sh all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 ```
 
 ```powershell
 git clone https://github.com/IanFrelinger/Nexo.git
-Set-Location Ashlar
+Set-Location Nexo
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 ```

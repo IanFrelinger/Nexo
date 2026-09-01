@@ -68,7 +68,7 @@ These files should remain open unless a later extraction finds unavoidable fleet
 
 | Path | Reason |
 |------|--------|
-| `application/src/Ashlar.CLI/Commands/MeshCommand.cs` | Keep local `discover`, `advertise`, `capabilities`, `sync`, import/export, and local trust-tier edits open. Split only if future owner decision makes `sync` a commercial fleet feature. |
+| `application/src/Ashlar.CLI/Commands/MeshCommand.cs` | Keep local `lan`, `capabilities`, `sync`, import/export, and local trust-tier edits open. Split only if future owner decision makes `sync` a commercial fleet feature. |
 | `application/src/Ashlar.API/Security/MeshCorrelationApplicationBuilderExtensions.cs` | Correlation ID middleware is an audit/trust primitive. |
 | `application/src/Ashlar.API/Security/MeshCorrelationMiddleware.cs` | Correlation ID middleware is an audit/trust primitive. |
 | `application/src/Ashlar.API/Security/MeshSecurityApplicationBuilderExtensions.cs` | Token/body/rate-limit middleware registration should remain inspectable. |
@@ -189,11 +189,11 @@ Target module: `commercial/tests/Ashlar.Commercial.Tests.Fleet`.
 
 | Path | Decision needed |
 |------|-----------------|
-| `application/src/Ashlar.CLI/Commands/MeshCommand.cs` | **Resolved:** `discover`, `advertise`, `capabilities`, `sync`, import/export, `peers`, `health`, `--set-trust-tier`, and local `admit`/`revoke` (instances.json) stay open. Fleet director ops use `Ashlar.Commercial.MeshDirector`. |
+| `application/src/Ashlar.CLI/Commands/MeshCommand.cs` | **Resolved:** `lan`, `capabilities`, `sync`, import/export, `peers`, `health`, `--set-trust-tier`, and local `admit`/`revoke` (instances.json) stay open. Fleet director ops use `Ashlar.Commercial.MeshDirector`. |
 | ~~`MeshHubCommand`~~ | **Resolved** — see open `mesh peers`/`mesh health` vs commercial `director list-nodes`/`director health`. |
 | `src/Ashlar.Tests.Infrastructure/Tests/Mesh/MeshLabDockerFixture.cs`, `MeshLabDockerEnv.cs`, `MeshLabDockerE2ETests.cs` | Virtual lab may remain open if it validates primitive two-node behavior; move commercial if it validates fleet worker/director placement. |
-| `src/Ashlar.Tests.Infrastructure/Tests/Networking/NetworkBusOptionsTests.cs` | Options-only test can remain open only if owner keeps a minimal open network bus. Otherwise move with commercial networking. |
-| `src/Ashlar.Tests.Infrastructure/Tests/Networking/InfrastructureNetworkingGapCoverageTests.cs` | Move if networking is commercial; split if any low-level open networking primitive remains. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Networking/NetworkBusOptionsTests.cs` | **Resolved by Phase F:** moved with commercial networking to `commercial/tests/Ashlar.Commercial.Tests.Fleet/Networking`. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Networking/InfrastructureNetworkingGapCoverageTests.cs` | **Resolved by Phase F:** moved with commercial networking to `commercial/tests/Ashlar.Commercial.Tests.Fleet/Networking`. |
 
 ## Updated extraction sequence
 
