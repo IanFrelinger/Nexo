@@ -63,10 +63,10 @@ internal sealed class BrickMutationEngine
         var killed = new List<string>();
         var mutations = AstMutationCatalog.CollectMutations(sourceCode);
 
-        // Survivors are reported by id, which encodes kind and line only. Keep each mutation's
-        // site so the rejection can say WHAT changed — the difference between "the witness is
-        // weak here" and "this mutant is equivalent and no witness could ever kill it".
-        // Two mutations of one kind on one line share an id (as they always have); first wins.
+        // Survivors are reported by id (kind, line, disambiguated with #2/#3 on collision so the
+        // signed ledger is unambiguous). Keep each mutation's site so the rejection can say WHAT
+        // changed — the difference between "the witness is weak here" and "this mutant is
+        // equivalent and no witness could ever kill it".
         var siteById = new Dictionary<string, MutationSite>(StringComparer.Ordinal);
         foreach (var mutation in mutations)
             siteById.TryAdd(mutation.Id, mutation.Site);

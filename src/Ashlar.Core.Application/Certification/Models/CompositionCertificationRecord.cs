@@ -5,7 +5,7 @@ namespace Ashlar.Core.Application.Certification.Models;
 /// </summary>
 public sealed record CompositionCertificationRecord
 {
-    /// <summary>Certification status label (e.g. ADMIT, REJECT).</summary>
+    /// <summary>Certification status label: <c>PASS</c> (admitted) or <c>FAIL</c> (refused).</summary>
     public required string Status { get; init; }
 
     /// <summary>Certification stage that produced this record.</summary>
