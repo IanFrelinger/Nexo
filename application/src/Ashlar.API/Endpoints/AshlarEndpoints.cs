@@ -14,6 +14,7 @@ using Ashlar.Core.Application.Knowledge.Models;
 using Ashlar.Core.Application.Knowledge.Ports;
 using Ashlar.Core.Application.Agent.UseCases.RunAgent;
 using Ashlar.Core.Application.Bricks;
+using Ashlar.Core.Domain.Exceptions;
 using Ashlar.Core.Application.NodeCapabilityRuntime.Models;
 using Ashlar.Core.Application.NodeCapabilityRuntime.Ports;
 using Ashlar.Core.Application.Trust.Ports;
@@ -74,6 +75,7 @@ public static class AshlarEndpoints
             .WithSummary("Invoke an agent by name")
             .Produces<AgentResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/validate", RunValidationAsync)
@@ -320,19 +322,38 @@ public static class AshlarEndpoints
     private static async Task<IResult> RunAgentAsync(
         [FromBody] AgentRequest request,
         [FromServices] IMediator mediator,
+        [FromServices] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request?.AgentName))
             return Results.BadRequest(new ProblemDetails { Title = "AgentName is required" });
 
+        var logger = loggerFactory.CreateLogger("Ashlar.Api.Agent");
         try
         {
             var command = new RunAgentCommand(request.AgentName, request.InputFilePath != null ? new FileInfo(request.InputFilePath) : null);
             var result = await mediator.Send(command, cancellationToken);
             return Results.Ok(new AgentResponse(result.Success, result.Message, result.Output));
         }
+        catch (AgentExecutionException ex) when (ex.ErrorCode == ErrorCodes.AgentNotFound)
+        {
+            // An unknown agent name is a client error, not a server fault: answer 404 naming the
+            // missing agent (previously a bare 500 that logged nothing — dead-end for operators).
+            logger.LogWarning(
+                "Agent execution requested for unknown agent '{AgentName}': {Message}",
+                ex.AgentName,
+                ex.Message);
+            var detail = string.IsNullOrWhiteSpace(ex.Suggestion)
+                ? ex.Message
+                : $"{ex.Message}. {ex.Suggestion}";
+            return Results.Problem(
+                title: "Agent not found",
+                detail: detail,
+                statusCode: StatusCodes.Status404NotFound);
+        }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Agent execution failed for '{AgentName}'.", request.AgentName);
             return Results.Problem(
                 detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
                 statusCode: StatusCodes.Status500InternalServerError);

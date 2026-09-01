@@ -18,6 +18,7 @@ public sealed class AshlarApiKeyAuthMiddleware
     private const string McpPathPrefix = "/api/mcp";
     private const string A2APathPrefix = "/api/a2a";
     private const string RootAgentCardPath = "/.well-known/agent-card.json";
+    private const string SupportDiagnosticsPath = "/api/support/diagnostics";
     private readonly RequestDelegate _next;
     private readonly AshlarSecurityOptions _options;
     private readonly AshlarProtocolIngressOptions _protocolOptions;
@@ -100,6 +101,14 @@ public sealed class AshlarApiKeyAuthMiddleware
             return !(_protocolOptions.AllowAnonymousAgentCard && IsAgentCardPath(request.Path));
         }
 
+        // Support diagnostics returns a config/environment bundle (redacted, but still revealing);
+        // it is a GET the default MutatingApi scope would leave open. Whenever any built-in auth mode
+        // is configured (mode != None, guarded by the early return above) gate it like the mutating
+        // routes on every verb, so a configured API key is required. It stays open only under
+        // AuthorizationMode=None, and operators can still exempt it via ExcludedAuthorizationPaths.
+        if (IsSupportDiagnosticsPath(request.Path))
+            return true;
+
         var scope = ResolveAuthorizationScope();
         var method = request.Method;
 
@@ -122,6 +131,9 @@ public sealed class AshlarApiKeyAuthMiddleware
         var value = path.Value ?? string.Empty;
         return value.StartsWith("/api/copilot/tasks", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static bool IsSupportDiagnosticsPath(PathString path)
+        => path.StartsWithSegments(SupportDiagnosticsPath, StringComparison.OrdinalIgnoreCase);
 
     private static bool IsProtocolIngressPath(PathString path)
         => path.StartsWithSegments(McpPathPrefix, StringComparison.OrdinalIgnoreCase) ||
