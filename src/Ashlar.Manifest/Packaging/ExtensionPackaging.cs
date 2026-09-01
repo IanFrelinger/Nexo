@@ -24,6 +24,12 @@ public sealed record ExtensionPackage
     /// <summary>The only accepted format version.</summary>
     public const string ExpectedFormatVersion = "ashpkg/v1";
 
+    /// <summary>Hard ceiling on the JSON document size accepted by ExtensionPackaging.TryOpen, in
+    /// characters. Well above the 4 MB mesh wire limit (base64 file bodies inflate the JSON),
+    /// far below anything that threatens the verifier. A package over this is refused before
+    /// deserialization rather than crashing the fail-closed path.</summary>
+    public const int MaxPackageChars = 16 * 1024 * 1024;
+
     /// <summary>Format tag, <c>ashpkg/v1</c>.</summary>
     public required string FormatVersion { get; init; }
 
@@ -150,6 +156,19 @@ public static class ExtensionPackaging
         if (string.IsNullOrWhiteSpace(json))
         {
             reason = "REFUSED: the package is empty.";
+            return false;
+        }
+
+        // Bound the work before the deserializer touches it. A .ashpkg is a signed unit of
+        // certified extension, not a data blob; the mesh serve/pull path already caps files at
+        // 4 MB, and an unbounded document handed straight to the JSON reader is an OOM on the
+        // verification path (an attacker-controlled peer file must never crash the verifier —
+        // it must REFUSE, fail-closed). The ceiling is generous over the 4 MB wire limit to
+        // leave headroom for base64-embedded file bodies.
+        if (json.Length > ExtensionPackage.MaxPackageChars)
+        {
+            reason = $"REFUSED: the package is {json.Length:N0} characters; the limit is {ExtensionPackage.MaxPackageChars:N0}. "
+                   + "A package this large is not a certified extension — refusing before parsing it.";
             return false;
         }
 
