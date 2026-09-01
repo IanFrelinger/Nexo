@@ -8,6 +8,12 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
+_Nothing yet — the tree is at 0.1.1._
+
+## [0.1.1] - 2026-09-01
+
+**Ashlar v0.1.1 — "the slimmed keep."** The first release published to nuget.org (Trusted Publishing/OIDC, with SPDX SBOMs). Between 0.1.0 and this tag the repository was cut down to Ashlar's native responsibilities, the open-core boundary gained enforceable covenants and in-force commercial terms, and the documentation was audited against source end to end (PRs #445–#448).
+
 ### Removed
 
 - **Native-responsibility slim: the monorepo now carries the runtime, not the verticals.** A six-area audit classified every piece of the tree against Ashlar's native responsibilities (kernel + trust surfaces, runtime/SDK/hosting, interface surfaces, federation + the commercial fleet-governance tier, and distribution for the above). Removed as verticals riding along (~670 files, all preserved intact on branch `archive/verticals-2026-08-31` for extraction to their own repos): the entire `applications/` product layer (physical-atom certification, provenance graph, six spatial/AR projects), the game vertical (nine `commercial/` GameDirector/GameDomain projects, `apps/game-director`, `apps/ashlar-forge`, game data, compose files, engine-bridge and forge/portal/aesthetic docs), the Unity dev vertical inside the CLI (`ashlar unity-dev`, its nine handlers, twelve constraint records, and ~1,300 lines of tests), `_handoff/game-layer`, vertical demo tools and samples, the orphaned `ValidationUtilities` and `src/Ashlar.API` stub, and stale working docs (`docs/planning`, `docs/cleanup`, promotion residue). Coupled edits: solutions, `ci/test-ownership.tsv`, path-scoped workflows and gates, `LICENSING.md` (Tier 3 is now empty in-repo; the evaluation grant scope shrank to `commercial/`; no open code moved behind a paywall — covenant 2 untouched), `ProjectTiers.md`, `OpenCoreBoundary.md` (which also gains a tracked follow-up for the game/spatial vocabulary still compiled into core: `Core.Application/Environments/**`, `ModelBackedMaterialIntelligenceService`, `QuestPdfWorkflowExporter`, the `/api/director` naming). `apps/release-manager` and `apps/runtime-studio` stay until their planned extractions land. A stale `GameDirector.Mcp` reference in `Fleet.Host` was severed in passing.
