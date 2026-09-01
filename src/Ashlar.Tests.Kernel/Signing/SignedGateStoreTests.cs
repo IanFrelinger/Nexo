@@ -110,8 +110,6 @@ public sealed class SignedGateStoreTests : IDisposable
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
-
-
     [Fact]
     public async Task A_signed_record_verifies_even_for_a_reader_that_holds_no_key()
     {
