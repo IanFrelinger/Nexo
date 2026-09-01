@@ -56,17 +56,16 @@ bash scripts/verify-stable-sdk-host-sample-packages.sh
 
 Workflows:
 
-- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only). After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
+- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
 - **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input). After push to nuget.org, runs the same **Verify NuGet consumer** job when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**.
 
-**Trusted Publishing (OIDC)** on nuget.org is bound to the **caller** workflow file, not the reusable `reusable-release-nuget.yml`. Register every entry point you use:
-
-| If you publish via | Register this workflow file on nuget.org |
-|--------------------|---------------------------------------------|
-| Tag push → **Release** | **`release.yml`** |
-| **Actions → Release NuGet packages** with `NUGET_PUBLISH_MODE=oidc` | **`release-nuget.yml`** |
-
-If you only ever use tag releases, **`release.yml`** alone is enough. If operators also run **`release-nuget.yml`** with OIDC, add a second Trusted Publishing policy (or equivalent) for **`release-nuget.yml`** or those pushes will be denied.
+**Trusted Publishing (OIDC)** on nuget.org matches the workflow that actually runs
+`NuGet/login` — for this repo that is the **reusable** `reusable-release-nuget.yml`, NOT the
+caller. (Verified empirically on the first v0.1.1 publish: a policy registered for
+`release.yml` fails token exchange with `Workflow mismatch … expected 'release.yml', actual
+'reusable-release-nuget.yml'`.) Register **one** policy for workflow file
+**`reusable-release-nuget.yml`** and it covers every entry point — tag push (**Release**)
+and the manual **Release NuGet packages** dispatch alike, since both call the same reusable.
 
 1. **Repository variable** `NUGET_PUBLISH_MODE`:
    - unset, empty, or **`none`** — pack + verify + artifact only; download **`nuget-packages-<version>`** and push manually if desired.
