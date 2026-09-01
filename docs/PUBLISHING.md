@@ -20,7 +20,7 @@ bash scripts/pack-ashlar-hosting-graph.sh 1.2.3 ./artifacts/nuget-release
 
 **Note:** `Ashlar.Hosting.Bundle` is **not** part of `Ashlar.sln` — it only restores after the graph exists on a feed. CI packs it via `scripts/pack-ashlar-hosting-graph.*`; local `dotnet build` of the repo does not need it.
 
-Stable **client** surface (HTTP) is documented in `docs/sdk.md` (`Ashlar.Sdk` / `Ashlar.Client`); pack those separately if you publish them to the same feed:
+Stable **client** surface (HTTP) is documented in `docs/sdk.md` (`Ashlar.Sdk` / `Ashlar.Client`). **In CI these are not optional**: `reusable-release-nuget.yml` unconditionally packs the hosting graph **plus** `Ashlar.Client`, `Ashlar.Sdk`, and `Ashlar.Authoring` (and the `Ashlar.CLI` tool) in one versioned set. Locally, pack them the same way if you publish to a feed:
 
 ```bash
 dotnet pack src/Ashlar.Client/Ashlar.Client.csproj -c Release -o ./artifacts/nuget-release -p:PackageVersion=1.2.3

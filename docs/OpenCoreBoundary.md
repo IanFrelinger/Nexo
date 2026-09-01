@@ -96,10 +96,10 @@ The residual open mesh files were reviewed as open-tier primitives. They are loc
 
 ## Current verification result
 
-As of this sprint, the dependency-boundary verifier passes with:
+As of 2026-09-01 (post-slim), the dependency-boundary verifier passes with:
 
 ```text
-dependency-boundary: scanned 72 projects (55 open, 17 commercial, 12 open packable)
+dependency-boundary: scanned 85 projects (77 open, 8 commercial, 21 open packable)
 dependency-boundary: PASS
 ```
 

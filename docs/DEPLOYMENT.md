@@ -81,9 +81,9 @@ For an operations-level dry run—**same Compose topology and images** as the go
 
 ## Observability
 
-Out of the box the API container writes **human-readable console lines** (read them with `docker compose logs -f nexo-api`) and keeps metrics **in-process only** — nothing is exported. Both upgrades are opt-in through the host configuration (see `docs/Configuration.md` § Observability):
+Out of the box the API container writes **human-readable console lines** (read them with `docker compose logs -f ashlar-api`) and keeps metrics **in-process only** — nothing is exported. Both upgrades are opt-in through the host configuration (see `docs/Configuration.md` § Observability):
 
-| Want | Set on the `nexo-api` service (compose `environment:` or an override file) |
+| Want | Set on the `ashlar-api` service (compose `environment:` or an override file) |
 |------|-------------------------------------------------------------------------------|
 | One JSON object per log line (for Loki / CloudWatch / Datadog agents) | `ASHLAR_LOG_JSON: "1"` — same flag works for `ashlar background-agent daemon` |
 | Traces + metrics to an OpenTelemetry Collector | `OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317` (add `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf`, `OTEL_EXPORTER_OTLP_HEADERS` as your backend needs) |
@@ -93,7 +93,7 @@ Example override next to the portal stack:
 ```yaml
 # docker-compose.observability.override.yml
 services:
-  nexo-api:
+  ashlar-api:
     environment:
       ASHLAR_LOG_JSON: "1"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

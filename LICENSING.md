@@ -84,7 +84,6 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `src/Ashlar.Policies.Dev/Ashlar.Policies.Dev.csproj` |
 | OPEN | `src/Ashlar.Bricks.Owasp/Ashlar.Bricks.Owasp.csproj` |
 | OPEN | `src/Ashlar.Compat/` (source-only compatibility/polyfill surface; no `.csproj`) |
-| OPEN | `src/ValidationUtilities/ValidationUtilities.csproj` |
 | OPEN | `src/Ashlar.Tools.Assembly/Ashlar.Tools.Assembly.csproj` |
 | OPEN | `src/Ashlar.Tools.Dev/Ashlar.Tools.Dev.csproj` |
 | OPEN | `src/Ashlar.Ingress.AwsSns/Ashlar.Ingress.AwsSns.csproj` |
@@ -132,7 +131,7 @@ These projects were explicitly inspected and placed:
 | `application/src/Ashlar.API/Ashlar.API.csproj` | OPEN | Single-node HTTP/API host over the open kernel. Fleet `/api/mesh/*` director endpoints live on `Ashlar.Commercial.Fleet.Host`, not open `Ashlar.API`. |
 | `src/Ashlar.Transport.Grpc.Server/Ashlar.Transport.Grpc.Server.csproj` | OPEN | Server implementation exposes the open gRPC transport surface; it is not a fleet-scale director/control-plane project. |
 | `src/Ashlar.Transport.Grpc.Server.Host/Ashlar.Transport.Grpc.Server.Host.csproj` | OPEN | Standalone gRPC host for the open transport server, not a governance tier. |
-| `application/Ashlar.Application.sln` contents | OPEN | The solution contains `Ashlar.API`, `Ashlar.CLI`, and `Ashlar.Tests.CLI` only. It previously also listed `Ashlar.Commercial.GameDomain` and its tests "for local dev"; those were removed so the tester quickstart never compiles commercial code. `Ashlar.LocalDevCore.slnf` likewise pulls no `commercial/` project. Filters that deliberately span both tiers (`Ashlar.PrimeTime.slnf`, `Ashlar.sln`) say so in `docs/ProjectTiers.md`. |
+| `application/Ashlar.Application.sln` contents | OPEN | The solution contains `Ashlar.API`, `Ashlar.CLI`, and `Ashlar.Tests.CLI` only. It previously also listed `Ashlar.Commercial.GameDomain` and its tests "for local dev"; those were removed so the tester quickstart never compiles commercial code. `Ashlar.LocalDevCore.slnf` likewise pulls no `commercial/` project. The one filter that deliberately spans both tiers (`Ashlar.sln`) says so in `docs/ProjectTiers.md`. |
 
 ## Tier 2 — COMMERCIAL (fleet + governance)
 
@@ -163,7 +162,7 @@ Tier 2 is the commercial layer for fleet-scale and governance capabilities:
 
 Mesh-lab **peer-a** runs `Ashlar.Commercial.Fleet.Host` (`.docker/Dockerfile.fleet-host`). Open duplicate fleet trees under `src/**/Fleet/**` have been removed.
 
-**Networking (Phase F, done):** knowledge-sync / network-bus / adaptive-cache surfaces live under `commercial/src/Ashlar.Commercial.Fleet.Contracts/Networking/**` and `commercial/src/Ashlar.Commercial.Fleet.Infrastructure/Networking/**` (namespaces retain `Ashlar.Core.Application.Networking` / `Ashlar.Commercial.Fleet.Infrastructure.Networking` for compatibility). Register via `AddAshlarCommercialFleetNetworking()` on the commercial fleet host.
+**Networking (Phase F, done):** knowledge-sync / network-bus / adaptive-cache surfaces live under `commercial/src/Ashlar.Commercial.Fleet.Contracts/Networking/**` and `commercial/src/Ashlar.Commercial.Fleet.Infrastructure/Networking/**` (namespaces are `Ashlar.Commercial.Fleet.Contracts.Networking.*` / `Ashlar.Commercial.Fleet.Infrastructure.Networking`). Register via `AddAshlarCommercialFleetNetworking()` on the commercial fleet host.
 
 ## Tier 3 — COMMERCIAL (verticals)
 

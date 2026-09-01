@@ -149,7 +149,7 @@ make mesh-lab-e2e-stress
 make mesh-lab-stress
 ```
 
-**CI:** [`.github/workflows/mesh-lab-stress-gate.yml`](../.github/workflows/mesh-lab-stress-gate.yml) runs on `workflow_dispatch` (the Monday 06:00 UTC schedule was removed 2026-08-16 after eight consecutive red runs; see the file header) — full verify (same sub-checks as PR gate), deep, stress ramp (`4` workers, `15` requests/step), then [`mesh-lab-verify-post-stress.sh`](../scripts/mesh-lab-verify-post-stress.sh). Default PR gate remains [`mesh-lab-gate.yml`](../.github/workflows/mesh-lab-gate.yml) without stress. See [`MeshPhase10LabStressHardening.md`](MeshPhase10LabStressHardening.md).
+**CI:** [`.github/workflows/mesh-lab-stress-gate.yml`](../.github/workflows/mesh-lab-stress-gate.yml) runs on `workflow_dispatch` (the Monday 06:00 UTC schedule was removed 2026-08-16 after eight consecutive red runs; see the file header) — full verify (same sub-checks as PR gate), deep, stress ramp (`4` workers, `15` requests/step), then [`mesh-lab-verify-post-stress.sh`](../scripts/mesh-lab-verify-post-stress.sh). The base gate [`mesh-lab-gate.yml`](../.github/workflows/mesh-lab-gate.yml) is **dormant** (manual `workflow_dispatch` only since 2026-08-11; its automatic triggers are preserved commented-out in the file for re-enabling). See [`MeshPhase10LabStressHardening.md`](MeshPhase10LabStressHardening.md).
 
 ## Try the mesh CLI
 
@@ -185,7 +185,7 @@ Pre-production gaps that Docker bridge alone cannot cover are automated in **Pha
 
 ## CI
 
-**`.github/workflows/mesh-lab-gate.yml`** writes lab secrets, brings up peers **and** the **`workers`** profile, then runs **`mesh-lab-verify.sh`** and **`mesh-lab-verify-deep.sh`**.
+**`.github/workflows/mesh-lab-gate.yml`** (dormant — manual dispatch only since 2026-08-11) writes lab secrets, brings up peers **and** the **`workers`** profile, then runs **`mesh-lab-verify.sh`** and **`mesh-lab-verify-deep.sh`**.
 
 **Optional dotnet mirror:** set **`ASHLAR_RUN_MESH_LAB=1`** and run **`make test-mesh-lab`** (or `dotnet test … --filter Category=MeshLab`). **`MeshLabDockerE2ETests`** starts the same Compose stack and invokes the same verify scripts; skipped when the env var is unset.
 

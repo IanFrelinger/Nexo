@@ -11,7 +11,7 @@ For the authoritative open-vs-commercial boundary, see **`docs/OpenCoreBoundary.
 Ship the **same semantic version** across artifacts that belong together:
 
 - **NuGet:** all `Ashlar.*` packages for a release share one `PackageVersion`; consumers often reference **`Ashlar.Hosting.Bundle`**. See **`docs/PUBLISHING.md`**.
-- **Containers:** GHCR images tagged **`X.Y.Z`** (no `v`) from the same **`vX.Y.Z`** git tag. The semver tag is a manifest retag of the smoke-tested immutable **`sha-<12>`** tag, not a rebuild, so it resolves to the same digest and the same platforms (`ashlar-cli`: linux/amd64 + linux/arm64 on release tags, like `:latest`; `ashlar-api`: linux/amd64). Pin digests for production. See **`docs/RELEASE.md`** and **`docs/DEPLOYMENT.md`**.
+- **Containers:** GHCR images tagged **`X.Y.Z`** (no `v`) from the same **`vX.Y.Z`** git tag. The semver tag is a manifest retag of the smoke-tested immutable **`sha-<12>`** tag, not a rebuild, so it resolves to the same digest and the same platforms (`nexo-cli`: linux/amd64 + linux/arm64 on release tags, like `:latest`; `nexo-api`: linux/amd64). Pin digests for production. See **`docs/RELEASE.md`** and **`docs/DEPLOYMENT.md`**.
 
 Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one tag when configured).
 
@@ -22,13 +22,13 @@ Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one
 | **NuGet host embed** | `Ashlar.Hosting` graph, **`Ashlar.Hosting.Bundle`** | Package version on a feed | Build and run **`docs/samples/StableSdkHostSample/`** (see **`docs/SdkIntegrationGuide.md`**) |
 | **NuGet client** | **`Ashlar.Client`** / **`Ashlar.Sdk`** | Package version | **`docs/sdk.md`** (client quick start) |
 | **HTTP-only** | Running **`Ashlar.API`** | Base URL + TLS + API key policy | **`curl`** `GET /health`, `GET /api/status` (see **`docs/SelfHostedAgentServer.md`**) |
-| **CLI** | **`Ashlar.CLI`** .NET tool (`PackAsTool`; **not yet on nuget.org** — install from a local feed with `dotnet tool install --tool-path <dir> Ashlar.CLI --add-source <feed>`, see **`docs/AuthoringBricks.md`**) or **GHCR `ashlar-cli`** image | Image tag or digest; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
+| **CLI** | **`Ashlar.CLI`** .NET tool (`PackAsTool`; **not yet on nuget.org** — install from a local feed with `dotnet tool install --tool-path <dir> Ashlar.CLI --add-source <feed>`, see **`docs/AuthoringBricks.md`**) or **GHCR `nexo-cli`** image | Image tag or digest; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
 | **Compose / operators** | **`deploy/compose/docker-compose*.yml`** + operator docs | Compose file revision + image digests | **`docs/DEPLOYMENT.md`**, stack-specific guides |
 | **Source / monorepo** | `ProjectReference` into **`src/`** | Git commit / branch | **`docs/IntegratorGuide.md`** (project reference example) |
 | **Mesh / federation (open peers)** | Peer config, local mesh primitives, worker executor | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, **`docs/MeshVirtualLab.md`** |
 | **Mesh fleet director (commercial)** | `Ashlar.Commercial.Fleet.Host`, `/api/mesh/*` director APIs | Image tag + API key + peer registration key | **`.docker/Dockerfile.fleet-host`**, **`scripts/commercial-fleet-host-smoke.sh`**, mesh-lab peer-a |
 
-**Publication status:** as of this writing **no `Ashlar.*` package (nor the `Ashlar.CLI` tool) has been published to nuget.org** — no `v*` tag or GitHub release exists and the release workflows have not run. The NuGet rows above are proven only against **local folder feeds** (`nuget-local-pack-consumer`, `scripts/verify-standalone-brick-authoring.sh`); until a release ships, consumers need either such a feed or a **`ProjectReference`** into `src/` (the **Source / monorepo** row; `samples/hello-brick/` is the smallest example).
+**Publication status:** the `v0.1.0` tag exists and `release.yml` has run **artifact-only**: all packages (and the `ashlar` CLI tool) are built and attached to the draft `v0.1.0` GitHub Release, but **nothing is on nuget.org yet** — `NUGET_PUBLISH_MODE` is unset, so the push step was skipped (see `docs/GitHubRepoVariables.md`). Until the nuget.org publish ships, the NuGet rows above are proven against **local folder feeds** (`nuget-local-pack-consumer`, `scripts/verify-standalone-brick-authoring.sh`) plus the release artifacts; consumers need such a feed or a **`ProjectReference`** into `src/` (the **Source / monorepo** row; `samples/hello-brick/` is the smallest example).
 
 ## Golden reference pins (copy/paste)
 

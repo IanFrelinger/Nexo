@@ -3,23 +3,22 @@
 Workflows in this directory are **manual-first** to reduce duplicate CI load, surprise
 minute costs, and branch-noise on `cursor/**` and other integration branches. The full,
 per-file trigger map lives in [`docs/CiGateInventory.md`](../../docs/CiGateInventory.md);
-the summary of the 62 files is:
+the summary of the 56 files is:
 
-- **14 run on `pull_request`** — only `cert-gate` and `layer-boundary` on every PR, the
+- **14 run on `pull_request`** — only `cert-gate`, `layer-boundary`, and `uat-gate` on every PR, the
   rest path-filtered (kernel/application/security/coverage/docs/testing-strategy/shell-lint/
   other path-scoped gates) plus the label-driven `release-staging-on-label`.
 - **20 run on `push` only** (path-filtered, `master`/`main`/`cursor/**`), all with
   `workflow_dispatch` as well — post-merge signals such as `mcp-a2a-gate`, `grpc-transport-gate`,
   `onboarding-docs-guard`, `container-image-publish`.
-- **21 are `workflow_dispatch` only**, including `cross-platform-tests` and `prod-dry-run-pr`
+- **17 are `workflow_dispatch` only**, including `cross-platform-tests` and `prod-dry-run-pr`
   despite their names: run them from the Actions tab or with
   `gh workflow run "<Workflow name>" --ref <branch>`.
 - **Tag-driven releases** stay automatic where required (`release.yml` on `v*.*.*` tags,
   `devlog-ghost-release.yml` on published releases).
-- **Schedules** still exist on six workflows: `distribution-matrix-gate` (Mon 10:00 UTC),
+- **Schedules** still exist on five workflows: `distribution-matrix-gate` (Mon 10:00 UTC),
   `full-platform-readiness-gate` (Mon 06:00), `onboarding-quickstart-gate` (Mon 07:00),
-  `rc-gate` (06:00 on the 1st of the month), `mesh-lab-stress-gate` (Mon 06:00) and
-  `mesh-lab-tls-gate` (Tue 07:00). Everything else is push- or dispatch-driven.
+  `rc-gate` (06:00 on the 1st of the month) and `mesh-lab-tls-gate` (Tue 07:00). Everything else is push- or dispatch-driven.
 
 When you change a workflow file, open a PR and run the relevant workflow(s) manually
 before merge if your branch protection expects a green check from that workflow.

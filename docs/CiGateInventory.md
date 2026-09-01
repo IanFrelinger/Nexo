@@ -2,7 +2,7 @@
 
 This file describes what CI **actually does** on this repository: which workflow files exist, what triggers each one, and which checks branch protection **really** requires. Workflow YAML controls when checks run; GitHub branch protection (a repository setting, not YAML) controls which check names must be green before merge. Where the two disagree, this file follows the settings and says so.
 
-Snapshot: **62 workflow files** under `.github/workflows/` (`git ls-files ".github/workflows/*.yml"`), verified 2026-08-16.
+Snapshot: **56 workflow files** under `.github/workflows/` (`git ls-files ".github/workflows/*.yml"`), verified 2026-09-01.
 
 ## Required checks (branch protection) — what is enforced today
 
@@ -49,18 +49,17 @@ gh api --method PATCH -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-
 
 ## Trigger map
 
-Counts by trigger class (62 files):
+Counts by trigger class (56 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 14 | 2 unfiltered (`cert-gate`, `layer-boundary`), 11 path-filtered, 1 label-driven (`release-staging-on-label`) |
-| Push-only (path-filtered on `master`/`main`/`cursor/**`), plus `workflow_dispatch` | 20 | Post-merge signal; never blocks a PR |
-| `workflow_dispatch` only | 21 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
-| `schedule` + `workflow_dispatch` only | 2 | `mesh-lab-stress-gate` (Mon 06:00 UTC), `mesh-lab-tls-gate` (Tue 07:00 UTC) |
+| Runs on `pull_request` | 14 | 3 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`), 10 path-filtered, 1 label-driven (`release-staging-on-label`) |
+| Push- and/or schedule-driven (path-filtered on `master`/`main`/`cursor/**`), plus `workflow_dispatch` | 20 | Post-merge / scheduled signal; never blocks a PR |
+| `workflow_dispatch` only | 17 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
 
-Six workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `full-platform-readiness-gate` (Mon 06:00), `onboarding-quickstart-gate` (Mon 07:00), `rc-gate` (06:00 on the 1st of each month), `mesh-lab-stress-gate` (Mon 06:00), `mesh-lab-tls-gate` (Tue 07:00).
+Five workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `full-platform-readiness-gate` (Mon 06:00), `onboarding-quickstart-gate` (Mon 07:00), `rc-gate` (06:00 on the 1st of each month), `mesh-lab-tls-gate` (Tue 07:00). (`mesh-lab-stress-gate` lost its schedule 2026-08-16 and is dispatch-only.)
 
 ### PR-triggered workflows
 
@@ -78,6 +77,8 @@ Six workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `f
 | `shell-lint.yml` | Shell lint / `shell-lint` | paths: `scripts/**` | dispatch |
 | `testing-strategy-gate.yml` | Testing strategy gate / `testing-strategy` | paths: `src/**`, `application/**`, `scripts/**`, `.github/**`, `Makefile`, `docs/architecture/TestingStrategy*.md` | — |
 | `release-staging-on-label.yml` | Release staging on label / `dispatch-staging-release` | `types: [labeled]` only | — |
+| `uat-gate.yml` | UAT / `uat`, `uat cross-platform` | **every PR** (no paths — deliberate, see file header) | push `master`, dispatch |
+| `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` | dispatch |
 
 ### Push-only (path-filtered) workflows
 
@@ -104,11 +105,10 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `production-readiness-gate-v1.yml` | Production Readiness Gate v1 | pipelines sources/tests, CLI, readiness docs |
 | `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule** |
 | `runtime-release-gate.yml` | Runtime Release Gate | `master`/`main`; CLI runtime/release commands, `docs/runtime/benchmarks/**` |
-| `test-persistence-multi-os.yml` | Persistence Tests (Multi-OS) | `master`/`main`; persistence sources/tests, Windows Dockerfile |
 
 ### Manual-only workflows (`workflow_dispatch`)
 
-`composition-mesh-gate`, `cross-platform-tests`, `installer-bruteforce-gate`, `mapbox-tile-helpers-ci`, `mesh-lab-gate`, `mesh-lab-remote-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `runtime-studio-forge-smoke`, `runtime-studio-playground`, `setup-smoke-suite`, `ship-gate`, `test-air-gapped-no-network`, `test-caching-multi-env`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (21).
+`composition-mesh-gate`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `ship-gate`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (16).
 
 Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not run on PRs; run them with `gh workflow run "<name>" --ref <branch>`.
 
@@ -116,7 +116,7 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 
 | Workflow file | Trigger |
 | --- | --- |
-| `mesh-lab-stress-gate.yml` | `schedule` Mon 06:00 UTC + dispatch |
+| `mesh-lab-stress-gate.yml` | dispatch only (schedule removed 2026-08-16) |
 | `mesh-lab-tls-gate.yml` | `schedule` Tue 07:00 UTC + dispatch |
 | `release.yml` | push tags `v*.*.*` + dispatch |
 | `devlog-ghost-release.yml` | `release: published` + dispatch |
@@ -124,7 +124,7 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 
 ## Coverage floors as enforced
 
-`scripts/ci/kernel-coverage-gate.sh` (run by `kernel-coverage-gate.yml`) enforces **Domain 100% / Infrastructure 80% / Core.Application 67%** line coverage (`INFRA_COVERAGE_THRESHOLD` default 80, measured ~80.3%, target 83 — see [`production-readiness/KernelCoverageGate-Findings.md`](production-readiness/KernelCoverageGate-Findings.md)). `core-domain-coverage.yml` enforces Domain 100%. Neither check is required by branch protection.
+`scripts/ci/kernel-coverage-gate.sh` (run by `kernel-coverage-gate.yml`) enforces **Domain 100% / Infrastructure 80% / Core.Application 67%** line coverage (`INFRA_COVERAGE_THRESHOLD` default 80, measured ~80.3%, target 83 — see [`production-readiness/KernelCoverageGate-Findings.md`](production-readiness/KernelCoverageGate-Findings.md)). Neither check is required by branch protection.
 
 ## Policy
 

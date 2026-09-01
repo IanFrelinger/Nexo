@@ -31,7 +31,7 @@ dotnet run --project application/src/Ashlar.CLI -- release gate [--ref branch]
 
 ## Automation you get from `release.yml` (tag push)
 
-- GHCR **`ashlar-cli`** / **`ashlar-api`** with **`sha-*`** (+ semver `X.Y.Z` on tags — a retag of the smoke-tested `sha-*` digest, multi-arch for `ashlar-cli`)
+- GHCR **`nexo-cli`** / **`nexo-api`** with **`sha-*`** (+ semver `X.Y.Z` on tags — a retag of the smoke-tested `sha-*` digest, multi-arch for `nexo-cli`)
 - NuGet pack/push per **`NUGET_PUBLISH_MODE`**
 - **`validate`** job: **`global.json`** SDK pin vs installed SDKs (`scripts/verify-release-sdk-pin.sh`); on tags, the tag version must equal the root **`VERSION`** file (`assert_version_matches_canonical`)
 - Optional **draft GitHub Release** with recent commits (`RELEASE_CREATE_GITHUB_RELEASE`; body includes `scripts/changelog-snippet-for-release.sh` output) with the `.nupkg` / `.snupkg` files, `nuget-publish-manifest.json` and per-package `.sha256.txt` attached as assets

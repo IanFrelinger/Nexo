@@ -11,7 +11,7 @@ public sealed class AshlarClientOptions
     public required string BaseUrl { get; set; }
 
     /// <summary>
-    /// Optional API key for authentication (e.g. X-Api-Key header).
+    /// Optional API key for authentication (sent as the X-Ashlar-Api-Key header).
     /// </summary>
     public string? ApiKey { get; set; }
 

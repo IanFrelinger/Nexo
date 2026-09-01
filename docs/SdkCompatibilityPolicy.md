@@ -83,7 +83,7 @@ The one experimental diagnostic id today; new ids get their own row (and their o
 
 The diagnostic id and the help link it carries are defined once, in `Ashlar.Core.Application.Autonomy.AutonomyExperimental` (`DiagnosticId`, `UrlFormat`), and applied as `[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]`. That holder type is deliberately not experimental itself (a member-level attribute binds its arguments in the containing type's scope and would otherwise trip the diagnostic it names).
 
-`netstandard2.0` targets: `System.Diagnostics.CodeAnalysis.ExperimentalAttribute` is a `net8.0+` BCL type. `Ashlar.Core.Application` (multi-targeted `netstandard2.0;net8.0`) compiles an internal polyfill of the attribute (`src/Ashlar.Compat/Polyfills/ExperimentalAttribute.cs`, linked into every `.NETStandard` inner build by `Directory.Build.targets`); the compiler recognises the attribute by its full name, so a `netstandard2.0` consumer gets the same `ASHLAREXP001` diagnostic as a `net8.0` one. Nothing is documented-only.
+`netstandard2.0` targets: `System.Diagnostics.CodeAnalysis.ExperimentalAttribute` is a `net8.0+` BCL type. `Ashlar.Core.Application` (multi-targeted `netstandard2.0;net8.0;net10.0`) compiles an internal polyfill of the attribute (`src/Ashlar.Compat/Polyfills/ExperimentalAttribute.cs`, linked into every `.NETStandard` inner build by `Directory.Build.targets`); the compiler recognises the attribute by its full name, so a `netstandard2.0` consumer gets the same `ASHLAREXP001` diagnostic as a `net8.0` one. Nothing is documented-only.
 
 ### Internal
 

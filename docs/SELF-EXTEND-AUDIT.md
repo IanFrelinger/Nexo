@@ -21,7 +21,7 @@ BackgroundAgentService.ExecuteAsync                    [BackgroundAgentService.c
          ├─ AgentFactory.CreateAgent                   [BackgroundAgentService.cs:126]
          └─ BackgroundAgentRegistry.RegisterAsync       [BackgroundAgentService.cs:129]
               ├─ AgentPolicyNarrowingValidator (B)     [BackgroundAgentRegistry.cs:203–206]
-              │    skip when ParentId absent (trust root)
+              │    skip when origin == Authored (config-file trust root)
               └─ stores instance                       [BackgroundAgentRegistry.cs:209–217]
 
 BackgroundAgentService → registry.StartAllAsync        [BackgroundAgentService.cs:87]
@@ -66,7 +66,7 @@ Runtime agent activation (separate from extend cycle):
 | ID | Invariant | Verdict | Executing enforcement | Test |
 |----|-----------|---------|----------------------|------|
 | A | Cert-gate inheritance | **ENFORCED** | `SelfProducedBrickCertificationPolicy.Approve` on self-extend writes when `selfExtendAdmission=true`; verifies admitted record via `CertificationTrustVerifier` (content-bound) [`SelfProducedBrickCertificationPolicy.cs:24–78`, wired `RepoFsToolboxFactory.cs:137–140`]. Missing store → `FailClosedCertificationRecordStore` denies all brick admissions. Human boot roots unaffected (no self-extend snapshot). | `SelfExtendInvariantACertGateTests` |
-| B | Monotonic policy narrowing | **ENFORCED** | `AgentPolicyNarrowingValidator.ValidateOrThrow` at `RegisterAsync` for `ParentId` children [`BackgroundAgentRegistry.cs:203–206`, `AgentPolicyNarrowingValidator.cs`]. Self-extend snapshot sets `agentId` + wires `DataExfiltrationPolicy` [`SelfExtendRunnerAdapter.cs:224–232`, `RepoFsToolboxFactory.cs:142–145`]. Roots without `ParentId` skip narrowing (trust root). | `SelfExtendInvariantBPolicyNarrowingTests` |
+| B | Monotonic policy narrowing | **ENFORCED** | `AgentPolicyNarrowingValidator.ValidateOrThrow` at `RegisterAsync`, keyed on `AgentRegistrationOrigin`: `Authored` (config-file) registrations skip narrowing as trust roots; machine-origin registrations REQUIRE a `ParentId` (refused otherwise) and must narrow. Self-extend snapshot sets `agentId` + wires `DataExfiltrationPolicy` [`SelfExtendRunnerAdapter.cs:224–232`, `RepoFsToolboxFactory.cs:142–145`]. | `SelfExtendInvariantBPolicyNarrowingTests` |
 | C | Fail-closed default | **ENFORCED** | `FileBasedAggressivenessModeStore` missing/corrupt file → **Passive** [`FileBasedAggressivenessModeStore.cs:33–34`, `41–44`]. Registry fallback when mode store absent → **Passive** [`BackgroundAgentRegistry.cs:518`]. SemiActive without `IApprovalGate` → denied [`BackgroundAgentRegistry.cs:528–535`]. Explicit Active or approved SemiActive → runs. | `SelfExtendInvariantCHumanAdmissionTests` |
 | D | Recursion / runaway ceiling | **ENFORCED** | Per-cycle: `ToolCallingAgent.DefaultMaxIterations`, `BuildTestBudget`. Cross-cycle: `ExtensionCeiling` (lineage depth, unattended cycles since human arm, cycles per trailing hour) enforced by `BackgroundAgentRegistry` after the mode gate and before `ISelfExtendRunner.RunAsync` [`ExtensionCeiling.cs`, `ExtensionLedger.cs`, `BackgroundAgentRegistry.cs` extender branch]. Overrides (env, agent `Parameters`) may only LOWER; ledgers live outside the agent instance so re-registration cannot reset them; re-arm is `RearmExtension` (operator surface) or restart. Refusals are logged (Warning), observed (`stopped_reason=extension_ceiling`), and carried in cycle telemetry. | `SelfExtendInvariantDRecursionCeilingTests` — rejection **PASSES** |
 
@@ -80,7 +80,7 @@ Self-produced brick writes under `src/Ashlar.Bricks*/` on the self-extend admiss
 
 **Verdict: ENFORCED**
 
-Machine-spawned agents (`ParentId` set) must have an envelope ⊆ creator at registration. Human-authored trust roots (`ParentId` absent) register unchanged. Self-extend cycles key `DataExfiltrationPolicy` on `agentId` in the snapshot.
+Machine-origin agents must carry a `ParentId` (refused without one) and have an envelope ⊆ creator at registration. `Authored` (config-file) trust roots register unchanged. Self-extend cycles key `DataExfiltrationPolicy` on `agentId` in the snapshot.
 
 ### Invariant C — fail-closed default
 

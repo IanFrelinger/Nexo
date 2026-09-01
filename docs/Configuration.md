@@ -408,7 +408,7 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `ASHLAR_OBSERVATIONS_PATH` | Path to the shared `observations.jsonl` | `<cwd>/.ashlar/runtime-studio/observations.jsonl` |
 | `ASHLAR_CYCLE_EVENTS_PATH` | Path to `cycles.jsonl` (absolute or cwd-relative) | `<cwd>/.ashlar/runtime-studio/cycles.jsonl` |
 | `ASHLAR_DASHBOARD_AUTH_TOKEN` | Shared secret for `ashlar background-agent dashboard` (same as `--auth-token`); when set, requests need `?token=` or a Bearer header | unset (dashboard binds `127.0.0.1` only) |
-| `ASHLAR_SANDBOX_ROOT` | Sandbox root for confined tool paths (`PathAllowlist`, forge propose-change) when the world snapshot carries no `SandboxRoot`; also set by `ashlar unity dev` | unset |
+| `ASHLAR_SANDBOX_ROOT` | Sandbox root for confined tool paths (`PathAllowlist`, forge propose-change) when the world snapshot carries no `SandboxRoot` | unset |
 | `ASHLAR_PATH_ALLOWLIST_EXTRA` | Comma/semicolon-separated extra path prefixes appended to the confined toolbox allowlist. Widening only — the default allowlist cannot be narrowed from here | unset |
 | `ASHLAR_EXTENSION_MAX_LINEAGE_DEPTH` | Extender ceiling (SX-AUDIT invariant D): max `ParentId` hops below a human-authored root an extender may sit and still extend. May only LOWER the built-in default. | 1 |
 | `ASHLAR_EXTENSION_MAX_UNATTENDED_CYCLES` | Extender ceiling: extend cycles since a human last armed the agent before it holds (re-arm: restart or `RearmExtension`). May only LOWER the default. | 8 |
