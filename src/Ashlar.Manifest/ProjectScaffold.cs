@@ -12,6 +12,13 @@ namespace Ashlar.Manifest;
 public static class ProjectScaffold
 {
     /// <summary>
+    /// Upper bound on a project name. The charset check alone accepts a 100k-character name, which
+    /// then lands verbatim in <c>metadata.name</c> and on disk as a directory. A name is an identifier,
+    /// not a document — cap it so a pathological input is refused up front rather than scaffolded.
+    /// </summary>
+    public const int MaxNameLength = 100;
+
+    /// <summary>
     /// Builds the starter <c>ashlar.yaml</c> and <c>ashlar.policy.yaml</c> for a new project.
     /// </summary>
     /// <param name="name">Project name: letters, digits and hyphens, starting with a letter.</param>
@@ -34,6 +41,11 @@ public static class ProjectScaffold
         }
 
         var trimmed = name!.Trim();
+        if (trimmed.Length > MaxNameLength)
+        {
+            reason = $"REJECTED: project name is {trimmed.Length} characters; the maximum is {MaxNameLength}. It becomes a metadata.name and a directory — keep it short (e.g. invoice-triage).";
+            return false;
+        }
         if (!IsValidName(trimmed))
         {
             reason = $"REJECTED: '{trimmed}' is not a valid project name. Use letters, digits and hyphens, starting with a letter (e.g. invoice-triage).";

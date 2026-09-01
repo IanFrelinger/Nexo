@@ -26,7 +26,7 @@ public sealed class PolicyCommandTests : IDisposable
         try { Directory.Delete(_dir, recursive: true); } catch { /* best effort */ }
     }
 
-    private string WritePolicy(string mode, string gates = "[sandbox]", string extra = "")
+    private string WritePolicy(string mode, string gates = "[sandbox]", string extra = "", int extensions = 3)
     {
         var yaml = $"""
             apiVersion: ashlar/v1
@@ -38,7 +38,7 @@ public sealed class PolicyCommandTests : IDisposable
               # raise the dial deliberately
               mode: {mode}{extra}
               budget:
-                extensions: 3
+                extensions: {extensions}
                 window: 24h
               mayAdd: [brick]
               gatesRequired: {gates}
@@ -90,6 +90,35 @@ public sealed class PolicyCommandTests : IDisposable
         rc.Should().Be(0);
         stdout.Should().Contain("ARMED").And.Contain("AUTO-APPLY");
         CurrentMode(path).Should().Be("self-extending");
+    }
+
+    [Fact]
+    public void Set_toProposing_withBudgetZero_succeeds_butWarnsLoudly()
+    {
+        // #460: arming `proposing` with budget.extensions == 0 admits nothing, and `ashlar verify`
+        // fails the envelope course on exactly that state. The write must still succeed (the mode did
+        // change), but the operator must be warned — silently landing them on verify's red wall is the
+        // failure this guards. Mirrors the self-extending budget-0 note.
+        var path = WritePolicy("sealed", extensions: 0);
+
+        var (rc, stdout, _) = Set("self_extend", "proposing");
+
+        rc.Should().Be(0, "the mode flip itself is valid and must be written");
+        CurrentMode(path).Should().Be("proposing");
+        stdout.Should().Contain("WARNING").And.Contain("budget is 0");
+        stdout.Should().Contain("verify", "the warning must name what will flag it");
+    }
+
+    [Fact]
+    public void Set_toProposing_withFundedBudget_doesNotWarn()
+    {
+        // The warning is specific to budget 0 — a funded budget must not cry wolf.
+        WritePolicy("sealed", extensions: 3);
+
+        var (rc, stdout, _) = Set("self_extend", "proposing");
+
+        rc.Should().Be(0);
+        stdout.Should().NotContain("WARNING");
     }
 
     [Fact]
