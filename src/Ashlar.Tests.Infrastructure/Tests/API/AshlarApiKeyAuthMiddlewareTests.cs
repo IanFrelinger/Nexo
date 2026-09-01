@@ -96,6 +96,80 @@ public sealed class AshlarApiKeyAuthMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_WhenApiKeyConfigured_ProtectsSupportDiagnosticsGet()
+    {
+        var nextCalled = false;
+        var middleware = new AshlarApiKeyAuthMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        }, CreateOptions(apiKey: "secret-key", required: false, authMode: AshlarAuthorizationMode.ApiKey));
+
+        var context = CreateContext("/api/support/diagnostics", method: "GET");
+
+        await middleware.InvokeAsync(context);
+
+        nextCalled.Should().BeFalse("the diagnostics bundle must not be reachable unauthenticated when a key is configured");
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenApiKeyConfiguredAndValidHeader_AllowsSupportDiagnosticsGet()
+    {
+        var nextCalled = false;
+        var middleware = new AshlarApiKeyAuthMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        }, CreateOptions(apiKey: "secret-key", required: false, authMode: AshlarAuthorizationMode.ApiKey));
+
+        var context = CreateContext("/api/support/diagnostics", method: "GET");
+        context.Request.Headers["X-Ashlar-Api-Key"] = "secret-key";
+
+        await middleware.InvokeAsync(context);
+
+        nextCalled.Should().BeTrue("a valid key must reach the diagnostics endpoint");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenAuthModeNone_LeavesSupportDiagnosticsOpen()
+    {
+        var nextCalled = false;
+        var middleware = new AshlarApiKeyAuthMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        }, CreateOptions(apiKey: null, required: false, authMode: AshlarAuthorizationMode.None));
+
+        var context = CreateContext("/api/support/diagnostics", method: "GET");
+
+        await middleware.InvokeAsync(context);
+
+        nextCalled.Should().BeTrue("diagnostics stays open only when no built-in auth mode is configured");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenSupportDiagnosticsExcluded_AllowsRequest()
+    {
+        var nextCalled = false;
+        var middleware = new AshlarApiKeyAuthMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        }, CreateOptions(
+            apiKey: "secret-key",
+            required: false,
+            authMode: AshlarAuthorizationMode.ApiKey,
+            excludedAuth: ["/api/support/diagnostics"]));
+
+        var context = CreateContext("/api/support/diagnostics", method: "GET");
+
+        await middleware.InvokeAsync(context);
+
+        nextCalled.Should().BeTrue("an explicit exclusion still opts the path out of enforcement");
+    }
+
+    [Fact]
     public async Task InvokeAsync_WhenEndpointExcluded_AllowsRequest()
     {
         var nextCalled = false;
