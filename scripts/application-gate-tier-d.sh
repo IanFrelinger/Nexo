@@ -13,9 +13,5 @@ else
   echo "== Application Tier D: agent-server dry run skipped (no Docker) =="
 fi
 
-    --blame-hang-timeout 120s --blame-hang-dump-type none
-else
-fi
-
 echo ""
 echo "application-gate-tier-d: PASS"

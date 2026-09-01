@@ -354,10 +354,9 @@ all three symbols. That check is the definition of done for this step.
 
 ### ~~Step 3 — the extraction~~ DONE — `302a5e02`
 
-```bash
-bash scripts/handoff/extract-game-layer.sh          # must report 0 blockers
-bash scripts/handoff/extract-game-layer.sh --apply
-```
+(The extraction script and `_handoff/game-layer` itself were removed in the
+2026-08-31 native-responsibility slim; both are preserved on the archive branch
+`archive/verticals-2026-08-31`.)
 
 Then delete `AddPlaytestServices` (empty no-op, zero callers), drop the moved files
 from any `.csproj` that lists them explicitly, and verify:
