@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Certification;
@@ -40,9 +41,47 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
         var signer = new CertificationRecordSigner();
         var store = new FileCertificationRecordStore(TempDir, signer);
 
-        // Every writer saves an ADMITTED record, so a shredded file is unmistakable: the brick
-        // reads back as uncertified even though nothing ever refused it.
-        Parallel.For(0, 64, i => store.Save(signer.SignRecord(Admitted(i))));
+        // Dedicated threads behind a barrier, deliberately NOT Parallel.For. Two reasons, and the
+        // second one cost a CI run to learn:
+        //
+        // 1. The race needs the writers to be INSIDE Save at the same instant. A barrier guarantees
+        //    that; Parallel.For only promises the work happens, and may well run it sequentially.
+        // 2. Parallel.For dispatches onto the thread pool, and this assembly runs test collections
+        //    concurrently (xunit.runner.json: maxParallelThreads 2). Flooding the pool with dozens
+        //    of blocking file writes starves the yield-based retry loops other tests depend on —
+        //    CertifiedBrickHotSwapHostTests asserts an AssemblyLoadContext was collected within a
+        //    bounded number of GC passes, and it fails when this test hogs the pool beside it.
+        //    Owning our threads keeps the blast radius of a concurrency test inside the test.
+        //
+        // Eight writers is plenty: the defect needs two racers, not sixty-four.
+        const int writers = 8;
+        const int savesPerWriter = 4;
+        var startTogether = new Barrier(writers);
+        var failures = new ConcurrentBag<Exception>();
+
+        var threads = Enumerable.Range(0, writers)
+            .Select(w => new Thread(() =>
+            {
+                try
+                {
+                    startTogether.SignalAndWait();
+                    for (var i = 0; i < savesPerWriter; i++)
+                        store.Save(signer.SignRecord(Admitted((w * savesPerWriter) + i)));
+                }
+                catch (Exception ex)
+                {
+                    failures.Add(ex);
+                }
+            })
+            { IsBackground = true, Name = $"cert-store-writer-{w}" })
+            .ToList();
+
+        foreach (var thread in threads) thread.Start();
+        foreach (var thread in threads) thread.Join();
+
+        // With a shared staging name this is where the old code died: one writer's cleanup deletes
+        // the file another writer staged, so the healthy writer's File.Move throws FileNotFound.
+        failures.Should().BeEmpty("a save must not fail merely because another save was in flight");
 
         store.Get(BrickId).Should().NotBeNull(
             "one of the concurrent writers' records must survive intact — an unparseable file " +
