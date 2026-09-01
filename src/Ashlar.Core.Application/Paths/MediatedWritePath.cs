@@ -258,6 +258,8 @@ public static class MediatedWritePath
         "nuget.config", "global.json",
         "Makefile", "GNUmakefile",           // GNU make reads GNUmakefile before Makefile; OIC covers makefile/MAKEFILE
         ".editorconfig",                      // a nested one can set analyzer severity=none, silencing the repo's gates
+        ".globalconfig",                      // the auto-included analyzer config; silences gates exactly like .editorconfig. NOTE: closes only the literal name — a global config carried under an arbitrary name via <GlobalAnalyzerConfigFiles> is content-flagged (is_global=true), not name-flagged, so leaf-matching cannot cover it; that residual (overwriting an already-referenced named config) is tracked separately.
+        "dotnet-tools.json",                  // the .NET local-tool manifest, discovered by ancestor-walk at any depth (canonically .config/dotnet-tools.json); a restored tool runs on the next `dotnet tool restore`/build
         ".pre-commit-config.yaml",            // a `repo: local` hook runs on the next git commit
     };
 

@@ -70,6 +70,11 @@ public sealed class ForgeApplierGovernanceTests : IDisposable
         "GNUmakefile",                  // GNU make prefers it over Makefile; distinct name
         ".editorconfig",                // can set analyzer severity=none, silencing the repo's gates
         "src/.editorconfig",            // ...at any depth
+        ".globalconfig",                // SDK-honoured analyzer config; silences gates like .editorconfig
+        "src/.globalconfig",            // ...at any depth
+        "dotnet-tools.json",            // .NET local-tool manifest, blocked by leaf name at ANY depth (root included)
+        ".config/dotnet-tools.json",    // ...canonical location
+        "nested/.config/dotnet-tools.json",
         ".pre-commit-config.yaml",      // `repo: local` hook runs on next git commit
         "src/Foo/Foo.csproj",
         "src/Foo/Foo.fsproj",
@@ -97,6 +102,8 @@ public sealed class ForgeApplierGovernanceTests : IDisposable
         "src/data.csproj.txt",     // not a .csproj
         "docs/solution.md",        // not a .props/.targets/.sln
         "src/editorconfig.cs",     // not .editorconfig
+        "src/globalconfig.cs",     // not .globalconfig
+        "config/dotnet-tools.json.bak",  // leaf differs (the .bak suffix), so not the manifest name
         "src/propshelper.cs",
     };
 
@@ -121,6 +128,8 @@ public sealed class ForgeApplierGovernanceTests : IDisposable
         "a/../.ashlar/steal.json",   // normalizes back into .ashlar
         "Directory.Build.targets",   // build-time code execution
         "Directory.Solution.targets",// solution-level auto-import (the adversarial finding)
+        ".globalconfig",             // analyzer-severity silencer, SDK-honoured
+        ".config/dotnet-tools.json", // local-tool manifest; a restored tool runs on next build
         "sub/dir/Directory.Build.props",
         "src/Evil.csproj",
         "../outside.txt",            // escapes the root entirely
