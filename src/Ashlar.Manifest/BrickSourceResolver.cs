@@ -83,8 +83,9 @@ public static class BrickSourceResolver
     // direction that matters more — compiled source under a blessed name was simply not part of
     // the inventory that certification reasons about.
     //
-    // Build output is already excluded, by DIRECTORY, in IgnoredDirectories above. That is the
-    // rule the compiler itself uses, and it needs no help from a name.
+    // Build output is already excluded, by DIRECTORY and in the POSITION the SDK puts it, in
+    // BuildOutputDirectories / IsProjectBuildOutput above. That is the rule the compiler itself
+    // uses, and it needs no help from a name.
 
     /// <summary>
     /// Everything authored under a project directory that a certification could be ABOUT: the

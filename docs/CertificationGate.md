@@ -160,13 +160,56 @@ The reason is that the certificate binds a content hash of one source file. If t
 in arbitrary code, the hash would cover a fraction of what actually runs, and "certified" would be a
 claim about a file rather than about behaviour.
 
+### What counts as "the brick's source", exactly
+
+The gate does not glob your directory and it does not read your `.csproj` as XML. It asks MSBuild
+what the project compiles — for the whole import chain, so a `Directory.Build.props` or
+`Directory.Build.targets` beside the project counts exactly as much as the `.csproj` — and then,
+after building, it reads the **compiler's own record** of the compilation (the source-document table
+in the PDB) and requires the two to agree file for file and byte for byte.
+
+That has consequences worth knowing before you hit them:
+
+- **An MSBuild target that adds a `Compile` item is refused.** So is one that removes an item after
+  the compile, or replaces the compile step. The gate compares against what csc recorded, not
+  against `@(Compile)`, so none of these hide anything — they just fail. Put brick code in the
+  brick's source file.
+- **A target that rewrites the brick source during the build is refused.** The gate hashes the file
+  before the build and checks that checksum against the compiler's; a generator that overwrites your
+  `.cs` on the way to `CoreCompile` makes the certificate describe a program the assembly does not
+  contain.
+- **`<DebugType>none</DebugType>` cannot be used.** The gate forces `DebugType=portable`,
+  `ChecksumAlgorithm=SHA256`, an empty `PathMap` and `DeterministicSourcePaths=false` as *global*
+  MSBuild properties, so your project cannot switch them off; a build that still emits no portable
+  PDB is refused, because there is then no record of what was compiled.
+- **The file extension is irrelevant.** `<Compile Include="Helper.cstxt" />` is a compiled file and
+  is treated as one. So is `Sub/obj/Thing.cs` — the SDK excludes only the project's *own* `bin/` and
+  `obj/`, and so does the gate.
+- **Multi-targeting is refused.** One content hash cannot speak for a per-framework source set.
+  Give the brick a single `<TargetFramework>`.
+- **A source generator is refused** (as an `<Analyzer>` item, and by the two-package rule): its
+  output is compiled into the brick without ever being a source file the hash can cover.
+
+The one thing tolerated outside the hash is the SDK's own boilerplate under the project's own
+intermediate output directory — `AssemblyInfo.cs`, `GlobalUsings.g.cs` and friends. That tolerance
+turns on MSBuild reporting that an SDK-shipped `.targets` file declared the item, not on the file's
+name or its directory, so dropping your own `Generated.cs` into `obj/` does not inherit it.
+
 **The canonical sample does not satisfy this.** `samples/hello-brick/` — which
 [`AuthoringBricks.md`](AuthoringBricks.md) calls the primary path — uses a `ProjectReference` into
 `src/Ashlar.Core.Domain`, so the gate rejects it at the dependency leg. That is fine for what it is
 (the smallest way to learn the `Brick` API inside a checkout) and wrong as a starting point for
-anything you intend to certify. The shape to copy is
-`samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/`, which is its own packable project
-referencing only `Ashlar.Brick.Contracts`.
+anything you intend to certify.
+
+**And as of the compiled-source-set change, neither does the other sample.**
+`samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/` is its own packable project
+referencing only `Ashlar.Brick.Contracts` — but `samples/Directory.Build.props` adds a
+`<Compile Include="../../src/Ashlar.Compat/GlobalUsings.DomainBrick.cs" Link="..." />` to it, and a
+compile item from outside the brick directory is now refused (it is bypass 3's exact shape: the
+`.csproj` was clean and the props file beside it was not). The sample was certifiable only because
+the gate used to read the `.csproj` alone. Until it is repaired — it needs the one-line alias
+`using DomainBrick = Ashlar.Core.Domain.Bricks.Brick;` inside its own source file instead of the
+linked global-usings file — **copy the complete project below rather than either sample.**
 
 A certifiable brick project, complete:
 
@@ -240,10 +283,13 @@ Console.WriteLine($"trusted={verify.Trusted} contentHash={data.ContentHash}");
 return verify.Trusted ? 0 : 3;
 ```
 
-`BrickCertificationProjectLoader.LoadAsync` shells out to `dotnet build -c Release` on the brick
-project, so the machine running this needs a .NET SDK, not just a runtime. Point it at a specific
-NuGet config with the `ASHLAR_CERT_NUGET_CONFIG` environment variable if the default source list is
-not what you want.
+`BrickCertificationProjectLoader.LoadAsync` shells out to
+`dotnet msbuild <csproj> -restore -t:Build -c Release` on the brick project, so the machine running
+this needs a .NET SDK, not just a runtime. (One invocation, which both builds and reports what it
+compiled: a separate verification query runs under different MSBuild properties, and a target
+conditioned on one of them can then contribute to the build while staying dormant in the query.)
+Point it at a specific NuGet config with the `ASHLAR_CERT_NUGET_CONFIG` environment variable — it is
+passed on as `-p:RestoreConfigFile` — if the default source list is not what you want.
 
 ### Shape B — the gate from DI, inside your own tests
 

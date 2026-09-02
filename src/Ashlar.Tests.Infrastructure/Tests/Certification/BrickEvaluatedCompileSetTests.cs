@@ -31,6 +31,14 @@ public sealed class BrickEvaluatedCompileSetTests : IDisposable
 {
     private readonly string _dir;
 
+    /// <summary>
+    /// A project name unique to this test, because the assembly takes its name from the project and
+    /// the tests that run all the way to <c>Assembly.LoadFrom</c> share one process: a second
+    /// "Brick.dll" fails with "assembly with same name is already loaded", which looks exactly like
+    /// a gate refusal and is not one.
+    /// </summary>
+    private readonly string _projectName = "Brick" + Guid.NewGuid().ToString("N")[..8];
+
     public BrickEvaluatedCompileSetTests()
     {
         _dir = Path.Combine(Path.GetTempPath(), "ashlar-evaluated-set-" + Guid.NewGuid().ToString("N"));
@@ -43,7 +51,7 @@ public sealed class BrickEvaluatedCompileSetTests : IDisposable
             Directory.Delete(_dir, recursive: true);
     }
 
-    private string Csproj => Path.Combine(_dir, "Brick.csproj");
+    private string Csproj => Path.Combine(_dir, _projectName + ".csproj");
 
     private void WriteProject(string xml) => File.WriteAllText(Csproj, xml);
 
@@ -218,26 +226,102 @@ public sealed class BrickEvaluatedCompileSetTests : IDisposable
             "the removed file is not compiled and the included one is; hashing the reverse signs a decoy");
     }
 
-    // ── bypass 5 · the same hole one step later: a target, not an ItemGroup ────────────────
+    // ── bypasses 5-7 · the same hole after evaluation: targets, not ItemGroups ─────────────
+    //
+    // These three are one family, and they are why the gate compares against the COMPILER's record
+    // (the PDB source-document table) rather than against anything MSBuild reports. Each was
+    // reproduced live on this repo, with the payload's type present in the built assembly:
+    //
+    //   5. A <Target BeforeTargets="CoreCompile"> adding a Compile item contributes nothing at
+    //      evaluation time and everything at compile time.
+    //   6. Give that target a Condition on $(OutputPath) and it also contributes nothing to a
+    //      SECOND MSBuild query — the gate builds into a temp directory and a separate query does
+    //      not, so the two answers necessarily differ. "Ask again after the build" splits here.
+    //   7. Ask in the build's own invocation and a second target, AfterTargets="CoreCompile",
+    //      removes the payload from @(Compile) once the compile has happened. The item list is
+    //      clean; the assembly is not.
+    //
+    // @(Compile) is mutable state belonging to the project under judgement. The compiler's record
+    // is not.
 
     [Fact]
-    public async Task Bypass5_a_compile_item_added_by_a_target_is_refused_before_the_assembly_is_loaded()
-    {
-        // Asking MSBuild what a project EVALUATES to closes four bypasses and leaves this one: a
-        // <Target BeforeTargets="CoreCompile"> adding a Compile item contributes nothing at
-        // evaluation time and everything at compile time. Reproduced live on this repo — the
-        // payload's type was in the built assembly and in none of the evaluation-time answers.
-        //
-        // The refusal must land BEFORE Assembly.LoadFrom, which executes the candidate's module
-        // initializers inside this process.
-        Write("Brick.cs", "public sealed class DemoBrick { }");
-        Write("Payload.cstxt", "public static class Payload { public static int Answer() => 42; }");
-        Write("witness.json", """{"brickId":"demo","cases":[]}""");
-        WriteProject("""
+    public Task Bypass5_a_compile_item_added_by_a_target_is_refused_before_the_assembly_is_loaded() =>
+        AssertPayloadRefused("""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
               <Target Name="Sneak" BeforeTargets="CoreCompile">
                 <ItemGroup><Compile Include="Payload.cstxt" /></ItemGroup>
+              </Target>
+            </Project>
+            """);
+
+    [Fact]
+    public Task Bypass6_a_target_conditioned_on_a_property_the_gate_cannot_match_is_refused() =>
+        // $(OutputPath) is the gate's own temp build directory and nothing else's. A target
+        // conditioned on it runs during certification and lies dormant in any second query, which
+        // is what makes "verify with another MSBuild invocation" unsound in principle rather than
+        // just incomplete.
+        AssertPayloadRefused("""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+              <Target Name="Sneak" BeforeTargets="CoreCompile"
+                      Condition="$(OutputPath.Contains('ashlar-cert-build'))">
+                <ItemGroup><Compile Include="Payload.cstxt" /></ItemGroup>
+              </Target>
+            </Project>
+            """);
+
+    [Fact]
+    public Task Bypass7_a_target_that_scrubs_the_item_after_the_compile_is_refused() =>
+        // The compile has already happened when Cover runs, so every reading of @(Compile) after
+        // the build — including one taken from the build's own invocation — reports a clean
+        // two-file project while Payload's type sits in the assembly.
+        AssertPayloadRefused("""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+              <Target Name="Sneak" BeforeTargets="CoreCompile">
+                <ItemGroup><Compile Include="Payload.cstxt" /></ItemGroup>
+              </Target>
+              <Target Name="Cover" AfterTargets="CoreCompile">
+                <ItemGroup><Compile Remove="Payload.cstxt" /></ItemGroup>
+              </Target>
+            </Project>
+            """);
+
+    [Fact]
+    public Task Bypass7_the_scrub_does_not_work_by_dropping_the_debug_record_either() =>
+        // The obvious next move once the PDB is the authority: switch it off. It is forced on as a
+        // GLOBAL property, which the project under judgement cannot override — from its csproj,
+        // from a Directory.Build.props, or from a PropertyGroup inside one of its own targets.
+        AssertPayloadRefused("""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <DebugType>none</DebugType>
+              </PropertyGroup>
+              <Target Name="Sneak" BeforeTargets="CoreCompile">
+                <ItemGroup><Compile Include="Payload.cstxt" /></ItemGroup>
+              </Target>
+              <Target Name="Cover" AfterTargets="CoreCompile">
+                <ItemGroup><Compile Remove="Payload.cstxt" /></ItemGroup>
+              </Target>
+            </Project>
+            """);
+
+    [Fact]
+    public async Task A_target_that_deletes_the_compilers_record_is_refused_rather_than_waved_through()
+    {
+        // DebugType is forced as a global property, so the project cannot switch the record off —
+        // but a target can still delete the file after the build. "The gate cannot establish what
+        // was compiled" must be a refusal in that case too, not an empty document set that trivially
+        // agrees with whatever was hashed. Verified live: the output keeps p.dll and loses p.pdb.
+        Write("Brick.cs", "public sealed class DemoBrick { }");
+        Write("witness.json", """{"brickId":"demo","cases":[]}""");
+        WriteProject($"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+              <Target Name="Nuke" AfterTargets="Build">
+                <Delete Files="$(OutputPath){_projectName}.pdb" />
               </Target>
             </Project>
             """);
@@ -247,8 +331,62 @@ public sealed class BrickEvaluatedCompileSetTests : IDisposable
 
         (await act.Should().ThrowAsync<InvalidOperationException>())
             .WithMessage("*Brick project refused*")
+            .And.Message.Should().Contain("no portable debug information")
+            .And.Contain("Fix:")
+            .And.Contain("deletes the .pdb",
+                "the fix must name what actually happened — the project cannot have set DebugType, "
+                + "because the gate forces it");
+    }
+
+    [Fact]
+    public async Task A_target_that_rewrites_the_brick_source_before_the_compile_is_refused()
+    {
+        // The path sets can agree perfectly and the certificate still be wrong: the gate reads and
+        // hashes Brick.cs, then the build rewrites it and compiles something else. The compiler
+        // records a checksum per file, so the bytes that were hashed must be the bytes that were
+        // compiled — one file, one text, or a refusal.
+        Write("Brick.cs", "public sealed class DemoBrick { }");
+        Write("witness.json", """{"brickId":"demo","cases":[]}""");
+        WriteProject("""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+              <Target Name="Swap" BeforeTargets="CoreCompile">
+                <WriteLinesToFile File="Brick.cs" Overwrite="true"
+                                  Lines="public sealed class DemoBrick { public static int Answer() =&gt; 42%3B }" />
+              </Target>
+            </Project>
+            """);
+
+        var act = async () => await BrickCertificationProjectLoader.LoadAsync(
+            _dir, Path.Combine(_dir, "witness.json"));
+
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .WithMessage("*Brick project refused*")
+            .And.Message.Should().Contain("Brick.cs")
+            .And.Contain("is not the text that was compiled")
+            .And.Contain("Fix:");
+    }
+
+    /// <summary>
+    /// Builds a brick whose project smuggles <c>Payload.cstxt</c> into the compilation past
+    /// evaluation, and requires the gate to refuse it by name — before <c>Assembly.LoadFrom</c>,
+    /// which executes the candidate's module initializers inside this process.
+    /// </summary>
+    private async Task AssertPayloadRefused(string projectXml)
+    {
+        Write("Brick.cs", "public sealed class DemoBrick { }");
+        Write("Payload.cstxt", "public static class Payload { public static int Answer() => 42; }");
+        Write("witness.json", """{"brickId":"demo","cases":[]}""");
+        WriteProject(projectXml);
+
+        var act = async () => await BrickCertificationProjectLoader.LoadAsync(
+            _dir, Path.Combine(_dir, "witness.json"));
+
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .WithMessage("*Brick project refused*")
             .And.Message.Should().Contain("Payload.cstxt")
-            .And.Contain("not in the set the certificate hashes");
+            .And.Contain("not in the set the certificate hashes")
+            .And.Contain("Fix:");
     }
 
     // ── the same root cause on the dependency leg: code and DLLs that are not Compile items ─
@@ -385,5 +523,135 @@ public sealed class BrickEvaluatedCompileSetTests : IDisposable
         SourceSetNames().Should().BeEquivalentTo(["Brick.cs"]);
         BrickDependencyChecker.Check(Csproj, "public sealed class DemoBrick { }")
             .Passed.Should().BeTrue();
+    }
+
+    // ── the other half: the fix must not become a blanket refusal ──────────────────────────
+    //
+    // Every leg above refuses something. These are the honest shapes that must still get all the
+    // way THROUGH the compiled-set comparison — a gate that refuses everything is not a strict
+    // gate, it is a broken one, and the strictest legs here are the newest and least exercised.
+    //
+    // They assert on how far the load got rather than on success, because a brick that carries no
+    // DomainBrick type cannot finish LoadAsync and one that does would need the contracts package
+    // restored from the network. "No DomainBrick type in assembly" is raised AFTER the build, after
+    // the compiled-set comparison and at Assembly.LoadFrom — so seeing it is proof that every check
+    // this file adds let the project past.
+
+    [Theory]
+    [InlineData("an ordinary single-file brick", """
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+        </Project>
+        """)]
+    [InlineData("a brick whose SDK generates assembly-info and global usings under obj/", """
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <TargetFramework>net8.0</TargetFramework>
+            <ImplicitUsings>enable</ImplicitUsings>
+            <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+          </PropertyGroup>
+        </Project>
+        """)]
+    [InlineData("a brick that relocates its own intermediate output", """
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <TargetFramework>net8.0</TargetFramework>
+            <ImplicitUsings>enable</ImplicitUsings>
+            <BaseIntermediateOutputPath>build-temp/</BaseIntermediateOutputPath>
+          </PropertyGroup>
+        </Project>
+        """)]
+    [InlineData("a deterministic CI build", """
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <TargetFramework>net8.0</TargetFramework>
+            <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+            <Deterministic>true</Deterministic>
+          </PropertyGroup>
+        </Project>
+        """)]
+    [InlineData("the analyzer ExcludeAssets shape docs/CertificationGate.md teaches", """
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+          <ItemGroup>
+            <PackageReference Include="Ashlar.Analyzers" Version="0.1.1" ExcludeAssets="runtime;compile" />
+          </ItemGroup>
+        </Project>
+        """)]
+    public async Task An_honest_brick_gets_past_the_compiled_set_comparison(string shape, string projectXml)
+    {
+        Write("Brick.cs", "public sealed class DemoBrick { }");
+        Write("witness.json", """{"brickId":"demo","cases":[]}""");
+        WriteProject(projectXml);
+
+        var act = async () => await BrickCertificationProjectLoader.LoadAsync(
+            _dir, Path.Combine(_dir, "witness.json"));
+
+        (await act.Should().ThrowAsync<InvalidOperationException>(shape))
+            .And.Message.Should()
+            .Be("No DomainBrick type in assembly",
+                $"{shape} must reach Assembly.LoadFrom — every refusal before it would be a blanket refusal "
+                + "of a project that did nothing wrong");
+    }
+
+    [Fact]
+    public async Task Following_the_fix_the_payload_refusal_names_actually_clears_it()
+    {
+        // The refusals in this area are the part of the gate authors praise, and the way to ruin
+        // that is to name a fix that leads into a DIFFERENT refusal. Bypass 5's message says:
+        // remove the target, and if the code belongs in the brick move it into the brick's own
+        // single source file. This walks exactly that, and requires the project to get all the way
+        // through the compiled-set comparison afterwards — an earlier wording said "declare it as
+        // an ordinary Compile item", which does clear THIS refusal and lands on the multi-file one.
+        Write("Brick.cs", "public sealed class DemoBrick { public static int Answer() => 42; }");
+        Write("witness.json", """{"brickId":"demo","cases":[]}""");
+        WriteProject("""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+            </Project>
+            """);
+
+        var act = async () => await BrickCertificationProjectLoader.LoadAsync(
+            _dir, Path.Combine(_dir, "witness.json"));
+
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .And.Message.Should().Be("No DomainBrick type in assembly",
+                "the fix the refusal names must leave the author past every check this file adds, not "
+                + "at the next refusal along");
+    }
+
+    [Fact]
+    public async Task A_source_generator_that_writes_code_into_the_brick_is_refused_by_name()
+    {
+        // The one shape that legitimately puts code in the assembly without a Compile item. It must
+        // be refused rather than tolerated — generated code in a signed brick is code no leg of the
+        // gate judged — and the refusal must say so rather than blaming the author's own file.
+        Write("Brick.cs", "public sealed class DemoBrick { }");
+        Write("witness.json", """{"brickId":"demo","cases":[]}""");
+        WriteProject("""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+              </PropertyGroup>
+              <Target Name="Sneak" BeforeTargets="CoreCompile">
+                <ItemGroup><Compile Include="obj/Generated.cs" /></ItemGroup>
+              </Target>
+              <Target Name="MakeIt" BeforeTargets="Sneak">
+                <WriteLinesToFile File="obj/Generated.cs" Overwrite="true"
+                                  Lines="public static class Generated { }" />
+              </Target>
+            </Project>
+            """);
+
+        // obj/ is the ONE place the gate tolerates an unhashed compiled file, so a payload dropped
+        // there is the sharpest test of the rule: tolerance turns on MSBuild saying the SDK's own
+        // files declared the item, not on the directory and not on the file's name.
+        var act = async () => await BrickCertificationProjectLoader.LoadAsync(
+            _dir, Path.Combine(_dir, "witness.json"));
+
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .WithMessage("*Brick project refused*")
+            .And.Message.Should().Contain("Generated.cs").And.Contain("Fix:");
     }
 }

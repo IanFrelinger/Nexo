@@ -41,16 +41,19 @@ internal sealed record EvaluatedItem(
 /// a decoy. Asking MSBuild removes all four at once, and every future variant of them, because the
 /// answer is no longer an approximation of the build — it is the build's own answer.</para>
 ///
-/// <para>Why a separate <c>dotnet msbuild -getItem</c> process rather than emitting the item list
-/// from the <c>dotnet build</c> the loader already runs: this evaluation must be able to REFUSE
-/// before the build happens. <c>-getItem</c> without a target evaluates the project and stops — no
-/// target executes, nothing is restored, nothing is compiled — so the gate can decide what it is
-/// certifying, and whether it can certify at all, before any of the candidate's code exists as a
-/// binary. Emitting from the build would put the answer AFTER the point where refusing is free,
-/// and would mean injecting a custom target into someone else's project to get it. It also adds no
-/// attack surface: <see cref="BrickCertificationProjectLoader.LoadAsync"/> already shells a full
-/// <c>dotnet build</c> of this same project and then <c>Assembly.LoadFrom</c>s the result, so an
+/// <para><see cref="Evaluate"/> runs no targets: <c>-getItem</c> without a target evaluates the
+/// project and stops — nothing is restored, nothing is compiled, no author target executes — so
+/// the gate can decide what it is certifying, and whether it can certify at all, before any of the
+/// candidate's code exists as a binary. That is the answer the content hash is taken over. It adds
+/// no attack surface either: <see cref="BrickCertificationProjectLoader.LoadAsync"/> already shells
+/// a full build of this same project and then <c>Assembly.LoadFrom</c>s the result, so an
 /// evaluation that runs no targets is strictly less than what already happens.</para>
+///
+/// <para><see cref="Build"/> is the other half, and it is deliberately ONE invocation that both
+/// builds and reports: a query issued separately from the build runs under different properties,
+/// and a conditioned target splits the two answers. Even so, the item list it returns is not
+/// treated as authority over what was compiled — see <see cref="CompiledSourceDocuments"/> for why
+/// nothing MSBuild reports can be, and for what is used instead.</para>
 /// </remarks>
 internal sealed class EvaluatedBrickProject
 {
@@ -172,8 +175,42 @@ internal sealed class EvaluatedBrickProject
         // needed to judge the post-compile set: the only compiled file the gate tolerates outside
         // the hash is SDK-generated assembly boilerplate under the project's own obj/.
         "NetCoreRoot",
-        "BaseIntermediateOutputPath"
+        "BaseIntermediateOutputPath",
+        "IntermediateOutputPath"
     ];
+
+    /// <summary>
+    /// An evaluated property as a directory path rooted at the project, with MSBuild's separators
+    /// translated to this platform's.
+    /// </summary>
+    /// <remarks>
+    /// MSBuild reports these with the separator the defining file wrote, which on Linux means
+    /// <c>BaseIntermediateOutputPath</c> can come back as the literal <c>obj\</c> — observed on the
+    /// SDK in this repo's container, and only on SOME of the two query shapes. <c>Path.Combine</c>
+    /// then produces a directory named <c>obj\</c>, every containment test against it fails, and the
+    /// SDK's own assembly-info boilerplate stops being recognised — which would refuse every honest
+    /// brick. Translating the separator is not tidiness; it is the difference between a rule and a
+    /// blanket refusal.
+    /// </remarks>
+    public string? DirectoryProperty(string name)
+    {
+        var value = Property(name);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value!.Replace('\\', Path.DirectorySeparatorChar)
+                               .Replace('/', Path.DirectorySeparatorChar);
+        try
+        {
+            return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ProjectPath)!, normalized));
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+    }
 
     private static readonly string[] RequestedItems =
     [
@@ -191,6 +228,12 @@ internal sealed class EvaluatedBrickProject
     private static readonly TimeSpan EvaluationTimeout = TimeSpan.FromMinutes(3);
 
     /// <summary>
+    /// How long the gate will wait for a build. Longer than an evaluation because it includes a
+    /// restore, which on a cold NuGet cache is the slow part and is not the candidate's fault.
+    /// </summary>
+    private static readonly TimeSpan BuildTimeout = TimeSpan.FromMinutes(15);
+
+    /// <summary>
     /// Asks MSBuild what <paramref name="projectPath"/> compiles and references, or REFUSES.
     /// </summary>
     /// <remarks>
@@ -203,38 +246,129 @@ internal sealed class EvaluatedBrickProject
     public static EvaluatedBrickProject Evaluate(string projectPath) => Run(projectPath, extraArguments: []);
 
     /// <summary>
-    /// What the compiler was ACTUALLY handed: the <c>Compile</c> set as it stands once the targets
-    /// that build it have run, not as it stood at evaluation.
+    /// The properties the gate FORCES on the brick's build, as global properties, because each one
+    /// is a precondition for being able to read what was compiled afterwards.
     /// </summary>
     /// <remarks>
-    /// <para>This exists because <see cref="Evaluate"/> alone leaves the same hole one step later.
-    /// Evaluation answers for the props, the imports, the removes and the non-<c>.cs</c> includes —
-    /// but a <c>&lt;Target BeforeTargets="CoreCompile"&gt;</c> adding
-    /// <c>&lt;Compile Include="Payload.cstxt" /&gt;</c> contributes NOTHING at evaluation time and
-    /// everything at compile time. Reproduced on this repo: the payload is in the built assembly and
-    /// absent from every evaluation-time answer, which is bypass #1 again with the item declared in
-    /// a target instead of an ItemGroup. A target is part of the same import chain a
-    /// <c>Directory.Build.props</c> is part of, so it needs no csproj edit either.</para>
+    /// <para>A global property cannot be overridden from inside the project being judged — not by
+    /// its <c>.csproj</c>, not by a <c>Directory.Build.props</c>, not by a <c>PropertyGroup</c>
+    /// inside one of its targets. That is the whole point of setting these here rather than reading
+    /// them: they turn "the candidate chose not to leave a record" from a bypass into an
+    /// impossibility, and leave a genuine absence of the record (an author who replaced CoreCompile
+    /// outright) as the refusal it should be.</para>
     ///
-    /// <para>Running <c>-t:CoreCompile</c> costs nothing after the build the loader already runs:
-    /// the compile is up to date, so MSBuild skips it and reports the item list. And it runs the
-    /// author's targets — which the loader's own <c>dotnet build</c> has already run in full, and
-    /// which it then <c>Assembly.LoadFrom</c>s the product of, so this adds no attack surface.</para>
+    /// <para><c>DebugType=portable</c> makes the PDB exist. <c>ChecksumAlgorithm=SHA256</c> makes
+    /// the per-file checksums in it something the gate will accept — SHA1 is still read, but is not
+    /// something to depend on for a signed claim. <c>PathMap</c> empty and
+    /// <c>DeterministicSourcePaths=false</c> keep the document paths as real paths on this disk;
+    /// under a path map they are rewritten placeholders, and every one of them would fail to match
+    /// the hashed set, which is a refusal of honest bricks rather than a defence.</para>
+    /// </remarks>
+    private static readonly string[] ForcedBuildProperties =
+    [
+        "-p:DebugType=portable",
+        "-p:ChecksumAlgorithm=SHA256",
+        "-p:PathMap=",
+        "-p:DeterministicSourcePaths=false",
+        "-p:TreatWarningsAsErrors=false",
+        "-p:NuGetAudit=false"
+    ];
+
+    /// <summary>The outcome of building a brick: how it went, what it said, and what it compiled.</summary>
+    /// <param name="ExitCode">MSBuild's exit code.</param>
+    /// <param name="Output">Diagnostics, populated on failure.</param>
+    /// <param name="Project">The evaluated project as it stood when the build finished, or
+    /// <c>null</c> when the build failed.</param>
+    internal sealed record BuildOutcome(int ExitCode, string Output, EvaluatedBrickProject? Project);
+
+    /// <summary>
+    /// Builds the brick and reports what it compiled, in ONE MSBuild invocation.
+    /// </summary>
+    /// <remarks>
+    /// <para>One invocation, not two, and that is the point. A second query — however it is
+    /// phrased — runs under a different property set than the build, and a
+    /// <c>&lt;Target BeforeTargets="CoreCompile" Condition="..."&gt;</c> that tests a property the
+    /// two runs disagree about then contributes its payload to the build and nothing to the query.
+    /// Reproduced live on this repo against exactly that shape, conditioned on
+    /// <c>$(OutputPath)</c>, which necessarily differs because the gate builds into a temp
+    /// directory: the payload's type was in the built assembly, and the verification query reported
+    /// a clean two-file project. Asking in the same invocation removes the disagreement by
+    /// construction rather than by enumerating which properties to match.</para>
+    ///
+    /// <para>Note what this still does NOT establish, and why <see cref="CompiledSourceDocuments"/>
+    /// exists: a target running <c>AfterTargets="CoreCompile"</c> can remove its payload from
+    /// <c>@(Compile)</c> once the compile has happened, and the item list read at the end of the
+    /// build is then clean while the assembly is not. That was reproduced live too. MSBuild's
+    /// answer is therefore used only to NARROW the one tolerance the gate grants (SDK boilerplate
+    /// under the project's own <c>obj/</c>) — never to admit a file. Its failure mode is a refusal,
+    /// which is the direction that is safe to be wrong in.</para>
+    ///
+    /// <para><c>dotnet msbuild -restore -t:Build</c> rather than <c>dotnet build</c> because
+    /// <c>dotnet build -getItem:Compile</c> reports the EVALUATION-time item list even though it
+    /// runs targets — verified against the SDK in this repo's container, where it missed a
+    /// target-added compile item that <c>dotnet msbuild -t:Build -getItem:Compile</c> reported.
+    /// </para>
     /// </remarks>
     /// <param name="projectPath">The brick project.</param>
-    /// <param name="configuration">The configuration the loader built, so the query sees that
-    /// build's own intermediate output rather than provoking a second one.</param>
-    public static EvaluatedBrickProject EvaluateAfterCompile(string projectPath, string configuration) =>
-        Run(projectPath,
-        [
-            "-t:CoreCompile",
+    /// <param name="outputDirectory">Where the build output goes.</param>
+    /// <param name="configuration">The build configuration.</param>
+    /// <param name="nugetConfigFile">An explicit NuGet config for the restore, or <c>null</c>.</param>
+    public static BuildOutcome Build(
+        string projectPath, string outputDirectory, string configuration, string? nugetConfigFile)
+    {
+        var arguments = new List<string>
+        {
+            "-restore",
+            "-t:Build",
             "-p:Configuration=" + configuration,
-            "-p:TreatWarningsAsErrors=false",
-            "-p:NuGetAudit=false"
-        ]);
+            // Trailing separator: MSBuild treats OutputPath as a directory prefix, and without it
+            // the output lands in a sibling named after the directory.
+            "-p:OutputPath=" + outputDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar
+        };
+        arguments.AddRange(ForcedBuildProperties);
+        if (!string.IsNullOrWhiteSpace(nugetConfigFile))
+        {
+            arguments.Add("-p:RestoreConfigFile=" + nugetConfigFile);
+        }
+
+        var (exitCode, stdout, stderr) = Invoke(projectPath, [.. arguments, .. QueryArguments()], BuildTimeout);
+        if (exitCode == 0)
+        {
+            return new BuildOutcome(exitCode, string.Empty, Parse(Path.GetFullPath(projectPath), stdout));
+        }
+
+        // -getItem replaces MSBuild's console output with JSON, so a failed build says nothing about
+        // WHY. Re-run without it to recover the compiler's diagnostics: the build produced no
+        // assembly, so there is nothing to be raced, and the cost falls only on the failure path.
+        var (_, failOut, failErr) = Invoke(projectPath, [.. arguments, "-v:m"], BuildTimeout);
+        var diagnostics = Trim(failOut + failErr);
+        return new BuildOutcome(
+            exitCode,
+            diagnostics.Length > 0 ? diagnostics : Trim(stdout + stderr),
+            null);
+    }
+
+    private static IEnumerable<string> QueryArguments() =>
+        RequestedItems.Select(i => "-getItem:" + i).Concat(RequestedProperties.Select(p => "-getProperty:" + p));
 
     private static EvaluatedBrickProject Run(string projectPath, IReadOnlyList<string> extraArguments)
     {
+        var full = Path.GetFullPath(projectPath);
+        var (exitCode, stdout, stderr) = Invoke(full, [.. extraArguments, .. QueryArguments()]);
+        if (exitCode != 0)
+        {
+            throw new InvalidOperationException(Refusal(full,
+                $"MSBuild could not evaluate it (exit {exitCode}). {Trim(stdout + stderr)}"));
+        }
+
+        return Parse(full, stdout);
+    }
+
+    private static (int ExitCode, string StandardOutput, string StandardError) Invoke(
+        string projectPath, IReadOnlyList<string> extraArguments, TimeSpan? timeout = null)
+    {
+        var limit = timeout ?? EvaluationTimeout;
         var full = Path.GetFullPath(projectPath);
         if (!File.Exists(full))
         {
@@ -245,8 +379,6 @@ internal sealed class EvaluatedBrickProject
 
         var arguments = new List<string> { "msbuild", full, "-nologo" };
         arguments.AddRange(extraArguments);
-        arguments.AddRange(RequestedItems.Select(i => "-getItem:" + i));
-        arguments.AddRange(RequestedProperties.Select(p => "-getProperty:" + p));
 
         var psi = new ProcessStartInfo
         {
@@ -287,11 +419,11 @@ internal sealed class EvaluatedBrickProject
                 ?? throw new InvalidOperationException("Failed to start `dotnet msbuild`");
             var outTask = process.StandardOutput.ReadToEndAsync();
             var errTask = process.StandardError.ReadToEndAsync();
-            if (!process.WaitForExit((int)EvaluationTimeout.TotalMilliseconds))
+            if (!process.WaitForExit((int)limit.TotalMilliseconds))
             {
                 TryKill(process);
                 throw new InvalidOperationException(Refusal(full,
-                    $"evaluating it did not finish within {EvaluationTimeout.TotalMinutes:0} minutes"));
+                    $"MSBuild did not finish within {limit.TotalMinutes:0} minutes"));
             }
             stdout = outTask.GetAwaiter().GetResult();
             stderr = errTask.GetAwaiter().GetResult();
@@ -304,13 +436,7 @@ internal sealed class EvaluatedBrickProject
                 + "compiles, and without the SDK the gate cannot know it"), ex);
         }
 
-        if (exitCode != 0)
-        {
-            throw new InvalidOperationException(Refusal(full,
-                $"MSBuild could not evaluate it (exit {exitCode}). {Trim(stdout + stderr)}"));
-        }
-
-        return Parse(full, stdout);
+        return (exitCode, stdout, stderr);
     }
 
     private static void TryKill(Process process)
