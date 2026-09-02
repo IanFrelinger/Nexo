@@ -19,18 +19,56 @@ namespace Ashlar.Manifest;
 /// output. It deliberately does NOT filter by file NAME — see the note above
 /// <c>IgnoredDirectories</c> — because a name like <c>.g.cs</c> says nothing about whether the SDK
 /// compiles the file, and it does.</para>
+///
+/// <para><strong>This is an inventory, not a certified source set, and the two are answered
+/// differently on purpose.</strong> The certification gate asks MSBuild what a brick project
+/// compiles (<c>BrickCertificationProjectLoader</c> /
+/// <c>EvaluatedBrickProject</c>) and refuses anything it cannot resolve, because the answer there
+/// is signed. This class cannot do that and must not pretend to: it is handed an APPLICATION
+/// directory rather than a project file — zero or many <c>.csproj</c> under it, and a brick may be
+/// authored as loose files with none — and <c>ashlar verify</c> runs inside an exported bundle on
+/// machines with no .NET SDK, where there is no MSBuild to ask. So it uses the SDK's own DIRECTORY
+/// rule, anchored where the SDK anchors it (see <c>BuildOutputDirectories</c>), and nothing
+/// finer.</para>
+///
+/// <para>What that costs is bounded, and it is bounded in the safe direction. A file this walk
+/// includes but the compiler ignores makes a declared brick RESOLVE that a stricter answer might
+/// refuse, and makes an export carry a directory it need not have carried. A file it MISSED would
+/// be the dangerous direction — a brick whose real source is invisible here does not get staged by
+/// <c>ashlar export</c> and quietly does not travel — which is exactly what the old any-depth
+/// <c>obj</c>/<c>bin</c> rule caused, and why that rule was anchored.</para>
 /// </summary>
 public static class BrickSourceResolver
 {
     /// <summary>
-    /// Directories that never hold authored source. Build output and the project's own state
-    /// directory would otherwise let a stale <c>obj/</c> copy resolve a brick whose source was
-    /// deleted — a certification standing on a build artefact.
+    /// Directories that never hold authored source, wherever they sit. Tooling and VCS state, not
+    /// build output — see <see cref="BuildOutputDirectories"/> for the two that need a position,
+    /// not just a name.
     /// </summary>
     private static readonly string[] IgnoredDirectories =
     [
-        "bin", "obj", ".git", ".ashlar", ".vs", ".idea", "node_modules", "TestResults", "packages",
+        ".git", ".ashlar", ".vs", ".idea", "node_modules", "TestResults", "packages",
     ];
+
+    /// <summary>
+    /// The two directory names that mean "build output" — but only where the SDK means them.
+    /// </summary>
+    /// <remarks>
+    /// <para>This list used to sit in <see cref="IgnoredDirectories"/> and be matched at ANY depth.
+    /// The SDK does not do that. <c>$(BaseOutputPath)</c> and <c>$(BaseIntermediateOutputPath)</c>
+    /// are <c>bin/</c> and <c>obj/</c> DIRECTLY under the project that owns them, and those two
+    /// paths are the whole of the default compile glob's exclusion. Everything else it compiles,
+    /// <c>Sub/obj/Payload.cs</c> included. Matching the name at any depth is therefore a hole with a
+    /// pure-layout trigger: a directory called <c>obj</c> nested anywhere under the project made
+    /// real, compiled source invisible to this inventory with no csproj edit to notice, which is
+    /// the same bypass the certification loader carried (see
+    /// <c>BrickCertificationProjectLoader.FindBrickSourceFiles</c>).</para>
+    ///
+    /// <para>So the exclusion is anchored: <c>bin</c>/<c>obj</c> is skipped only when its PARENT is
+    /// a project root — a directory holding a <c>.csproj</c> — or the scan root itself. Anywhere
+    /// else the name means nothing and the files are walked.</para>
+    /// </remarks>
+    private static readonly string[] BuildOutputDirectories = ["bin", "obj"];
 
     // There is deliberately NO "generated file name" exclusion list here any more.
     //
@@ -68,6 +106,37 @@ public static class BrickSourceResolver
         return new ProjectSourceInventory(files, directories);
     }
 
+    /// <summary>
+    /// True when <paramref name="candidate"/> is a build-output directory in the position the SDK
+    /// puts one: <c>bin</c> or <c>obj</c> sitting directly inside a project root.
+    /// </summary>
+    private static bool IsProjectBuildOutput(DirectoryInfo parent, DirectoryInfo candidate, int depth)
+    {
+        if (!BuildOutputDirectories.Contains(candidate.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // depth 0 is the scan root: an application's own bin/ and obj/ live there whether or not a
+        // csproj sits beside them, and they are output either way.
+        if (depth == 0)
+        {
+            return true;
+        }
+
+        try
+        {
+            return parent.GetFiles("*.csproj").Length > 0;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Cannot tell whether this is a project root. Walk it: an extra file in the inventory
+            // is a brick that resolves, while a missed one is a brick whose source silently does
+            // not travel in an export.
+            return false;
+        }
+    }
+
     private static void Walk(DirectoryInfo dir, List<string> files, List<string> directories, int depth)
     {
         // A project tree is not unbounded, but a symlink loop is. Cap the walk rather than hang a
@@ -96,7 +165,8 @@ public static class BrickSourceResolver
 
         foreach (var sub in subdirectories)
         {
-            if (IgnoredDirectories.Contains(sub.Name, StringComparer.OrdinalIgnoreCase))
+            if (IgnoredDirectories.Contains(sub.Name, StringComparer.OrdinalIgnoreCase)
+                || IsProjectBuildOutput(dir, sub, depth))
             {
                 continue;
             }
@@ -157,7 +227,7 @@ public static class BrickSourceResolver
         var pascal = ToPascal(brickId);
         return $"a directory named '{brickId}' (or '{pascal}') with C# in it, "
              + $"or a file named {brickId}.cs / {pascal}.cs / {pascal}Brick.cs, "
-             + "anywhere under the project except bin/, obj/ and .ashlar/";
+             + "anywhere under the project except a project's own bin/ and obj/, and .ashlar/";
     }
 
     private static bool Matches(string name, string key)

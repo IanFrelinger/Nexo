@@ -124,7 +124,90 @@ public static class NativeBundle
                     || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
             });
         StageDeclaredBrickSources(projectDir, appDir, written, bundleDir);
+        StagePolicyDirectories(projectDir, appDir, written, bundleDir);
         return written;
+    }
+
+    /// <summary>
+    /// Creates, inside the staged app, the directories the POLICY declares: <c>sandbox.root</c> and
+    /// every writable path beneath it.
+    /// </summary>
+    /// <remarks>
+    /// <para>Without this, narrowing the sandbox — the ordinary hardening move — made
+    /// <c>ashlar export</c> an unfixable refusal. A policy naming <c>sandbox.root: ./workspace</c>
+    /// verifies at the source, because the directory is there; the staged copy carries
+    /// <c>ashlar.yaml</c>, <c>ashlar.policy.yaml</c>, <c>.ashlar/</c>, <c>src/</c> and declared-brick
+    /// carriers, and <c>workspace/</c> is none of those, so the envelope course failed on the copy
+    /// with "sandbox.root './workspace' does not exist" and <c>SelfVerificationRefusal</c> refused
+    /// the export. Forever: the refusal's own named fix — "create it, commit a .gitkeep, re-export"
+    /// — was run verbatim and returned the byte-identical refusal, because the missing directory
+    /// was never missing at the source. There was no override flag, and the same project exported
+    /// fine before the self-verification check existed.</para>
+    ///
+    /// <para>Staging it is not the export inventing policy. The policy IS the declaration of where
+    /// this application writes; carrying that declaration while dropping the thing it declares is
+    /// what made the bundle unable to prove itself. What travels is the directory, EMPTY — its
+    /// contents are the app's runtime state, not cargo, and copying them would ship whatever the
+    /// last run happened to leave there.</para>
+    ///
+    /// <para>A root outside the project is left alone, and deliberately: nothing outside the
+    /// project directory can travel in a bundle, so creating it here would fake a guarantee that
+    /// only the target machine can meet. The refusal names that case separately.</para>
+    /// </remarks>
+    private static void StagePolicyDirectories(string projectDir, string appDir, List<string> written, string bundleRoot)
+    {
+        string policyYaml;
+        try
+        {
+            policyYaml = File.ReadAllText(Path.Combine(projectDir, "ashlar.policy.yaml"));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return;   // The self-verification of the staged copy is what reports this, not staging.
+        }
+
+        if (!PolicyLoader.TryLoad(policyYaml, out var policy, out _))
+        {
+            return;   // An unloadable policy is the verifier's refusal to make, with its own wording.
+        }
+
+        var root = policy!.Sandbox.Root;
+        if (string.IsNullOrWhiteSpace(root) || Path.IsPathRooted(root))
+        {
+            return;
+        }
+
+        var wanted = new List<string> { root };
+        wanted.AddRange(policy.Sandbox.Writable.Where(w => !string.IsNullOrWhiteSpace(w) && !Path.IsPathRooted(w))
+            .Select(w => Path.Combine(root, w)));
+
+        foreach (var relative in wanted)
+        {
+            string full;
+            try
+            {
+                full = Path.GetFullPath(Path.Combine(appDir, relative));
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                continue;   // A path the export cannot resolve is one the verifier will refuse by name.
+            }
+
+            // Never create anything outside the staged app: a policy path that walks up is a
+            // problem for the verifier to name, not for the exporter to materialise on disk.
+            if (!IsSameOrUnder(full, appDir) || string.Equals(full, Path.GetFullPath(appDir), StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (Directory.Exists(full))
+            {
+                continue;
+            }
+
+            Directory.CreateDirectory(full);
+            written.Add(Path.GetRelativePath(bundleRoot, full));
+        }
     }
 
     /// <summary>
@@ -305,8 +388,9 @@ public static class NativeBundle
         lines.Add("fix, in the order to try them:");
         lines.Add("  - move that source under the project directory: everything under it travels except bin/,");
         lines.Add("    obj/, .git/, .ashlar/keys/ and .ashlar/forge/. a brick outside the project cannot ship.");
-        lines.Add("  - a directory the policy needs (sandbox.root, a writable path) must EXIST in the project,");
-        lines.Add("    or `verify` in the bundle refuses it. create it, commit a .gitkeep, and re-export.");
+        lines.Add("  - a directory the policy names (sandbox.root, a writable path) is created inside the bundle");
+        lines.Add("    for you when it is RELATIVE. an ABSOLUTE sandbox.root cannot travel in a bundle at all —");
+        lines.Add("    make it relative to the project, or provision it on the machine that runs the bundle.");
         lines.Add("  - or delete the entry from bricks: in ashlar.yaml, if the project no longer uses it.");
         lines.Add("then run `ashlar verify` at the source and export again.");
         lines.Add($"the incomplete bundle was left at {bundleDir} so you can see what did and did not arrive.");

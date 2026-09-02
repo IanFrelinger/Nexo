@@ -189,7 +189,10 @@ public sealed class LedgerCommand : Command
             errw.WriteLine();
             errw.WriteLine("a re-anchor does NOT recover anything. it re-verifies every entry that is still here and then");
             errw.WriteLine("declares that length to be the intended one, signed with your operator key. whatever is missing");
-            errw.WriteLine("stays missing, and the fact that it went missing stops being detectable.");
+            errw.WriteLine("stays missing.");
+            errw.WriteLine("if NOTHING is still here - the anchor is alive and every entry under it is gone - it starts the");
+            errw.WriteLine("history again and writes the destruction down as its first signed entry, so what was lost stays");
+            errw.WriteLine("on the record instead of the project reading as one that was never certified.");
             errw.WriteLine();
             errw.WriteLine("if the entries can be restored, restore them first - that is the repair that keeps the history:");
             errw.WriteLine("  restore .ashlar/ledger and .ashlar/ledger.head.json from backup, then:  ashlar ledger status");

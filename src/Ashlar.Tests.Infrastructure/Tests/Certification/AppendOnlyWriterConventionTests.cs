@@ -55,10 +55,30 @@ public sealed class AppendOnlyWriterConventionTests
         "src/Ashlar.Tools.Dev/RepoGitCommitTool.cs",
     };
 
+    /// <summary>
+    /// The repo root, anchored on THIS ASSEMBLY rather than on the process working directory.
+    /// </summary>
+    /// <remarks>
+    /// <para><c>RepoPathResolver.FindRepoRoot()</c> with no argument walks up from
+    /// <c>Directory.GetCurrentDirectory()</c>, and the working directory is process-global while
+    /// this assembly runs collections in parallel. Several test classes flip the cwd to a temp
+    /// directory (see <c>Helpers/ProcessCwdCollection</c>, which serialises the ones that were
+    /// noticed — <c>AgentExecutorAdapterTests</c>, reached through the unit-test bridge, is not in
+    /// it). When one of them holds the cwd, the walk finds no <c>Ashlar.sln</c> and falls back to
+    /// that temp directory: the scan below then finds ZERO appenders, every allowlist row reads as
+    /// stale, and this test fails with an inventory that has not changed. Observed exactly once in
+    /// a full-suite run and never in isolation, which is the signature.</para>
+    ///
+    /// <para><see cref="AppContext.BaseDirectory"/> is where this test assembly was loaded from —
+    /// inside the repo, and immovable for the process's lifetime. A test that calls itself
+    /// hermetic must not depend on a global another test is allowed to change.</para>
+    /// </remarks>
+    private static string RepoRoot() => RepoPathResolver.FindRepoRoot(AppContext.BaseDirectory);
+
     [Fact]
     public void No_unlisted_file_appends_without_bound()
     {
-        var root = RepoPathResolver.FindRepoRoot();
+        var root = RepoRoot();
 
         var unlisted = Appenders(root)
             .Where(path => !Allowed.Contains(path))
@@ -79,8 +99,12 @@ public sealed class AppendOnlyWriterConventionTests
     [Fact]
     public void No_allowlisted_file_has_stopped_appending()
     {
-        var root = RepoPathResolver.FindRepoRoot();
+        var root = RepoRoot();
         var actual = Appenders(root).ToHashSet(StringComparer.Ordinal);
+
+        actual.Should().NotBeEmpty(
+            "the scan found no appenders at all, which means it did not find the repo — a stale-row "
+            + "verdict computed against the wrong root says nothing about the inventory");
 
         var stale = Allowed.Where(a => !actual.Contains(a)).OrderBy(a => a, StringComparer.Ordinal).ToList();
 

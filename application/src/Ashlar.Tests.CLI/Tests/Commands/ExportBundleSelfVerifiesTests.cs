@@ -175,26 +175,73 @@ public sealed class ExportBundleSelfVerifiesTests : IDisposable
     }
 
     [Fact]
-    public void A_bundle_that_would_fail_its_own_launcher_is_refused_by_name()
+    public void A_narrowed_sandbox_root_travels_so_the_export_is_not_an_unfixable_refusal()
     {
-        // A sandbox root that exists in the project as an EMPTY directory: the source verifies
-        // (the directory is there), the bundle does not (an empty directory has no files to copy,
-        // so it never arrives), and the launcher's `verify --path app` therefore exits 65 on the
-        // user's machine. Exactly the shape the brick defect had, through a different door.
-        Scaffold(sandboxRoot: "./work");
-        Directory.CreateDirectory(Path.Combine(_project, "work"));
+        // W3. Narrowing sandbox.root is the ordinary hardening move, and it made `ashlar export`
+        // impossible to satisfy. StageApp carried ashlar.yaml, ashlar.policy.yaml, .ashlar/, src/
+        // and declared-brick carriers; ./workspace is none of those, so the envelope course failed
+        // on the COPY with "sandbox.root './workspace' does not exist" and the export refused —
+        // forever. The refusal's own named fix ("create it, commit a .gitkeep, re-export") was run
+        // verbatim and produced the byte-identical refusal, because the directory was never missing
+        // at the source. There was no override flag, and the same project exported fine before the
+        // self-verification check existed.
+        //
+        // The policy IS the declaration of where this application writes. Carrying the declaration
+        // while dropping the thing it declares is what made the bundle unable to prove itself.
+        Scaffold(sandboxRoot: "./workspace");
+        Directory.CreateDirectory(Path.Combine(_project, "workspace"));
 
         VerifyProject().Verified.Should().BeTrue("the source project has the directory the policy names");
 
         var bundleDir = StageBundle();
+
+        Directory.Exists(Path.Combine(bundleDir, "app", "workspace"))
+            .Should().BeTrue("the directory the policy names has to exist in the copy the launcher verifies");
+        NativeBundle.SelfVerificationRefusal(_project, bundleDir).Should().BeNull(
+            "a project that verifies at the source and hardens its sandbox must still be exportable");
+    }
+
+    [Fact]
+    public void A_writable_path_under_a_narrowed_root_travels_too()
+    {
+        // The same fact for the rest of the envelope: writable paths are resolved beneath the root,
+        // and a bundle missing them is a bundle whose app cannot write where its policy says it may.
+        Scaffold(sandboxRoot: "./workspace");
+        Directory.CreateDirectory(Path.Combine(_project, "workspace"));
+        var policyPath = Path.Combine(_project, "ashlar.policy.yaml");
+        var policy = File.ReadAllText(policyPath).Replace(
+            "  writable: []", "  writable:\n    - ./out", StringComparison.Ordinal);
+        policy.Should().Contain("- ./out", "the test has to actually change the policy it is about");
+        File.WriteAllText(policyPath, policy);
+
+        var app = Path.Combine(StageBundle(), "app");
+
+        Directory.Exists(Path.Combine(app, "workspace", "out")).Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_refusal_no_longer_teaches_a_step_that_cannot_work()
+    {
+        // The old fix text told the operator to create the directory and re-export, which was the
+        // exact thing that could not help — the directory already existed at the source. A refusal
+        // naming an unrunnable fix is the defect this whole pass is about.
+        Scaffold(brickId: "invoice-classifier");
+        var brickDir = Path.Combine(_project, "bricks", "invoice-classifier");
+        Directory.CreateDirectory(brickDir);
+        File.WriteAllText(Path.Combine(brickDir, "InvoiceClassifier.cs"), "namespace Demo; public sealed class InvoiceClassifier { }\n");
+        var bundleDir = StageBundle();
+        Directory.Delete(Path.Combine(bundleDir, "app", "bricks"), recursive: true);
+
         var refusal = NativeBundle.SelfVerificationRefusal(_project, bundleDir);
 
-        refusal.Should().NotBeNull("reporting a successful export here ships an application that cannot start");
+        refusal.Should().NotBeNull();
         refusal!.Should().Contain("DOES NOT VERIFY ITSELF");
-        refusal.Should().Contain("course 'envelope' failed", "the refusal names which course the copy fails");
-        refusal.Should().Contain("verify --path app", "and why that matters: it is what the launcher runs first");
-        refusal.Should().Contain("must EXIST in the project", "the refusal names the fix, not only the fault");
+        refusal.Should().Contain("verify --path app", "why it matters: it is what the launcher runs first");
         refusal.Should().Contain(bundleDir, "and where to look at what did and did not arrive");
+        refusal.Should().NotContain("commit a .gitkeep",
+            "that step was run verbatim and produced the identical refusal");
+        refusal.Should().Contain("is created inside the bundle",
+            "the fix list has to say what the export now does on the operator's behalf");
     }
 
     [Fact]

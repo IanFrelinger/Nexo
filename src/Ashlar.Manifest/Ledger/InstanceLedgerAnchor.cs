@@ -111,14 +111,24 @@ public sealed partial class InstanceLedger
     /// the person reading it, which is the same defect as naming no fix at all. The CLI half is
     /// <c>ashlar ledger reanchor</c>; the identifier stays beside it for anyone driving the kernel
     /// directly.
+    ///
+    /// <para>It has to describe what the command does in BOTH states it is attached to, which is
+    /// the second way this sentence has been wrong. It said "re-verifies every surviving entry and
+    /// then re-pins the anchor over them" — true of a truncated chain, meaningless when the entries
+    /// are gone, and for a while the command matched the sentence and simply refused that case. So
+    /// a refusal named a fix that could not run, and the only thing that DID clear it was deleting
+    /// the anchor: the act this refusal exists to detect. Both halves are named now because both
+    /// halves work.</para>
     /// </remarks>
     private const string RestoreOnlyFix =
         "Fix: restore .ashlar/ledger (and ledger.head.json) from backup — the only repair that keeps "
         + "the history. Accepting the loss instead is a deliberate, signed act and NOT a side effect "
         + "of verifying: run `ashlar ledger reanchor --path <project> --yes` (the kernel verb behind "
-        + "it is InstanceLedger.ReanchorAsync), which re-verifies every surviving entry and then "
-        + "re-pins the anchor over them; `ashlar ledger status` prints this same message first, so "
-        + "you can see what you would be accepting. A signed `ashlar verify` "
+        + "it is InstanceLedger.ReanchorAsync). Where entries survive it re-verifies them and re-pins "
+        + "the anchor over them; where the entries are gone entirely it starts the history again with "
+        + "the destruction recorded as its first signed entry, so the loss stays visible instead of "
+        + "looking like a project that was never certified. `ashlar ledger status` prints this same "
+        + "message first, so you can see what you would be accepting. A signed `ashlar verify` "
         + "will not do it, and that is on purpose — burying a shortened history under a fresh entry "
         + "is exactly what this refusal exists to prevent. Do not delete .ashlar/ledger to make this "
         + "message go away; that is the act being detected.";

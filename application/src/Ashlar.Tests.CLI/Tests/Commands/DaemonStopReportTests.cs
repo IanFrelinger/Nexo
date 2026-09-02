@@ -37,6 +37,68 @@ public sealed class DaemonStopReportTests
         return log;
     }
 
+    // ── the inverse defect: an honest stop reported as a failure ───────────────────────────
+    //
+    // The fix above ("the host stopped itself ⇒ faulted") over-reached. ConsoleLifetime answers
+    // SIGTERM and Ctrl+C by calling StopApplication, so ApplicationStopping fires on an ordinary
+    // `docker stop` exactly as it does on a crash. Measured: unbounded + SIGTERM exited 0 with
+    // reason "shutdown", while --duration + SIGTERM exited 1 with ok:false / status:faulted /
+    // reason:host_stopped_early and wrote "faulted" into the heartbeat the HEALTHCHECK reads.
+    // The guard meant to tell them apart was dead code: the handler passed no cancellation token.
+
+    [Fact]
+    public void An_operator_stop_of_a_bounded_run_is_a_clean_stop_not_a_fault()
+    {
+        BackgroundAgentDaemonCommand.ClassifyBoundedStop(
+            operatorStopped: true, hostStopping: true, faulted: false)
+            .Should().Be(BackgroundAgentDaemonCommand.BoundedStopVerdict.CleanStop,
+                "a `docker stop` of a --duration run is the same event as a `docker stop` of an unbounded one, "
+                + "and the unbounded one has always exited 0 with reason 'shutdown'");
+    }
+
+    [Fact]
+    public void A_host_that_stopped_with_nothing_logged_is_a_clean_stop()
+    {
+        // The token was not observed at all before the fix, so this is the shape that actually
+        // occurred in production: ApplicationStopping fired, nothing failed, and the daemon
+        // called it a fault anyway.
+        BackgroundAgentDaemonCommand.ClassifyBoundedStop(
+            operatorStopped: false, hostStopping: true, faulted: false)
+            .Should().Be(BackgroundAgentDaemonCommand.BoundedStopVerdict.CleanStop,
+                "a fault is a fault because something FAILED, not because the host stopped");
+    }
+
+    [Fact]
+    public void A_host_that_stopped_after_a_service_logged_a_failure_is_still_a_fault()
+    {
+        // The original defect must stay closed: this is the crashed-at-startup case that used to
+        // report ok:true / duration_elapsed.
+        BackgroundAgentDaemonCommand.ClassifyBoundedStop(
+            operatorStopped: false, hostStopping: true, faulted: true)
+            .Should().Be(BackgroundAgentDaemonCommand.BoundedStopVerdict.Faulted);
+    }
+
+    [Fact]
+    public void A_window_that_simply_elapsed_is_neither()
+    {
+        BackgroundAgentDaemonCommand.ClassifyBoundedStop(
+            operatorStopped: false, hostStopping: false, faulted: false)
+            .Should().Be(BackgroundAgentDaemonCommand.BoundedStopVerdict.WindowElapsed);
+    }
+
+    [Fact]
+    public void A_clean_stop_reports_ok_true_and_the_same_reason_an_unbounded_run_reports()
+    {
+        var json = Parse(BackgroundAgentDaemonCommand.StoppedJson(
+            "shutdown", cycles: 3, window: TimeSpan.FromMinutes(5)));
+
+        json.GetProperty("ok").GetBoolean().Should().BeTrue();
+        json.GetProperty("status").GetString().Should().Be("stopped");
+        json.GetProperty("reason").GetString().Should().Be("shutdown",
+            "the heartbeat and the HEALTHCHECK read this; 'faulted' on an honest stop is a false alarm "
+            + "an operator has to chase");
+    }
+
     [Fact]
     public void A_host_that_faulted_is_not_ok_and_names_the_service_and_the_reason()
     {

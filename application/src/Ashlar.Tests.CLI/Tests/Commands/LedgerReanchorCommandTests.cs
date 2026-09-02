@@ -159,6 +159,90 @@ public sealed class LedgerReanchorCommandTests : IDisposable
         chain.Count.Should().Be(2);
     }
 
+    /// <summary>Deletes every entry, leaving the anchor alive — "the history was deleted".</summary>
+    private void DeleteAllEntries()
+    {
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(_stateRoot, "ledger"), "*.json"))
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public async Task The_entries_gone_refusal_names_a_command_that_can_actually_run()
+    {
+        // The defect this pass removes, reintroduced one state over. RestoreOnlyFix is attached to
+        // TWO states; for this one the named command refused an empty ledger before doing anything,
+        // so status refused 65, the fix it named refused 65, verify refused 65, and the only escape
+        // was deleting ledger.head.json — the act the refusal exists to detect.
+        await AppendAsync(3);
+        DeleteAllEntries();
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+
+        LedgerCommand.Status(Project, stdout, stderr).Should().Be(65);
+        stderr.ToString().Should().Contain("ashlar ledger reanchor");
+
+        var exit = await LedgerCommand.ReanchorAsync(Project, _keyDir, yes: true, CancellationToken.None, stdout, stderr);
+
+        exit.Should().Be(0, "a refusal whose only working fix is the act it warns against is a dead end, not a gate");
+        LedgerCommand.Status(Project, new StringWriter(), new StringWriter()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Accepting_a_destroyed_history_records_it_rather_than_erasing_it()
+    {
+        // The reason deleting ledger.head.json was never an acceptable fix: it leaves a project
+        // that reads as one which was simply never certified. Accepting the loss has to leave
+        // evidence that there was something to lose.
+        await AppendAsync(3);
+        var destroyedHead = Ledger().VerifyChain().Head!;
+        DeleteAllEntries();
+
+        await LedgerCommand.ReanchorAsync(
+            Project, _keyDir, yes: true, CancellationToken.None, new StringWriter(), new StringWriter());
+
+        var chain = Ledger().VerifyChain();
+        chain.Count.Should().Be(1);
+        chain.Head!.Verified.Should().BeFalse("nothing was verified — a loss was accepted");
+        chain.Head.Courses.Should().ContainSingle(c => c.Name == "ledger-anchor" && !c.Passed)
+            .Which.Detail.Should().Contain("the whole history had been deleted")
+            .And.Contain(destroyedHead.Seq.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                "the record has to say how much history there was");
+        chain.Head.Signer.Should().Be(_signer.PublicKeyBase64, "accepting the loss is a SIGNED act");
+    }
+
+    [Fact]
+    public async Task An_ordinary_verify_still_cannot_bury_a_destroyed_history()
+    {
+        // Making the recovery verb work must not make the loss clearable as a side effect of
+        // verifying — that is the whole reason it is a separate verb.
+        await AppendAsync(3);
+        DeleteAllEntries();
+
+        var append = async () => await Ledger().AppendVerificationAsync(
+            _signer, "subject-new", verified: true, [], Now.AddHours(1));
+
+        (await append.Should().ThrowAsync<InvalidOperationException>())
+            .WithMessage("*Refusing to start a fresh history on top of one that was destroyed*");
+    }
+
+    [Fact]
+    public async Task Reanchor_on_a_project_with_neither_entries_nor_anchor_is_still_refused()
+    {
+        // "Never certified" is not a loss to accept, and there is nothing for an anchor to pin.
+        await AppendAsync(1);
+        DeleteAllEntries();
+        File.Delete(Path.Combine(_stateRoot, "ledger.head.json"));
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+
+        var exit = await LedgerCommand.ReanchorAsync(Project, _keyDir, yes: true, CancellationToken.None, stdout, stderr);
+
+        exit.Should().Be(1);
+        stderr.ToString().Should().Contain("nothing to re-anchor");
+    }
+
     [Fact]
     public async Task Reanchor_refuses_a_forged_entry_even_with_yes()
     {

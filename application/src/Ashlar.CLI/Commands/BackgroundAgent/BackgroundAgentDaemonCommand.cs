@@ -289,12 +289,18 @@ public sealed class BackgroundAgentDaemonCommand
                     }
                     catch (OperationCanceledException)
                     {
-                        // An operator's Ctrl+C is a clean stop and is handled by the caller; only a
-                        // stop the HOST initiated falls through to the report below.
-                        cancellationToken.ThrowIfCancellationRequested();
+                        // Every reason for waking early falls through to the report below, including
+                        // an operator's stop. It used to rethrow, which skipped host.StopAsync
+                        // entirely and reported the run without a cycle count.
                     }
                 }
                 ran.Stop();
+
+                // The operator asked for this stop: SIGTERM or Ctrl+C reaching the token this
+                // command was given. Read before StopAsync, which does not change it, and kept
+                // separate from ApplicationStopping because the two fire in an unspecified order
+                // on the same signal.
+                var operatorStopped = cancellationToken.IsCancellationRequested;
 
                 var stoppedItself = lifetime.ApplicationStopping.IsCancellationRequested;
                 var cycles = CountCycles(host.Services);
@@ -302,13 +308,39 @@ public sealed class BackgroundAgentDaemonCommand
                 // skipped just because the reason for stopping was a fault.
                 await host.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
-                if (stoppedItself)
+                // "The host stopped itself" is not the same fact as "something went wrong", and
+                // treating them as one turned every operator stop of a bounded run into a fault.
+                // ConsoleLifetime handles SIGTERM and Ctrl+C by calling StopApplication, so
+                // ApplicationStopping fires on an ordinary `docker stop` exactly as it does on a
+                // crash. The measured result: unbounded + SIGTERM exited 0 with reason "shutdown",
+                // while `--duration 5m` + SIGTERM exited 1 with ok:false / status:faulted /
+                // reason:host_stopped_early, and wrote "faulted" into the heartbeat the HEALTHCHECK
+                // reads — an honest stop reported as a failure, which is this pass's own theme
+                // inverted. The guard that was supposed to tell them apart
+                // (cancellationToken.ThrowIfCancellationRequested in the catch above) was DEAD:
+                // the handler called RunAsync with no token at all, so it was always
+                // CancellationToken.None.
+                //
+                // What actually distinguishes them is whether anything FAILED. DaemonFaultLog
+                // captures the first error logged with an exception attached, which is how
+                // BackgroundServiceExceptionBehavior.StopHost announces a faulted hosted service —
+                // the case this whole branch was written for. No fault logged and no operator
+                // cancellation still leaves one honest reading: the host was asked to stop.
+                switch (ClassifyBoundedStop(operatorStopped, stoppedItself, faultLog.HasFault))
                 {
-                    return WriteHostStoppedItself(formatJson, faultLog, ran.Elapsed, runDuration.Value, cycles);
+                    case BoundedStopVerdict.Faulted:
+                        return WriteHostStoppedItself(formatJson, faultLog, ran.Elapsed, runDuration.Value, cycles);
+                    case BoundedStopVerdict.CleanStop:
+                        // The same reason string an UNBOUNDED run already writes for the same
+                        // signal. A bounded run and an unbounded run stopped the same way must not
+                        // disagree about what happened, and they did: 0/"shutdown" against
+                        // 1/"faulted".
+                        WriteStopped(formatJson, reason: "shutdown", cycles, runDuration.Value);
+                        return 0;
+                    default:
+                        WriteStopped(formatJson, reason: "duration_elapsed", cycles, runDuration.Value);
+                        return 0;
                 }
-
-                WriteStopped(formatJson, reason: "duration_elapsed", cycles, runDuration.Value);
-                return 0;
             }
 
             await host.WaitForShutdownAsync(cancellationToken).ConfigureAwait(false);
@@ -330,6 +362,47 @@ public sealed class BackgroundAgentDaemonCommand
             return 0;
         }
     }
+
+    /// <summary>What a bounded run that ended before its window did actually was.</summary>
+    internal enum BoundedStopVerdict
+    {
+        /// <summary>The window closed on its own.</summary>
+        WindowElapsed,
+
+        /// <summary>Someone stopped it, and nothing failed. Exit 0, status "stopped".</summary>
+        CleanStop,
+
+        /// <summary>The host tore itself down after something logged a failure. Exit 1.</summary>
+        Faulted,
+    }
+
+    /// <summary>
+    /// The whole judgement of a bounded run, as a function of three booleans — so the rule can be
+    /// tested without standing up a host, which is why it got this wrong for as long as it did.
+    /// </summary>
+    /// <remarks>
+    /// <para>The rule that was here read "ApplicationStopping fired ⇒ faulted". It is not:
+    /// <c>ConsoleLifetime</c> answers SIGTERM and Ctrl+C by calling <c>StopApplication</c>, so an
+    /// ordinary <c>docker stop</c> raises exactly the same signal a crashing hosted service does.
+    /// Measured: an unbounded run + SIGTERM exited 0 with reason "shutdown"; the same daemon with
+    /// <c>--duration</c> + SIGTERM exited 1 with <c>ok:false / status:faulted /
+    /// reason:host_stopped_early</c>, and wrote "faulted" into the heartbeat the container
+    /// HEALTHCHECK reads. Two runs, one signal, opposite verdicts — and the wrong one was the one
+    /// an operator sees, because the bounded run is the one they watch.</para>
+    ///
+    /// <para>A fault is a fault because something FAILED, not because the host stopped.
+    /// <paramref name="faulted"/> is <c>DaemonFaultLog.HasFault</c>: the first error logged with an
+    /// exception attached, which is precisely how
+    /// <c>BackgroundServiceExceptionBehavior.StopHost</c> announces the case this branch was
+    /// written for. Absent that, a host that stopped was a host that was asked to stop.</para>
+    /// </remarks>
+    /// <param name="operatorStopped">The cancellation token this command was given was cancelled.</param>
+    /// <param name="hostStopping">The host's <c>ApplicationStopping</c> had fired.</param>
+    /// <param name="faulted">Something logged an error with an exception before the host stopped.</param>
+    internal static BoundedStopVerdict ClassifyBoundedStop(bool operatorStopped, bool hostStopping, bool faulted) =>
+        hostStopping && faulted ? BoundedStopVerdict.Faulted
+        : operatorStopped || hostStopping ? BoundedStopVerdict.CleanStop
+        : BoundedStopVerdict.WindowElapsed;
 
     /// <summary>
     /// Total cycles the registered agents have executed, or null when the registry cannot be read.

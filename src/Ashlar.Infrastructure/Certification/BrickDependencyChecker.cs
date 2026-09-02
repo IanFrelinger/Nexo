@@ -1,8 +1,20 @@
-using System.Xml.Linq;
-
 namespace Ashlar.Infrastructure.Certification;
 
-/// <summary>Validates brick project dependencies against the certification allow-list.</summary>
+/// <summary>
+/// Validates brick project dependencies against the certification allow-list, against the
+/// references MSBuild actually gives the project rather than the ones its <c>.csproj</c> spells
+/// out.
+/// </summary>
+/// <remarks>
+/// This class used to <c>XDocument.Load</c> the <c>.csproj</c> and walk its descendants. That reads
+/// ONE file out of the chain MSBuild evaluates, and a <c>Directory.Build.props</c> sitting beside
+/// the project is part of that chain: a <c>ProjectReference</c> and a <c>Newtonsoft.Json</c>
+/// <c>PackageReference</c> declared there were ADMITTED and signed, with both DLLs sitting in the
+/// built output, while the identical items written into the csproj were correctly refused. Where an
+/// item was declared is not a fact about the brick; what the brick depends on is. So the question
+/// is put to MSBuild — see <see cref="EvaluatedBrickProject"/> — and answered for the whole import
+/// chain at once.
+/// </remarks>
 internal static class BrickDependencyChecker
 {
     private static readonly HashSet<string> AllowedPackages = new(StringComparer.OrdinalIgnoreCase)
@@ -59,19 +71,69 @@ internal static class BrickDependencyChecker
             return new DependencyCheckResult(false, violations);
         }
 
-        var projectDir = Path.GetDirectoryName(projectPath) ?? ".";
-        var doc = XDocument.Load(projectPath);
-        var ns = doc.Root?.Name.Namespace ?? XNamespace.None;
-
-        foreach (var projectRef in doc.Descendants(ns + "ProjectReference"))
+        EvaluatedBrickProject project;
+        List<EvaluatedItem> declaredAnalyzers;
+        List<EvaluatedItem> declaredReferences;
+        try
         {
-            violations.Add($"ProjectReference forbidden: {projectRef.Attribute("Include")?.Value}");
+            project = EvaluatedBrickProject.Evaluate(projectPath);
+            // Inside the same guard as the evaluation: telling an author-declared item from an
+            // SDK-declared one needs the SDK root, and a project where that cannot be established
+            // is a project whose references the gate cannot judge. That is a refusal to report as a
+            // violation, not an exception to escape a method whose contract is a result.
+            declaredAnalyzers = project.Analyzers.Where(a => !project.IsSdkDeclared(a)).ToList();
+            declaredReferences = project.References.Where(r => !project.IsSdkDeclared(r)).ToList();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
+        {
+            // A project whose references cannot be established is not a project with no references.
+            // Fail closed: the refusal carries MSBuild's own reason.
+            violations.Add(ex.Message);
+            return new DependencyCheckResult(false, violations);
         }
 
-        foreach (var packageRef in doc.Descendants(ns + "PackageReference"))
+        foreach (var projectRef in project.ProjectReferences)
         {
-            var include = packageRef.Attribute("Include")?.Value;
-            if (include is null)
+            violations.Add(
+                $"ProjectReference forbidden: {projectRef.Identity}"
+                + DeclaredIn(projectPath, projectRef));
+        }
+
+        // An <Analyzer> is an assembly Roslyn loads INTO the compilation, and a source generator is
+        // an analyzer: it writes code straight into the assembly without ever appearing as a
+        // Compile item, so no amount of care about the compile set can see it. The allow-list is
+        // about what a brick may contain, and generated code is contained in the brick. The SDK's
+        // own analyzers are implicit in every project and are not the candidate's doing.
+        foreach (var analyzer in declaredAnalyzers)
+        {
+            violations.Add(
+                $"Analyzer forbidden: {analyzer.Identity} — an analyzer assembly may be a SOURCE GENERATOR, whose "
+                + "output is compiled into the brick without ever being a source file the content hash, the "
+                + "analyzer fence or the mutation leg can see. Fix: remove the <Analyzer> item; reference "
+                + $"{string.Join(" / ", BuildTimeOnlyPackages)} as a build-time-only PackageReference if you want "
+                + "the Ashlar analyzers to run."
+                + DeclaredIn(projectPath, analyzer));
+        }
+
+        // A raw <Reference Include="X"><HintPath>…</HintPath></Reference> is a dependency that
+        // never passes through the PackageReference allow-list at all: the DLL is copied to the
+        // brick's output, the brick binds to its types and certifies, and the packed brick declares
+        // no such dependency. The XML scan looked only at PackageReference and ProjectReference, so
+        // this walked straight past the two-package rule.
+        foreach (var reference in declaredReferences)
+        {
+            violations.Add(
+                $"Reference forbidden: {reference.Identity} — a raw assembly reference bypasses the package "
+                + "allow-list entirely while still putting its DLL in the brick's output. Fix: express the "
+                + "dependency as a PackageReference (only Ashlar.Brick.Contracts + Ashlar.Authoring are allowed), "
+                + "or drop it."
+                + DeclaredIn(projectPath, reference));
+        }
+
+        foreach (var packageRef in project.PackageReferences)
+        {
+            var include = packageRef.Identity;
+            if (string.IsNullOrWhiteSpace(include))
                 continue;
             if (AllowedPackages.Contains(include))
                 continue;
@@ -93,12 +155,14 @@ internal static class BrickDependencyChecker
                     + $"consumers, so '{include}' still contributes its compile and runtime assets to this project. "
                     + "The DLL lands in the brick's output, the brick can bind to its types and still certify, and "
                     + "the packed brick declares no such dependency — a FileNotFoundException in someone else's "
-                    + "process. A certified brick has at most two runtime dependencies.");
+                    + "process. A certified brick has at most two runtime dependencies."
+                    + DeclaredIn(projectPath, packageRef));
                 continue;
             }
 
             violations.Add($"PackageReference '{include}' is not allowed (only Ashlar.Brick.Contracts + Ashlar.Authoring, "
-                + $"plus {string.Join(" / ", BuildTimeOnlyPackages)} referenced build-time-only with ExcludeAssets=\"runtime;compile\")");
+                + $"plus {string.Join(" / ", BuildTimeOnlyPackages)} referenced build-time-only with ExcludeAssets=\"runtime;compile\")"
+                + DeclaredIn(projectPath, packageRef));
         }
 
         foreach (var token in ForbiddenSourceTokens)
@@ -132,22 +196,34 @@ internal static class BrickDependencyChecker
     /// <c>analyzers</c> asset group is untouched) and keeps the assembly out of the output and off
     /// the compile-time reference set. That is the shape the refusal names and the docs teach.</para>
     /// </remarks>
-    private static bool IsBuildTimeOnly(XElement packageRef)
+    private static bool IsBuildTimeOnly(EvaluatedItem packageRef)
     {
-        var excludeAssets = MetadataValue(packageRef, "ExcludeAssets");
+        // MSBuild unifies the attribute and element forms into one metadata value, so the two-shape
+        // lookup this used to need is gone with the XML.
+        var excludeAssets = packageRef.Meta("ExcludeAssets");
         if (HasToken(excludeAssets, "all"))
             return true;
 
         return HasToken(excludeAssets, "runtime") && HasToken(excludeAssets, "compile");
     }
 
-    private static string? MetadataValue(XElement packageRef, string name)
+    /// <summary>
+    /// " (declared in Directory.Build.props)", when the item came from somewhere other than the
+    /// project file itself. Without it the author reads a refusal naming a reference their csproj
+    /// does not contain, and has nowhere to look.
+    /// </summary>
+    private static string DeclaredIn(string projectPath, EvaluatedItem item)
     {
-        var attribute = packageRef.Attribute(name)?.Value;
-        if (!string.IsNullOrWhiteSpace(attribute))
-            return attribute;
-        var ns = packageRef.Name.Namespace;
-        return packageRef.Element(ns + name)?.Value;
+        var origin = item.Meta("DefiningProjectFullPath");
+        if (string.IsNullOrWhiteSpace(origin))
+            return string.Empty;
+
+        var comparison = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return string.Equals(Path.GetFullPath(origin), Path.GetFullPath(projectPath), comparison)
+            ? string.Empty
+            : $" (declared in {Path.GetFileName(origin)}, which MSBuild imports into this project)";
     }
 
     private static bool HasToken(string? value, string token) =>

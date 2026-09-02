@@ -122,10 +122,17 @@ instead is a separate, signed decision:
 ashlar ledger reanchor --yes  # re-verifies every surviving entry, then re-pins the anchor over them
 ```
 
+When **nothing** survived — the anchor is alive and every entry under it is gone — the same command
+starts the history again and writes the destruction down as its first signed entry: the destroyed
+anchor's sequence and hash, recorded as a failed `ledger-anchor` course. An anchor cannot honestly
+pin an empty directory, so the loss is put on the record instead. Do **not** delete
+`ledger.head.json` to clear this state: that is the one act that makes the destruction invisible,
+and it is exactly what the refusal is detecting.
+
 Without `--yes` it prints exactly what would be accepted and changes nothing. It recovers nothing —
-whatever is missing stays missing, and stops being detectable — which is why it is its own verb and
-not a side effect of verifying. It still refuses a chain whose entries do not verify: it accepts a
-shorter history, never a forged one.
+whatever is missing stays missing — which is why it is its own verb and not a side effect of
+verifying. It still refuses a chain whose entries do not verify: it accepts a shorter history, never
+a forged one.
 
 ## `ashlar run` — you cannot run what does not verify
 
