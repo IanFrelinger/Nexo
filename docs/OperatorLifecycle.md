@@ -125,14 +125,42 @@ ashlar ledger reanchor --yes  # re-verifies every surviving entry, then re-pins 
 When **nothing** survived — the anchor is alive and every entry under it is gone — the same command
 starts the history again and writes the destruction down as its first signed entry: the destroyed
 anchor's sequence and hash, recorded as a failed `ledger-anchor` course. An anchor cannot honestly
-pin an empty directory, so the loss is put on the record instead. Do **not** delete
-`ledger.head.json` to clear this state: that is the one act that makes the destruction invisible,
-and it is exactly what the refusal is detecting.
+pin an empty directory, so the loss is put on the record instead. It reports that outcome as what it
+is, and does not count that first entry as a survivor:
+
+```
+OK loss accepted  NOTHING survived - signed ed25519:…
+every entry under the anchor was gone, so there was nothing to re-verify and nothing to re-pin.
+the history has been started again, and the destruction is written down as its first signed
+entry - that entry is now the only surviving evidence this project ever had a history.
+this is not a recovery. nothing was recovered.
+```
+
+If that anchor's own signature does not verify, the recorded sequence and hash are written down as
+the anchor's **claim** rather than as fact — they are what was found on disk, not a length anything
+attested. The state is still accepted, because refusing it would strand every message that names this
+command as its fix.
+
+Do **not** delete `ledger.head.json` to clear this state: that is the one act that makes the
+destruction invisible, and it is exactly what the refusal is detecting.
 
 Without `--yes` it prints exactly what would be accepted and changes nothing. It recovers nothing —
 whatever is missing stays missing — which is why it is its own verb and not a side effect of
 verifying. It still refuses a chain whose entries do not verify: it accepts a shorter history, never
 a forged one.
+
+A re-anchor is a **signed** act, so it needs the operator key. If there is none it refuses, naming
+the directory it searched and a `keys init` that puts a key exactly there — note the `--key-dir`,
+which matters whenever you passed one, because a bare `ashlar keys init` writes to
+`$ASHLAR_KEY_DIR`/`~/.ashlar/keys` instead:
+
+```bash
+ashlar keys init --key-dir "<the directory the refusal named>"
+ashlar ledger reanchor --key-dir "<same directory>" --path <project> --yes
+```
+
+After either outcome the ledger verifies again, and the documents are re-certified over the new
+history with `ashlar verify`.
 
 ## `ashlar run` — you cannot run what does not verify
 

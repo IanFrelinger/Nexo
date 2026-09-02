@@ -288,4 +288,95 @@ public sealed class LedgerReanchorCommandTests : IDisposable
         stderr.ToString().Should().Contain("ashlar keys init",
             "a signed act with no key is refused, and the refusal names how to get one");
     }
+
+    [Fact]
+    public async Task The_no_key_refusal_names_the_directory_it_actually_searched()
+    {
+        // It named OperatorKey.ResolveKeyDir() — the env/default directory — whatever --key-dir
+        // said. So an operator who passed --key-dir was told to look somewhere the command had not
+        // looked, which is a refusal describing a search that never happened.
+        await AppendAsync(3);
+        TruncateNewestEntry();
+        var empty = Path.Combine(_root, "no-keys-named");
+        Directory.CreateDirectory(empty);
+        var stderr = new StringWriter();
+
+        await LedgerCommand.ReanchorAsync(Project, empty, yes: true, CancellationToken.None, new StringWriter(), stderr);
+
+        stderr.ToString().Should().Contain(Path.GetFullPath(empty),
+            "the directory in the message must be the directory that was searched");
+        stderr.ToString().Should().NotContain(OperatorKey.ResolveKeyDir(),
+            "naming the default directory when --key-dir was given sends the operator to the wrong place");
+    }
+
+    [Fact]
+    public async Task The_no_key_refusal_names_a_keys_init_that_actually_clears_it()
+    {
+        // The defect this pass exists to remove, in its purest form: the refusal said "run
+        // `ashlar keys init`, then run this command again". With --key-dir given, bare
+        // `keys init` writes to the DEFAULT directory, which this command does not search — so
+        // following the instruction exactly and re-running returned the byte-identical refusal.
+        // A fix that loops is not a fix. So the command it names must carry the directory, and
+        // running THAT must clear the refusal.
+        await AppendAsync(3);
+        TruncateNewestEntry();
+        var empty = Path.Combine(_root, "no-keys-runnable");
+        Directory.CreateDirectory(empty);
+        var stderr = new StringWriter();
+
+        var refused = await LedgerCommand.ReanchorAsync(
+            Project, empty, yes: true, CancellationToken.None, new StringWriter(), stderr);
+        refused.Should().Be(1);
+
+        var named = stderr.ToString();
+        named.Should().Contain($"ashlar keys init --key-dir \"{Path.GetFullPath(empty)}\"",
+            "the named command has to put a key where this command will look for it");
+
+        // Run exactly what it named, then exactly what it said to do next.
+        OperatorKey.Generate(Path.GetFullPath(empty));
+        var exit = await LedgerCommand.ReanchorAsync(
+            Project, empty, yes: true, CancellationToken.None, new StringWriter(), new StringWriter());
+
+        exit.Should().Be(0, "the fix a refusal names must be one that clears the refusal");
+    }
+
+    [Fact]
+    public async Task Accepting_a_destroyed_history_never_calls_the_marker_a_survivor()
+    {
+        // The success line read "{Count} surviving entr(y|ies)" for both outcomes. When every
+        // entry was gone the count is 1 — the destruction marker the re-anchor had just written —
+        // so `rm -rf .ashlar/ledger` followed by the fix printed "1 surviving entry" to an
+        // operator whose history was entirely destroyed. The number was right and the sentence was
+        // a lie, which is the worst shape a refusal-adjacent message can take.
+        await AppendAsync(3);
+        DeleteAllEntries();
+        var stdout = new StringWriter();
+
+        var exit = await LedgerCommand.ReanchorAsync(
+            Project, _keyDir, yes: true, CancellationToken.None, stdout, new StringWriter());
+
+        exit.Should().Be(0);
+        var text = stdout.ToString();
+        text.Should().NotContain("surviving entry",
+            "nothing survived; the one entry on disk is the record of the loss, not a piece of the history");
+        text.Should().Contain("NOTHING survived");
+        text.Should().Contain("nothing was recovered");
+    }
+
+    [Fact]
+    public async Task Accepting_a_truncation_still_reports_the_entries_that_really_did_survive()
+    {
+        // The control case for the message above: where entries genuinely survive, the count is a
+        // count of survivors and must still be reported as one.
+        await AppendAsync(3);
+        TruncateNewestEntry();
+        var stdout = new StringWriter();
+
+        var exit = await LedgerCommand.ReanchorAsync(
+            Project, _keyDir, yes: true, CancellationToken.None, stdout, new StringWriter());
+
+        exit.Should().Be(0);
+        stdout.ToString().Should().Contain("2 surviving entries");
+        stdout.ToString().Should().NotContain("NOTHING survived");
+    }
 }
