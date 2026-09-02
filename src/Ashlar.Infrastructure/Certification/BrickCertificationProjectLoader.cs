@@ -21,7 +21,14 @@ public static class BrickCertificationProjectLoader
             ?? throw new FileNotFoundException($"No .csproj in {projectDir}");
         var sourceFile = ResolveSingleBrickSource(projectDir, csproj);
 
-        var sourceCode = await File.ReadAllTextAsync(sourceFile, cancellationToken).ConfigureAwait(false);
+        // Captured as BYTES, and decoded from those same bytes. The certificate's content hash is
+        // taken over this text, so the comparison against the compiler's per-file checksum below
+        // has to be against exactly these bytes — not against whatever is on disk after the build.
+        // A target that rewrites the brick source on its way to CoreCompile leaves the two
+        // identical if the file is re-read afterwards, which is the check quietly passing on the
+        // one case it exists for.
+        var sourceBytes = await File.ReadAllBytesAsync(sourceFile, cancellationToken).ConfigureAwait(false);
+        var sourceCode = Decode(sourceBytes);
         var witnessJson = await File.ReadAllTextAsync(witnessSpecPath, cancellationToken).ConfigureAwait(false);
         var witnessDto = JsonSerializer.Deserialize<WitnessSpecDto>(witnessJson, JsonOptions)
             ?? throw new InvalidOperationException("Witness spec is empty");
@@ -29,19 +36,26 @@ public static class BrickCertificationProjectLoader
         var buildDir = Path.Combine(Path.GetTempPath(), "ashlar-cert-build", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(buildDir);
 
-        var build = await RunDotnetBuildAsync(csproj, buildDir, cancellationToken).ConfigureAwait(false);
-        if (build.ExitCode != 0)
+        var build = await Task.Run(
+            () => EvaluatedBrickProject.Build(
+                csproj, buildDir, BuildConfiguration,
+                Environment.GetEnvironmentVariable("ASHLAR_CERT_NUGET_CONFIG")),
+            cancellationToken).ConfigureAwait(false);
+        if (build.ExitCode != 0 || build.Project is null)
             throw new InvalidOperationException($"dotnet build failed: {build.Output}");
-
-        // What was compiled, asked AFTER the targets that build the compile list have run — and
-        // asked BEFORE Assembly.LoadFrom below, which executes the candidate's module
-        // initializers. A payload smuggled in by a target is refused here rather than running
-        // first and being refused afterwards.
-        AssertCompiledSetIsExactlyTheCertifiedSet(csproj, projectDir, [sourceFile]);
 
         var dllPath = Directory.GetFiles(buildDir, "*.dll", SearchOption.AllDirectories)
             .FirstOrDefault(f => Path.GetFileName(f).Contains(Path.GetFileNameWithoutExtension(csproj), StringComparison.OrdinalIgnoreCase))
             ?? throw new FileNotFoundException("Built brick assembly not found");
+
+        // What the COMPILER recorded compiling, read out of the built assembly — and read BEFORE
+        // Assembly.LoadFrom below, which executes the candidate's module initializers inside this
+        // process. A payload smuggled in by a target is refused here rather than running first and
+        // being refused afterwards.
+        AssertCompiledSetIsExactlyTheCertifiedSet(
+            csproj, projectDir,
+            new Dictionary<string, byte[]>(PathComparer) { [Path.GetFullPath(sourceFile)] = sourceBytes },
+            dllPath, build.Project);
 
         var assembly = Assembly.LoadFrom(dllPath);
         var brickType = assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
@@ -196,6 +210,11 @@ public static class BrickCertificationProjectLoader
                     + $"resolve ({ex.Message}). Refusing rather than hashing a source set it cannot enumerate.", ex);
             }
 
+            // NOTE ON EVERY "Fix:" BELOW. A brick is ONE source file — see ResolveSingleBrickSource
+            // — so "add the missing file to the brick directory" is not a fix, it is a trip into the
+            // multi-file refusal one step later. Each of these used to say exactly that. The fix an
+            // author can actually carry out is to move the CODE into the brick's own source file, or
+            // to stop compiling the other file at all, and that is what these now say.
             if (!IsInside(projectDir, full))
             {
                 // Covers the walked-up relative path, the absolute path, the property that expanded
@@ -206,8 +225,10 @@ public static class BrickCertificationProjectLoader
                     $"Brick project refused: {name} compiles '{item.Identity}' ({full}), which is outside the brick "
                     + "directory. That file is compiled into the brick but sits outside the content hash, the "
                     + "analyzer fence and the mutation leg — the certificate would assert more than was checked. "
-                    + "Fix: move the file into the brick directory, or move it into a package that is certified in "
-                    + "its own right. Refusing rather than hashing a partial source set.");
+                    + "Fix: move its code into the brick's own single source file (a certificate binds one content "
+                    + "hash over one source text, so adding a second file in the brick directory is refused too), or "
+                    + "drop the Compile item and take the dependency as a package that is certified in its own "
+                    + "right. Refusing rather than hashing a partial source set.");
             }
 
             if (!File.Exists(full))
@@ -215,8 +236,9 @@ public static class BrickCertificationProjectLoader
                 throw new InvalidOperationException(
                     $"Brick project refused: {name} compiles '{item.Identity}' ({full}), and no such file exists to "
                     + "hash. A source the build generates on its way past is code the content hash, the analyzer "
-                    + "fence and the mutation leg never see. Fix: commit the file, or drop the compile item. "
-                    + "Refusing rather than certifying a source set with a hole in it.");
+                    + "fence and the mutation leg never see. Fix: drop the Compile item, or — if the code belongs "
+                    + "in the brick — write it into the brick's own single source file, which is the one text a "
+                    + "certificate can bind. Refusing rather than certifying a source set with a hole in it.");
             }
 
             if (seen.Add(full))
@@ -233,73 +255,135 @@ public static class BrickCertificationProjectLoader
     private const string BuildConfiguration = "Release";
 
     /// <summary>
-    /// Refuses unless the set the COMPILER was handed is exactly the set that was hashed.
+    /// Refuses unless the source the COMPILER recorded compiling is exactly the source that was
+    /// hashed, byte for byte.
     /// </summary>
     /// <remarks>
-    /// <para>Evaluation closes four bypasses and leaves a fifth open one step later. A
-    /// <c>&lt;Target BeforeTargets="CoreCompile"&gt;&lt;ItemGroup&gt;&lt;Compile
+    /// <para>Evaluation closes four bypasses and leaves the same hole one step later, twice over.
+    /// A <c>&lt;Target BeforeTargets="CoreCompile"&gt;&lt;ItemGroup&gt;&lt;Compile
     /// Include="Payload.cstxt" /&gt;</c> contributes nothing to the evaluated item list and
-    /// everything to the compilation — reproduced on this repo, with the payload's type present in
-    /// the built assembly and absent from every evaluation-time answer. A target lives in the same
-    /// import chain a <c>Directory.Build.props</c> lives in, so it needs no csproj edit either. This
-    /// is the same fact as the other four: an answer taken BEFORE the thing it describes is a model
-    /// of the compiler, and the compiler is the only authority on what the compiler compiled.</para>
+    /// everything to the compilation. Give that target a <c>Condition</c> on
+    /// <c>$(OutputPath)</c> and it also contributes nothing to a SECOND MSBuild query, because the
+    /// gate builds into a temp directory and a separate query does not — so "ask again after the
+    /// build" splits in exactly the same way. Ask in the build's own invocation instead and a
+    /// second target, <c>AfterTargets="CoreCompile"</c>, removes the payload from
+    /// <c>@(Compile)</c> once the compile has happened and the answer is clean again. All three
+    /// were reproduced live on this repo, with the payload's type present in the built assembly
+    /// every time.</para>
     ///
-    /// <para>So the question is asked again once the targets have run, and the two answers must
-    /// agree. Exactly one difference is tolerated, and it is named rather than guessed: a file
-    /// under the project's OWN intermediate output directory that the SDK's own targets declared —
-    /// the assembly-info boilerplate every SDK project compiles. Both halves are required. A file
-    /// the author's chain declared is never tolerated wherever it sits, and an SDK-declared file
-    /// outside <c>obj/</c> is not tolerated either.</para>
+    /// <para>The lesson is not "ask MSBuild more carefully". It is that <c>@(Compile)</c> is
+    /// mutable state belonging to the project under judgement, and no reading of it is an
+    /// authority on what was compiled. The authority is the compiler's own record: the source
+    /// document table csc writes into the PDB while emitting, from the syntax trees it actually
+    /// parsed. That is what this method compares against — see
+    /// <see cref="CompiledSourceDocuments"/>.</para>
     ///
-    /// <para>The reverse direction is checked too: a hashed file the compiler did NOT compile means
-    /// the certificate is signed over a decoy, which is bypass #4's shape. Evaluation already
-    /// catches it; catching it here as well costs one set lookup and closes the case where a target
-    /// does the removing.</para>
+    /// <para>MSBuild's post-build answer is still used, for one thing only: to NARROW the single
+    /// tolerance the gate grants. A compiled file outside the hashed set is admitted only when it
+    /// is under the project's OWN intermediate output directory AND MSBuild reports it as declared
+    /// by a file that ships with the SDK — the assembly-info boilerplate every SDK project
+    /// compiles. Used this way its failure mode is a refusal rather than an admission, which is the
+    /// direction that is safe to be wrong in; a payload dropped into <c>obj/</c> by an author's
+    /// target is declared by the author's own file and is refused, and a payload whose target
+    /// scrubbed it from <c>@(Compile)</c> has no SDK declaration to point at and is refused too.</para>
+    ///
+    /// <para>Two further checks, both cheap and both closing a hole a path comparison cannot see.
+    /// A hashed file the compiler did NOT compile is bypass #4's shape — a certificate signed over
+    /// a decoy — and is refused. And each hashed file's bytes on disk must equal the checksum the
+    /// compiler recorded for it, so a candidate rewritten between the hash and the build binds the
+    /// text that was actually compiled or nothing at all.</para>
     /// </remarks>
+    /// <param name="csprojPath">The brick project.</param>
+    /// <param name="projectDir">The brick directory, for rendering paths in refusals.</param>
+    /// <param name="certified">Each hashed file, mapped to the EXACT bytes the certificate's
+    /// content hash was taken over — not the file, which the build may since have rewritten.</param>
+    /// <param name="assemblyPath">The built brick assembly.</param>
+    /// <param name="built">The project as MSBuild reported it at the end of that build.</param>
     internal static void AssertCompiledSetIsExactlyTheCertifiedSet(
-        string csprojPath, string projectDir, IReadOnlyCollection<string> certified)
+        string csprojPath,
+        string projectDir,
+        IReadOnlyDictionary<string, byte[]> certified,
+        string assemblyPath,
+        EvaluatedBrickProject built)
     {
-        var project = EvaluatedBrickProject.EvaluateAfterCompile(csprojPath, BuildConfiguration);
         var name = Path.GetFileName(csprojPath);
-        var hashed = new HashSet<string>(certified.Select(Path.GetFullPath), PathComparer);
-        var intermediate = Path.GetFullPath(Path.Combine(
-            projectDir, project.Property("BaseIntermediateOutputPath") is { Length: > 0 } p ? p : "obj"));
+        var hashed = new Dictionary<string, byte[]>(PathComparer);
+        foreach (var (file, bytes) in certified)
+        {
+            hashed[Path.GetFullPath(file)] = bytes;
+        }
+        var documents = CompiledSourceDocuments.Read(assemblyPath);
+        var sdkBoilerplate = SdkGeneratedFilesUnderIntermediateOutput(built);
 
         var compiled = new HashSet<string>(PathComparer);
-        foreach (var item in project.Compile)
+        foreach (var document in documents)
         {
-            if (string.IsNullOrWhiteSpace(item.FullPath))
+            string full;
+            try
+            {
+                // Rooted, or the gate does not know which file this is. Path.GetFullPath would
+                // resolve a relative document against the CURRENT PROCESS's working directory —
+                // some host's, not the brick's — and quietly produce a confident wrong answer. The
+                // forced empty PathMap means csc records absolute paths, so this is unreachable
+                // through the front door; it is here because "resolve it against whatever directory
+                // we happen to be in" is the shape of every bug in this file's history.
+                if (!Path.IsPathRooted(document.Path))
+                {
+                    throw new ArgumentException("the compiler recorded it as a relative path");
+                }
+
+                full = Path.GetFullPath(document.Path);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
             {
                 throw new InvalidOperationException(
-                    $"Brick project refused: after building {name}, MSBuild reported a compile item "
-                    + $"('{item.Identity}') with no path on disk. The gate cannot confirm that what was compiled is "
-                    + "what was hashed. Refusing rather than signing over a set it could not compare.");
+                    $"Brick project refused: {name} was compiled from '{document.Path}', which is not a path the "
+                    + $"gate can resolve ({ex.Message}). The certificate covers named files, so a compiled source "
+                    + "the gate cannot locate is one it cannot have checked. Fix: remove any <PathMap> or "
+                    + "<DeterministicSourcePaths> setting that rewrites source paths, and any target that invokes "
+                    + "the compiler itself, then certify again. Refusing rather than certifying an assembly whose "
+                    + "source set it could not read.", ex);
             }
 
-            var full = Path.GetFullPath(item.FullPath);
             compiled.Add(full);
-            if (hashed.Contains(full))
+
+            if (hashed.TryGetValue(full, out var certifiedBytes))
             {
+                if (!CompiledSourceDocuments.ContentMatches(document, certifiedBytes))
+                {
+                    throw new InvalidOperationException(
+                        $"Brick project refused: the text of '{Path.GetRelativePath(projectDir, full)}' that the "
+                        + "certificate would hash is not the text that was compiled — the compiler's own checksum "
+                        + "for that file does not match the bytes the gate read. Something rewrote the brick source "
+                        + "in between, so the record would bind a content hash over a program the assembly does not "
+                        + "contain, and the analyzer fence and the mutation leg would judge that program rather than "
+                        + "the shipped one. Fix: remove the MSBuild target in the project or in the "
+                        + $"Directory.Build.props / Directory.Build.targets beside {name} that writes to the brick "
+                        + "source during the build, then certify again. Refusing rather than signing a hash of one "
+                        + "text over a build of another.");
+                }
+
                 continue;
             }
 
-            if (IsInside(intermediate, full) && project.IsSdkDeclared(item))
+            if (sdkBoilerplate.Contains(full))
             {
                 continue; // The SDK's own assembly-info boilerplate, in the SDK's own directory.
             }
 
             throw new InvalidOperationException(
-                $"Brick project refused: {name} compiled '{item.Identity}' ({full}), which is not in the set the "
-                + $"certificate hashes. It was declared by {item.Meta("DefiningProjectFullPath") ?? "an unreported file"} "
-                + "— a target or item that contributes to the compilation AFTER the project is evaluated, so it is "
-                + "invisible to the content hash, the analyzer fence and the mutation leg while shipping inside the "
-                + "signed assembly. Fix: declare the file as an ordinary Compile item in the brick directory, or "
-                + "remove the target that adds it. Refusing rather than certifying an assembly the gate did not "
-                + "read all of.");
+                $"Brick project refused: {name} was compiled from '{Relative(projectDir, full)}', which is not in the "
+                + "set the certificate hashes. The compiler recorded it as part of this assembly, so it ships inside "
+                + "the signed brick while being invisible to the content hash, the analyzer fence and the mutation "
+                + "leg. It reached the compilation after the project was evaluated — an MSBuild target that adds a "
+                + "Compile item, or one that replaces the compile step. Fix: remove the target that adds it, from "
+                + $"the project or from the Directory.Build.props / Directory.Build.targets beside {name}; if the "
+                + "code belongs in the brick, move it into the brick's own single source file, which is the one "
+                + "text a certificate can bind. Refusing rather than certifying an assembly the gate did not read "
+                + "all of.");
         }
 
-        foreach (var file in hashed)
+        foreach (var file in hashed.Keys)
         {
             if (compiled.Contains(file))
             {
@@ -308,11 +392,92 @@ public static class BrickCertificationProjectLoader
 
             throw new InvalidOperationException(
                 $"Brick project refused: the certificate would hash '{Path.GetRelativePath(projectDir, file)}', which "
-                + $"{name} did NOT compile. A hash over text the assembly does not contain is a certificate signed "
-                + "over a decoy — the analyzer fence and the mutation leg would judge one program while the shipped "
-                + "one is another. Fix: remove whatever excludes this file from the compilation. Refusing rather "
-                + "than signing a record about a file that is not in the brick.");
+                + $"{name} did NOT compile — the compiler's record of this assembly does not mention it. A hash over "
+                + "text the assembly does not contain is a certificate signed over a decoy: the analyzer fence and "
+                + "the mutation leg would judge one program while the shipped one is another. Fix: remove whatever "
+                + "excludes this file from the compilation (a <Compile Remove> in the project or in a "
+                + "Directory.Build.props beside it). Refusing rather than signing a record about a file that is not "
+                + "in the brick.");
         }
+    }
+
+    /// <summary>
+    /// The files under the project's own intermediate output directory that the SDK's own files
+    /// declared — the only compiled source the gate tolerates outside the certified set.
+    /// </summary>
+    /// <remarks>
+    /// <para>Both halves are load-bearing and neither is a name match. The DIRECTORY comes from
+    /// MSBuild's own <c>IntermediateOutputPath</c> rather than from the string "obj", so a project
+    /// that relocates it is judged where its output actually is. The ORIGIN comes from MSBuild's
+    /// <c>DefiningProjectFullPath</c> rather than from the file's name, so
+    /// <c>Brick.AssemblyInfo.cs</c> written by <c>Microsoft.NET.GenerateAssemblyInfo.targets</c> is
+    /// tolerated while <c>obj/Brick.AssemblyInfo.cs</c> written by an author's target — same name,
+    /// same directory — is not. Four previous rounds drew this line on names and each one moved the
+    /// hole rather than closing it.</para>
+    ///
+    /// <para>This is the one place MSBuild's post-build item list is consulted, and it can only
+    /// ever SHRINK what is tolerated: a file missing from it (because a target scrubbed the item
+    /// after the compile) is a file with no SDK declaration to point at, which is a refusal.</para>
+    /// </remarks>
+    private static HashSet<string> SdkGeneratedFilesUnderIntermediateOutput(EvaluatedBrickProject built)
+    {
+        var tolerated = new HashSet<string>(PathComparer);
+        var intermediate = built.DirectoryProperty("IntermediateOutputPath")
+            ?? built.DirectoryProperty("BaseIntermediateOutputPath");
+        if (intermediate is null)
+        {
+            // No intermediate output directory means no tolerance, which refuses rather than
+            // admits. That is the correct direction for a question the gate cannot answer.
+            return tolerated;
+        }
+
+        foreach (var item in built.Compile)
+        {
+            if (string.IsNullOrWhiteSpace(item.FullPath) || !built.IsSdkDeclared(item))
+            {
+                continue;
+            }
+
+            string full;
+            try
+            {
+                full = Path.GetFullPath(item.FullPath);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                continue;
+            }
+
+            if (IsInside(intermediate, full))
+            {
+                tolerated.Add(full);
+            }
+        }
+
+        return tolerated;
+    }
+
+    /// <summary>
+    /// A path relative to the brick directory when it is inside it, and absolute when it is not —
+    /// so a refusal never renders an outside path as a pile of <c>../</c> the reader must decode.
+    /// </summary>
+    private static string Relative(string projectDir, string full) =>
+        IsInside(projectDir, full) ? Path.GetRelativePath(projectDir, full) : full;
+
+    /// <summary>
+    /// Brick source bytes as text, with exactly <see cref="File.ReadAllText(string)"/>'s encoding
+    /// rules — UTF-8, with a byte-order mark honoured when one is present.
+    /// </summary>
+    /// <remarks>
+    /// The gate reads the source once, as bytes, so that the text it hashes and the bytes it
+    /// compares against the compiler's checksum are provably the same read. Decoding here rather
+    /// than reading the file a second time is what makes that true.
+    /// </remarks>
+    private static string Decode(byte[] bytes)
+    {
+        using var stream = new MemoryStream(bytes, writable: false);
+        using var reader = new StreamReader(stream, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 
     /// <summary>
@@ -384,34 +549,6 @@ public static class BrickCertificationProjectLoader
         }
 
         return sources[0];
-    }
-
-    private static async Task<(int ExitCode, string Output)> RunDotnetBuildAsync(
-        string csproj,
-        string outputDir,
-        CancellationToken cancellationToken)
-    {
-        var configFile = Environment.GetEnvironmentVariable("ASHLAR_CERT_NUGET_CONFIG");
-        var configArg = string.IsNullOrWhiteSpace(configFile)
-            ? string.Empty
-            : $" --configfile \"{configFile}\"";
-
-        var psi = new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments =
-                $"build \"{csproj}\" -c Release -o \"{outputDir}\" -v q{configArg} " +
-                "-p:TreatWarningsAsErrors=false -p:NuGetAudit=false",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-        using var process = System.Diagnostics.Process.Start(psi)
-            ?? throw new InvalidOperationException("Failed to start dotnet build");
-        var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        var stderr = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        return (process.ExitCode, stdout + stderr);
     }
 
     /// <summary>
