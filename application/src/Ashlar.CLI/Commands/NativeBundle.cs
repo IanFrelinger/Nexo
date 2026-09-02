@@ -17,7 +17,30 @@ public sealed record BundleInfo(
     // What the verdict this bundle carries actually covers. A bundle that ships a CERTIFIED banner
     // over a project with no code in it is the same silent overclaim `ashlar verify` used to make;
     // the scope travels with the bundle so the person who unzips it reads the same honest line.
-    CertificationScope? Scope = null);
+    CertificationScope? Scope = null,
+    // The courses exactly as they ran at the source. A refusal to export has to name what failed —
+    // "the project does not verify" with no course beside it sends the operator to a second command
+    // to learn something this one already knew.
+    IReadOnlyList<CourseResult>? Courses = null);
+
+/// <summary>
+/// What a project's <c>sandbox</c> declaration means for a BUNDLE: the root as written, whether it
+/// can travel at all, and the directories the export creates inside the staged app.
+/// </summary>
+/// <param name="Root">The <c>sandbox.root</c> value exactly as the policy writes it.</param>
+/// <param name="RootIsAbsolute">The root names a directory on a machine, not one in the bundle.</param>
+/// <param name="RootEscapesProject">The root is relative but resolves outside the project directory.</param>
+/// <param name="Directories">Project-relative directories to create inside the staged app; empty
+/// when the root cannot travel.</param>
+public sealed record PolicySandbox(
+    string Root,
+    bool RootIsAbsolute,
+    bool RootEscapesProject,
+    IReadOnlyList<string> Directories)
+{
+    /// <summary>True when the root can be carried in a bundle at all.</summary>
+    public bool Travels => !RootIsAbsolute && !RootEscapesProject;
+}
 
 /// <summary>
 /// Stages a governed Ashlar application into a portable, self-proving bundle: the project (its
@@ -69,7 +92,8 @@ public static class NativeBundle
             // A corrupt ledger is not certified; verify will refuse it at run time.
         }
 
-        return new BundleInfo(name, rid, verification.Verified, certified, fingerprint, ledgerEntries, verification.Scope);
+        return new BundleInfo(
+            name, rid, verification.Verified, certified, fingerprint, ledgerEntries, verification.Scope, verification.Courses);
     }
 
     /// <summary>
@@ -129,6 +153,125 @@ public static class NativeBundle
     }
 
     /// <summary>
+    /// Reads what the project's <c>sandbox</c> declaration means for a bundle: the root as the
+    /// policy writes it, whether it can travel at all, and the project-relative directories the
+    /// export must create inside the staged app. Returns null when the policy cannot be read or
+    /// loaded — an unloadable policy is the verifier's refusal to make, in its own wording.
+    /// </summary>
+    /// <remarks>
+    /// <para>The envelope course requires <c>sandbox.root</c> to EXIST. Three shapes of root, three
+    /// different truths for a bundle, and the export has to tell them apart because they need three
+    /// different things said to the operator:</para>
+    /// <list type="bullet">
+    ///   <item><description>relative and inside the project — it travels; the export creates it in
+    ///   the staged app (see <see cref="StagePolicyDirectories"/>).</description></item>
+    ///   <item><description>relative but resolving OUTSIDE the project (<c>../shared</c>) — nothing
+    ///   outside the project can travel, so no amount of creating directories at the source helps;
+    ///   the refusal has to say to move it in.</description></item>
+    ///   <item><description>absolute (<c>/var/lib/app</c>) — it names a directory on a MACHINE. The
+    ///   staged copy verifies here whenever this machine happens to have it, and then exits 65 on
+    ///   the machine that does not. That is a portability note, not a refusal.</description></item>
+    /// </list>
+    /// </remarks>
+    public static PolicySandbox? DescribeSandbox(string projectDir)
+    {
+        string policyYaml;
+        try
+        {
+            policyYaml = File.ReadAllText(Path.Combine(projectDir, "ashlar.policy.yaml"));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        if (!PolicyLoader.TryLoad(policyYaml, out var policy, out _))
+        {
+            return null;
+        }
+
+        var root = policy!.Sandbox.Root;
+        if (string.IsNullOrWhiteSpace(root))
+        {
+            return null;
+        }
+        if (Path.IsPathRooted(root))
+        {
+            return new PolicySandbox(root, RootIsAbsolute: true, RootEscapesProject: false, Array.Empty<string>());
+        }
+
+        var rootRelative = RelativeInsideProject(projectDir, projectDir, root);
+        if (rootRelative is null)
+        {
+            return new PolicySandbox(root, RootIsAbsolute: false, RootEscapesProject: true, Array.Empty<string>());
+        }
+
+        // Writable paths resolve BENEATH the root — the same way the envelope course resolves them.
+        var directories = new List<string>();
+        if (rootRelative.Length > 0)
+        {
+            directories.Add(rootRelative);
+        }
+        var rootAtSource = Path.Combine(projectDir, rootRelative);
+        foreach (var writable in policy.Sandbox.Writable)
+        {
+            if (string.IsNullOrWhiteSpace(writable) || Path.IsPathRooted(writable))
+            {
+                continue;   // An absolute writable is the envelope course's refusal, by name, at the source.
+            }
+            if (RelativeInsideProject(rootAtSource, rootAtSource, writable) is null)
+            {
+                continue;   // Escapes the root: the envelope course refuses that at the source, by name.
+            }
+            var rel = RelativeInsideProject(projectDir, rootAtSource, writable);
+            if (rel is { Length: > 0 } && !directories.Contains(rel, StringComparer.Ordinal))
+            {
+                directories.Add(rel);
+            }
+        }
+        return new PolicySandbox(root, RootIsAbsolute: false, RootEscapesProject: false, directories);
+    }
+
+    /// <summary>
+    /// Resolves <paramref name="relative"/> against <paramref name="baseDir"/> and returns it as a
+    /// path relative to <paramref name="projectDir"/> — empty for the project directory itself, and
+    /// null when it lands outside the project (or cannot be resolved at all).
+    /// </summary>
+    private static string? RelativeInsideProject(string projectDir, string baseDir, string relative)
+    {
+        try
+        {
+            var full = Path.GetFullPath(Path.Combine(baseDir, relative));
+            // A trailing separator survives GetRelativePath, so `./out/` and `./out` — the same
+            // directory, written twice in one writable: list — came back as two different strings
+            // and the export said it had created two directories. Normalise before comparing.
+            var rel = Path.GetRelativePath(Path.GetFullPath(projectDir), full)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (rel is "." or "")
+            {
+                return string.Empty;
+            }
+            var escapes = Path.IsPathRooted(rel)
+                || rel == ".."
+                || rel.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                || rel.StartsWith("../", StringComparison.Ordinal);
+            return escapes ? null : rel;
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;   // A path the export cannot resolve is one the verifier refuses by name.
+        }
+    }
+
+    /// <summary>
+    /// The directories, relative to the staged <c>app/</c>, that this project's policy makes the
+    /// export create — empty ones. Public so the export can DISCLOSE them: staging on the
+    /// operator's behalf is only defensible if it is said out loud.
+    /// </summary>
+    public static IReadOnlyList<string> StagedPolicyDirectories(string projectDir)
+        => DescribeSandbox(projectDir)?.Directories ?? Array.Empty<string>();
+
+    /// <summary>
     /// Creates, inside the staged app, the directories the POLICY declares: <c>sandbox.root</c> and
     /// every writable path beneath it.
     /// </summary>
@@ -148,64 +291,42 @@ public static class NativeBundle
     /// this application writes; carrying that declaration while dropping the thing it declares is
     /// what made the bundle unable to prove itself. What travels is the directory, EMPTY — its
     /// contents are the app's runtime state, not cargo, and copying them would ship whatever the
-    /// last run happened to leave there.</para>
+    /// last run happened to leave there. Exactly two kinds of directory are created, both named by
+    /// <c>sandbox</c> in the policy, and the export prints the list beside the verdict rather than
+    /// quietly making more exports succeed.</para>
     ///
     /// <para>A root outside the project is left alone, and deliberately: nothing outside the
     /// project directory can travel in a bundle, so creating it here would fake a guarantee that
-    /// only the target machine can meet. The refusal names that case separately.</para>
+    /// only the target machine can meet. The refusal names that case, and only that case, itself.</para>
     /// </remarks>
     private static void StagePolicyDirectories(string projectDir, string appDir, List<string> written, string bundleRoot)
     {
-        string policyYaml;
-        try
-        {
-            policyYaml = File.ReadAllText(Path.Combine(projectDir, "ashlar.policy.yaml"));
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return;   // The self-verification of the staged copy is what reports this, not staging.
-        }
-
-        if (!PolicyLoader.TryLoad(policyYaml, out var policy, out _))
-        {
-            return;   // An unloadable policy is the verifier's refusal to make, with its own wording.
-        }
-
-        var root = policy!.Sandbox.Root;
-        if (string.IsNullOrWhiteSpace(root) || Path.IsPathRooted(root))
+        if (DescribeSandbox(projectDir) is not { } sandbox)
         {
             return;
         }
 
-        var wanted = new List<string> { root };
-        wanted.AddRange(policy.Sandbox.Writable.Where(w => !string.IsNullOrWhiteSpace(w) && !Path.IsPathRooted(w))
-            .Select(w => Path.Combine(root, w)));
-
-        foreach (var relative in wanted)
+        foreach (var relative in sandbox.Directories)
         {
-            string full;
-            try
-            {
-                full = Path.GetFullPath(Path.Combine(appDir, relative));
-            }
-            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
-            {
-                continue;   // A path the export cannot resolve is one the verifier will refuse by name.
-            }
-
-            // Never create anything outside the staged app: a policy path that walks up is a
-            // problem for the verifier to name, not for the exporter to materialise on disk.
-            if (!IsSameOrUnder(full, appDir) || string.Equals(full, Path.GetFullPath(appDir), StringComparison.Ordinal))
-            {
-                continue;
-            }
-
+            var full = Path.Combine(appDir, relative);
             if (Directory.Exists(full))
             {
                 continue;
             }
-
-            Directory.CreateDirectory(full);
+            try
+            {
+                Directory.CreateDirectory(full);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Never a stack trace: the export command turns this into the operator's message.
+                throw new InvalidOperationException(
+                    $"refusing to stage this bundle: could not create '{relative}' inside it ({ex.Message}). "
+                    + $"ashlar.policy.yaml names it under sandbox.root '{sandbox.Root}', and the bundle's launcher "
+                    + "runs `verify --path app` first, so a bundle without it exits 65 on launch. "
+                    + $"clear whatever holds '{Path.Combine(bundleRoot, "app", relative)}' — or export to a different "
+                    + "--out directory — and re-export.");
+            }
             written.Add(Path.GetRelativePath(bundleRoot, full));
         }
     }
@@ -385,16 +506,110 @@ public static class NativeBundle
         }
 
         lines.Add(string.Empty);
-        lines.Add("fix, in the order to try them:");
-        lines.Add("  - move that source under the project directory: everything under it travels except bin/,");
-        lines.Add("    obj/, .git/, .ashlar/keys/ and .ashlar/forge/. a brick outside the project cannot ship.");
-        lines.Add("  - a directory the policy names (sandbox.root, a writable path) is created inside the bundle");
-        lines.Add("    for you when it is RELATIVE. an ABSOLUTE sandbox.root cannot travel in a bundle at all —");
-        lines.Add("    make it relative to the project, or provision it on the machine that runs the bundle.");
-        lines.Add("  - or delete the entry from bricks: in ashlar.yaml, if the project no longer uses it.");
-        lines.Add("then run `ashlar verify` at the source and export again.");
+        lines.Add("fix:");
+        lines.AddRange(RefusalFixes(projectDir, appDir, staged, stranded.Count > 0));
+        lines.Add(string.Empty);
+        lines.Add($"see it for yourself:  ashlar verify --path {appDir}");
         lines.Add($"the incomplete bundle was left at {bundleDir} so you can see what did and did not arrive.");
         return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// The fix lines for THIS refusal — only the ones that apply to what actually failed.
+    ///
+    /// <para>This is the part that had to change. The list used to be fixed: three bullets printed
+    /// for every failure, two of them about bricks. A project whose only problem was
+    /// <c>sandbox.root: ../shared</c> was told "make it relative to the project" about a root that
+    /// was already relative, and "a RELATIVE directory is created inside the bundle for you" about a
+    /// directory the export had just declined to create. Every bullet was false for the failure in
+    /// hand, so re-running the export reproduced the refusal byte for byte. A refusal that names a
+    /// step which cannot be executed is worse than one that names none — so each bullet below is
+    /// emitted only when it is the fix for the failure being reported, and every one of them was run
+    /// against the failure it claims to fix.</para>
+    /// </summary>
+    private static List<string> RefusalFixes(
+        string projectDir, string appDir, ProjectVerification staged, bool strandedBricks)
+    {
+        var fixes = new List<string>();
+        var sandbox = DescribeSandbox(projectDir);
+        var rootFailed = staged.Courses.Any(c =>
+            !c.Passed && c.Name == "envelope" && c.Detail.Contains("sandbox.root", StringComparison.Ordinal));
+        var compositionFailed = staged.Courses.Any(c => !c.Passed && c.Name == "composition");
+        var example = Path.Combine(projectDir, "workspace");
+
+        if (rootFailed && sandbox is { RootEscapesProject: true })
+        {
+            fixes.Add($"  - sandbox.root '{sandbox.Root}' resolves OUTSIDE the project directory, and nothing outside the");
+            fixes.Add("    project travels in a bundle — so creating it at the source cannot help, however many times.");
+            fixes.Add($"    move it in:  mkdir -p \"{example}\"");
+            fixes.Add("    then set  `root: ./workspace`  under sandbox: in ashlar.policy.yaml.");
+            fixes.Add("    a root inside the project IS created inside the bundle for you, empty, on the next export.");
+        }
+        else if (rootFailed && sandbox is { RootIsAbsolute: true })
+        {
+            fixes.Add($"  - sandbox.root '{sandbox.Root}' is an absolute path: it names a directory on a machine, not one");
+            fixes.Add("    in the bundle, so a bundle can never carry it.");
+            fixes.Add($"    make it travel:  mkdir -p \"{example}\"");
+            fixes.Add("    then set  `root: ./workspace`  under sandbox: in ashlar.policy.yaml.");
+            fixes.Add("    a root inside the project IS created inside the bundle for you, empty, on the next export.");
+        }
+        else if (rootFailed && sandbox is { Travels: true })
+        {
+            // The root can travel and the export creates it, so a failure here is the export's own.
+            fixes.Add($"  - sandbox.root '{sandbox.Root}' should have been created inside the bundle by this export and");
+            fixes.Add("    was not. that is an export bug, not a project one — re-run the export, and report it with");
+            fixes.Add("    this message if it repeats.");
+        }
+
+        if (compositionFailed || strandedBricks)
+        {
+            fixes.Add("  - move the brick source listed above under the project directory: everything under it travels");
+            fixes.Add("    except bin/, obj/, .git/, .ashlar/keys/ and .ashlar/forge/. a brick outside the project cannot");
+            fixes.Add("    ship, wherever the source project happens to resolve it from.");
+            fixes.Add("  - or delete that entry from bricks: in ashlar.yaml, if the project no longer uses it.");
+        }
+
+        if (fixes.Count == 0)
+        {
+            fixes.Add($"  - read the failure against the copy itself:  ashlar verify --path {appDir}");
+            fixes.Add("    and compare it with  ashlar verify  at the source. the two directories are the only");
+            fixes.Add("    difference; if nothing above explains it, that is an export bug — report it with both.");
+            return fixes;
+        }
+
+        fixes.Add("  then re-certify the change:  ashlar verify   (at the source) and export again.");
+        return fixes;
+    }
+
+    /// <summary>
+    /// What is TRUE about this bundle that its own self-verification cannot catch — printed beside
+    /// a successful export, never as a refusal.
+    ///
+    /// <para>An absolute <c>sandbox.root</c> is the case that matters. The staged copy verifies here
+    /// whenever THIS machine happens to have that directory, so the export exits 0 and bundle.json
+    /// says certified — and on the machine the bundle is handed to, the launcher's first line
+    /// (<c>verify --path app</c>) fails the envelope course and the application exits 65. That is
+    /// precisely the failure the self-verification exists to prevent, and the self-verification
+    /// cannot see it, because it runs on the one machine where it does not happen. Refusing would
+    /// be wrong — deploying onto a machine you provision is legitimate, and a refusal with no way
+    /// past it is the defect this whole pass is about — so the export says it, names both real
+    /// fixes, and exits 0.</para>
+    /// </summary>
+    public static IReadOnlyList<string> PortabilityNotes(string projectDir)
+    {
+        var notes = new List<string>();
+        if (DescribeSandbox(projectDir) is not { RootIsAbsolute: true } sandbox)
+        {
+            return notes;
+        }
+        var example = Path.Combine(projectDir, "workspace");
+        notes.Add($"NOT PORTABLE: sandbox.root '{sandbox.Root}' is an absolute path — a directory on a machine, not one in the bundle.");
+        notes.Add("this export verified because THIS machine has it. the launcher runs `verify --path app` first, so on a");
+        notes.Add("machine that does not, the application exits 65 while bundle.json and README.md say it is certified.");
+        notes.Add($"make it travel:  mkdir -p \"{example}\"  then set  `root: ./workspace`  under sandbox: in ashlar.policy.yaml,");
+        notes.Add("                 re-certify with  ashlar verify , and export again — that root is created inside the bundle for you.");
+        notes.Add($"or keep it and provision '{sandbox.Root}' on the machine that runs the bundle, before launching it.");
+        return notes;
     }
 
     /// <summary>
@@ -522,10 +737,32 @@ public static class NativeBundle
             + "proves its own certification.\n\n"
             + "- `app/` — the project: its contract, its operator-owned policy, its signed ledger.\n"
             + $"- `{exe}` — the self-contained runtime (no .NET install required).\n"
-            + "- `bundle.json` — what is inside and what certifies it.\n";
+            + "- `bundle.json` — what is inside and what certifies it.\n"
+            // Say what the export created that the project did not hand it. These directories are
+            // the only thing in app/ that was not copied from the project, and a bundle that
+            // silently manufactures directories is a bundle you cannot audit against its source.
+            + PolicyDirectoryNote(projectDir);
         WriteText(Path.Combine(bundleDir, "README.md"), readme, written, bundleDir);
 
         return written;
+    }
+
+    /// <summary>
+    /// The README paragraph naming the directories the export created inside <c>app/</c>, and why.
+    /// Empty when the policy asked for none. Shared by the native and cloud READMEs.
+    /// </summary>
+    public static string PolicyDirectoryNote(string projectDir)
+    {
+        var dirs = StagedPolicyDirectories(projectDir);
+        if (dirs.Count == 0)
+        {
+            return string.Empty;
+        }
+        var list = string.Join(", ", dirs.Select(d => $"`app/{d.Replace(Path.DirectorySeparatorChar, '/')}/`"));
+        return "\nCreated by the export, EMPTY: " + list + ".\n"
+             + "`ashlar.policy.yaml` names these under `sandbox` as where this application may write, and the\n"
+             + "verification the launcher runs requires the sandbox root to exist. Their contents are runtime\n"
+             + "state, not part of the application, so nothing from the source project's copies was carried in.\n";
     }
 
     private static void CopyFile(string src, string dest, List<string> written, string bundleRoot)
@@ -573,8 +810,12 @@ public static class NativeBundle
                 // Same rule ForgeApplier enforces on the write side: lexical containment is not
                 // enough when a link is in the way. A link can pull content from outside the
                 // project — including a private key — into the bundle, past every name filter.
+                //
+                // The FULL path, not the path relative to whichever subtree is being copied: the
+                // message names a step ("remove it"), and `rm src/Widget/link.cs` typed from a
+                // message that said 'Widget/link.cs' is a step that fails.
                 throw new InvalidOperationException(
-                    $"refusing to stage '{rel}': it is a symlink or junction, and a link can pull content from outside the project into the bundle. Replace it with the real file, or remove it, and re-export.");
+                    $"refusing to stage '{entry}': it is a symlink or junction, and a link can pull content from outside the project into the bundle. Replace it with the real file, or remove it, and re-export.");
             }
             if ((attributes & FileAttributes.Directory) != 0)
             {

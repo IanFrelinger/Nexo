@@ -72,9 +72,9 @@ public sealed class ExportBundleSelfVerifiesTests : IDisposable
         File.ReadAllText(Path.Combine(_project, "ashlar.policy.yaml")),
         _project);
 
-    private string StageBundle()
+    private string StageBundle(string name = "bundle")
     {
-        var bundleDir = Path.Combine(_out, "bundle");
+        var bundleDir = Path.Combine(_out, name);
         Directory.CreateDirectory(bundleDir);
         var info = NativeBundle.Describe(_project, "linux-x64");
         NativeBundle.Stage(_project, bundleDir, info);
@@ -240,8 +240,200 @@ public sealed class ExportBundleSelfVerifiesTests : IDisposable
         refusal.Should().Contain(bundleDir, "and where to look at what did and did not arrive");
         refusal.Should().NotContain("commit a .gitkeep",
             "that step was run verbatim and produced the identical refusal");
-        refusal.Should().Contain("is created inside the bundle",
-            "the fix list has to say what the export now does on the operator's behalf");
+    }
+
+    [Fact]
+    public void The_fix_list_names_only_the_fix_for_what_actually_failed()
+    {
+        // The list used to be fixed — all three bullets, every time. Two of them are about bricks,
+        // so a sandbox failure was answered with brick advice and a sentence about absolute paths
+        // that did not describe the policy in hand. A bullet that is false for the failure being
+        // reported is how a refusal ends up naming a step that cannot be run.
+        Scaffold(brickId: "invoice-classifier");
+        var brickDir = Path.Combine(_project, "bricks", "invoice-classifier");
+        Directory.CreateDirectory(brickDir);
+        File.WriteAllText(Path.Combine(brickDir, "InvoiceClassifier.cs"), "namespace Demo; public sealed class InvoiceClassifier { }\n");
+        var bundleDir = StageBundle();
+        Directory.Delete(Path.Combine(bundleDir, "app", "bricks"), recursive: true);
+
+        var refusal = NativeBundle.SelfVerificationRefusal(_project, bundleDir)!;
+
+        refusal.Should().Contain("move the brick source listed above");
+        refusal.Should().NotContain("sandbox.root",
+            "this project's sandbox is fine — advice about it is noise the operator has to rule out");
+    }
+
+    [Fact]
+    public void A_sandbox_root_outside_the_project_refuses_with_a_step_that_can_be_run()
+    {
+        // The same class as W3, one shape further out, and it survived the first fix: a RELATIVE
+        // root that resolves outside the project (`../shared`) certifies at the source — the
+        // directory is right there — and can never travel, because nothing outside the project
+        // does. The old fix list answered it with "make it relative to the project" about a root
+        // that was already relative, and "a RELATIVE directory is created inside the bundle for
+        // you" about a directory the export had just declined to create. Re-running reproduced the
+        // refusal byte for byte: unfixable, exactly like the original defect.
+        var shared = Path.Combine(_root, "shared");
+        Directory.CreateDirectory(shared);
+        Scaffold(sandboxRoot: "../shared");
+
+        VerifyProject().Verified.Should().BeTrue("the source project has the directory, so it certifies");
+
+        var bundleDir = StageBundle();
+        var refusal = NativeBundle.SelfVerificationRefusal(_project, bundleDir);
+
+        refusal.Should().NotBeNull("a bundle that cannot carry its sandbox root exits 65 on launch");
+        refusal!.Should().Contain("resolves OUTSIDE the project directory");
+        refusal.Should().Contain($"mkdir -p \"{Path.Combine(_project, "workspace")}\"",
+            "the step has to be one the operator can paste and run");
+        refusal.Should().Contain("root: ./workspace");
+        refusal.Should().NotContain("make it relative to the project",
+            "it IS relative — telling someone to do what they already did is the unfixable refusal");
+        refusal.Should().NotContain("move the brick source",
+            "there is no brick in this project");
+
+        // Now RUN the fix the refusal names, exactly as written, and require it to work.
+        Directory.CreateDirectory(Path.Combine(_project, "workspace"));
+        var policyPath = Path.Combine(_project, "ashlar.policy.yaml");
+        File.WriteAllText(policyPath, File.ReadAllText(policyPath)
+            .Replace("  root: ../shared", "  root: ./workspace", StringComparison.Ordinal));
+
+        VerifyProject().Verified.Should().BeTrue();
+        var fixedBundle = StageBundle("bundle-fixed");
+
+        Directory.Exists(Path.Combine(fixedBundle, "app", "workspace")).Should().BeTrue();
+        NativeBundle.SelfVerificationRefusal(_project, fixedBundle).Should().BeNull(
+            "the refusal's own named fix has to produce an export that succeeds");
+    }
+
+    [Fact]
+    public void An_absolute_sandbox_root_is_called_out_instead_of_shipping_a_silent_65()
+    {
+        // The failure the bundle's own self-verification structurally CANNOT catch. An absolute
+        // sandbox.root names a directory on a machine; the staged copy verifies here because this
+        // machine has it, so the export exits 0 and bundle.json says certified — and the launcher's
+        // first line (`verify --path app`) then fails on the machine the bundle is handed to. The
+        // export cannot refuse (deploying onto a machine you provision is legitimate, and a refusal
+        // with no way past it is this pass's whole subject), so it says so and names both fixes.
+        var elsewhere = Path.Combine(_root, "machine-state");
+        Directory.CreateDirectory(elsewhere);
+        Scaffold(sandboxRoot: elsewhere.Replace('\\', '/'));
+
+        VerifyProject().Verified.Should().BeTrue();
+        var bundleDir = StageBundle();
+        NativeBundle.SelfVerificationRefusal(_project, bundleDir).Should().BeNull(
+            "the copy verifies HERE — that is exactly why a refusal cannot be the mechanism");
+
+        var notes = NativeBundle.PortabilityNotes(_project);
+        notes.Should().NotBeEmpty();
+        string.Join(" ", notes).Should().Contain("NOT PORTABLE").And.Contain("exits 65");
+        string.Join(" ", notes).Should().Contain($"mkdir -p \"{Path.Combine(_project, "workspace")}\"");
+
+        // Fix 1, run verbatim: move the root inside the project.
+        Directory.CreateDirectory(Path.Combine(_project, "workspace"));
+        var policyPath = Path.Combine(_project, "ashlar.policy.yaml");
+        File.WriteAllText(policyPath, File.ReadAllText(policyPath)
+            .Replace($"  root: {elsewhere.Replace('\\', '/')}", "  root: ./workspace", StringComparison.Ordinal));
+
+        VerifyProject().Verified.Should().BeTrue();
+        var fixedBundle = StageBundle("bundle-portable");
+        NativeBundle.PortabilityNotes(_project).Should().BeEmpty("the fix the note named has to clear the note");
+        Directory.Exists(Path.Combine(fixedBundle, "app", "workspace")).Should().BeTrue();
+
+        // Fix 2 is the other half of the same note: with the directory provisioned, the copy that
+        // WAS exported verifies. Deleting it is the target machine that does not have it.
+        var stagedApp = Path.Combine(bundleDir, "app");
+        ProjectVerifier.Verify(
+            File.ReadAllText(Path.Combine(stagedApp, "ashlar.yaml")),
+            File.ReadAllText(Path.Combine(stagedApp, "ashlar.policy.yaml")),
+            stagedApp).Verified.Should().BeTrue("provisioned: this is the machine that has it");
+        Directory.Delete(elsewhere, recursive: true);
+        ProjectVerifier.Verify(
+            File.ReadAllText(Path.Combine(stagedApp, "ashlar.yaml")),
+            File.ReadAllText(Path.Combine(stagedApp, "ashlar.policy.yaml")),
+            stagedApp).Verified.Should().BeFalse("unprovisioned: this is the 65 the note predicts");
+    }
+
+    [Fact]
+    public void The_export_discloses_the_directories_it_created_rather_than_manufacturing_them_quietly()
+    {
+        // Staging on the operator's behalf is only defensible if it is said out loud: these are the
+        // only things under app/ that were not copied from the project, and a reader comparing the
+        // bundle against its source must be able to account for every one of them.
+        Scaffold(sandboxRoot: "./workspace");
+        Directory.CreateDirectory(Path.Combine(_project, "workspace"));
+        var policyPath = Path.Combine(_project, "ashlar.policy.yaml");
+        File.WriteAllText(policyPath, File.ReadAllText(policyPath)
+            .Replace("  writable: []", "  writable:\n    - ./out", StringComparison.Ordinal));
+
+        NativeBundle.StagedPolicyDirectories(_project).Should().BeEquivalentTo(
+            new[] { "workspace", Path.Combine("workspace", "out") },
+            "exactly two, both named by sandbox: in the policy — nothing else is invented");
+
+        var readme = File.ReadAllText(Path.Combine(StageBundle(), "README.md"));
+        readme.Should().Contain("Created by the export, EMPTY:");
+        readme.Should().Contain("`app/workspace/`").And.Contain("`app/workspace/out/`");
+    }
+
+    [Fact]
+    public void The_disclosed_list_names_each_directory_once()
+    {
+        // `./out/` and `./out` are the same directory. A trailing separator survives
+        // Path.GetRelativePath, so they came back as two different strings and the export announced
+        // that it had created two directories — a disclosure that miscounts is not a disclosure.
+        Scaffold(sandboxRoot: "./workspace/");
+        Directory.CreateDirectory(Path.Combine(_project, "workspace"));
+        var policyPath = Path.Combine(_project, "ashlar.policy.yaml");
+        File.WriteAllText(policyPath, File.ReadAllText(policyPath)
+            .Replace("  writable: []", "  writable:\n    - ./out/\n    - ./out", StringComparison.Ordinal));
+
+        NativeBundle.StagedPolicyDirectories(_project).Should().BeEquivalentTo(
+            new[] { "workspace", Path.Combine("workspace", "out") });
+    }
+
+    [Fact]
+    public void A_writable_path_escaping_the_root_is_never_created()
+    {
+        // The envelope course refuses this at the SOURCE, by name. The exporter must not quietly
+        // materialise the directory and turn a policy the verifier rejects into one it accepts.
+        Scaffold(sandboxRoot: "./workspace");
+        Directory.CreateDirectory(Path.Combine(_project, "workspace"));
+        var policyPath = Path.Combine(_project, "ashlar.policy.yaml");
+        File.WriteAllText(policyPath, File.ReadAllText(policyPath)
+            .Replace("  writable: []", "  writable:\n    - ../escape", StringComparison.Ordinal));
+
+        VerifyProject().Verified.Should().BeFalse("a writable path outside the root is a policy the verifier rejects");
+        NativeBundle.StagedPolicyDirectories(_project).Should().NotContain(d => d.Contains("escape", StringComparison.Ordinal));
+
+        Directory.Exists(Path.Combine(StageBundle(), "app", "escape")).Should().BeFalse();
+    }
+
+    [Fact]
+    public void The_symlink_refusal_names_a_path_that_exists()
+    {
+        // The refusal names a step — "remove it" — against a path that was printed relative to
+        // whichever subtree was being copied. `rm Widget/link.cs`, typed from a message about
+        // src/Widget/link.cs, fails. A message that names the wrong file names no fix at all.
+        Scaffold();
+        var dir = Path.Combine(_project, "src", "Widget");
+        Directory.CreateDirectory(dir);
+        var link = Path.Combine(dir, "link.cs");
+        var target = Path.Combine(_root, "target.cs");
+        File.WriteAllText(target, "// target\n");
+        try
+        {
+            File.CreateSymbolicLink(link, target);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return;   // Creating symlinks needs privilege on Windows; the Linux lanes cover this.
+        }
+
+        var act = () => StageBundle();
+
+        var message = act.Should().Throw<InvalidOperationException>().Which.Message;
+        message.Should().Contain(link, "the path in the message is the one the operator has to delete");
+        File.Exists(message.Split('\'')[1]).Should().BeTrue("and it has to be a path that is really there");
     }
 
     [Fact]
