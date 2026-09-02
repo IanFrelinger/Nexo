@@ -508,8 +508,17 @@ rm -f "$MESH/planted.ashpkg"
 # A .ashpkg is refused on SIZE before it is read, on every path that reads one — not only import
 # and show. The mesh store is a plain synced directory, so an oversized file needs no publish to
 # get there, and an unbounded read of one is an OutOfMemoryException, not a refusal.
+# Sparse, and built with dd rather than `truncate`: truncate is a GNU/FreeBSD tool macOS does not
+# ship (Homebrew installs it as gtruncate, not on PATH), and .github/workflows/portability-gate.yml
+# runs this script on macos-latest as well as ubuntu and windows. `dd bs=1 count=0 seek=N` is the
+# portable way to make an N-byte sparse file: identical on GNU coreutils, BSD/macOS dd, and the dd
+# in Git Bash on windows-latest. The fixture gets its own scenario because a silently-missing
+# $GIANT is how the two scenarios below would have failed on macOS for a reason nobody could read.
 GIANT="$WORK/giant.ashpkg"
-truncate -s $((16*1024*1024+1024)) "$GIANT"
+dd if=/dev/zero of="$GIANT" bs=1 count=0 seek=$((16*1024*1024+1024)) 2>/dev/null
+{ [ -f "$GIANT" ] && [ "$(wc -c < "$GIANT")" -gt $((16*1024*1024)) ]; } \
+  && result "pkg-oversized-fixture-built" PASS "sparse fixture is over the ceiling" \
+  || result "pkg-oversized-fixture-built" FAIL "could not build the oversized fixture"
 MESH_BEFORE=$(ls "$MESH"/*.ashpkg 2>/dev/null | wc -l)
 run_cli pkg publish "$GIANT" --store "$MESH"
 claim "pkg-publish-refuses-oversized" 65 "refusing before reading it"
@@ -524,6 +533,75 @@ cp "$GIANT" "$MESH/aaa-planted-giant.ashpkg"
 run_cli pkg pull --from "$MESH" --path "$PP"
 claim "pkg-pull-oversized-refuses-row-and-continues" 65 "refusing before reading it" "already-have 1" "refused/rejected 1"
 rm -f "$MESH/aaa-planted-giant.ashpkg"
+
+# A ceiling read off metadata is not a ceiling, which is why the guard is a bounded READ and not a
+# size check. FileInfo.Length reports 0 for a FIFO and for a symlink to a character device, and for
+# a symlink to a real file it reports the length of the target PATH — so `ln -s /dev/zero x.ashpkg`
+# was an OutOfMemoryException that killed the whole pass, `mkfifo x.ashpkg` was a permanent hang
+# that wedged every pull on the fleet, and `ln -s <oversized> x.ashpkg` ignored the limit outright.
+# Each is one command for anyone who can write to the share — cheaper than the oversized file above.
+#
+# LINUX ONLY, and deliberately a `uname` test rather than a capability probe. The probe that used to
+# stand here — `mkfifo … && ln -s …`, succeed and proceed — looked like the more careful choice and
+# was asking the wrong question. It SUCCEEDS in Git Bash on windows-latest: MSYS emulates both calls
+# and reports `prw-rw-rw-` and `lrwxrwxrwx` back. What lands on NTFS is not what it reports:
+# `mkfifo x.ashpkg` writes a 130-byte Windows shortcut named `x.ashpkg.lnk`, which the CLI's
+# `*.ashpkg` enumeration does not even return, so the row never appears; `ln -s /dev/zero x.ashpkg`
+# writes a 32-byte ORDINARY file whose bytes spell `!<symlink>` and whose .NET LinkTarget is null,
+# so the symlink gate has nothing to fire on; and `ln -s "$GIANT" x` silently falls back to COPYING.
+# A probe tests whether the syscall is available. Every claim below is about the OBJECT the syscall
+# leaves on disk, and those are three different objects here — which is why the probe passed and
+# five of these scenarios failed.
+#
+# macOS is excluded for a worse reason than red. There `mkfifo` plants a REAL fifo, `run_cli` has no
+# timeout, and GNU `timeout` is not on a mac runner to add one. SafePackageRead's non-blocking open
+# is a DllImport("libc") with a documented managed fallback that BLOCKS FOREVER on a fifo, and
+# nobody has verified that P/Invoke binds on Darwin. If it does not, macos-latest does not fail — it
+# hangs to the six-hour job limit with nothing in the log to read.
+#
+# Linux is the platform where this behaviour is verified, and where the dev container and the
+# primary CI leg run. Nothing takes over on the other two: SafePackageReadTests' non-regular-file
+# cases are [UnixOnlyFact] and report as SKIPPED on Windows, so the Windows branch of the guard —
+# the \\?\ prefix, the device-namespace refusal, the FILE_TYPE_DISK check — has no automated
+# coverage anywhere, and Darwin has none either. Skipping here is a gap, not a delegation.
+if [ "$(uname -s)" = "Linux" ]; then
+  mkfifo "$MESH/aaa-planted-fifo.ashpkg"
+  ln -s /dev/zero "$MESH/aab-planted-zero.ashpkg"
+  ln -s "$GIANT" "$MESH/aac-planted-linked-giant.ashpkg"
+  # Planted FIRST in Ordinal order, as above. The FIFO used to block here forever, so reaching the
+  # summary line at all is half the claim; the other half is the legitimate package behind them
+  # still being decided.
+  run_cli pkg pull --from "$MESH" --path "$PP"
+  claim "pkg-pull-refuses-nonregular-rows-and-continues" 65 "fifo, socket or pipe" "symbolic link" "not a regular file" "already-have 1" "refused/rejected 3"
+  rm -f "$MESH/aaa-planted-fifo.ashpkg" "$MESH/aab-planted-zero.ashpkg" "$MESH/aac-planted-linked-giant.ashpkg"
+
+  # publish, import and show take a CALLER-SUPPLIED path, so they are reachable directly — and all
+  # three read the same way, including import, which the refactor had treated as the safe reference.
+  ln -s /dev/zero "$WORK/zero.ashpkg"
+  MESH_BEFORE=$(ls "$MESH"/*.ashpkg 2>/dev/null | wc -l)
+  run_cli pkg publish "$WORK/zero.ashpkg" --store "$MESH"
+  claim "pkg-publish-refuses-symlink-to-device" 65 "not a regular file"
+  MESH_AFTER=$(ls "$MESH"/*.ashpkg 2>/dev/null | wc -l)
+  [ "$MESH_BEFORE" = "$MESH_AFTER" ] \
+    && result "pkg-publish-nonregular-not-in-store" PASS "refused at the source" \
+    || result "pkg-publish-nonregular-not-in-store" FAIL "a link to a device reached the mesh store"
+  run_cli pkg import "$WORK/zero.ashpkg" --path "$PP"
+  claim "pkg-import-refuses-symlink-to-device" 65 "not a regular file"
+  run_cli pkg show "$WORK/zero.ashpkg"
+  claim "pkg-show-refuses-symlink-to-device" 65 "not a regular file"
+  rm -f "$WORK/zero.ashpkg"
+
+  # A character device stats like an empty regular file and then never stops yielding bytes. Only
+  # the cap ON THE READ stops it, and it has to stop it in milliseconds, not by exhausting memory.
+  run_cli pkg import /dev/zero --path "$PP"
+  claim "pkg-import-caps-endless-device-read" 65 "past the limit"
+else
+  echo "  (skipping the FIFO/symlink scenarios: Linux only — on MSYS/Windows mkfifo and ln -s"
+  echo "   succeed but leave a .lnk shortcut and an ordinary file, so the fixtures do not mean"
+  echo "   what the claims say; on macOS the non-blocking open is unverified and a real FIFO"
+  echo "   would hang the run rather than fail it. Nothing covers it in their place: the matching"
+  echo "   SafePackageReadTests cases are Unix-only and skip on this host too.)"
+fi
 
 # a sealed peer pulls the same store: every package rejected, nothing lands, non-zero exit
 PS=$(fresh); run_cli init sealed-pull --path "$PS"
@@ -618,6 +696,27 @@ claim "coprod-a-admit-applies-v2" 0 "seated" "applied"
 grep -q "coprod v2" "$CA/src/Coprod.cs" 2>/dev/null \
   && result "coprod-a-holds-v2" PASS "A's file holds v2 — both gates, both directions" \
   || result "coprod-a-holds-v2" FAIL "v2 did not land on A"
+
+# A THROW from the gate submission costs one row, not the pass. The read was already inside the
+# per-row guard; SubmitAsync sat one statement outside it, so anything IT threw still aborted the
+# whole pull — the exact denial the guard exists to prevent, moved one line further down and left
+# open. The trap is a real failure and not a stub: a DIRECTORY where the gate record's file belongs
+# makes GateStore's write-then-move fail — IOException "Is a directory" on Linux, an access denial
+# on Windows — and either way it escapes SubmitAsync's own
+# `when (ex is InvalidOperationException or ArgumentException)` filter and reaches the caller. It is
+# the shape an operator meets for real when the receiving project's .ashlar cannot be written.
+#
+# ext-co1 sorts before ext-co2 in the store, so a pass that dies on the trap never reaches v2 — the
+# file-on-disk check is what makes "the pass continued" a claim rather than a hope, and the counters
+# are what keep the refusal from becoming a silent skip. Not in the Linux-only block: a directory is
+# a directory on every host, and a rename onto one fails on NTFS exactly as it does on ext4.
+CR=$(fresh); run_cli init coprod-r --path "$CR"; set_selfextending "$CR"
+mkdir -p "$CR/.ashlar/gates/ext-co1.json"
+run_cli pkg pull --from "$MESH2" --path "$CR"
+claim "pkg-pull-submit-throw-refuses-row-and-continues" 65 "REFUSED" "ext-co1" "ADMITTED" "pulled 2" "admitted 1" "refused/rejected 1"
+grep -q "coprod v2" "$CR/src/Coprod.cs" 2>/dev/null \
+  && result "pkg-pull-submit-throw-later-package-still-lands" PASS "one row threw; the package behind it was still decided and applied" \
+  || result "pkg-pull-submit-throw-later-package-still-lands" FAIL "a throw at one row denied every package behind it"
 
 # content claims: the admission signed (path, sha256) for its rows at propose time, so a forge
 # row edited AFTER the gate decided fails verification — the doctored bytes never travel under

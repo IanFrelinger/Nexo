@@ -76,7 +76,10 @@ jobs:
 
           echo "portable: the loop holds on ${{ matrix.os }}"
 
-      - name: scenario sweep — 44 behavioural claims on ${{ matrix.os }}
+      # ~143 on Linux; the six FIFO/symlink scenarios are Linux-only (see the comment above that
+      # block in e2e-loop.sh), so the other two legs run ~137. The count is a scale, not a contract:
+      # the script's own RESULT tally is the number to read.
+      - name: scenario sweep — ~143 behavioural claims on ${{ matrix.os }}
         shell: bash
         env:
           NO_COLOR: "1"

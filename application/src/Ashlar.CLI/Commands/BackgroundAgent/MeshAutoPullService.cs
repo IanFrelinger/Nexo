@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Ashlar.CLI.Packaging;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
 
@@ -202,15 +203,23 @@ public sealed class MeshAutoPullService : BackgroundService
         foreach (var file in files)
         {
             ct.ThrowIfCancellationRequested();
-            if (new FileInfo(file).Length > MeshWire.MaxPackageBytes)
-            {
-                errors++;   // an oversized package is never buffered — local or remote, same bound
-                continue;
-            }
             try
             {
-                var json = await File.ReadAllTextAsync(file, ct).ConfigureAwait(false);
-                var result = await PackageImport.SubmitAsync(projectDir, json).ConfigureAwait(false);
+                // INSIDE the try, unlike the FileInfo.Length guard it replaces: that one sat outside
+                // and so a single unreadable file aborted the daemon's WHOLE pass, the same
+                // whole-pass abort the CLI's pull loop just had fixed. And FileInfo.Length was never
+                // a bound to begin with — it reports 0 for a FIFO or a symlink to /dev/zero, and the
+                // length of the target PATH for a symlink to a real file, so the unattended daemon
+                // shared the CLI's hole exactly. One door for both: SafePackageRead never blocks and
+                // never buffers past the bound, local or remote.
+                var read = await SafePackageRead.TryReadTextAsync(file, MeshWire.MaxPackageBytes, ct)
+                    .ConfigureAwait(false);
+                if (!read.Ok)
+                {
+                    errors++;   // refused, never buffered — local or remote, same bound
+                    continue;
+                }
+                var result = await PackageImport.SubmitAsync(projectDir, read.Text!).ConfigureAwait(false);
                 switch (result.Outcome)
                 {
                     case PackageAdmission.Admitted: admitted++; break;

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Ashlar.CLI.Packaging;
 using Ashlar.Manifest.Signing;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
@@ -36,6 +37,12 @@ public static class MeshWire
     /// Upper bound for one <c>.ashpkg</c> on the wire and on disk. Packages carry source text of a
     /// gated extension — legitimately tens of KB — so 4&#160;MB is generous headroom while still
     /// bounding what a peer can make this node download or buffer.
+    ///
+    /// <para>ON DISK it is a bound on the BYTES SERVED, not on a number read out of a directory
+    /// entry. That sentence was false until the serve path went through
+    /// <see cref="Ashlar.CLI.Packaging.SafePackageRead"/>: a symlink's <see cref="FileInfo.Length"/>
+    /// is the length of the target's path string, so a link to a 40&#160;MB file measured 23 bytes,
+    /// passed this bound, and was then served at 40&#160;MB — ten times the documented ceiling.</para>
     /// </summary>
     public const long MaxPackageBytes = 4 * 1024 * 1024;
 
@@ -98,12 +105,19 @@ public static class MeshWire
 /// protections a raw socket loop had to hand-roll: a slow or non-reading client is dropped, not able
 /// to wedge serving.</para>
 ///
-/// <para>Safe by construction: everything offered is already sealed and Ed25519-signed (MeshStore
-/// refuses to store what does not verify), the surface is read-only GET, file names are validated
-/// against a traversal-free pattern AND resolved-path containment, oversized files are excluded, and a
-/// failed bind is logged and never takes the daemon down. Trust still lives entirely on the RECEIVING
-/// side — a peer that pulls from here runs every package through its own trust root and gate; TLS is
-/// access control and confidentiality on top, not a substitute for the seal.</para>
+/// <para>Safe by construction: the surface is read-only GET, file names are validated against a
+/// traversal-free pattern AND resolved-path containment, every file offered or served is opened
+/// through <see cref="Ashlar.CLI.Packaging.SafePackageRead"/> — so a symlink, a FIFO, a device or an
+/// oversized file is a 404 and never a served byte — and a failed bind is logged and never takes the
+/// daemon down. Trust still lives entirely on the RECEIVING side — a peer that pulls from here runs
+/// every package through its own trust root and gate; TLS is access control and confidentiality on
+/// top, not a substitute for the seal.</para>
+///
+/// <para>WHAT THIS DIRECTORY IS. The published dir is not a private staging area: MeshStore.Publish
+/// writes to it, ASHLAR_MESH_AUTOSHARE writes admitted packages into it unattended
+/// (docs/Federation.md), and on a real host it is often a synced folder. "Everything offered is
+/// already sealed" describes what this node PUT there, not what is there — so the endpoints check
+/// what they are about to serve rather than trusting how it arrived. Issue #488.</para>
 ///
 /// <para>Opt-in (registered only when <c>ASHLAR_MESH_SERVE_PORT</c> is set).</para>
 /// </summary>
@@ -253,6 +267,26 @@ public sealed class MeshServeService : BackgroundService
 
         app.MapGet("/mesh/v1/index", () => Results.Json(ListPackages()));
 
+        // ONE DOOR, and this endpoint is the sixth thing behind it. The name check and the
+        // containment check below both constrain a PATH; neither says anything about what the path
+        // points AT, and Path.GetFullPath does not resolve symlinks. This used to end in
+        // `new FileInfo(full).Length > MaxPackageBytes` and `Results.File(full, …)`, which meant a
+        // link planted in the published directory was measured at the length of its target's path
+        // string and then served in full:
+        //
+        //   ln -s <a 40 MB file> linked-big.ashpkg   -> advertised at 23 bytes, served at 41,943,040
+        //   ln -s /etc/passwd    d-secret.ashpkg     -> ARBITRARY FILE READ over the network
+        //   mkfifo               hang.ashpkg         -> one GET blocks in open(2) inside Kestrel's
+        //                                               SendFileAsync; a client disconnect cannot
+        //                                               unblock it, and 105 of them (the
+        //                                               MaxConcurrentConnections limit is 100) wedge
+        //                                               the node so hello and index stop answering.
+        //
+        // SafePackageRead refuses a LinkTarget, refuses anything not seekable / not FILE_TYPE_DISK,
+        // opens without ever blocking, and reports the length off the OPENED HANDLE — so the bytes
+        // served and the bytes bounded are the same bytes. ASHLAR_MESH_AUTOSHARE writes admitted
+        // packages into this very directory, so "nobody would plant a file here" was never the
+        // property this rested on. Issue #488.
         app.MapGet("/mesh/v1/pkg/{file}", (string file) =>
         {
             if (!MeshWire.IsSafePackageName(file))
@@ -261,29 +295,53 @@ public sealed class MeshServeService : BackgroundService
             }
             var full = Path.GetFullPath(Path.Combine(_settings.PublishedDir, file));
             // Containment on the RESOLVED path, independent of the name check.
-            if (!string.Equals(Path.GetDirectoryName(full), Path.GetFullPath(_settings.PublishedDir), StringComparison.Ordinal)
-                || !File.Exists(full)
-                || new FileInfo(full).Length > MeshWire.MaxPackageBytes)
+            if (!string.Equals(Path.GetDirectoryName(full), Path.GetFullPath(_settings.PublishedDir), StringComparison.Ordinal))
             {
                 return Results.NotFound();
             }
-            return Results.File(full, "application/json");   // Kestrel streams it under its own limits
+            // A refusal is a 404 and never its reason: this is the one caller of the primitive whose
+            // output goes to a STRANGER, and the refusals are written for the operator at the
+            // console — they name the path, the symlink target, and which gate fired. Telling a peer
+            // apart "no such package" from "that one is a symlink to something 40 MB" hands them a
+            // probe into the node's filesystem.
+            if (!SafePackageRead.TryOpenBounded(full, MeshWire.MaxPackageBytes, out var stream, out _, out _))
+            {
+                return Results.NotFound();
+            }
+            // Results.Stream disposes the stream once the response is written; Kestrel streams it
+            // under its own connection and data-rate limits.
+            return Results.Stream(stream, "application/json");
         });
 
         return app;
     }
 
+    /// <summary>
+    /// The packages this node will actually serve, with the size it will actually serve them at.
+    ///
+    /// <para>Every candidate is OPENED (and closed again — not a byte is read) rather than measured
+    /// through <see cref="FileInfo"/>, because a FileInfo length is a claim about a path: it reports
+    /// the target's path-string length for a symlink and 0 for a FIFO, so both cleared the 4 MiB
+    /// bound and were advertised to the whole LAN. An index row that a peer can rely on has to be
+    /// measured the same way the file will later be served.</para>
+    /// </summary>
     private List<MeshWire.IndexEntry> ListPackages()
     {
         if (!Directory.Exists(_settings.PublishedDir))
         {
             return [];
         }
-        return Directory.EnumerateFiles(_settings.PublishedDir, "*.ashpkg")
-            .Select(f => new FileInfo(f))
-            .Where(fi => MeshWire.IsSafePackageName(fi.Name) && fi.Length <= MeshWire.MaxPackageBytes)
-            .OrderBy(fi => fi.Name, StringComparer.Ordinal)
-            .Select(fi => new MeshWire.IndexEntry(fi.Name, fi.Length))
-            .ToList();
+        var entries = new List<MeshWire.IndexEntry>();
+        foreach (var path in Directory.EnumerateFiles(_settings.PublishedDir, "*.ashpkg"))
+        {
+            var name = Path.GetFileName(path);
+            if (MeshWire.IsSafePackageName(name)
+                && SafePackageRead.TryMeasure(path, MeshWire.MaxPackageBytes, out var length))
+            {
+                entries.Add(new MeshWire.IndexEntry(name, length));
+            }
+        }
+        entries.Sort((a, b) => string.CompareOrdinal(a.File, b.File));
+        return entries;
     }
 }
