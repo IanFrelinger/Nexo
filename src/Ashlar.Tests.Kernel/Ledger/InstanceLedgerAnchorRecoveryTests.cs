@@ -274,12 +274,108 @@ public sealed class InstanceLedgerAnchorRecoveryTests : IDisposable
     }
 
     [Fact]
-    public async Task Reanchor_refuses_to_pin_an_empty_ledger()
+    public async Task Reanchor_refuses_an_empty_ledger_that_has_no_anchor_either()
     {
+        // NOTE THE STATE THIS PINS, because the name it used to carry —
+        // "refuses_to_pin_an_empty_ledger" — reads as though an empty ledger were refused in
+        // general, and that reading is the defect. An empty ledger UNDER A LIVE ANCHOR is a
+        // destroyed history, and it is accepted (see the two tests below); a refusal there would
+        // strand every message that names this command as its fix. Empty with NO anchor is a
+        // different thing entirely: a project that was never certified, where nothing was lost and
+        // there is nothing an anchor could pin.
         var act = async () => await Open().ReanchorAsync(_signer, Now);
 
         (await act.Should().ThrowAsync<InvalidOperationException>())
             .And.Message.Should().Contain("Nothing to re-anchor");
+    }
+
+    [Fact]
+    public async Task Accepting_a_destroyed_history_is_flagged_as_a_loss_not_counted_as_survivors()
+    {
+        // Count is 1 here and NOTHING survived to make it — the 1 is the marker this call just
+        // wrote. Every earlier reader of this result treated Count as a survivor count, which is
+        // how the CLI came to tell an operator whose ledger had been deleted that one entry of it
+        // was still there. The distinction has to live on the result, not in the caller's guess.
+        var led = Open();
+        await Append(led, "s1", 0);
+        await Append(led, "s2", 1);
+        Directory.Delete(LedgerDir, recursive: true);
+
+        var result = await led.ReanchorAsync(_signer, Now.AddMinutes(5));
+
+        result.DestroyedHistoryAccepted.Should().BeTrue();
+        result.Count.Should().Be(1, "the new history is one entry long: the record of the loss");
+        result.Head!.Verified.Should().BeFalse();
+        (await led.VerifyChainAsync()).Count.Should().Be(1, "and the ledger verifies afterwards");
+    }
+
+    [Fact]
+    public async Task Accepting_a_truncation_is_not_flagged_as_a_destroyed_history()
+    {
+        // The control. Survivors are survivors, and the flag must not fire for them, or the honest
+        // message for one case becomes a false message for the other.
+        var led = Open();
+        await Append(led, "s1", 0);
+        await Append(led, "s2", 1);
+        File.Delete(EntryFile(2));
+
+        var result = await led.ReanchorAsync(_signer, Now.AddMinutes(5));
+
+        result.DestroyedHistoryAccepted.Should().BeFalse();
+        result.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task A_verifying_chain_is_never_flagged_as_a_destroyed_history()
+    {
+        var led = Open();
+        await Append(led, "s1", 0);
+
+        (await led.VerifyChainAsync()).DestroyedHistoryAccepted.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task The_record_of_a_loss_does_not_repeat_an_unsigned_anchors_claim_as_fact()
+    {
+        // The entries-gone state is refused BEFORE the anchor's signature is examined, and that
+        // ordering is deliberate: checking the signature first would route an operator whose
+        // entries are gone and whose anchor is also unsigned to `ashlar verify`, which refuses the
+        // same state — a refusal naming a fix that cannot run. So the anchor's sequence and hash
+        // reach the permanent record unattested, and the record has to say so rather than assert
+        // someone else's number as the length of a history nobody signed for.
+        var led = Open();
+        await Append(led, "s1", 0);
+        var node = JsonNode.Parse(await File.ReadAllTextAsync(AnchorFile))!;
+        node["Seq"] = 99999;
+        await File.WriteAllTextAsync(AnchorFile, node.ToJsonString());
+        Directory.Delete(LedgerDir, recursive: true);
+
+        var result = await led.ReanchorAsync(_signer, Now.AddMinutes(5));
+
+        var detail = result.Head!.Courses.Single(c => c.Name == "ledger-anchor").Detail;
+        detail.Should().Contain("claimed to pin entry 99999")
+            .And.Contain("signature did NOT verify",
+                "an unsigned anchor's length is what was found on disk, not something that was attested");
+        detail.Should().Contain("the whole history had been deleted");
+    }
+
+    [Fact]
+    public async Task A_record_of_a_loss_never_prints_a_dangling_empty_hash()
+    {
+        // An anchor with no head hash is only reachable by hand-editing, but the entry that
+        // records the loss is permanent and signed — "hash )" with nothing in it would be there
+        // for good.
+        var led = Open();
+        await Append(led, "s1", 0);
+        var node = JsonNode.Parse(await File.ReadAllTextAsync(AnchorFile))!;
+        node["Hash"] = "";
+        await File.WriteAllTextAsync(AnchorFile, node.ToJsonString());
+        Directory.Delete(LedgerDir, recursive: true);
+
+        var result = await led.ReanchorAsync(_signer, Now.AddMinutes(5));
+
+        result.Head!.Courses.Single(c => c.Name == "ledger-anchor").Detail
+            .Should().Contain("hash none recorded").And.NotContain("(hash )");
     }
 
     // ---- The crash window itself -------------------------------------------------------------

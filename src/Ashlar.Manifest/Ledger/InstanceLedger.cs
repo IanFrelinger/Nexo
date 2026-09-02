@@ -65,6 +65,23 @@ public sealed record LedgerVerification
 
     /// <summary>The most recent entry, or null when the ledger is empty.</summary>
     public LedgerEntry? Head { get; init; }
+
+    /// <summary>
+    /// True only when this result came from ACCEPTING A DESTROYED HISTORY: every entry was gone
+    /// from under a live anchor, and <see cref="InstanceLedger.ReanchorAsync"/> started the history
+    /// again with the loss recorded as its first signed entry.
+    /// </summary>
+    /// <remarks>
+    /// It exists because <see cref="Count"/> means something different in that one case, and the
+    /// difference is the kind a caller gets wrong silently. Everywhere else <see cref="Count"/> is
+    /// how many entries SURVIVED. Here nothing survived: the count is 1, and that 1 is the marker
+    /// the re-anchor just wrote. A caller that renders "N surviving entries" without consulting
+    /// this tells an operator whose whole history was deleted that one entry of it came back —
+    /// which is the reassurance this entire mechanism exists to refuse to give. The flag is on the
+    /// result rather than left to the caller to infer, because inferring it means sniffing the
+    /// refusal text, and a rewording would silently turn the message back into a lie.
+    /// </remarks>
+    public bool DestroyedHistoryAccepted { get; init; }
 }
 
 /// <summary>
@@ -320,9 +337,32 @@ public sealed partial class InstanceLedger
                 + "verify`. Refusing to write a pin that points at nothing.");
         }
 
+        // Whether the destroyed anchor's own signature verified. This is recorded rather than
+        // enforced: an anchor with no entries beneath it is refused for being an anchor with no
+        // entries beneath it, BEFORE its signature is looked at, in the read path and in the append
+        // path alike — deliberately, because checking the signature first would send an operator
+        // whose entries are gone and whose anchor is also unsigned to `ashlar verify`, which
+        // refuses that same state. That is the dead end this whole mechanism exists to remove. So
+        // the state stays acceptable, and what changes is only the honesty of the record: the
+        // sequence and hash below are the anchor's CLAIM about how much history there was, and
+        // when nothing signed that claim the entry says so instead of repeating it as fact.
+        var attested = destroyed.Sig is not null && destroyed.Signer is not null
+            && OperatorKey.Verify(
+                destroyed.Signer,
+                CanonicalJson.Bytes(destroyed with { Sig = null, Signer = null }),
+                destroyed.Sig);
+
+        var found = attested
+            ? $"the head anchor pinned entry {destroyed.Seq} (hash {HashOrNone(destroyed.Hash)}), and every entry "
+              + "beneath it was gone: the whole history had been deleted."
+            : $"the head anchor claimed to pin entry {destroyed.Seq} (hash {HashOrNone(destroyed.Hash)}), and every "
+              + "entry beneath it was gone: the whole history had been deleted. That anchor's own signature did NOT "
+              + "verify, so the length recorded above is what was found on disk rather than anything the operator "
+              + "key ever attested.";
+
         var detail =
-            $"the head anchor pinned entry {destroyed.Seq} (hash {destroyed.Hash}) and every entry beneath it was "
-            + "gone: the whole history had been deleted. That loss was accepted deliberately, with the operator "
+            found
+            + " That loss was accepted deliberately, with the operator "
             + "key, by `ashlar ledger reanchor --yes`. Nothing was recovered — this entry is the record that "
             + "there was something to recover, so the deletion stays visible instead of looking like a project "
             + "that had never been certified.";
@@ -369,8 +409,16 @@ public sealed partial class InstanceLedger
         // clears on a second run. There is no phase-one pending anchor for a genesis entry: the
         // old anchor names a history none of whose entries exist, so there is no position to keep.
         WriteAnchor(signer, signed, now, pending: null);
-        return new LedgerVerification { Count = 1, Head = signed };
+
+        // Count 1, and NOTHING survived to make it. The flag is what stops a caller reporting the
+        // marker as a recovered entry; see LedgerVerification.DestroyedHistoryAccepted.
+        return new LedgerVerification { Count = 1, Head = signed, DestroyedHistoryAccepted = true };
     }
+
+    /// <summary>The destroyed anchor's head hash, or a phrase saying it carried none — so a record
+    /// of a loss never contains a dangling "hash " with nothing after it.</summary>
+    private static string HashOrNone(string? hash) =>
+        string.IsNullOrEmpty(hash) ? "none recorded" : hash;
 
     private static void TryDelete(string path)
     {

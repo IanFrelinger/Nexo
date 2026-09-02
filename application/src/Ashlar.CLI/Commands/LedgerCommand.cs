@@ -155,10 +155,28 @@ public sealed class LedgerCommand : Command
 
         if (signer is null)
         {
+            // The directory TryLoad actually searched, which is --key-dir when it was given and
+            // only otherwise the env/default one. Printing OperatorKey.ResolveKeyDir() here named
+            // the default no matter what was passed, so `--key-dir /somewhere/empty` produced a
+            // refusal pointing at ~/.ashlar/keys: the operator was told to look where the command
+            // had not looked. And the fix it named was worse than wrong, it was a loop — bare
+            // `ashlar keys init` writes to that same default, so running it exactly as instructed
+            // and re-running the command returned the byte-identical refusal, forever. A refusal
+            // has to name the directory it really searched and a command that really puts a key
+            // there, or it is a dead end wearing the clothes of a fix.
+            var searched = string.IsNullOrWhiteSpace(keyDir)
+                ? OperatorKey.ResolveKeyDir()
+                : Path.GetFullPath(keyDir);
+            var initCommand = string.IsNullOrWhiteSpace(keyDir)
+                ? "ashlar keys init"
+                : $"ashlar keys init --key-dir \"{searched}\"";
+
             errw.WriteLine("refusing to re-anchor: there is no operator key on this machine, and a re-anchor is a SIGNED act -");
             errw.WriteLine("that is what makes it a decision someone took rather than something that happened.");
-            errw.WriteLine("fix: run `ashlar keys init` on the machine that owns this project, then run this command again.");
-            errw.WriteLine($"if the key lives elsewhere, point ASHLAR_KEY_DIR at it, or pass --key-dir <dir> (looked in {OperatorKey.ResolveKeyDir()}).");
+            errw.WriteLine($"no key was found in {searched} - that is the directory this command searched.");
+            errw.WriteLine($"fix: run `{initCommand}` on the machine that owns this project, then run this command again.");
+            errw.WriteLine("if the key already exists somewhere else, point this command at it instead:  --key-dir <dir>");
+            errw.WriteLine("(or set ASHLAR_KEY_DIR, which is where the search looks when --key-dir is not given).");
             return ExitUsage;
         }
 
@@ -204,7 +222,28 @@ public sealed class LedgerCommand : Command
         try
         {
             var chain = await ledger.ReanchorAsync(signer, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
-            outw.WriteLine($"  {Gold("OK ledger re-anchored")}  {Dim($"{chain.Count} surviving entr{(chain.Count == 1 ? "y" : "ies")} - signed {signer.Fingerprint}")}");
+
+            // The two outcomes are NOT the same sentence with a different number in it, and saying
+            // so cost an operator the truth. This line used to read "{chain.Count} surviving
+            // entries" in both cases; where the entries were all gone the count is 1 and that 1 is
+            // the destruction marker the re-anchor had just written, so `rm -rf .ashlar/ledger`
+            // followed by the fix printed "OK ledger re-anchored - 1 surviving entry". Nothing
+            // survived. Whatever else this command is allowed to do, it is not allowed to tell
+            // someone whose history was destroyed that a piece of it came back.
+            if (chain.DestroyedHistoryAccepted)
+            {
+                outw.WriteLine($"  {Gold("OK loss accepted")}  {Dim($"NOTHING survived - signed {signer.Fingerprint}")}");
+                outw.WriteLine($"  {Dim("every entry under the anchor was gone, so there was nothing to re-verify and nothing to re-pin.")}");
+                outw.WriteLine($"  {Dim("the history has been started again, and the destruction is written down as its first signed")}");
+                outw.WriteLine($"  {Dim("entry - that entry is now the only surviving evidence this project ever had a history.")}");
+                outw.WriteLine($"  {Dim("this is not a recovery. nothing was recovered.")}");
+            }
+            else
+            {
+                outw.WriteLine($"  {Gold("OK ledger re-anchored")}  {Dim($"{chain.Count} surviving entr{(chain.Count == 1 ? "y" : "ies")} - signed {signer.Fingerprint}")}");
+                outw.WriteLine($"  {Dim("whatever was missing is still missing - a re-anchor recovers nothing.")}");
+            }
+
             outw.WriteLine($"  {Dim("what was accepted:")}");
             outw.WriteLine($"  {Dim(disagreement)}");
             outw.WriteLine($"  {Dim("the anchor now pins this history. re-certify the documents over it with:  ashlar verify")}");
@@ -212,9 +251,13 @@ public sealed class LedgerCommand : Command
         }
         catch (InvalidOperationException ex)
         {
-            // ReanchorAsync verifies the whole chain first and refuses an empty ledger. Neither is
-            // something --yes may override: a re-anchor accepts a SHORTER history, never a forged
-            // one, and there is no honest anchor to write over nothing.
+            // ReanchorAsync verifies the whole chain first, and --yes may not override that: a
+            // re-anchor accepts a SHORTER history, never a forged one. It does NOT refuse an empty
+            // ledger under a live anchor any more — that state is accepted by recording the loss
+            // (AcceptDestroyedHistoryLocked), because refusing it here while every refusal in the
+            // kernel named this command as the fix was the dead end this verb exists to close. The
+            // one empty case still refused is an empty ledger with no anchor either, which is a
+            // project that was never certified rather than a loss to accept.
             errw.WriteLine("  re-anchor refused");
             errw.WriteLine($"  {ex.Message}");
             return ExitRefused;
