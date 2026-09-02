@@ -8,8 +8,8 @@ Documentation index for the Ashlar platform. Start here to find what you need.
 2. `README.md` — the front door: what Ashlar is (auditable workflows, certified artifacts, your infrastructure), the trust loop / certification section, and the Try / Develop / Deploy lanes (container-first; native paths are escape hatches).
 3. `docs/GettingStarted.md` — the longer tour after the quickstart: startup lanes, first pipeline, CLI commands, provider setup, testing.
 4. `docs/ProjectTiers.md` — **canonical repo map** by project tier: kernel, hosts, distribution, transport/protocols, applications on the core, commercial satellites, and tests.
-5. `docs/IntegratorGuide.md` — embedding Ashlar in your own host: SDK packages, brick/agent registration, trust configuration, compatibility matrix.
-6. `consumer-template/CONSUMING.md` — `nuget.config` + `Directory.Packages.props` template for consuming Ashlar packages from a feed you supply (nothing is on nuget.org yet).
+5. `docs/IntegratorGuide.md` — embedding Ashlar in your own host: SDK packages, brick/agent registration, trust configuration, compatibility matrix. It opens with a table that routes you to the right consumption path (packages / checkout / operator CLI).
+6. **`docs/ConsumingFromNuGet.md`** — **package-only getting started**: `0.1.1` from plain nuget.org, which package does what, the composition order, and the project-file settings a consumer outside a checkout actually needs. `consumer-template/CONSUMING.md` is the copy-paste `nuget.config` + `Directory.Packages.props` pair that goes with it.
 7. `docs/DistributionModels.md` — how to **consume and ship** Ashlar (NuGet, HTTP, CLI, compose, mesh) and the **distribution-matrix** CI workflow.
 8. `CONTRIBUTING.md` — branching, the recommended **Dev Container** workflow, and the pre-PR checks; `.devcontainer/devcontainer.json` is the default development environment (Cursor / VS Code).
 9. `docs/Architecture.md` — layered architecture and component boundaries; `docs/Conventions.md` — current code conventions as practiced today.
@@ -29,7 +29,9 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/governed-pipeline.md` — the governed MEAI model pipeline every proposal flows through.
 - **`docs/RunningASelfExtendingNode.md`** — the **operator guide** to running a node that extends itself unattended (A0–A5): the two dials, `ashlar policy set self_extend` / `policy show`, the build course + post-apply canary/rollback, budgets, and the `background-agent report` / `disarm` safety front doors.
 - `docs/SELF-EXTEND-AUDIT.md` — background-agent self-extend safety audit (four invariants, all enforced on the live path as of 2026-08-16).
-- `docs/AuthoringBricks.md` + `samples/hello-brick/README.md` — author a brick the gate can judge (`ProjectReference` into `src/`; no NuGet feed needed).
+- **`docs/CertificationGate.md`** — **the builder-facing gate page**: what a *witness* is, the five legs and what each refuses, how a package-only consumer invokes `CertifyAsync`, what a rejection looks like, and the two-package / own-project rule a certifiable brick must satisfy.
+- **`docs/OperatorLifecycle.md`** — the **operator persona**: `ashlar init` and the two documents, the operator-owned `ashlar.policy.yaml`, the `ashlar verify` VERIFIED→CERTIFIED reveal, the self-extend dial, `ashlar gates`, and `ashlar pkg` / `keys` trust.
+- `docs/AuthoringBricks.md` + `samples/hello-brick/README.md` — author a brick the gate can judge (the sample uses a `ProjectReference` into `src/`, which is convenient in a checkout and **not** certifiable — see `docs/CertificationGate.md`).
 - `samples/autonomy-objectives/README.md` — a complete tracked objective + witness + recorded model proposal, and how to feed it to the loop.
 - `spikes/README.md` — what each spike under `spikes/` is, which ledger rows cite it, and why none of them is a supported entry point; `spikes/autonomy-first-flight/run-first-flight.ps1` flies one real iteration (Docker + Ollama).
 - `scripts/run-cert-gate.sh` + `scripts/cert-gate-config.sh` — reproduce the CI `cert-gate` locally with the same filter.

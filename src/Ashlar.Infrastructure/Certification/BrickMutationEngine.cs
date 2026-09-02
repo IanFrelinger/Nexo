@@ -125,6 +125,7 @@ internal sealed class BrickMutationEngine
             foreach (var unit in pendingUnits)
             {
                 var observations = report.Observations.Where(o => o.UnitId == unit.UnitId).ToArray();
+                ThrowIfUnitNeverRan(unit.UnitId, observations);
                 if (!WitnessRunner.JudgeMutantObservations(witness, observations))
                 {
                     killed.Add(unit.UnitId);
@@ -146,6 +147,44 @@ internal sealed class BrickMutationEngine
             .ToArray();
 
         return new MutationTestResult(total, survivors, killed, escapeRate, survivorSites);
+    }
+
+    /// <summary>
+    /// Refuses a backend unit that never actually executed.
+    /// </summary>
+    /// <remarks>
+    /// The runner reports a unit it could not LOAD as a thrown observation on every case, which
+    /// is byte-identical in shape to a mutant that throws on every case — and the judge reads
+    /// both as killed. One of those is a witness doing its job; the other is a mutation leg with
+    /// no harness behind it, and counting it inflates the kill count of a certificate the gate is
+    /// about to sign. The runner marks the difference explicitly
+    /// (<see cref="HotSwap.ExecutionRunnerMarkers.UnitLoadFailurePrefix"/>), so honour it.
+    /// </remarks>
+    private static void ThrowIfUnitNeverRan(
+        string unitId, IReadOnlyList<CandidateCaseObservation> observations)
+    {
+        if (observations.Count == 0)
+        {
+            throw new CertificationHarnessException(
+                "Mutation harness: the execution backend returned no observation at all for mutant "
+                + $"'{unitId}'. A mutant with no observation has not been judged, and scoring it either way "
+                + "would put a number in a signed record that nothing measured. Fix: check the backend's "
+                + "runner output for the missing unit. Refusing rather than guessing a verdict.");
+        }
+
+        var loadFailure = observations.FirstOrDefault(o =>
+            o.Threw
+            && o.Error is not null
+            && o.Error.StartsWith(HotSwap.ExecutionRunnerMarkers.UnitLoadFailurePrefix, StringComparison.Ordinal));
+        if (loadFailure is not null)
+        {
+            throw new CertificationHarnessException(
+                $"Mutation harness: mutant '{unitId}' never ran — the execution backend could not load it "
+                + $"({loadFailure.Error}). Its cases threw because the harness broke, not because the witness "
+                + "caught anything, so counting them as kills would report a mutation leg that never happened. "
+                + "Fix: the mutant image and its reference set must load in the runner — check the unit upload "
+                + "and the probe directories. Refusing rather than signing an unearned escape_rate.");
+        }
     }
 
     /// <summary>
@@ -325,6 +364,13 @@ internal sealed class BrickMutationEngine
                 cancellationToken).ConfigureAwait(false);
 
             return (passed, new WeakReference(loadContext));
+        }
+        catch (CertificationHarnessException)
+        {
+            // NOT a kill. A harness that cannot drive the mutant has observed nothing about the
+            // witness, and folding that into (false, ...) is exactly how the leg came to report a
+            // clean sweep it never ran. Propagates as an infrastructure fault, like a backend one.
+            throw;
         }
         catch
         {

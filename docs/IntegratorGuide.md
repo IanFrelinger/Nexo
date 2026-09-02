@@ -4,11 +4,39 @@ This guide is for teams embedding Ashlar, extending bricks, or hosting custom ba
 
 For **how all distribution channels fit together** (NuGet, HTTP, CLI, compose, source, mesh), **pinning**, and the **CI matrix** that validates each channel, see **`docs/DistributionModels.md`**.
 
+## Pick your consumption path first
+
+| You have | Use | Start at |
+|----------|-----|----------|
+| **No checkout** — your own repository, consuming Ashlar as a dependency | **`PackageReference`** to `Ashlar.*` `0.1.1` from nuget.org | **[`ConsumingFromNuGet.md`](ConsumingFromNuGet.md)**, pins in [`consumer-template/CONSUMING.md`](../consumer-template/CONSUMING.md) |
+| **A checkout of this repository** — you are changing Ashlar itself, or want to track `master` | `ProjectReference` into `src/` | the rest of this page |
+| **A deployed project you operate** — `ashlar.yaml` + `ashlar.policy.yaml` | the `ashlar` CLI as a .NET tool | **[`OperatorLifecycle.md`](OperatorLifecycle.md)** |
+| **A brick you want the gate to certify** | its own project, at most two packages | **[`CertificationGate.md`](CertificationGate.md)** |
+
+The rest of this page assumes the second row — a checkout — because that is the shape most
+integrator work takes. Everything it describes has a package equivalent; where the two differ, the
+package form is in `ConsumingFromNuGet.md`.
+
 ## Getting started with the Ashlar SDK
 
 The slim **HTTP client** package is the `Ashlar.Sdk` project (`src/Ashlar.Sdk/Ashlar.Sdk.csproj`). Register it with **`AddAshlarClientSdk(baseUrl, ...)`** (`Ashlar.Sdk.Client`). The obsolete **`AddAshlarSdk(string baseUrl, ...)`** name remains as a compat shim. For **host-side** brick/agent registration, use **`Ashlar.Hosting.Sdk.AddAshlarSdk`** (before `AddAshlar`). See [`docs/architecture/SdkStructure.md`](architecture/SdkStructure.md).
 
-Add a project reference from your integrator assembly:
+From packages (no checkout needed — `Ashlar.*` is on nuget.org at `0.1.1`):
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Ashlar.Sdk" Version="0.1.1" />           <!-- HTTP client -->
+  <PackageReference Include="Ashlar.Hosting.Bundle" Version="0.1.1" /> <!-- embed the kernel -->
+  <PackageReference Include="Ashlar.Authoring" Version="0.1.1" />      <!-- AddAshlarBrick<T>() -->
+</ItemGroup>
+```
+
+Add `<ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>` if any ancestor
+directory carries a `Directory.Packages.props`. See [`ConsumingFromNuGet.md`](ConsumingFromNuGet.md)
+for what each package is for, the composition order, and the `nuget.config` you need only when
+mixing in a local feed.
+
+Or, from a checkout, add a project reference from your integrator assembly:
 
 ```xml
 <ItemGroup>
@@ -36,11 +64,16 @@ For container or native install paths, see `docs/GettingStarted.md` and `docs/On
 
 ## Building a custom brick
 
-Start with **[`docs/AuthoringBricks.md`](AuthoringBricks.md)**, the authoritative code-brick authoring path. Bricks exchange structured payloads; shared DTOs and versioning live in **Ashlar.Brick.Contracts** (`src/Ashlar.Brick.Contracts`), while code-authored bricks derive from `Ashlar.Core.Domain.Bricks.Brick`.
+Start with **[`docs/AuthoringBricks.md`](AuthoringBricks.md)**, the authoritative code-brick authoring path. Bricks exchange structured payloads; shared DTOs and versioning live in **Ashlar.Brick.Contracts** (package `Ashlar.Brick.Contracts`, or `src/Ashlar.Brick.Contracts` in a checkout), while code-authored bricks derive from `Ashlar.Core.Domain.Bricks.Brick`.
+
+> **If you intend to certify the brick**, decide the project shape now: a certifiable brick lives in
+> its OWN project, carries no `ProjectReference` at all, and may reference at most the two packages
+> `Ashlar.Brick.Contracts` and `Ashlar.Authoring`. Retrofitting that later means splitting the
+> project. See **[`CertificationGate.md`](CertificationGate.md)**.
 
 Recommended steps:
 
-1. Add `ProjectReference` to `Ashlar.Brick.Contracts`.
+1. Add `PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.1"` (or a `ProjectReference` inside a checkout, if the brick will never be certified).
 2. Define stable JSON-serializable request/response shapes aligned with the DTOs.
 3. Register and exercise your brick through the host’s brick pipeline and existing OWASP sample (`Ashlar.Bricks.Owasp`) as a reference implementation.
 4. Run `dotnet run --project application/src/Ashlar.CLI -- validate` before publishing.

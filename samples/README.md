@@ -1,6 +1,6 @@
 # Samples
 
-Small, tracked inputs and reference projects that the docs and CI point at. Each row links to the sample's own README for details; run commands are relative to the repository root. Ashlar packages are **not yet published to nuget.org**, so every runnable sample here works from a checkout (`ProjectReference` or a local folder feed), never from a package install.
+Small, tracked inputs and reference projects that the docs and CI point at. Each row links to the sample's own README for details; run commands are relative to the repository root. Every runnable sample here works from a checkout (`ProjectReference` or a local folder feed) so it stays in step with `src/`; `Ashlar.*` is also **on nuget.org at `0.1.1`** if you would rather consume it as packages (`docs/ConsumingFromNuGet.md`).
 
 | Sample | What it shows | Run command | Prerequisites |
 |--------|---------------|-------------|---------------|

@@ -3,6 +3,18 @@ namespace Ashlar.Certification.Contracts;
 /// <summary>
 /// External consumer verifier: signature + content binding. No gate or generator required.
 /// </summary>
+/// <remarks>
+/// <b>Scope, stated up front.</b> What this verifies is a certification record against a brick's
+/// SOURCE TEXT — the record is an admitted PASS, its signature verifies, and its content hash is
+/// the hash of the source you handed in. It says nothing whatever about a compiled assembly,
+/// because no certification record binds one: the gate analyzes, mutates and judges source. A
+/// consumer who verifies a genuine record against genuine source and then loads a DLL that came
+/// from somewhere else gets a trusted verdict over an artifact that was never checked. Run the
+/// source this record covers (compile it, as <c>CertifiedBrickHotSwapHost</c> does), or set
+/// <c>CertificationVerifyOptions.RequireAssemblyBinding</c> to make the missing check a refusal
+/// instead of a silence. Every trusted result names its scope in
+/// <see cref="CertificationTrustResult.VerifiedScope"/>.
+/// </remarks>
 public static class CertificationTrustVerifier
 {
     /// <summary>
@@ -96,6 +108,25 @@ public static class CertificationTrustVerifier
         }
 #endif
 
+        // What this verifier binds is the brick's SOURCE TEXT. It has no view of any compiled
+        // artifact, because no certification record carries one — the gate judges source. A
+        // consumer who loads a prebuilt assembly beside a genuine record therefore gets a pass
+        // over something the pass never covered. The check cannot be performed here, so under
+        // strictness it is REFUSED rather than skipped: a verifier asked for an assurance it
+        // cannot produce must say so, never quietly answer the narrower question. (Consumers that
+        // compile the verified source instead — as the kernel's hot-swap host does — close the gap
+        // properly and should leave this off.)
+        if (strictness.RequireAssemblyBinding)
+        {
+            return Untrusted(
+                "assembly-binding-unavailable",
+                "This verifier was asked to attest the executable artifact, and cannot: a certification "
+                + "record binds the brick's source text and carries nothing about a compiled assembly. "
+                + "Fix: compile the source this record covers and run that, instead of a prebuilt "
+                + "assembly you cannot bind. Refusing rather than reporting a pass over an artifact that "
+                + "was never checked.");
+        }
+
         var actualHash = BrickContentHasher.ComputeSha256(brickSource);
         if (!string.Equals(actualHash, record.ContentHash, StringComparison.Ordinal))
         {
@@ -104,7 +135,11 @@ public static class CertificationTrustVerifier
                 $"Brick source hash does not match certified content (expected {record.ContentHash}, got {actualHash}).");
         }
 
-        return new CertificationTrustResult(true, null, null);
+        // Trusted, and explicit about in WHAT: the source text, not the artifact.
+        return new CertificationTrustResult(true, null, null)
+        {
+            VerifiedScope = CertificationTrustResult.SourceTextScope,
+        };
     }
 
     private static CertificationTrustResult Untrusted(string code, string reason) =>

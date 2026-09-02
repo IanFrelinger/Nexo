@@ -30,6 +30,13 @@ public sealed class AnalyzerFenceGate
     private const string DiagnosticIdPrefix = "ASHLAR";
     private const string AnalyzerCrashDiagnosticId = "AD0001";
 
+    /// <summary>
+    /// CS0009 — "Metadata file '...' could not be opened -- PE image doesn't contain managed
+    /// metadata". A statement about the REFERENCE SET the harness supplied, never about the
+    /// candidate source, and reported as such.
+    /// </summary>
+    private const string UnmanagedReferenceDiagnosticId = "CS0009";
+
     /// <summary>Feedback is deterministically truncated beyond this many findings (A3.3 permits
     /// deterministic truncation; the truncation itself is recorded in the feedback).</summary>
     public const int MaxFindingsInFeedback = 25;
@@ -129,13 +136,35 @@ public sealed class AnalyzerFenceGate
             // as a pass; fail loudly instead (same argument as the analyzer test harness).
             var compileErrors = compilation.GetDiagnostics(cancellationToken)
                 .Where(d => d.Severity == DiagnosticSeverity.Error)
-                .Take(10)
                 .ToArray();
+
+            // ... but only when the candidate is what broke. CS0009 is never a statement about the
+            // candidate: it means a file in the REFERENCE SET is not a managed assembly, and the
+            // reference set is supplied by the harness (BrickCertificationProjectLoader), not by the
+            // brick author. A brick referencing Ashlar.Authoring used to land here — that package's
+            // transitive graph copies LLamaSharp's unmanaged binaries into runtimes/<rid>/native/,
+            // the loader handed them over as references, and the gate then told the author their
+            // source did not compile. Naming the candidate for the harness's own defect is the worst
+            // kind of refusal: it is confident, specific, and about the wrong thing.
+            if (compileErrors.Length > 0 && compileErrors.All(d => d.Id == UnmanagedReferenceDiagnosticId))
+            {
+                return AnalyzerGateOutcome.Failed(
+                    "certification harness error, NOT a defect in the candidate: the compilation reference set "
+                    + "contains files that are not managed assemblies, so the compiler could not open them "
+                    + $"({UnmanagedReferenceDiagnosticId}). The candidate source was never judged. The reference set "
+                    + "comes from BrickCertificationProjectLoader.CollectReferences, which must pass only managed "
+                    + "assemblies from the brick's build output — native payloads under runtimes/<rid>/native/ "
+                    + "belong to the runtime graph, not the compile graph. Fix the harness, not the brick: "
+                    + string.Join(" | ", compileErrors.Take(10).Select(e => e.ToString())),
+                    floor,
+                    analyzerVersion);
+            }
+
             if (compileErrors.Length > 0)
             {
                 return AnalyzerGateOutcome.Failed(
                     "candidate does not compile, so analyzer silence would be meaningless: "
-                    + string.Join(" | ", compileErrors.Select(e => e.ToString())),
+                    + string.Join(" | ", compileErrors.Take(10).Select(e => e.ToString())),
                     floor,
                     analyzerVersion);
             }

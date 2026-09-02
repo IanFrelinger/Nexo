@@ -23,8 +23,16 @@ internal static class MutantWitnessExecutor
                 witness,
                 cancellationToken).ConfigureAwait(false);
         }
+        catch (CertificationHarnessException)
+        {
+            // The harness broke, not the mutant. Swallowing this is how a mutation leg reports
+            // a clean sweep it never ran; it propagates so the gate produces no verdict at all.
+            throw;
+        }
         catch
         {
+            // A mutant that throws while EXECUTING is a genuine kill: the witness drove it and
+            // it could not produce the expected output.
             return false;
         }
     }
@@ -42,9 +50,14 @@ internal static class MutantWitnessExecutor
         var parameters = executeMethod.GetParameters();
         var inputType = parameters[0].ParameterType;
         var implementationType = parameters[1].ParameterType;
-        var auditContext = mutantAssembly
-            .GetTypes()
-            .First(t => t.Name == "CertAuditContext")
+        // Named refusal, not First()-throws: the difference between "the harness has no execution
+        // context" and "the mutant threw" is the difference between a vacuous kill and a real one,
+        // and an InvalidOperationException out of First() is indistinguishable from the latter.
+        var auditContextType = Array.Find(
+            mutantAssembly.GetTypes(),
+            t => t.Name == CandidateSourceWrapper.AuditContextTypeName)
+            ?? throw CertificationHarnessException.MissingAuditContext(mutantAssembly.GetName().Name ?? "<mutant>");
+        var auditContext = auditContextType
             .GetConstructor(Type.EmptyTypes)!
             .Invoke(null);
 

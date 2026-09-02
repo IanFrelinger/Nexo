@@ -40,7 +40,7 @@ With **central package management**, use `Directory.Packages.props` in this fold
 
 ## Layout (typical PoP)
 
-- **Brick project** — references `Ashlar.Authoring` (+ `Ashlar.Brick.Contracts` types); scaffold with `ashlar new brick --ashlar-version <version>` from a CLI tool-installed at the same version (`dotnet tool install --tool-path <dir> Ashlar.CLI --version <version> --add-source <feed>`; the CLI is not on nuget.org yet either, so `--add-source` must point at your feed).
+- **Brick project** — references `Ashlar.Authoring` (+ `Ashlar.Brick.Contracts` types); scaffold with `ashlar new brick --ashlar-version <version>` from a CLI tool-installed at the same version (`dotnet tool install --global Ashlar.CLI --version 0.1.1` — the CLI is on nuget.org too; `--add-source <feed>` is needed only for a pre-release version you packed yourself). A brick you intend to **certify** must be its own project and may reference **only** `Ashlar.Brick.Contracts` and `Ashlar.Authoring` — see `docs/CertificationGate.md`.
 - **Host** — `Ashlar.Authoring` + `Ashlar.Hosting.Bundle`; register bricks with `AddAshlarBrick<T>()` before `AddAshlar()`; expose `GET /health` and `POST /api/bricks/{id}/execute` (see `scripts/verify-external-product-shape.sh` for a minimal reference).
 - **Client** — `Ashlar.Sdk`; call `IAshlarClient.InvokeAsync(HttpMethod.Post, "api/bricks/{id}/execute", …)` against the host base URL.
 

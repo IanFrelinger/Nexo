@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Text.Json;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.CLI.Runtime;
+using Ashlar.Infrastructure.Execution;
+using Ashlar.Manifest;
 
 namespace Ashlar.CLI.Commands;
 
@@ -142,6 +144,38 @@ public sealed class SelfExtendCommand : Command
         if (!Directory.Exists(fullRepoRoot))
         {
             WriteResult(false, $"Repo root not found: {fullRepoRoot}", fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null, testFilter: null, testSummary: null, focus: "balanced", maxIterations: 0, iterations: Array.Empty<object>());
+            return 1;
+        }
+
+        // A provider name this build cannot route to is refused HERE, before a cycle starts, rather
+        // than surviving to request time where the echo fallback answered for it and the cycle
+        // reported "ok". The model layer refuses it too (HotSwappableModel) — this is the earlier,
+        // cheaper copy of the same refusal so the operator sees it before anything runs.
+        if (!string.IsNullOrWhiteSpace(provider) && !ProviderFactory.IsKnownProvider(provider))
+        {
+            WriteResult(
+                false,
+                $"'{provider.Trim()}' is not a model provider this build knows. Known providers: "
+                + ProviderFactory.KnownProviderList() + ". "
+                + "Refusing rather than falling back: an unreachable provider can degrade to the offline "
+                + "echo model, but a name that is not a provider is a mistake, and degrading would report "
+                + "success over a model that was never called. Fix --provider, or pass --provider mock-json "
+                + "to run offline on canned responses.",
+                fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null,
+                testFilter: null, testSummary: null, focus: "balanced", maxIterations: 0, iterations: Array.Empty<object>());
+            return 1;
+        }
+
+        // The policy is the operator's envelope, and `sealed` means nothing changes after deploy.
+        // This verb wrote files into a sealed project and reported "ok / passed QA gates": the
+        // enforcement point was simply not consulted on this path, and its absence read as
+        // permission. The daemon path checks the policy; the manual verb now does too.
+        if (SealedProjectRefusal(fullRepoRoot) is { } sealedRefusal)
+        {
+            WriteResult(
+                false, sealedRefusal, fullRepoRoot, provider, executed: 0, denied: 0, json,
+                testsRun: false, testsPassed: null, testFilter: null, testSummary: null,
+                focus: "balanced", maxIterations: 0, iterations: Array.Empty<object>());
             return 1;
         }
 
@@ -294,8 +328,25 @@ public sealed class SelfExtendCommand : Command
                 }
             }
 
+            // A cycle that executed no tool calls and had none denied changed nothing. "ok" and
+            // "passed QA gates" over `executed: 0` is the report that made an unwired node look
+            // like a working one — the QA gates passed because there was nothing to fail. Say what
+            // happened instead, and exit non-zero: producing nothing is not a successful cycle.
+            var didWork = executed > 0 || denied > 0;
+            if (succeeded && !didWork)
+            {
+                summary =
+                    "NO WORK: the cycle completed without executing a single tool call (executed: 0, denied: 0), "
+                    + "so nothing in the repo changed. The QA gates below passed over an unchanged tree, which is "
+                    + "not evidence of anything. Usual causes, in order: the model returned no tool calls (an "
+                    + "offline provider such as mock-json will do this — point --provider at a real one); the "
+                    + "objective was too vague to act on; or every write the model attempted was outside the "
+                    + "policy sandbox, in which case denied would be non-zero. Re-run with --json to see the "
+                    + "per-phase stopped reason.";
+            }
+
             WriteResult(
-                succeeded && (testsRun ? testsPassed != false : true),
+                succeeded && didWork && (testsRun ? testsPassed != false : true),
                 string.IsNullOrWhiteSpace(summary)
                     ? $"Completed {maxIterations} iteration(s) with focus={focus}."
                     : summary,
@@ -312,6 +363,8 @@ public sealed class SelfExtendCommand : Command
                 maxIterations,
                 iterationReports);
             if (!succeeded)
+                return 1;
+            if (!didWork)
                 return 1;
             if (testsRun && testsPassed == false)
                 return 1;
@@ -776,6 +829,57 @@ public sealed class SelfExtendCommand : Command
         return run.ExitCode == 0
             ? new QaCheckResult(true, true, $"Visual QA passed (filter={filter}).")
             : new QaCheckResult(true, false, $"Visual QA failed (filter={filter}, exit={run.ExitCode}).");
+    }
+
+    /// <summary>
+    /// The refusal for running a self-extend cycle against a project whose operator-owned policy
+    /// says <c>sealed</c> — or whose policy cannot be read at all. Null when the cycle may proceed.
+    ///
+    /// <para>Fail-closed both ways. A directory that is not an ashlar project has no envelope to
+    /// violate, so the cycle proceeds (this verb predates projects and is still used on plain repos).
+    /// A directory that IS one and whose policy will not load is refused, because "I could not
+    /// parse the constraints" must never resolve to "then there are none" — the same rule
+    /// <see cref="PolicyLoader"/> states for itself.</para>
+    /// </summary>
+    internal static string? SealedProjectRefusal(string repoRoot)
+    {
+        var policyPath = Path.Combine(repoRoot, "ashlar.policy.yaml");
+        if (!File.Exists(policyPath))
+        {
+            return null;
+        }
+
+        string text;
+        try
+        {
+            text = File.ReadAllText(policyPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return $"REFUSING: '{repoRoot}' has an ashlar.policy.yaml that could not be read ({ex.Message}). "
+                 + "A self-extend cycle writes files; it does not run against an envelope it cannot see. "
+                 + "Fix the file's permissions, or run the cycle somewhere that is not a governed project.";
+        }
+
+        if (!PolicyLoader.TryLoad(text, out var policy, out var reason))
+        {
+            return $"REFUSING: '{repoRoot}' is an ashlar project whose policy does not load — {reason} "
+                 + "A self-extend cycle writes files, and an envelope that cannot be parsed is not an "
+                 + "absent one. Fix ashlar.policy.yaml, then run the cycle again.";
+        }
+
+        if (policy!.SelfExtend.Mode != SelfExtendMode.Sealed)
+        {
+            return null;
+        }
+
+        return $"REFUSING: '{repoRoot}' is sealed. selfExtend.mode is 'sealed' in ashlar.policy.yaml, which "
+             + "means nothing changes after deploy — and a self-extend cycle changes files. This used to run "
+             + "anyway and report \"ok / passed QA gates\", because this verb never read the policy.\n"
+             + "  Raise the dial deliberately, then re-run:\n"
+             + "    ashlar policy set self_extend proposing     # cycles are HELD for review (`ashlar gates`)\n"
+             + "    ashlar policy set self_extend self-extending  # admitted cycles auto-apply within budget\n"
+             + "  Or run the cycle against a directory that is not a governed project.";
     }
 
     private static void WriteResult(

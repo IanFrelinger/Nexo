@@ -81,6 +81,15 @@ public sealed class ExportCommand : Command
             return 65;
         }
 
+        // The container this bundle deploys runs `verify` before it runs the app, exactly as the
+        // native launcher does. A cloud bundle that cannot verify itself is a deployment that
+        // refuses to start in ECS/ACI, where the exit code is much harder to read than it is here.
+        if (NativeBundle.SelfVerificationRefusal(directory.FullName, bundleDir) is { } refusal)
+        {
+            Console.Error.WriteLine(refusal);
+            return 65;
+        }
+
         var effectiveImage = string.IsNullOrWhiteSpace(runtimeImage) ? CloudBundle.RuntimeImage : runtimeImage;
         Console.WriteLine();
         var verdict = info.Certified ? Gold("✓ CERTIFIED cloud bundle") : Gold("✓ VERIFIED cloud bundle");
@@ -92,9 +101,29 @@ public sealed class ExportCommand : Command
             // to when the operator builds. Say so, and say how to pin it.
             Console.WriteLine($"  {Dim($"runtime image: {effectiveImage} (mutable tag — pass --runtime-image with a version or digest to pin the verifier)")}");
         }
+        RenderScope(info);
         Console.WriteLine($"  {Dim($"→ {bundleDir}")}");
         Console.WriteLine($"  {Dim($"deploy + run it:  ./deploy-{targetName}.sh \"<request>\"  (the container verifies before it runs)")}");
         return 0;
+    }
+
+    /// <summary>
+    /// Prints what the exported verdict COVERS, beside the verdict. `export` inherits the whole of
+    /// `verify`'s honesty problem: it printed a gold CERTIFIED banner over a project holding no code
+    /// at all, and shipped a bundle whose README repeated the claim. The scope line travels with the
+    /// bundle (bundle.json, README.md) and is printed here so the person exporting sees it first.
+    /// </summary>
+    private static void RenderScope(BundleInfo info)
+    {
+        if (info.Scope is not { } scope)
+        {
+            return;
+        }
+        Console.WriteLine($"  {Dim(scope.Summary)}");
+        if (!scope.CoversCode)
+        {
+            Console.WriteLine($"  {Dim("this bundle carries no application code — add the code this project is meant to run, then re-export.")}");
+        }
     }
 
     private static Command BuildNative()
@@ -163,6 +192,15 @@ public sealed class ExportCommand : Command
             return 65;
         }
 
+        // Checked BEFORE the runtime is published and before the zip is cut: publishing takes a
+        // minute, and there is nothing to spend it on if the thing being wrapped cannot start. A
+        // bundle whose own run.sh exits 65 must never be reported as a successful export.
+        if (NativeBundle.SelfVerificationRefusal(directory.FullName, bundleDir) is { } refusal)
+        {
+            Console.Error.WriteLine(refusal);
+            return 65;
+        }
+
         var exeName = rid.StartsWith("win", StringComparison.Ordinal) ? "ashlar.exe" : "ashlar";
         var runtimeBuilt = false;
         if (!noRuntime)
@@ -213,6 +251,7 @@ public sealed class ExportCommand : Command
         var verdict = info.Certified ? Gold("✓ CERTIFIED bundle") : Gold("✓ VERIFIED bundle");
         Console.WriteLine($"  {verdict}  {info.Name} · {rid}");
         Console.WriteLine($"  {Dim(info.Certified ? $"signed {info.SignerFingerprint} · {info.LedgerEntries} ledger entr{(info.LedgerEntries == 1 ? "y" : "ies")}" : "unsigned — run `ashlar keys init` and re-export to certify")}");
+        RenderScope(info);
         Console.WriteLine($"  {Dim(runtimeBuilt ? $"runtime: {exeName} (self-contained, single file)" : "runtime: not built (see RUNTIME.md)")}");
         Console.WriteLine($"  {Dim($"→ {(zipPath ?? bundleDir)}")}");
         Console.WriteLine($"  {Dim(runtimeBuilt ? $"run it:  {(rid.StartsWith("win", StringComparison.Ordinal) ? "run.cmd" : "./run.sh")} \"<request>\"" : "add the runtime, then run the launcher")}");

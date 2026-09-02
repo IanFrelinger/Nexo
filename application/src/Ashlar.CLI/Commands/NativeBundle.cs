@@ -13,7 +13,11 @@ public sealed record BundleInfo(
     bool Verified,
     bool Certified,
     string? SignerFingerprint,
-    int LedgerEntries);
+    int LedgerEntries,
+    // What the verdict this bundle carries actually covers. A bundle that ships a CERTIFIED banner
+    // over a project with no code in it is the same silent overclaim `ashlar verify` used to make;
+    // the scope travels with the bundle so the person who unzips it reads the same honest line.
+    CertificationScope? Scope = null);
 
 /// <summary>
 /// Stages a governed Ashlar application into a portable, self-proving bundle: the project (its
@@ -65,7 +69,7 @@ public static class NativeBundle
             // A corrupt ledger is not certified; verify will refuse it at run time.
         }
 
-        return new BundleInfo(name, rid, verification.Verified, certified, fingerprint, ledgerEntries);
+        return new BundleInfo(name, rid, verification.Verified, certified, fingerprint, ledgerEntries, verification.Scope);
     }
 
     /// <summary>
@@ -119,7 +123,228 @@ public static class NativeBundle
                 return name is ".lock" || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
                     || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
             });
+        StageDeclaredBrickSources(projectDir, appDir, written, bundleDir);
         return written;
+    }
+
+    /// <summary>
+    /// Stages the source of every brick the manifest DECLARES, wherever in the project it lives.
+    ///
+    /// <para>The composition course resolves declared bricks by scanning the whole project tree;
+    /// this staging used to copy <c>src/</c> and nothing else. A brick implemented anywhere else —
+    /// <c>bricks/</c>, <c>libs/</c>, a file at the project root — therefore certified at the source
+    /// and was then DROPPED from the bundle, and the bundle's own launcher, which begins with
+    /// <c>verify --path app</c>, failed course 2 and exited 65 on every machine. An export that
+    /// reports CERTIFIED over an application that cannot start is worse than one that reports
+    /// nothing, so what the courses resolve is what travels.</para>
+    ///
+    /// <para>The unit staged is the resolved file's TOP-LEVEL directory under the project, not the
+    /// file: a brick is a project (a csproj, a README, nested folders), and carrying its .cs files
+    /// out of the layout that resolved them would satisfy the course while shipping something no
+    /// one can build. A resolved file sitting directly in the project root is carried alone,
+    /// because its "directory" is the project.</para>
+    /// </summary>
+    private static void StageDeclaredBrickSources(string projectDir, string appDir, List<string> written, string bundleRoot)
+    {
+        string manifestYaml;
+        try
+        {
+            manifestYaml = File.ReadAllText(Path.Combine(projectDir, "ashlar.yaml"));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return;   // Describe() already read it; a race here is not this method's to report.
+        }
+
+        if (!ManifestLoader.TryLoad(manifestYaml, out var manifest, out _) || manifest!.Bricks.Count == 0)
+        {
+            return;
+        }
+
+        var inventory = BrickSourceResolver.Scan(projectDir);
+        // Already staged above, by their own rules. Restaging them would duplicate work and, for
+        // .ashlar/, would defeat the keys/forge exclusions that protect the operator's private key.
+        var alreadyStaged = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".ashlar", "src" };
+        var carrierDirectories = new SortedSet<string>(StringComparer.Ordinal);
+        var looseFiles = new SortedSet<string>(StringComparer.Ordinal);
+
+        foreach (var brick in manifest.Bricks)
+        {
+            foreach (var file in BrickSourceResolver.Resolve(inventory, brick.Id))
+            {
+                var rel = Path.GetRelativePath(projectDir, file);
+                if (rel.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(rel))
+                {
+                    continue;   // Scan never leaves the project; belt and braces.
+                }
+                var segments = rel.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (segments.Length == 1)
+                {
+                    looseFiles.Add(rel);
+                    continue;
+                }
+                if (alreadyStaged.Contains(segments[0]))
+                {
+                    continue;
+                }
+                carrierDirectories.Add(segments[0]);
+            }
+        }
+
+        foreach (var carrier in carrierDirectories)
+        {
+            var source = Path.Combine(projectDir, carrier);
+            // An --out directory inside the project would otherwise be copied into itself.
+            if (IsSameOrUnder(bundleRoot, source))
+            {
+                continue;
+            }
+            CopyTreeIfPresent(source, Path.Combine(appDir, carrier), written, bundleRoot,
+                exclude: rel =>
+                {
+                    var parts = rel.Split('/', '\\');
+                    if (parts[0] is "bin" or "obj" or ".git")
+                    {
+                        return true;
+                    }
+                    if (parts.Any(p => string.Equals(p, "bin", StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(p, "obj", StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(p, "keys", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                    var name = Path.GetFileName(rel);
+                    return name is ".lock" || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
+                        || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
+                });
+        }
+
+        foreach (var loose in looseFiles)
+        {
+            var source = Path.Combine(projectDir, loose);
+            if (!File.Exists(source))
+            {
+                continue;
+            }
+            CopyFile(source, Path.Combine(appDir, loose), written, bundleRoot);
+        }
+    }
+
+    /// <summary>True when <paramref name="candidate"/> is <paramref name="ancestor"/> or sits inside it.</summary>
+    private static bool IsSameOrUnder(string candidate, string ancestor)
+    {
+        var a = Path.GetFullPath(ancestor).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var c = Path.GetFullPath(candidate).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return c.Equals(a, StringComparison.OrdinalIgnoreCase)
+            || c.StartsWith(a + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Runs the project's own courses against the STAGED copy and returns a refusal naming what did
+    /// not travel, or null when the bundle proves itself.
+    ///
+    /// <para>This is the guarantee, not the optimism: the launcher every export writes begins with
+    /// <c>verify --path app</c>, so a staged copy that fails a course is an application that exits
+    /// 65 on first launch, on every machine, while its bundle.json and README say
+    /// <c>certified: true</c>. The source project verifying is not evidence that the COPY does —
+    /// they are different directories, and only one of them is what the user receives. So the copy
+    /// is verified before the export is allowed to call itself successful.</para>
+    /// </summary>
+    /// <param name="projectDir">The source project, used to name what is present there and absent here.</param>
+    /// <param name="bundleDir">The staged bundle root (the one holding <c>app/</c>).</param>
+    public static string? SelfVerificationRefusal(string projectDir, string bundleDir)
+    {
+        var appDir = Path.Combine(bundleDir, "app");
+        var manifestPath = Path.Combine(appDir, "ashlar.yaml");
+        var policyPath = Path.Combine(appDir, "ashlar.policy.yaml");
+        if (!File.Exists(manifestPath) || !File.Exists(policyPath))
+        {
+            return "refusing to report this export as successful: the staged bundle has no "
+                 + $"ashlar.yaml/ashlar.policy.yaml under {appDir}, so its launcher cannot verify it. "
+                 + "This is an export bug, not a project one — re-run the export, and report it if it repeats.";
+        }
+
+        var staged = ProjectVerifier.Verify(
+            File.ReadAllText(manifestPath), File.ReadAllText(policyPath), appDir);
+        if (staged.Verified)
+        {
+            return null;
+        }
+
+        var lines = new List<string>
+        {
+            "refusing to report this export as successful: THE BUNDLE DOES NOT VERIFY ITSELF.",
+            string.Empty,
+            "the launcher this export writes starts with `verify --path app`, so a course that fails on the",
+            "staged copy is an application that exits 65 on first launch, on every machine, while bundle.json",
+            "and README.md say it is certified. the source project verifies; the copy does not, which means",
+            "something the courses depend on did not travel:",
+            string.Empty,
+        };
+        foreach (var course in staged.Courses.Where(c => !c.Passed))
+        {
+            lines.Add($"  course '{course.Name}' failed — {course.Detail}");
+        }
+
+        var stranded = StrandedBrickSources(projectDir, appDir);
+        if (stranded.Count > 0)
+        {
+            lines.Add(string.Empty);
+            lines.Add("brick source that is in the project but NOT in the bundle:");
+            foreach (var rel in stranded.Take(20))
+            {
+                lines.Add($"  {rel}");
+            }
+            if (stranded.Count > 20)
+            {
+                lines.Add($"  … and {stranded.Count - 20} more");
+            }
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("fix, in the order to try them:");
+        lines.Add("  - move that source under the project directory: everything under it travels except bin/,");
+        lines.Add("    obj/, .git/, .ashlar/keys/ and .ashlar/forge/. a brick outside the project cannot ship.");
+        lines.Add("  - a directory the policy needs (sandbox.root, a writable path) must EXIST in the project,");
+        lines.Add("    or `verify` in the bundle refuses it. create it, commit a .gitkeep, and re-export.");
+        lines.Add("  - or delete the entry from bricks: in ashlar.yaml, if the project no longer uses it.");
+        lines.Add("then run `ashlar verify` at the source and export again.");
+        lines.Add($"the incomplete bundle was left at {bundleDir} so you can see what did and did not arrive.");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// Declared-brick source files present under the project and absent from the staged app —
+    /// the concrete list a person needs to see, rather than "something did not travel".
+    /// </summary>
+    private static List<string> StrandedBrickSources(string projectDir, string appDir)
+    {
+        var stranded = new List<string>();
+        try
+        {
+            var manifestYaml = File.ReadAllText(Path.Combine(projectDir, "ashlar.yaml"));
+            if (!ManifestLoader.TryLoad(manifestYaml, out var manifest, out _))
+            {
+                return stranded;
+            }
+            var inventory = BrickSourceResolver.Scan(projectDir);
+            foreach (var brick in manifest!.Bricks)
+            {
+                foreach (var file in BrickSourceResolver.Resolve(inventory, brick.Id))
+                {
+                    var rel = Path.GetRelativePath(projectDir, file);
+                    if (!File.Exists(Path.Combine(appDir, rel)))
+                    {
+                        stranded.Add(rel);
+                    }
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The refusal still stands on the failed courses above; this list is detail, not proof.
+        }
+        return stranded.Distinct(StringComparer.Ordinal).OrderBy(r => r, StringComparer.Ordinal).ToList();
     }
 
     /// <summary>
@@ -175,6 +400,14 @@ public static class NativeBundle
             certified = info.Certified,
             signer = info.SignerFingerprint,
             ledgerEntries = info.LedgerEntries,
+            scope = info.Scope is null ? null : new
+            {
+                summary = info.Scope.Summary,
+                coversCode = info.Scope.CoversCode,
+                sourceFiles = info.Scope.SourceFiles,
+                declaredBricks = info.Scope.DeclaredBricks,
+                resolvedBricks = info.Scope.ResolvedBricks,
+            },
             runtime = exe,
             run = info.Rid.StartsWith("win", StringComparison.Ordinal) ? "run.cmd \"<request>\"" : "./run.sh \"<request>\"",
         };
@@ -189,6 +422,13 @@ public static class NativeBundle
             $"# {info.Name} — a portable Ashlar application\n\n"
             + "This folder is a governed AI application you can run offline, with no install.\n\n"
             + $"{certLine}\n\n"
+            + (info.Scope is { } scope
+                ? $"Scope of that verdict: {scope.Summary}.\n\n"
+                  + (scope.CoversCode
+                      ? string.Empty
+                      : "**There is no application code in this bundle.** The verdict above covers the two\n"
+                        + "documents and nothing else — it does not attest an implementation.\n\n")
+                : string.Empty)
             + "## Run it\n\n"
             + (info.Rid.StartsWith("win", StringComparison.Ordinal)
                 ? "```\nrun.cmd \"<your request>\"\n```\n\n"

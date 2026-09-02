@@ -58,7 +58,7 @@ public sealed class BackgroundAgentDaemonCommand
             }
             catch (OperationCanceledException)
             {
-                WriteStopped(formatJson, timedOut: false);
+                WriteStopped(formatJson, reason: "shutdown", cycles: null, window: null);
                 return 0;
             }
             catch (NodeParkedException parked)
@@ -78,7 +78,7 @@ public sealed class BackgroundAgentDaemonCommand
             }
             catch (OperationCanceledException)
             {
-                WriteStopped(formatJson, timedOut: false);
+                WriteStopped(formatJson, reason: "shutdown", cycles: null, window: null);
                 return 0;
             }
 
@@ -87,7 +87,7 @@ public sealed class BackgroundAgentDaemonCommand
                 : maxBackoff;
         }
 
-        WriteStopped(formatJson, timedOut: false);
+        WriteStopped(formatJson, reason: "shutdown", cycles: null, window: null);
         return 0;
     }
 
@@ -159,9 +159,20 @@ public sealed class BackgroundAgentDaemonCommand
 
             if (!TryParseDuration(duration, out var runDuration))
             {
+                // Parked, not exited — see the contract at the top of RunAsync. But unlike a
+                // config file that has not finished mounting, argv cannot change while this process
+                // lives, so retrying will fail identically forever. Say that, and say how to stop:
+                // an operator who does not know this is a park will sit watching a command that
+                // never returns.
                 throw new NodeParkedException(
-                    $"invalid --duration value '{duration}'. Use formats like 30s, 5m, or 1h.");
+                    $"invalid --duration value '{duration}'. Use formats like 30s, 5m, or 1h. "
+                    + "This one will not fix itself: the value comes from the command line, which does not "
+                    + "change while the process runs, so the node will park on it until you stop it. "
+                    + "Stop this process (Ctrl+C, or `docker stop`), correct --duration, and start it again; "
+                    + "omit --duration entirely to run until stopped.");
             }
+
+            var faultLog = new DaemonFaultLog();
 
             var builder = Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((context, config) =>
@@ -201,7 +212,16 @@ public sealed class BackgroundAgentDaemonCommand
                 // Host.CreateDefaultBuilder already wires the console provider; this only switches it
                 // to JSON lines when Ashlar:Logging:Json=true or ASHLAR_LOG_JSON=1 (same flag as Ashlar.API).
                 .ConfigureLogging((context, logging) =>
-                    logging.AddAshlarJsonConsoleIfRequested(context.Configuration))
+                {
+                    logging.AddAshlarJsonConsoleIfRequested(context.Configuration);
+                    // Observe faults, do not merely print them. A hosted service that throws is
+                    // logged and then stops the host; this command used to notice neither, and
+                    // reported ok:true / "duration_elapsed" over a host that had been dead for
+                    // most of the window. The filter is explicit so an operator's log
+                    // configuration can quieten the console without also blinding the report.
+                    logging.AddProvider(new DaemonFaultLoggerProvider(faultLog));
+                    logging.AddFilter<DaemonFaultLoggerProvider>(level => level >= LogLevel.Error);
+                })
                 .ConfigureServices((context, services) =>
                 {
                     services.Configure<GrpcTransportOptions>(
@@ -250,18 +270,186 @@ public sealed class BackgroundAgentDaemonCommand
             // that already carries seven unbounded appenders.
             using var heartbeat = StartHeartbeat(host.Services, cancellationToken);
 
+            // The host stops for three different reasons and this command used to report all three
+            // as the same clean exit. ApplicationStopping tells them apart: the operator cancelled
+            // (cancellationToken), the window closed (Task.Delay won), or the host tore ITSELF down
+            // because a hosted service faulted — the case that printed ok:true after running ~2s of
+            // a 15s window with zero cycles.
+            var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
+
             if (runDuration.HasValue)
             {
-                await Task.Delay(runDuration.Value, cancellationToken).ConfigureAwait(false);
-                await host.StopAsync(cancellationToken).ConfigureAwait(false);
-                WriteStopped(formatJson, timedOut: true);
+                var ran = System.Diagnostics.Stopwatch.StartNew();
+                using (var window = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken, lifetime.ApplicationStopping))
+                {
+                    try
+                    {
+                        await Task.Delay(runDuration.Value, window.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // An operator's Ctrl+C is a clean stop and is handled by the caller; only a
+                        // stop the HOST initiated falls through to the report below.
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
+                }
+                ran.Stop();
+
+                var stoppedItself = lifetime.ApplicationStopping.IsCancellationRequested;
+                var cycles = CountCycles(host.Services);
+                // Not cancellationToken: the window is over either way, and stopping must not be
+                // skipped just because the reason for stopping was a fault.
+                await host.StopAsync(CancellationToken.None).ConfigureAwait(false);
+
+                if (stoppedItself)
+                {
+                    return WriteHostStoppedItself(formatJson, faultLog, ran.Elapsed, runDuration.Value, cycles);
+                }
+
+                WriteStopped(formatJson, reason: "duration_elapsed", cycles, runDuration.Value);
                 return 0;
             }
 
             await host.WaitForShutdownAsync(cancellationToken).ConfigureAwait(false);
-            WriteStopped(formatJson, timedOut: false);
+            var shutdownCycles = CountCycles(host.Services);
+            if (faultLog.HasFault)
+            {
+                // PARK, NEVER EXIT still holds for the unbounded run — this is the shape that runs
+                // under `restart: unless-stopped`, where a non-zero exit is an untrottled
+                // crashloop. Parking is not a quiet success: it writes ok:false and the reason into
+                // both the console and the heartbeat, and retries on a backoff. The bounded run
+                // above is the one an operator is watching, and that one exits non-zero.
+                throw new NodeParkedException(
+                    $"the background-agent host stopped itself: {faultLog.Service} failed — {faultLog.Reason}. "
+                    + $"{DescribeCycles(shutdownCycles)} Fix the cause (check the config passed to --config, and "
+                    + "`ashlar background-agent report` for the node's own view), then the node recovers on the "
+                    + "next retry without a restart.");
+            }
+            WriteStopped(formatJson, reason: "shutdown", shutdownCycles, window: null);
             return 0;
         }
+    }
+
+    /// <summary>
+    /// Total cycles the registered agents have executed, or null when the registry cannot be read.
+    /// Null, never 0: "I could not count" and "nothing ran" are different facts, and reporting the
+    /// first as the second is the same class of defect as reporting a crash as a clean exit.
+    /// </summary>
+    private static int? CountCycles(IServiceProvider services)
+    {
+        try
+        {
+            var registry = services.GetService<IBackgroundAgentRegistry>();
+            if (registry is null)
+            {
+                return null;
+            }
+            return registry.GetAll().Sum(instance => instance.ExecutionCount);
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    internal static string DescribeCycles(int? cycles) => cycles switch
+    {
+        null => "The cycle count could not be read.",
+        0 => "It ran ZERO agent cycles.",
+        1 => "It ran 1 agent cycle.",
+        _ => $"It ran {cycles} agent cycles.",
+    };
+
+    /// <summary>
+    /// The machine-readable report for a host that stopped itself. Separated from the writing so
+    /// the JUDGEMENT — ok:false, which service, which reason, how many cycles — is testable without
+    /// standing up a host, and so the text and JSON forms cannot drift apart.
+    /// </summary>
+    internal static string HostStoppedItselfJson(DaemonFaultLog faults, TimeSpan ran, TimeSpan window, int? cycles)
+    {
+        var faulted = faults.HasFault;
+        return System.Text.Json.JsonSerializer.Serialize(new
+        {
+            ok = false,
+            status = "faulted",
+            reason = faulted ? "background_service_faulted" : "host_stopped_early",
+            service = faulted ? faults.Service : null,
+            error = faulted ? faults.Reason : null,
+            cycles,
+            ranSeconds = Math.Round(ran.TotalSeconds, 1),
+            windowSeconds = Math.Round(window.TotalSeconds, 1),
+        });
+    }
+
+    /// <summary>The machine-readable report for a clean stop. Carries the cycle count, because
+    /// "the window elapsed" was never evidence that anything happened inside it.</summary>
+    internal static string StoppedJson(string reason, int? cycles, TimeSpan? window) =>
+        System.Text.Json.JsonSerializer.Serialize(new
+        {
+            ok = true,
+            status = "stopped",
+            reason,
+            cycles,
+            windowSeconds = window.HasValue ? Math.Round(window.Value.TotalSeconds, 1) : (double?)null,
+            note = ZeroCycleNote(cycles),
+        });
+
+    /// <summary>What to add when a window closed with nothing having run. Null when cycles ran or
+    /// could not be counted — an honest run is not annotated as if it were suspect.</summary>
+    internal static string? ZeroCycleNote(int? cycles) => cycles == 0
+        ? "no agent cycle ran in this window. that is not necessarily a fault — a window shorter than the "
+          + "agents' schedules produces it — but nothing here is evidence that the node does any work. "
+          + "run for longer, or check `ashlar background-agent report` for what is registered."
+        : null;
+
+    /// <summary>
+    /// The report for a bounded run whose host tore itself down before the window closed. Exits
+    /// non-zero and names the service and the reason: a daemon that crashed at startup and ran no
+    /// cycles used to print <c>ok:true / status:running</c> AFTER shutdown had begun, then
+    /// <c>ok:true / reason:"duration_elapsed"</c> — two false statements about the same 2 seconds.
+    /// </summary>
+    private static int WriteHostStoppedItself(
+        bool formatJson, DaemonFaultLog faults, TimeSpan ran, TimeSpan window, int? cycles)
+    {
+        var faulted = faults.HasFault;
+        var reason = faulted ? "background_service_faulted" : "host_stopped_early";
+
+        new NodeHeartbeat
+        {
+            Status = "faulted",
+            Reason = faulted ? $"{faults.Service}: {faults.Reason}" : "the host stopped before the run window elapsed",
+            UpdatedAt = DateTimeOffset.UtcNow,
+            KeyFingerprint = NodeHeartbeat.TryFingerprint(),
+            NodeId = NodeHeartbeat.TryFingerprint(),
+            CyclesSinceStart = cycles ?? 0,
+        }.Write();
+
+        if (formatJson)
+        {
+            Console.Out.WriteLine(HostStoppedItselfJson(faults, ran, window, cycles));
+            return 1;
+        }
+
+        Console.Error.WriteLine(
+            $"FAILED: the background-agent host stopped itself after {ran.TotalSeconds:F1}s of a "
+            + $"{window.TotalSeconds:F1}s window.");
+        if (faulted)
+        {
+            Console.Error.WriteLine($"  service: {faults.Service}");
+            Console.Error.WriteLine($"  reason:  {faults.Reason}");
+        }
+        else
+        {
+            Console.Error.WriteLine("  no component logged an exception — something asked the host to shut down.");
+        }
+        Console.Error.WriteLine($"  {DescribeCycles(cycles)}");
+        Console.Error.WriteLine("  this exits non-zero on purpose: the window did not elapse, so \"duration_elapsed\" would be false.");
+        Console.Error.WriteLine("  fix, in order:");
+        Console.Error.WriteLine("  - the config passed to --config: a value the service rejects at load faults it at startup.");
+        Console.Error.WriteLine("  - re-run with ASHLAR_LOG_JSON=1 (or Ashlar:Logging:Json=true) for the full structured log.");
+        Console.Error.WriteLine("  - `ashlar background-agent report` for the node's own view once it is up.");
+        return 1;
     }
 
     /// <summary>Minimum heartbeat interval. Lower would trade real disk life for no new information.</summary>
@@ -505,20 +693,25 @@ public sealed class BackgroundAgentDaemonCommand
         Console.Out.WriteLine($"Background-agent daemon started{durationText}.");
     }
 
-    private static void WriteStopped(bool formatJson, bool timedOut)
+    /// <summary>
+    /// The clean-stop report. <paramref name="cycles"/> travels with it because "the window
+    /// elapsed" and "anything happened during it" are different claims, and only the first one was
+    /// ever printed — a node that ran zero cycles for fifteen seconds reported exactly what a
+    /// working one did.
+    /// </summary>
+    private static void WriteStopped(bool formatJson, string reason, int? cycles, TimeSpan? window)
     {
         if (formatJson)
         {
-            Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
-            {
-                ok = true,
-                status = "stopped",
-                reason = timedOut ? "duration_elapsed" : "shutdown"
-            }));
+            Console.Out.WriteLine(StoppedJson(reason, cycles, window));
             return;
         }
 
-        Console.Out.WriteLine("Background-agent daemon stopped.");
+        Console.Out.WriteLine($"Background-agent daemon stopped. {DescribeCycles(cycles)}");
+        if (ZeroCycleNote(cycles) is { } note)
+        {
+            Console.Out.WriteLine($"  {note}");
+        }
     }
 
     private static int WriteError(bool formatJson, string error)

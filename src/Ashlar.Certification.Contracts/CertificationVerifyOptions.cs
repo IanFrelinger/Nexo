@@ -52,6 +52,30 @@ public sealed class CertificationVerifyOptions
     public bool RequireEd25519Signature { get; init; }
 
     /// <summary>
+    /// When true, a verifier that cannot bind the EXECUTABLE ARTIFACT refuses rather than
+    /// reporting a pass over the source text alone.
+    /// </summary>
+    /// <remarks>
+    /// <para>A certification record binds the brick's SOURCE, because source is what the gate
+    /// analyzed, mutated and judged. Nothing in the record covers a compiled assembly. So a
+    /// consumer holding a genuine record, the genuine source, and a TAMPERED DLL built from
+    /// something else gets a trusted verdict — every check the verifier runs really does pass; the
+    /// artifact it will actually execute was simply never one of them.</para>
+    ///
+    /// <para>The kernel's own path does not have this gap: the hot-swap host verifies the record
+    /// against the source text it is about to compile, so what runs is what was certified. The gap
+    /// is a consumer who loads a prebuilt assembly and reads "trusted" as covering it.</para>
+    ///
+    /// <para>No record format binds an artifact yet, so this option cannot make the check happen —
+    /// it makes the ABSENCE of the check loud. Setting it turns "trusted (source only)" into an
+    /// explicit refusal, on the same principle as the netstandard2.0 Ed25519 lane below: a
+    /// verifier asked for an assurance it cannot produce must say so, never quietly answer a
+    /// narrower question. Consumers that can compile the verified source instead should do that
+    /// and leave this off.</para>
+    /// </remarks>
+    public bool RequireAssemblyBinding { get; init; }
+
+    /// <summary>
     /// Base64 raw Ed25519 public keys this verifier will accept as signers. Empty or null
     /// disables pinning.
     /// </summary>
@@ -67,7 +91,7 @@ public sealed class CertificationVerifyOptions
 
     /// <summary>True when any strictness beyond today's behaviour is configured.</summary>
     public bool IsStrict =>
-        MinimumSchemaVersion > 0 || RequireEd25519Signature || PinningEnabled;
+        MinimumSchemaVersion > 0 || RequireEd25519Signature || PinningEnabled || RequireAssemblyBinding;
 
     /// <summary>True when a non-empty trusted-key set is configured.</summary>
     public bool PinningEnabled => TrustedEd25519PublicKeys is { Count: > 0 };

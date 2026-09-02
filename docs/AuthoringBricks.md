@@ -1,6 +1,14 @@
 # Authoring Bricks
 
-This is the authoritative entry point for writing **code-authored bricks** for Ashlar. For host setup and SDK registration context, see [`docs/sdk.md`](sdk.md) and [`docs/SdkIntegrationGuide.md`](SdkIntegrationGuide.md).
+This is the authoritative entry point for writing **code-authored bricks** for Ashlar. For host setup and SDK registration context, see [`docs/sdk.md`](sdk.md) and [`docs/SdkIntegrationGuide.md`](SdkIntegrationGuide.md); for consuming Ashlar as packages with no checkout, [`docs/ConsumingFromNuGet.md`](ConsumingFromNuGet.md).
+
+> **Before you choose a project layout, decide whether this brick will be certified.** A brick the
+> certification gate can admit must live in its **own project**, carry **no `ProjectReference` at
+> all**, and reference **at most two packages** — `Ashlar.Brick.Contracts` and `Ashlar.Authoring`.
+> That is enforced, not advisory, and it is the leg most first-time authors hit. The rule, the exact
+> refusals, and how to run the gate yourself are in
+> [`docs/CertificationGate.md`](CertificationGate.md). Everything else on this page applies either
+> way.
 
 ## What a brick is
 
@@ -83,13 +91,39 @@ Ashlar also has an adaptive manifest path: `INewBrickGenerator.GenerateAsync(...
 
 Use **code-authored bricks** when you want to ship source-controlled domain logic with tests and stable package/version ownership. Use the **manifest generator** when Ashlar is inferring a candidate brick from observed workflow patterns. Both paths describe the same conceptual brick surface; code bricks are the developer-authored, reviewable path.
 
-## Packages are not on nuget.org yet
+## Getting the packages
 
-**Nothing has been published.** No `v*` tag or GitHub release has been cut, `release.yml` / `release-nuget.yml` have never run, and `Ashlar.CLI`, `Ashlar.Authoring`, `Ashlar.Hosting` and `Ashlar.Hosting.Bundle` all return 404 on nuget.org. Any instruction of the form `dotnet tool install --global Ashlar.CLI` or `<PackageReference Include="Ashlar.Authoring" ... />` therefore fails today unless **you** supply the packages from a local folder feed. The rest of this page is written for that reality: start from the `ProjectReference` sample, and use the local-feed recipe only when you specifically want to exercise the standalone (`ashlar new brick`) shape.
+**`Ashlar.*` is on nuget.org at `0.1.1`** (published 2026-09-01 by `release.yml` via Trusted Publishing/OIDC, with SPDX SBOMs), including `Ashlar.Brick.Contracts`, `Ashlar.Authoring`, `Ashlar.Hosting`, `Ashlar.Hosting.Bundle` and the `Ashlar.CLI` .NET tool. Both `dotnet tool install --global Ashlar.CLI --version 0.1.1` and `<PackageReference Include="Ashlar.Authoring" Version="0.1.1" />` resolve from plain nuget.org with no extra feed. [`docs/ConsumingFromNuGet.md`](ConsumingFromNuGet.md) is the package-only getting-started page.
 
-## Primary path: `samples/hello-brick` (ProjectReference)
+The local-folder-feed recipe below is still the right tool for a **pre-release** version you packed yourself out of a checkout — which is what `scripts/verify-standalone-brick-authoring.sh` exercises, and why it pins `9.9.9-local` rather than a released version.
 
-[`samples/hello-brick/`](../samples/hello-brick/) is the complete reference implementation and the path that works from a repository checkout with no extra setup. Its brick project references the domain model by **`ProjectReference`**, not by package (`samples/hello-brick/HelloBrick/HelloBrick.csproj`):
+## The certifiable shape: one project, at most two packages
+
+If the brick will ever face the certification gate, this is the layout to start from — retrofitting it later means splitting the project. The gate’s dependency leg rejects *any* `ProjectReference` and allows only `Ashlar.Brick.Contracts` and `Ashlar.Authoring`, and the certificate binds a SHA-256 of the single source file, so the brick has to be a project on its own.
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <PackageId>Acme.Bricks.LateFee</PackageId>
+    <!-- Required under any directory that has a Directory.Packages.props. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.1" />
+  </ItemGroup>
+</Project>
+```
+
+One brick, one `.cs`, one `.csproj`, in its own directory. Add `Ashlar.Authoring` if the same project also needs `AddAshlarBrick<T>()`; add nothing else. `samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/` is the tracked example of exactly this shape, and [`docs/CertificationGate.md`](CertificationGate.md) is how you drive the gate over it.
+
+## Learning path: `samples/hello-brick` (ProjectReference, not certifiable)
+
+[`samples/hello-brick/`](../samples/hello-brick/) is the complete reference implementation of the `Brick` API and the fastest thing to run from a repository checkout — no feed, no restore, no packages. **It is deliberately not a certifiable brick:** it references the domain model by **`ProjectReference`** (`samples/hello-brick/HelloBrick/HelloBrick.csproj`), which the gate refuses outright with `ProjectReference forbidden: ...`. Use it to learn the API; use the section above as the starting point for anything you intend to certify.
 
 ```xml
 <ItemGroup>
@@ -103,7 +137,7 @@ Run it from the repository root:
 dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj
 ```
 
-To start your own brick, copy `samples/hello-brick/` next to it (or anywhere inside the checkout), rename the projects, and keep the `ProjectReference` pointing at `src/Ashlar.Core.Domain/Ashlar.Core.Domain.csproj` (add `src/Ashlar.Authoring/Ashlar.Authoring.csproj` if you want `AddAshlarBrick<T>()` for host registration). One detail: the sample derives from `DomainBrick`, a `global using` alias for `Ashlar.Core.Domain.Bricks.Brick` that `samples/Directory.Build.props` injects **only** into the `HelloBrick` project name, so a renamed copy should derive from `Brick` directly (as the minimal example above does; if your own namespace starts with `Ashlar.` and you reference `Ashlar.Authoring`, the `Ashlar.Brick` namespace from `Ashlar.Brick.Contracts` shadows the short name, so write `Ashlar.Core.Domain.Bricks.Brick` or declare the same alias). The sample layout is:
+To start your own **uncertified** brick inside the checkout, copy `samples/hello-brick/` next to it, rename the projects, and keep the `ProjectReference` pointing at `src/Ashlar.Core.Domain/Ashlar.Core.Domain.csproj` (add `src/Ashlar.Authoring/Ashlar.Authoring.csproj` if you want `AddAshlarBrick<T>()` for host registration). One detail: the sample derives from `DomainBrick`, a `global using` alias for `Ashlar.Core.Domain.Bricks.Brick` that `samples/Directory.Build.props` injects **only** into the `HelloBrick` project name, so a renamed copy should derive from `Brick` directly (as the minimal example above does; if your own namespace starts with `Ashlar.` and you reference `Ashlar.Authoring`, the `Ashlar.Brick` namespace from `Ashlar.Brick.Contracts` shadows the short name, so write `Ashlar.Core.Domain.Bricks.Brick` or declare the same alias). The sample layout is:
 
 - `HelloBrick/HelloBrick.csproj` — code-authored brick project.
 - `HelloBrick/HelloBrick.cs` — `public sealed class HelloBrick : DomainBrick` (= `Brick`).
@@ -118,7 +152,7 @@ To start your own brick, copy `samples/hello-brick/` next to it (or anywhere ins
 ashlar new brick MyThing --ashlar-version 1.2.3
 ```
 
-Because `Ashlar.Authoring` is not on nuget.org, restoring the generated project fails with `NU1101: Unable to find package Ashlar.Authoring` until you make the package restorable (next section). Inside a checkout you can run the CLI without installing it:
+With a released version (`--ashlar-version 0.1.1`) the generated project restores from plain nuget.org. If you pin a version that exists only in a local feed, restore fails with `NU1101: Unable to find package Ashlar.Authoring` until you make that feed visible (next section). Inside a checkout you can run the CLI without installing it:
 
 ```bash
 dotnet run --project application/src/Ashlar.CLI -- new brick Hello --output /tmp/hello-brick --ashlar-version 9.9.9-local
@@ -126,7 +160,7 @@ dotnet run --project application/src/Ashlar.CLI -- new brick Hello --output /tmp
 
 ## Restoring Ashlar.Authoring
 
-Two options; the first is what CI verifies.
+For a **released** version there is nothing to do: `Ashlar.Authoring 0.1.1` restores from plain nuget.org. The two options below are for a version that is not on nuget.org — a pre-release you packed yourself, or a brick that must track `src/` exactly. The first is what CI verifies.
 
 ### Option 1: local folder feed (CI-verified)
 

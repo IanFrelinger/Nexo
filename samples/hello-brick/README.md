@@ -1,6 +1,8 @@
 # Hello Brick sample
 
-This is the complete code-brick reference sample used by [`docs/AuthoringBricks.md`](../../docs/AuthoringBricks.md), and the **primary** way to build a code brick today: it references `src/Ashlar.Core.Domain` by `ProjectReference`, so it needs no NuGet feed (Ashlar packages are not yet published to nuget.org).
+This is the complete code-brick reference sample used by [`docs/AuthoringBricks.md`](../../docs/AuthoringBricks.md), and the **primary** way to build a code brick today: it references `src/Ashlar.Core.Domain` by `ProjectReference`, so it needs no NuGet feed and no package restore.
+
+**This shape is not certifiable, by design.** The certification gate’s dependency leg rejects *any* `ProjectReference` and allows exactly two packages, `Ashlar.Brick.Contracts` and `Ashlar.Authoring` (`src/Ashlar.Infrastructure/Certification/BrickDependencyChecker.cs`). Use this sample to learn the `Brick` API from inside the checkout; when you want a brick the gate can admit, give it its own project with a `PackageReference` to `Ashlar.Brick.Contracts` (on nuget.org at `0.1.1`), the way `samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/` does. See [`docs/CertificationGate.md`](../../docs/CertificationGate.md).
 
 Prerequisites: a repository checkout and the .NET SDK (`global.json` pins the version). Run it from the repository root:
 
