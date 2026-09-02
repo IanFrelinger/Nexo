@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
@@ -62,6 +64,77 @@ internal sealed class DaemonFaultLog
             }
             _reason = text;
         }
+    }
+
+    /// <summary>
+    /// Records a fault whose component is already known exactly, without the stack-walking guess
+    /// <see cref="Capture"/> needs when a log category names the generic host instead of the
+    /// component.
+    /// </summary>
+    public void CaptureService(string service, Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        lock (_gate)
+        {
+            if (_service is not null)
+            {
+                return;
+            }
+            _service = service;
+            _reason = $"{exception.GetType().Name}: {exception.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Structural evidence that a hosted service died, read from the services themselves rather
+    /// than from what anybody logged — and the answer to "did a service fault?" that the daemon's
+    /// stop report actually needs.
+    ///
+    /// <para><b>Why the log is not enough, in both directions.</b> Too loud: <see cref="HasFault"/>
+    /// is set by ANY error line carrying an exception, so one unreachable mesh peer over three
+    /// weeks was enough to make the next ordinary `docker stop` report <c>status:faulted</c> — the
+    /// reported defect, re-armed. Too quiet: a hosted service that stops the host without logging
+    /// through this pipeline leaves no trace at all. <c>BackgroundService.ExecuteTask</c> has
+    /// neither problem. It is the task <c>ExecuteAsync</c> returned, and
+    /// <see cref="Task.IsFaulted"/> on it means that service ended in an exception — nothing else
+    /// sets it. A service cancelled by an ordinary shutdown ends <em>Canceled</em>, not
+    /// <em>Faulted</em>, so a clean stop cannot be mistaken for a crash here.</para>
+    ///
+    /// <para><b>Read this BEFORE <c>StopAsync</c>.</b> Afterwards every service has been asked to
+    /// stop, which is a different question than the one being asked.</para>
+    /// </summary>
+    /// <param name="services">The running host's service provider.</param>
+    /// <returns>True when at least one hosted service's execute task ended in an exception.</returns>
+    public bool CaptureHostedServiceFaults(IServiceProvider services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        var faulted = false;
+        try
+        {
+            foreach (var hosted in services.GetServices<IHostedService>())
+            {
+                if (hosted is not BackgroundService background)
+                {
+                    continue;
+                }
+                if (background.ExecuteTask is not { IsFaulted: true } task)
+                {
+                    continue;
+                }
+                faulted = true;
+                if (task.Exception?.GetBaseException() is { } error)
+                {
+                    CaptureService(hosted.GetType().FullName ?? hosted.GetType().Name, error);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException)
+        {
+            // Racing a disposal. "I could not look" must not be reported as "nothing was wrong",
+            // but it must not invent a fault either — the caller still has the log and the
+            // lifetime signals.
+        }
+        return faulted;
     }
 
     /// <summary>
