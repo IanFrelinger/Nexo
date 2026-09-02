@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using Ashlar.Manifest;
 
 namespace Ashlar.CLI.Commands;
 
@@ -52,9 +53,9 @@ public sealed class ExportCommand : Command
 
     private static int ExecuteCloud(DirectoryInfo directory, DirectoryInfo outDir, CloudTarget target, string? runtimeImage)
     {
-        if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml")) || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
+        if (NotAProject(directory) is { } notAProject)
         {
-            Console.Error.WriteLine($"not an ashlar project: {directory.FullName}");
+            Console.Error.WriteLine(notAProject);
             return 1;
         }
 
@@ -62,7 +63,7 @@ public sealed class ExportCommand : Command
         var info = NativeBundle.Describe(directory.FullName, targetName);
         if (!info.Verified)
         {
-            Console.Error.WriteLine("refusing to export: the project does not verify. fix it, then:  ashlar verify");
+            Console.Error.WriteLine(DoesNotVerify(info));
             return 65;
         }
 
@@ -102,9 +103,69 @@ public sealed class ExportCommand : Command
             Console.WriteLine($"  {Dim($"runtime image: {effectiveImage} (mutable tag — pass --runtime-image with a version or digest to pin the verifier)")}");
         }
         RenderScope(info);
+        RenderStagingNotes(directory.FullName);
         Console.WriteLine($"  {Dim($"→ {bundleDir}")}");
         Console.WriteLine($"  {Dim($"deploy + run it:  ./deploy-{targetName}.sh \"<request>\"  (the container verifies before it runs)")}");
         return 0;
+    }
+
+    /// <summary>
+    /// The refusal for a directory that is not an Ashlar project, or null when it is one. Names the
+    /// documents that are missing and the command that creates them — the same wording
+    /// <c>ashlar verify</c> uses, because "not an ashlar project: /some/path" with no next step is
+    /// a dead end for someone who mistyped <c>--path</c>.
+    /// </summary>
+    private static string? NotAProject(DirectoryInfo directory)
+    {
+        var missing = new[] { "ashlar.yaml", "ashlar.policy.yaml" }
+            .Where(f => !File.Exists(Path.Combine(directory.FullName, f))).ToList();
+        if (missing.Count == 0)
+        {
+            return null;
+        }
+        return $"not an ashlar project: missing {string.Join(" and ", missing)} in {directory.FullName}"
+             + Environment.NewLine + "start one with:  ashlar init <name>"
+             + Environment.NewLine + "or point at the project you meant:  --path <directory>";
+    }
+
+    /// <summary>
+    /// The refusal for a project that does not verify — with the courses that failed, named here.
+    ///
+    /// <para>It used to say only "the project does not verify. fix it, then: ashlar verify". That
+    /// fix runs, which is why it survived; but it withheld what this command had already computed
+    /// and made the operator run a second command to be told it. The courses are printed, then the
+    /// re-run that re-certifies.</para>
+    /// </summary>
+    private static string DoesNotVerify(BundleInfo info)
+    {
+        var lines = new List<string>
+        {
+            "refusing to export: the project does not verify, and a bundle is only worth making from one that does.",
+        };
+        foreach (var course in (info.Courses ?? Array.Empty<CourseResult>()).Where(c => !c.Passed))
+        {
+            lines.Add($"  course '{course.Name}' failed — {course.Detail}");
+        }
+        lines.Add("fix what those name, then:  ashlar verify   (it re-runs the courses and re-certifies), and export again.");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// Prints what the export did on the operator's behalf and what the bundle still cannot promise:
+    /// the directories the policy made it create inside <c>app/</c>, and — the one failure a bundle's
+    /// own self-verification structurally cannot catch — an absolute <c>sandbox.root</c>.
+    /// </summary>
+    private static void RenderStagingNotes(string projectDir)
+    {
+        var dirs = NativeBundle.StagedPolicyDirectories(projectDir);
+        if (dirs.Count > 0)
+        {
+            Console.WriteLine($"  {Dim($"created empty in the bundle, because sandbox names {(dirs.Count == 1 ? "it" : "them")}: {string.Join(", ", dirs.Select(d => "app/" + d.Replace(Path.DirectorySeparatorChar, '/')))}")}");
+        }
+        foreach (var note in NativeBundle.PortabilityNotes(projectDir))
+        {
+            Console.WriteLine($"  {Dim(note)}");
+        }
     }
 
     /// <summary>
@@ -162,17 +223,17 @@ public sealed class ExportCommand : Command
     private static async Task<int> ExecuteAsync(
         DirectoryInfo directory, DirectoryInfo outDir, string rid, FileInfo? cliProject, bool noRuntime, bool zip, CancellationToken ct)
     {
-        if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml")) || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
+        if (NotAProject(directory) is { } notAProject)
         {
-            Console.Error.WriteLine($"not an ashlar project: {directory.FullName}");
+            Console.Error.WriteLine(notAProject);
             return 1;
         }
 
         var info = NativeBundle.Describe(directory.FullName, rid);
         if (!info.Verified)
         {
-            // You ship governed apps that pass — not broken ones. The refusal points at `verify`.
-            Console.Error.WriteLine("refusing to export: the project does not verify. fix it, then:  ashlar verify");
+            // You ship governed apps that pass — not broken ones.
+            Console.Error.WriteLine(DoesNotVerify(info));
             return 65;
         }
 
@@ -252,6 +313,7 @@ public sealed class ExportCommand : Command
         Console.WriteLine($"  {verdict}  {info.Name} · {rid}");
         Console.WriteLine($"  {Dim(info.Certified ? $"signed {info.SignerFingerprint} · {info.LedgerEntries} ledger entr{(info.LedgerEntries == 1 ? "y" : "ies")}" : "unsigned — run `ashlar keys init` and re-export to certify")}");
         RenderScope(info);
+        RenderStagingNotes(directory.FullName);
         Console.WriteLine($"  {Dim(runtimeBuilt ? $"runtime: {exeName} (self-contained, single file)" : "runtime: not built (see RUNTIME.md)")}");
         Console.WriteLine($"  {Dim($"→ {(zipPath ?? bundleDir)}")}");
         Console.WriteLine($"  {Dim(runtimeBuilt ? $"run it:  {(rid.StartsWith("win", StringComparison.Ordinal) ? "run.cmd" : "./run.sh")} \"<request>\"" : "add the runtime, then run the launcher")}");
