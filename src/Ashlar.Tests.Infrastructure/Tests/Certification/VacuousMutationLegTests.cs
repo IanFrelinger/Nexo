@@ -4,6 +4,8 @@ using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using Ashlar.Tests.Infrastructure.Certification.Reuse;
+using Ashlar.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -93,6 +95,107 @@ public sealed class VacuousMutationLegTests
         decision.Record.EscapeRate.Should().Be(0);
         decision.Record.TotalMutants.Should().BeGreaterThan(0);
     }
+
+    // ── kills must be owed to the witness's expectations ─────────────────────────────────────
+
+    /// <summary>
+    /// The helper-contradiction brick's strengthened witness: two cases with armour 0, one with
+    /// armour 10 that tells <c>-</c> from <c>+</c>, and one at the floor.
+    /// </summary>
+    private static readonly WitnessSpec HelperWitness = new(
+        HelperContradictionBrickSource.BrickId,
+        [
+            new WitnessCase(
+                new Dictionary<string, object> { ["baseDamage"] = 5, ["armor"] = 0 },
+                new Dictionary<string, object> { ["finalDamage"] = 5 }),
+            new WitnessCase(
+                new Dictionary<string, object> { ["baseDamage"] = 12, ["armor"] = 0 },
+                new Dictionary<string, object> { ["finalDamage"] = 12 }),
+            new WitnessCase(
+                new Dictionary<string, object> { ["baseDamage"] = 50, ["armor"] = 10 },
+                new Dictionary<string, object> { ["finalDamage"] = 40 }),
+            new WitnessCase(
+                new Dictionary<string, object> { ["baseDamage"] = 3, ["armor"] = 10 },
+                new Dictionary<string, object> { ["finalDamage"] = 0 }),
+        ]);
+
+    /// <summary>The same inputs with every expectation removed: a witness that observes nothing.</summary>
+    private static WitnessSpec Vacuous(WitnessSpec witness) => witness with
+    {
+        Cases = witness.Cases.Select(c => new WitnessCase(c.Input, new Dictionary<string, object>())).ToArray(),
+    };
+
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task AVacuousWitness_KillsNothing_SoEveryKillIsOwedToAnExpectation()
+    {
+        // The mutation leg reports how many mutants the WITNESS caught. A mutant that dies under
+        // a witness with no expectations at all died for some other reason — a mutated lookup key
+        // that throws on every input, a statement removal that never compiled — and counting it
+        // says the witness has teeth it was never shown to have. Such mutants are not emitted.
+        var source = HelperContradictionBrickSource.Subtracting("private static");
+        var engine = new BrickMutationEngine();
+
+        var vacuous = await engine.RunAsync(
+            source, HelperContradictionBrickSource.TypeName, Vacuous(HelperWitness), References(), CancellationToken.None);
+        var real = await engine.RunAsync(
+            source, HelperContradictionBrickSource.TypeName, HelperWitness, References(), CancellationToken.None);
+
+        vacuous.TotalMutants.Should().BeGreaterThan(0);
+        vacuous.KilledMutantIds.Should().BeEmpty(
+            "a witness with no expectations can observe nothing, so any mutant it 'kills' owes its death to something other than "
+            + "the witness; killed: [{0}]", string.Join(", ", vacuous.KilledMutantIds));
+
+        real.TotalMutants.Should().Be(vacuous.TotalMutants, "the mutant set is a property of the source, not the witness");
+        real.KilledMutantIds.Should().Contain(id => id.StartsWith("swap-arithmetic-op", StringComparison.Ordinal));
+        real.SurvivingMutantIds.Should().BeEmpty(real.SurvivingMutantIds.Count == 0 ? string.Empty
+            : "the strengthened witness must kill every mutant of the honest brick; survivors: "
+            + string.Join(", ", real.Survivors.Select(s => s.Describe())));
+    }
+
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task AWitnessThatKillsNoMoreThanTheVacuousOne_IsToothless_AndIsRejected()
+    {
+        // The flag for a toothless witness, stated operationally: strip every expectation, re-run,
+        // and whatever the kill set did NOT gain is logic the expectations never reached. armor=0
+        // on every case is exactly that witness for a damage brick: the only kill its expectations
+        // add over the vacuous run is the output KEY (it asserts finalDamage exists), not one
+        // mutant of the arithmetic — and the gate must refuse it, honest brick or not, with the
+        // arithmetic mutant named as the survivor.
+        var source = HelperContradictionBrickSource.Subtracting("private static");
+        var toothless = HelperWitness with { Cases = HelperWitness.Cases.Take(2).ToArray() };
+        var engine = new BrickMutationEngine();
+
+        var vacuous = await engine.RunAsync(
+            source, HelperContradictionBrickSource.TypeName, Vacuous(toothless), References(), CancellationToken.None);
+        var judged = await engine.RunAsync(
+            source, HelperContradictionBrickSource.TypeName, toothless, References(), CancellationToken.None);
+
+        var owedToExpectations = judged.KilledMutantIds.Except(vacuous.KilledMutantIds, StringComparer.Ordinal).ToArray();
+        owedToExpectations.Should().OnlyContain(id => id.StartsWith("mutate-string-literal", StringComparison.Ordinal),
+            "with armor=0 everywhere the expectations kill the output-key mutant and nothing else — not one mutant of the logic; "
+            + "owed: [{0}]", string.Join(", ", owedToExpectations));
+        judged.SurvivingMutantIds.Should().Contain(id => id.StartsWith("swap-arithmetic-op", StringComparison.Ordinal));
+
+        var decision = await CreateGate().CertifyAsync(new CertificationRequest
+        {
+            Brick = CertifiedBrickCompiler.InstantiateBrick(source, HelperContradictionBrickSource.TypeName),
+            Witness = toothless,
+            SourceCode = source,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = References(),
+            BrickTypeName = HelperContradictionBrickSource.TypeName,
+        });
+
+        decision.Admitted.Should().BeFalse("a witness whose kills are all owed to something other than its expectations must not certify");
+        decision.FailureCheck.Should().Be("mutation");
+        decision.Record.SurvivingMutantIds.Should().Contain(id => id.StartsWith("swap-arithmetic-op", StringComparison.Ordinal));
+    }
+
+    private static List<string> References() =>
+    [
+        typeof(DomainBrick).Assembly.Location,
+        typeof(BrickInput).Assembly.Location,
+    ];
 
     private static CertificationGate CreateGate() => new(new CertificationRecordSigner());
 

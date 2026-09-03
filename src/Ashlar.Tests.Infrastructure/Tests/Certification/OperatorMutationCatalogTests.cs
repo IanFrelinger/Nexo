@@ -43,22 +43,26 @@ public sealed class OperatorMutationCatalogTests
     ];
 
     [Fact]
-    public void ContradictoryBrick_GainsExactlyTheArithmeticMutant_AndKeepsEveryPreExistingId()
+    public void ContradictoryBrick_GainsExactlyTheArithmeticMutant_AndKeepsEveryWitnessKillableId()
     {
         var mutations = AstMutationCatalog.CollectMutations(ContradictoryDamageBrickSource.Subtracting, BrickReferences);
         var ids = mutations.Select(m => m.Id).ToArray();
 
-        // The five ids the pre-fix catalog produced for this exact source, verbatim from the run
-        // that reproduced the defect. They must survive unchanged: a record signed against them
-        // is only reproducible if the same edit still carries the same name.
+        // Of the five ids the pre-fix catalog produced for this exact source, the two a witness can
+        // kill keep their names unchanged — the same edit must carry the same name, or a record
+        // signed against it stops being reproducible. The other three are gone on purpose: the two
+        // input-key literals (lines 31, 32) throw on every input whatever the witness expects, and
+        // the statement removal (line 31) never compiled. All three were kills owed to the
+        // compiler or the runtime, not to the witness, and inflated mutants_killed.
         ids.Should().Contain(
         [
             "mutate-int-literal-33",
-            "mutate-string-literal-31",
-            "mutate-string-literal-32",
             "mutate-string-literal-35",
-            "remove-statement-31",
         ]);
+        ids.Should().NotContain(["mutate-string-literal-31", "mutate-string-literal-32"],
+            "input.Get(\"...\") keys are lookups; a mutated lookup key is killed by any witness with a case");
+        ids.Should().NotContain("remove-statement-31",
+            "removing `var baseDamage = input.Get(...)` does not compile, so no witness case is what kills it");
 
         var arithmetic = mutations.Should().ContainSingle(m => m.Id.StartsWith("swap-arithmetic-op", StringComparison.Ordinal)).Subject;
         arithmetic.Id.Should().Be("swap-arithmetic-op-33");
