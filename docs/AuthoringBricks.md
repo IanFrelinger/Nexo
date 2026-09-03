@@ -123,7 +123,7 @@ One brick, one `.cs`, one `.csproj`, in its own directory. Add `Ashlar.Authoring
 
 ## Learning path: `samples/hello-brick` (package-only, certifiable)
 
-[`samples/hello-brick/`](../samples/hello-brick/) is the complete reference implementation of the `Brick` API and the smallest brick the certification gate admits. It has exactly the shape above: one project, one source file, one `PackageReference` to `Ashlar.Brick.Contracts` (`0.1.1`, on nuget.org), and a witness beside the source. `ShippedSampleCertificationTests` certifies it as checked in on every cert-gate run, so the sample can be copied as a starting point for a brick you intend to certify.
+[`samples/hello-brick/`](../samples/hello-brick/) is the complete reference implementation of the `Brick` API and the smallest brick the certification gate admits. It has exactly the shape above: one project, one source file, one `PackageReference` to `Ashlar.Brick.Contracts` (`0.1.1`, on nuget.org), and a witness beside the source. `ShippedSampleCertificationTests` certifies it as checked in on every cert-gate run, so the sample can be copied as a starting point for a brick you intend to certify. That run uses the gate **at this line (`0.1.2`)**: the sample carries no `CopyLocalLockFileAssemblies`, because the `0.1.2` loader reads references from the compiler's own record of the build. Under the `Ashlar.Infrastructure 0.1.1` package on nuget.org — whose loader reads `*.dll` from the output folder — this same sample is REJECTED at the analyzer leg (`analyzer anchor type ... is not resolvable`). [`docs/CertificationGate.md`](CertificationGate.md) opens with what a `0.1.1` consumer actually gets.
 
 ```xml
 <ItemGroup>
@@ -160,7 +160,7 @@ To start your own brick inside the checkout, copy `samples/hello-brick/` next to
 ashlar new brick MyThing --ashlar-version 1.2.3
 ```
 
-With a released version (`--ashlar-version 0.1.1`) the generated project restores from plain nuget.org. If you pin a version that exists only in a local feed, restore fails with `NU1101: Unable to find package Ashlar.Authoring` until you make that feed visible (next section). Inside a checkout you can run the CLI without installing it:
+With a released version (`--ashlar-version 0.1.1`) the generated project restores from plain nuget.org. Which *template* you get depends on the CLI, not on `--ashlar-version`: the template tracked at this line certifies exactly as scaffolded under the `0.1.2` gate (`BrickCertificationProjectLoaderReferenceTests.The_brick_template_certifies_exactly_as_scaffolded`), but the **`Ashlar.CLI 0.1.1` tool on nuget.org embeds the older template**, whose scaffold the `0.1.2` gate REJECTS — run the CLI from a checkout (below) or wait for `Ashlar.CLI 0.1.2` if the scaffold has to certify. If you pin a version that exists only in a local feed, restore fails with `NU1101: Unable to find package Ashlar.Authoring` until you make that feed visible (next section). Inside a checkout you can run the CLI without installing it:
 
 ```bash
 dotnet run --project application/src/Ashlar.CLI -- new brick Hello --output /tmp/hello-brick --ashlar-version 9.9.9-local
