@@ -27,7 +27,7 @@ namespace Ashlar.Infrastructure.Certification;
 /// — contradictory programs — BOTH certified <c>ADMIT escape_rate=0 mutants_killed=5</c> against
 /// the same witness. The catalog had mutated three string literals, one integer literal and one
 /// statement, and never the arithmetic, so a witness that never exercised the arithmetic scored a
-/// perfect kill rate. The leg's whole job is proving the witness would notice if the logic were
+/// perfect kill rate. The mutation leg's entire job is to prove the witness would notice logic being
 /// wrong; it cannot do that for an operator it never changes.</para>
 ///
 /// <para>Type information comes from a binding-only compilation of the candidate against the
@@ -36,13 +36,53 @@ namespace Ashlar.Infrastructure.Certification;
 /// e.g. because a reference is missing) the operator family emits NOTHING for that site rather
 /// than guessing: a guess that compiles proves nothing extra, and a guess that does not compile is
 /// a vacuous kill. The literal family is unaffected by binding.</para>
+///
+/// <para>WHERE the operators look, and how far, was the second way the leg could sign a vacuous
+/// certificate. Two adjudicated findings, neither refutable:</para>
+/// <list type="bullet">
+/// <item><description>Every kind stopped after its first four qualifying sites in document order.
+/// A brick with six arithmetic sites had its fifth and sixth — <c>+ surcharge - discount</c> —
+/// never mutated, so contradictory bricks differing only there both certified, and the record
+/// carried no trace that the leg had stopped early. There is no cap now, per kind or per site: a
+/// brick is one file and a mutant costs a fraction of a second, and a cap that must be hidden in
+/// the record to keep the record honest is not worth its saving.</description></item>
+/// <item><description>Only <c>ExecuteAsync</c> and private INSTANCE methods were in scope. A
+/// <c>private static</c>, <c>internal</c> or <c>public</c> helper — or a property body, a
+/// constructor, a nested type — was never mutated, so contradictory bricks whose only arithmetic
+/// lived in <c>private static int Resolve(...)</c> both certified. Every member body of every type
+/// in the candidate is in scope now (<see cref="MutationScope"/>), whatever its modifiers.</description></item>
+/// </list>
+///
+/// <para>Widening the scope also exposed KILLS THE WITNESS NEVER EARNED and EQUIVALENT MUTANTS,
+/// and the catalog now refuses to emit either where it can tell:</para>
+/// <list type="bullet">
+/// <item><description>A mutant that does not compile is DISCARDED, not emitted (the engine would
+/// score it as killed). The check re-binds the mutated text in the same compilation the operator
+/// family uses, so it sees what the certification compile will see.</description></item>
+/// <item><description>A LOOKUP KEY literal — <c>input.Get("baseDamage")</c>,
+/// <c>dict.TryGetValue("k", ...)</c>, <c>dict["k"]</c> read — is not mutated: the mutated lookup
+/// fails on every input whatever the witness expects, so its kill is owed to the runtime. A STORE
+/// key (<c>output.Set("finalDamage", v)</c>, <c>dict["k"] = v</c>) is mutated: dropping a declared
+/// output is observable only by a witness that asserts it.</description></item>
+/// <item><description>An arithmetic swap on an identity operand — <c>x * 1</c> ↔ <c>x / 1</c>,
+/// <c>x + 0</c> ↔ <c>x - 0</c> — is the same program and is not emitted.</description></item>
+/// <item><description>A constructor statement that writes a member NOTHING in the candidate reads
+/// (<c>Id = "..."</c>, <c>Interface = new BrickInterface { ... }</c>) cannot change what any member
+/// computes, so no witness case could kill a mutant of it; it is out of scope. A member the
+/// constructor writes and some body reads stays in.</description></item>
+/// </list>
 /// </remarks>
 internal static class AstMutationCatalog
 {
-    private const int MaxPerKind = 4;
-
     /// <summary>Longest edit text carried on a <see cref="MutationSite"/> before truncation.</summary>
     private const int MaxSiteTextLength = 80;
+
+    /// <summary>
+    /// Member names taken to be keyed lookups when the invocation cannot be bound (no references).
+    /// With binding the rule is the API's own: a non-void method's parameter named <c>key</c>.
+    /// </summary>
+    private static readonly string[] UnboundLookupMemberNames =
+        ["Get", "TryGet", "TryGetValue", "GetValueOrDefault", "ContainsKey"];
 
     /// <summary>
     /// Builds a mutation together with the <see cref="MutationSite"/> that describes it, so a
@@ -127,23 +167,25 @@ internal static class AstMutationCatalog
     {
         var tree = CSharpSyntaxTree.ParseText(sourceCode, BrickCompilation.ParseOptions(compileOptions));
         var root = tree.GetRoot();
-        var model = BindForOperatorMutants(tree, compilationReferences, compileOptions);
+        var compilation = BindCandidate(tree, compilationReferences, compileOptions);
+        var model = compilation.GetSemanticModel(tree);
+        var scope = MutationScope.Of(root, model);
         var mutations = new List<AstMutation>();
 
-        CollectFlipBinaryComparisons(root, mutations);
-        CollectNegateConditions(root, mutations);
-        CollectMutateIntegerLiterals(root, mutations);
-        CollectMutateStringLiterals(root, mutations);
-        CollectRemoveStatements(root, mutations);
-        CollectSwapLogicalOperators(root, mutations);
-        CollectDegradeCoalesceAssignments(root, mutations);
-        CollectSwapArithmeticOperators(root, model, mutations);
-        CollectSwapArithmeticAssignments(root, model, mutations);
-        CollectShiftRelationalBoundaries(root, model, mutations);
-        CollectSwapUnaryOperators(root, model, mutations);
-        CollectRemoveLogicalNots(root, model, mutations);
+        CollectFlipBinaryComparisons(root, scope, mutations);
+        CollectNegateConditions(root, scope, mutations);
+        CollectMutateIntegerLiterals(root, scope, mutations);
+        CollectMutateStringLiterals(root, scope, model, mutations);
+        CollectRemoveStatements(root, scope, mutations);
+        CollectSwapLogicalOperators(root, scope, mutations);
+        CollectDegradeCoalesceAssignments(root, scope, mutations);
+        CollectSwapArithmeticOperators(root, scope, model, mutations);
+        CollectSwapArithmeticAssignments(root, scope, model, mutations);
+        CollectShiftRelationalBoundaries(root, scope, model, mutations);
+        CollectSwapUnaryOperators(root, scope, model, mutations);
+        CollectRemoveLogicalNots(root, scope, model, mutations);
 
-        return DisambiguateIds(mutations);
+        return DisambiguateIds(DiscardNonCompiling(mutations, compilation, tree));
     }
 
     /// <summary>
@@ -167,15 +209,46 @@ internal static class AstMutationCatalog
     }
 
     /// <summary>
-    /// A binding-only compilation of the candidate, so operator mutants can ask what type an
-    /// operand has before rewriting it. The candidate is parsed ALONE (so every mutation keeps
-    /// the candidate's own line numbers and <c>ToSource()</c> returns unwrapped candidate text,
-    /// exactly as before); the usings and audit context the certification compile injects are
-    /// hoisted into a sibling tree as <c>global using</c>s, which bind identically. The reference
-    /// set is the one every mutant will be compiled against, so a type that resolves here
-    /// resolves there.
+    /// Drops every mutant whose text does not compile. The engine scores a non-compiling mutant as
+    /// killed, and that kill is owed to the compiler, not to a witness case — the canonical case is
+    /// <c>remove-statement</c> dropping <c>var x = input.Get(...)</c> and leaving <c>x</c>
+    /// dangling. Each mutant is re-bound in the same compilation the operator family binds against,
+    /// so what fails here is what the certification compile would fail. When the CANDIDATE itself
+    /// does not bind (a reference is missing, so every mutant would "fail" for the same reason)
+    /// nothing can be judged and nothing is discarded.
     /// </summary>
-    private static SemanticModel BindForOperatorMutants(
+    private static List<AstMutation> DiscardNonCompiling(
+        List<AstMutation> mutations, CSharpCompilation compilation, SyntaxTree candidate)
+    {
+        if (mutations.Count == 0 || HasErrors(compilation, candidate))
+            return mutations;
+
+        var kept = new List<AstMutation>(mutations.Count);
+        foreach (var mutation in mutations)
+        {
+            // Re-parsed under the candidate's own (the build's) parse options, so the same #if
+            // branches are code here as they were when the mutant was collected.
+            var mutatedTree = CSharpSyntaxTree.ParseText(mutation.ToSource(), (CSharpParseOptions)candidate.Options);
+            if (!HasErrors(compilation.ReplaceSyntaxTree(candidate, mutatedTree), mutatedTree))
+                kept.Add(mutation);
+        }
+
+        return kept;
+    }
+
+    private static bool HasErrors(CSharpCompilation compilation, SyntaxTree tree) =>
+        compilation.GetSemanticModel(tree).GetDiagnostics().Any(d => d.Severity == DiagnosticSeverity.Error);
+
+    /// <summary>
+    /// A binding-only compilation of the candidate, so operator mutants can ask what type an
+    /// operand has before rewriting it, and so a mutant can be re-bound to see whether it compiles.
+    /// The candidate is parsed ALONE (so every mutation keeps the candidate's own line numbers and
+    /// <c>ToSource()</c> returns unwrapped candidate text, exactly as before); the usings and audit
+    /// context the certification compile injects are hoisted into a sibling tree as
+    /// <c>global using</c>s, which bind identically. The reference set is the one every mutant
+    /// will be compiled against, so a type that resolves here resolves there.
+    /// </summary>
+    private static CSharpCompilation BindCandidate(
         SyntaxTree candidate, IReadOnlyList<string>? compilationReferences, BrickCompileOptions? compileOptions)
     {
         var parseOptions = BrickCompilation.ParseOptions(compileOptions);
@@ -188,23 +261,17 @@ internal static class AstMutationCatalog
         var trees = new List<SyntaxTree> { candidate, preamble };
         trees.AddRange(BrickCompilation.CompanionTrees(compileOptions));
 
-        var compilation = CSharpCompilation.Create(
+        return CSharpCompilation.Create(
             "AshlarMutationCatalogBinding",
             trees,
             RoslynCodeAnalysisService.BuildReferenceSet(compilationReferences),
             BrickCompilation.CompilationOptions(compileOptions, OutputKind.DynamicallyLinkedLibrary));
-
-        return compilation.GetSemanticModel(candidate);
     }
 
-    private static void CollectFlipBinaryComparisons(SyntaxNode root, List<AstMutation> mutations)
+    private static void CollectFlipBinaryComparisons(SyntaxNode root, MutationScope scope, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<BinaryExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<BinaryExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             if (!TryFlipComparisonOperator(node, out var flipped))
                 continue;
 
@@ -216,18 +283,13 @@ internal static class AstMutationCatalog
                 flipped,
                 node.OperatorToken.Text,
                 ((BinaryExpressionSyntax)flipped).OperatorToken.Text));
-            count++;
         }
     }
 
-    private static void CollectNegateConditions(SyntaxNode root, List<AstMutation> mutations)
+    private static void CollectNegateConditions(SyntaxNode root, MutationScope scope, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<IfStatementSyntax>())
+        foreach (var node in scope.Nodes.OfType<IfStatementSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             if (node.Condition.Kind() == SyntaxKind.LogicalNotExpression)
                 continue;
 
@@ -245,18 +307,13 @@ internal static class AstMutationCatalog
                 negated,
                 node.Condition.ToString(),
                 "!(" + node.Condition.WithoutTrivia() + ")"));
-            count++;
         }
     }
 
-    private static void CollectMutateIntegerLiterals(SyntaxNode root, List<AstMutation> mutations)
+    private static void CollectMutateIntegerLiterals(SyntaxNode root, MutationScope scope, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<LiteralExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<LiteralExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             if (node.Kind() is not SyntaxKind.NumericLiteralExpression)
                 continue;
 
@@ -275,23 +332,28 @@ internal static class AstMutationCatalog
                 SyntaxFactory.Literal(mutatedValue));
 
             mutations.Add(Create(root, "mutate-int-literal", node, replacement));
-            count++;
         }
     }
 
-    private static void CollectMutateStringLiterals(SyntaxNode root, List<AstMutation> mutations)
+    /// <summary>
+    /// Rewrites the last character of a string literal — except a LOOKUP KEY, see
+    /// <see cref="IsLookupKey"/>: a mutated <c>input.Get("baseDamagX")</c> throws on every input
+    /// and is killed by any witness with a case, so its kill says nothing about the witness's
+    /// expectations, and counting it inflated <c>mutants_killed</c> on every brick ever certified.
+    /// </summary>
+    private static void CollectMutateStringLiterals(
+        SyntaxNode root, MutationScope scope, SemanticModel model, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<LiteralExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<LiteralExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             if (node.Kind() != SyntaxKind.StringLiteralExpression)
                 continue;
 
             var text = node.Token.ValueText;
             if (string.IsNullOrEmpty(text))
+                continue;
+
+            if (IsLookupKey(node, model))
                 continue;
 
             var mutated = text.Length == 1 ? text + "X" : text[..^1] + "X";
@@ -300,26 +362,101 @@ internal static class AstMutationCatalog
                 SyntaxFactory.Literal(mutated));
 
             mutations.Add(Create(root, "mutate-string-literal", node, replacement));
-            count++;
         }
     }
 
-    private static void CollectRemoveStatements(SyntaxNode root, List<AstMutation> mutations)
+    /// <summary>
+    /// Whether a string literal is the KEY of a keyed lookup, precisely: (1) the index of an
+    /// element access that is read, not assigned (<c>dict["k"]</c> but not <c>dict["k"] = v</c>);
+    /// or (2) an argument of an invocation that binds to a NON-VOID method, in the position of a
+    /// parameter named <c>key</c> — the .NET convention every keyed lookup follows
+    /// (<c>BrickInput.Get&lt;T&gt;(string key)</c>, <c>TryGetValue(TKey key, out ...)</c>,
+    /// <c>ContainsKey(TKey key)</c>, <c>GetValueOrDefault(TKey key)</c>). Void methods are stores
+    /// (<c>BrickOutput.Set(string key, object value)</c>, <c>Add(key, value)</c>): a wrong store key
+    /// drops a declared output, which only a witness asserting that output can notice, so those keys
+    /// stay mutable. When the invocation cannot be bound at all the member name decides, from a
+    /// short list of lookup names, so a blind run behaves the same way on the common shapes.
+    /// </summary>
+    private static bool IsLookupKey(LiteralExpressionSyntax literal, SemanticModel model)
     {
-        var count = 0;
-        foreach (var block in ExecutionScopeNodes(root).OfType<BlockSyntax>())
+        SyntaxNode node = literal;
+        while (node.Parent is ParenthesizedExpressionSyntax parenthesized)
+            node = parenthesized;
+
+        if (node.Parent is not ArgumentSyntax argument)
+            return false;
+
+        switch (argument.Parent)
         {
-            if (count >= MaxPerKind)
-                break;
+            case BracketedArgumentListSyntax { Parent: ElementAccessExpressionSyntax access }:
+                return !IsSimpleAssignmentTarget(access);
 
-            if (block.Statements.Count == 0)
+            case ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } arguments:
+                var info = model.GetSymbolInfo(invocation);
+                var method = info.Symbol as IMethodSymbol ?? info.CandidateSymbols.OfType<IMethodSymbol>().FirstOrDefault();
+                if (method is null)
+                    return UnboundLookupMemberNames.Contains(InvokedMemberName(invocation), StringComparer.Ordinal);
+
+                if (method.ReturnsVoid)
+                    return false;
+
+                var parameter = ParameterFor(method, argument, arguments);
+                return parameter is not null && string.Equals(parameter.Name, "key", StringComparison.OrdinalIgnoreCase);
+
+            default:
+                return false;
+        }
+    }
+
+    private static string? InvokedMemberName(InvocationExpressionSyntax invocation) => invocation.Expression switch
+    {
+        MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
+        MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText,
+        IdentifierNameSyntax name => name.Identifier.ValueText,
+        GenericNameSyntax generic => generic.Identifier.ValueText,
+        _ => null
+    };
+
+    /// <summary>The parameter an argument binds to: by name when named, else by position (a
+    /// reduced extension method's parameters already exclude <c>this</c>), else <c>params</c>.</summary>
+    private static IParameterSymbol? ParameterFor(IMethodSymbol method, ArgumentSyntax argument, ArgumentListSyntax arguments)
+    {
+        if (argument.NameColon is not null)
+        {
+            var name = argument.NameColon.Name.Identifier.ValueText;
+            return method.Parameters.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal));
+        }
+
+        var index = arguments.Arguments.IndexOf(argument);
+        if (index >= 0 && index < method.Parameters.Length)
+            return method.Parameters[index];
+
+        return method.Parameters.Length > 0 && method.Parameters[^1].IsParams ? method.Parameters[^1] : null;
+    }
+
+    private static bool IsSimpleAssignmentTarget(SyntaxNode node) =>
+        node.Parent is AssignmentExpressionSyntax assignment
+        && assignment.Kind() == SyntaxKind.SimpleAssignmentExpression
+        && assignment.Left == node;
+
+    /// <summary>
+    /// Removes the first in-scope statement of every block (a constructor's metadata writes are
+    /// not in scope, so a constructor block's first LOGIC statement is the one removed). A removal
+    /// that leaves a later use dangling does not compile and is discarded downstream rather than
+    /// scored as a kill.
+    /// </summary>
+    private static void CollectRemoveStatements(SyntaxNode root, MutationScope scope, List<AstMutation> mutations)
+    {
+        foreach (var block in scope.Nodes.OfType<BlockSyntax>())
+        {
+            var statement = block.Statements.FirstOrDefault(scope.Contains);
+            if (statement is null || statement is ReturnStatementSyntax)
                 continue;
 
-            var statement = block.Statements[0];
-            if (statement is ReturnStatementSyntax)
+            var newBlock = block.RemoveNode(statement, SyntaxRemoveOptions.KeepNoTrivia);
+            if (newBlock is null)
                 continue;
 
-            var newBlock = block.WithStatements(SyntaxFactory.List(block.Statements.Skip(1)));
             mutations.Add(Create(
                 root,
                 "remove-statement",
@@ -328,18 +465,13 @@ internal static class AstMutationCatalog
                 newBlock,
                 statement.ToString(),
                 "(statement removed)"));
-            count++;
         }
     }
 
-    private static void CollectSwapLogicalOperators(SyntaxNode root, List<AstMutation> mutations)
+    private static void CollectSwapLogicalOperators(SyntaxNode root, MutationScope scope, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<BinaryExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<BinaryExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             if (node.Kind() is not (SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression))
                 continue;
 
@@ -362,7 +494,6 @@ internal static class AstMutationCatalog
                 flipped,
                 node.OperatorToken.Text,
                 flippedToken.Value.Text));
-            count++;
         }
     }
 
@@ -375,14 +506,10 @@ internal static class AstMutationCatalog
     /// weak witness looked strong purely on the strength of mutants that were dead on
     /// arrival at the analyzer fence.
     /// </summary>
-    private static void CollectDegradeCoalesceAssignments(SyntaxNode root, List<AstMutation> mutations)
+    private static void CollectDegradeCoalesceAssignments(SyntaxNode root, MutationScope scope, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<AssignmentExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<AssignmentExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             if (node.Kind() != SyntaxKind.CoalesceAssignmentExpression)
                 continue;
 
@@ -400,7 +527,6 @@ internal static class AstMutationCatalog
                 degraded,
                 node.OperatorToken.Text,
                 "="));
-            count++;
         }
     }
 
@@ -412,17 +538,15 @@ internal static class AstMutationCatalog
     /// combination, enum offsets, pointer arithmetic, <c>dynamic</c> and user-defined operators,
     /// none of which admit an arbitrary swap. Whole-expression constants are skipped because
     /// constant folding turns a swapped operator into a COMPILE error (<c>int.MaxValue + 1</c>,
-    /// <c>1 / 0</c>), and so is <c>*</c> → <c>/</c> over a constant-zero divisor.
+    /// <c>1 / 0</c>), and so is <c>*</c> → <c>/</c> over a constant-zero divisor. An IDENTITY
+    /// operand is skipped too: <c>x * 1</c> and <c>x / 1</c>, <c>x + 0</c> and <c>x - 0</c>, are
+    /// the same program, so the swap is an equivalent mutant no witness could kill.
     /// </summary>
     private static void CollectSwapArithmeticOperators(
-        SyntaxNode root, SemanticModel model, List<AstMutation> mutations)
+        SyntaxNode root, MutationScope scope, SemanticModel model, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<BinaryExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<BinaryExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             var (swappedKind, swappedToken) = node.Kind() switch
             {
                 SyntaxKind.AddExpression => (SyntaxKind.SubtractExpression, SyntaxKind.MinusToken),
@@ -444,6 +568,9 @@ internal static class AstMutationCatalog
             if (swappedKind == SyntaxKind.DivideExpression && IsConstantZero(model.GetConstantValue(node.Right)))
                 continue;
 
+            if (IsIdentityOperand(node.Kind(), model.GetConstantValue(node.Right)))
+                continue;
+
             if (WritesALoopControlVariable(node))
                 continue;
 
@@ -458,26 +585,21 @@ internal static class AstMutationCatalog
                 swapped,
                 node.OperatorToken.Text,
                 token.Text));
-            count++;
         }
     }
 
     /// <summary>
     /// Compound arithmetic assignment: <c>+=</c> ↔ <c>-=</c>, <c>*=</c> ↔ <c>/=</c>,
-    /// <c>%=</c> → <c>*=</c>, under the same numeric-operands rule as the binary form. A
-    /// <c>string +=</c> (concatenation) and a delegate <c>+=</c> (event subscription) have no
-    /// <c>-=</c> with the same meaning — the former does not even compile — so both are excluded
-    /// by the type check.
+    /// <c>%=</c> → <c>*=</c>, under the same numeric-operands and identity-operand rules as the
+    /// binary form. A <c>string +=</c> (concatenation) and a delegate <c>+=</c> (event
+    /// subscription) have no <c>-=</c> with the same meaning — the former does not even compile
+    /// — so both are excluded by the type check.
     /// </summary>
     private static void CollectSwapArithmeticAssignments(
-        SyntaxNode root, SemanticModel model, List<AstMutation> mutations)
+        SyntaxNode root, MutationScope scope, SemanticModel model, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<AssignmentExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<AssignmentExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             var (swappedKind, swappedToken) = node.Kind() switch
             {
                 SyntaxKind.AddAssignmentExpression => (SyntaxKind.SubtractAssignmentExpression, SyntaxKind.MinusEqualsToken),
@@ -496,6 +618,9 @@ internal static class AstMutationCatalog
             if (swappedKind == SyntaxKind.DivideAssignmentExpression && IsConstantZero(model.GetConstantValue(node.Right)))
                 continue;
 
+            if (IsIdentityOperand(node.Kind(), model.GetConstantValue(node.Right)))
+                continue;
+
             if (WritesALoopControlVariable(node))
                 continue;
 
@@ -510,7 +635,6 @@ internal static class AstMutationCatalog
                 swapped,
                 node.OperatorToken.Text,
                 token.Text));
-            count++;
         }
     }
 
@@ -524,14 +648,10 @@ internal static class AstMutationCatalog
     /// simply not exist.
     /// </summary>
     private static void CollectShiftRelationalBoundaries(
-        SyntaxNode root, SemanticModel model, List<AstMutation> mutations)
+        SyntaxNode root, MutationScope scope, SemanticModel model, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<BinaryExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<BinaryExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             var (shiftedKind, shiftedToken) = node.Kind() switch
             {
                 SyntaxKind.LessThanExpression => (SyntaxKind.LessThanOrEqualExpression, SyntaxKind.LessThanEqualsToken),
@@ -560,7 +680,6 @@ internal static class AstMutationCatalog
                 shifted,
                 node.OperatorToken.Text,
                 token.Text));
-            count++;
         }
     }
 
@@ -571,14 +690,10 @@ internal static class AstMutationCatalog
     /// <c>-2147483648</c> it is a compile error.
     /// </summary>
     private static void CollectSwapUnaryOperators(
-        SyntaxNode root, SemanticModel model, List<AstMutation> mutations)
+        SyntaxNode root, MutationScope scope, SemanticModel model, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root))
+        foreach (var node in scope.Nodes)
         {
-            if (count >= MaxPerKind)
-                break;
-
             AstMutation? mutation = node switch
             {
                 PrefixUnaryExpressionSyntax prefix => TrySwapPrefixUnary(root, model, prefix),
@@ -589,7 +704,6 @@ internal static class AstMutationCatalog
                 continue;
 
             mutations.Add(mutation);
-            count++;
         }
     }
 
@@ -648,14 +762,10 @@ internal static class AstMutationCatalog
     /// <c>!</c>, so the two operators never produce the same edit.
     /// </summary>
     private static void CollectRemoveLogicalNots(
-        SyntaxNode root, SemanticModel model, List<AstMutation> mutations)
+        SyntaxNode root, MutationScope scope, SemanticModel model, List<AstMutation> mutations)
     {
-        var count = 0;
-        foreach (var node in ExecutionScopeNodes(root).OfType<PrefixUnaryExpressionSyntax>())
+        foreach (var node in scope.Nodes.OfType<PrefixUnaryExpressionSyntax>())
         {
-            if (count >= MaxPerKind)
-                break;
-
             if (node.Kind() != SyntaxKind.LogicalNotExpression)
                 continue;
 
@@ -671,7 +781,6 @@ internal static class AstMutationCatalog
                 stripped,
                 node.ToString(),
                 node.Operand.ToString()));
-            count++;
         }
     }
 
@@ -766,39 +875,37 @@ internal static class AstMutationCatalog
     private static bool IsBuiltInComparable(ITypeSymbol? type) =>
         IsNumeric(type) || type is { TypeKind: TypeKind.Enum };
 
-    private static bool IsConstantZero(Optional<object?> constant) => constant.HasValue && constant.Value switch
+    /// <summary>
+    /// Whether swapping the operator over a constant right operand leaves the program unchanged:
+    /// <c>+</c>/<c>-</c> over 0, <c>*</c>/<c>/</c> over 1 (<c>%</c> is never an identity).
+    /// </summary>
+    private static bool IsIdentityOperand(SyntaxKind kind, Optional<object?> right) => kind switch
     {
-        sbyte v => v == 0,
-        byte v => v == 0,
-        short v => v == 0,
-        ushort v => v == 0,
-        int v => v == 0,
-        uint v => v == 0,
-        long v => v == 0,
-        ulong v => v == 0,
-        float v => v == 0,
-        double v => v == 0,
-        decimal v => v == 0,
-        char v => v == '\0',
+        SyntaxKind.AddExpression or SyntaxKind.SubtractExpression
+            or SyntaxKind.AddAssignmentExpression or SyntaxKind.SubtractAssignmentExpression => IsConstantZero(right),
+        SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression
+            or SyntaxKind.MultiplyAssignmentExpression or SyntaxKind.DivideAssignmentExpression => IsConstantEqualTo(right, 1),
         _ => false
     };
 
-    private static IEnumerable<SyntaxNode> ExecutionScopeNodes(SyntaxNode root)
+    private static bool IsConstantZero(Optional<object?> constant) => IsConstantEqualTo(constant, 0);
+
+    private static bool IsConstantEqualTo(Optional<object?> constant, int expected) => constant.HasValue && constant.Value switch
     {
-        foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
-        {
-            if (!IsExecutionMethod(method))
-                continue;
-
-            yield return method;
-            foreach (var descendant in method.DescendantNodes())
-                yield return descendant;
-        }
-    }
-
-    private static bool IsExecutionMethod(MethodDeclarationSyntax method) =>
-        method.Identifier.Text == "ExecuteAsync"
-        || (method.Modifiers.Any(SyntaxKind.PrivateKeyword) && !method.Modifiers.Any(SyntaxKind.StaticKeyword));
+        sbyte v => v == expected,
+        byte v => v == expected,
+        short v => v == expected,
+        ushort v => v == expected,
+        int v => v == expected,
+        uint v => v == expected,
+        long v => v == expected,
+        ulong v => v == (ulong)expected,
+        float v => v == expected,
+        double v => v == expected,
+        decimal v => v == expected,
+        char v => v == expected,
+        _ => false
+    };
 
     private static bool TryFlipComparisonOperator(BinaryExpressionSyntax node, out BinaryExpressionSyntax flipped)
     {
@@ -821,5 +928,163 @@ internal static class AstMutationCatalog
 
         flipped = node.WithOperatorToken(flippedToken.Value);
         return true;
+    }
+
+    /// <summary>
+    /// The nodes the operators may rewrite: every member body of every type in the candidate —
+    /// method, constructor (body and <c>: this(...)</c>/<c>: base(...)</c> initializer),
+    /// destructor, operator and conversion bodies; property, indexer and event accessor bodies;
+    /// expression-bodied members; property and field initializers — and everything inside them,
+    /// which is where local functions and lambdas live. Modifiers play no part: a
+    /// <c>private static</c> helper carries the same logic as a private instance one, and the
+    /// witness is judged on whether it observes that logic, not on who may call it.
+    /// </summary>
+    /// <remarks>
+    /// One shape is excluded, by data flow rather than by name: a constructor statement that
+    /// assigns a field or property NOTHING in the candidate reads — <c>Id = "damage-resolver"</c>,
+    /// <c>Version = "1.0.0"</c>, <c>Interface = new BrickInterface { ... }</c>. No member computes
+    /// anything from such a write, so no witness case could ever tell a mutant of it from the
+    /// original, and every literal in it would survive as an equivalent mutant on every honest
+    /// brick. The same statement stays IN scope the moment any body reads the member (a
+    /// <c>Summary = $"{Name} ..."</c> makes <c>Name</c> observable). A read the candidate cannot see
+    /// — a base-class method consulting the property — is not detected; that residual only ever
+    /// removes mutants, never manufactures a kill. When binding fails the target is unresolved and
+    /// the statement is kept.
+    /// </remarks>
+    private sealed class MutationScope
+    {
+        private readonly HashSet<SyntaxNode> _nodes;
+
+        private MutationScope(List<SyntaxNode> nodes)
+        {
+            Nodes = nodes;
+            _nodes = new HashSet<SyntaxNode>(nodes);
+        }
+
+        /// <summary>In document order, each body followed by its descendants.</summary>
+        public IReadOnlyList<SyntaxNode> Nodes { get; }
+
+        public bool Contains(SyntaxNode node) => _nodes.Contains(node);
+
+        public static MutationScope Of(SyntaxNode root, SemanticModel model)
+        {
+            var readMembers = MembersReadAnywhere(root, model);
+            var nodes = new List<SyntaxNode>();
+
+            foreach (var member in root.DescendantNodes().OfType<MemberDeclarationSyntax>())
+            {
+                foreach (var body in BodiesOf(member))
+                {
+                    if (member is ConstructorDeclarationSyntax && body is BlockSyntax block)
+                    {
+                        var unobservable = block.Statements
+                            .Where(statement => WritesOnlyWhatNothingReads(statement, model, readMembers))
+                            .ToHashSet();
+                        nodes.Add(block);
+                        foreach (var node in block.DescendantNodes(descendIntoChildren: child => !unobservable.Contains(child)))
+                        {
+                            if (!unobservable.Contains(node))
+                                nodes.Add(node);
+                        }
+
+                        continue;
+                    }
+
+                    nodes.Add(body);
+                    nodes.AddRange(body.DescendantNodes());
+                }
+            }
+
+            return new MutationScope(nodes);
+        }
+
+        private static IEnumerable<SyntaxNode> BodiesOf(MemberDeclarationSyntax member)
+        {
+            switch (member)
+            {
+                case BaseMethodDeclarationSyntax method:
+                    if (method.Body is not null)
+                        yield return method.Body;
+                    if (method.ExpressionBody is not null)
+                        yield return method.ExpressionBody;
+                    if (method is ConstructorDeclarationSyntax { Initializer: { } initializer })
+                        yield return initializer;
+                    break;
+
+                case BasePropertyDeclarationSyntax property:
+                    if (property.AccessorList is not null)
+                    {
+                        foreach (var accessor in property.AccessorList.Accessors)
+                        {
+                            if (accessor.Body is not null)
+                                yield return accessor.Body;
+                            if (accessor.ExpressionBody is not null)
+                                yield return accessor.ExpressionBody;
+                        }
+                    }
+
+                    switch (property)
+                    {
+                        case PropertyDeclarationSyntax { ExpressionBody: { } expression }:
+                            yield return expression;
+                            break;
+                        case IndexerDeclarationSyntax { ExpressionBody: { } expression }:
+                            yield return expression;
+                            break;
+                    }
+
+                    if (property is PropertyDeclarationSyntax { Initializer: { } propertyInitializer })
+                        yield return propertyInitializer;
+                    break;
+
+                case BaseFieldDeclarationSyntax field:
+                    foreach (var variable in field.Declaration.Variables)
+                    {
+                        if (variable.Initializer is not null)
+                            yield return variable.Initializer;
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Every field or property symbol some expression in the candidate READS: any name or
+        /// member access that is not the target of a plain assignment (a compound assignment reads
+        /// too). The name half of a member access is skipped so <c>this.Id = ...</c> is not counted
+        /// as a read of <c>Id</c>.
+        /// </summary>
+        private static HashSet<ISymbol> MembersReadAnywhere(SyntaxNode root, SemanticModel model)
+        {
+            var read = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            foreach (var node in root.DescendantNodes())
+            {
+                if (node is not (IdentifierNameSyntax or MemberAccessExpressionSyntax))
+                    continue;
+
+                if (node.Parent is MemberAccessExpressionSyntax access && access.Name == node)
+                    continue;
+
+                if (IsSimpleAssignmentTarget(node))
+                    continue;
+
+                var symbol = model.GetSymbolInfo(node).Symbol;
+                if (symbol is IPropertySymbol or IFieldSymbol)
+                    read.Add(symbol.OriginalDefinition);
+            }
+
+            return read;
+        }
+
+        private static bool WritesOnlyWhatNothingReads(
+            StatementSyntax statement, SemanticModel model, HashSet<ISymbol> readMembers)
+        {
+            if (statement is not ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax assignment }
+                || assignment.Kind() != SyntaxKind.SimpleAssignmentExpression)
+                return false;
+
+            var target = model.GetSymbolInfo(assignment.Left).Symbol;
+            return target is IPropertySymbol or IFieldSymbol
+                && !readMembers.Contains(target.OriginalDefinition);
+        }
     }
 }

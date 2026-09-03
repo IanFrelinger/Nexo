@@ -7,7 +7,7 @@
   "brickId": "damage-resolver",
   "contentHash": "rPxj86wxnhQT1xexONKPrBL74GKnS0rrLC\u002BEg0f27fw=",
   "escapeRate": 0,
-  "totalMutants": 10,
+  "totalMutants": 6,
   "survivingMutants": 0,
   "killedMutants": [
     "remove-statement-42",
