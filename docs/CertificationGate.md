@@ -13,6 +13,21 @@ actually been proven and where it still falls short, see
 > ([`OperatorLifecycle.md`](OperatorLifecycle.md)). This page is about the *artifact* gate that
 > judges a brick's source. Different subject, different record.
 
+> **What a nuget.org `0.1.1` consumer actually gets.** This page describes the gate at the `0.1.2`
+> line, and every behaviour that `0.1.1` does not have is marked **since `0.1.2`** where it is
+> described. At the time of writing `0.1.2` is not on nuget.org. If you restore `Ashlar.Infrastructure
+> 0.1.1` you get the *previous* loader: it globs `*.cs` under the brick directory for the source, reads
+> the `.csproj` as XML for the dependency leg, and takes the reference set from `*.dll` in the build
+> output — so a stock brick project referencing an Ashlar package fails the analyzer leg with
+> `analyzer anchor type ... is not resolvable` unless it sets `CopyLocalLockFileAssemblies=true`.
+> `Ashlar.Analyzers 0.1.1` ships only `lib/netstandard2.0/` and no `analyzers/dotnet/cs/`, so
+> referencing it runs no rules, and the `0.1.1` CLI's `ashlar new brick` scaffolds the *old* template.
+> Concretely: **the template scaffold and `samples/hello-brick/HelloBrick` as tracked at this line both
+> REJECT under a `0.1.1` host**, and the `0.1.1` template as scaffolded REJECTS under the `0.1.2` gate.
+> To reproduce what this page says, build the gate from a checkout at or after the `0.1.2` line
+> (`tools/Ashlar.ExportCertifiedBrick`, `tools/Ashlar.CertifyBrick`, `bash scripts/run-cert-gate.sh`)
+> until `0.1.2` is published.
+
 ## What a witness is
 
 `README.md` and the trust-loop spec both lean on the word "witness" without defining it. Here it is:
@@ -73,7 +88,7 @@ how far the candidate got.
 | 0 | `recursion` | Generation lineage is coherent and under the depth ceiling. Absent lineage = human-authored, depth 0. | Runs before everything: an incoherent depth claim must not even be analyzed. Only relevant to the autonomy loop; hand-authored bricks pass trivially. |
 | 1 | `analyzer` | The candidate compiles, and the Ashlar analyzer catalog (plus any constraint-manifest rules) reports nothing at or above the severity floor. | A defect a deterministic analyzer can *name* should never cost a mutation run. |
 | 2 | `correctness` | Every witness case's actual output equals its expected output. | Cheap, and mutation testing is meaningless if the unmutated candidate is already wrong. |
-| 3 | `mutation` | The engine generates mutants of the source and requires `escape_rate == 0` — every mutant must be killed by some witness case. Zero mutants generated is also a failure. | This is what gives the certificate teeth: it audits the witness, not the candidate. |
+| 3 | `mutation` | The engine generates mutants of the source and requires `escape_rate == 0` — every mutant must be killed by some witness case. Zero mutants generated is also a failure. Since `0.1.2` the catalog includes operator-class mutants (`+`↔`-`, `*`↔`/`, `<`↔`<=`, unary sign, `!` removal), every mutable site is generated with no cap and no member-scope filter, and each mutant's replay runs under a time bound — a mutant that never terminates is scored killed with the bound named, instead of hanging the certifier. | This is what gives the certificate teeth: it audits the witness, not the candidate. |
 | 4 | `determinism` | The same case run twice under `AuditMode` canonicalizes identically. A missing repeat is nondeterminism-by-absence, never vacuous agreement. | A nondeterministic brick cannot be certified against a fixed expected output. |
 | 5 | `dependency` | The brick project references no other project and only the two allowed packages (next section), and the source contains none of the forbidden kernel tokens. | Last because it is about *shape*, not behaviour — but it is not optional; see below. |
 
@@ -90,9 +105,9 @@ would be misread as a pass, not because a problem was found:
   rules would silently no-op`. Every brick-scoped rule anchors on that type; without it they would
   all pass vacuously.
 
-Both are refusals about the reference set. In Shape A that set is the loader's job, not yours:
-`BrickCertificationProjectLoader` reads it out of the compiler's own record of the build (see "What
-the brick is compiled against"). Only Shape B, where you build the request by hand, has to supply
+Both are refusals about the reference set. In Shape A that set is the loader's job, not yours
+(**since `0.1.2`**): `BrickCertificationProjectLoader` reads it out of the compiler's own record of
+the build (see "What the brick is compiled against"). Only Shape B, where you build the request by hand, has to supply
 `CompilationReferences` itself — see "Things that will bite you".
 
 ## The two-package rule (and the one-project rule)
@@ -110,14 +125,19 @@ first-time authors hit:
   plus Ashlar.Analyzers referenced build-time-only with ExcludeAssets="runtime;compile")
   ```
 
-- **One exception: `Ashlar.Analyzers`, build-time-only.** Running the fence locally is worth doing:
+- **One exception: `Ashlar.Analyzers`, build-time-only** (**since `0.1.2`**, both the exception in
+  the dependency leg and the package layout it depends on). Running the fence locally is worth doing:
   it is the same rule catalogue the gate's analyzer leg attaches to your candidate. It does not
   count against the two-package rule — but only in a reference shape that keeps it out of the
   built brick. This is the shape:
 
   ```xml
-  <PackageReference Include="Ashlar.Analyzers" Version="0.1.1" ExcludeAssets="runtime;compile" />
+  <PackageReference Include="Ashlar.Analyzers" Version="0.1.2" ExcludeAssets="runtime;compile" />
   ```
+
+  `Ashlar.Analyzers 0.1.1` on nuget.org has **no** `analyzers/dotnet/cs/` leg — it ships
+  `lib/netstandard2.0/` only — so referencing it in any shape runs no rules in your build, and the
+  `0.1.1` dependency leg counts it as a third package and refuses the project.
 
   **`PrivateAssets="all"` is not enough, and is refused.** This is the one place the rule is
   counter-intuitive, so it is worth being exact about. `PrivateAssets` controls what flows
@@ -154,9 +174,10 @@ first-time authors hit:
 
 - **One brick, one `.cs`, one `.csproj`.** The certificate binds a SHA-256 of a single source
   file, and the analyzer and mutation legs compile that file as one compilation unit — so the brick
-  must BE one authored source file. `BrickCertificationProjectLoader` refuses a project whose
-  authored C# spans several files rather than picking one and signing as though it were the whole
-  brick. It also takes the first `.csproj` in the directory and the first non-abstract
+  must BE one authored source file. Since `0.1.2`, `BrickCertificationProjectLoader` refuses a
+  project whose authored C# spans several files rather than picking one and signing as though it
+  were the whole brick (the `0.1.1` loader took the first `*.cs` in the directory and hashed only
+  that one). It also takes the first `.csproj` in the directory and the first non-abstract
   `DomainBrick` type in the built assembly, so give each brick its own directory.
 
 The reason is that the certificate binds a content hash of one source file. If the brick could pull
@@ -165,7 +186,10 @@ claim about a file rather than about behaviour.
 
 ### What counts as "the brick's source", exactly
 
-The gate does not glob your directory and it does not read your `.csproj` as XML. It asks MSBuild
+**Everything in this section is `0.1.2` behaviour.** The `0.1.1` loader globbed `*.cs` under the
+brick directory and read the `.csproj` as XML; none of the refusals below exist in it.
+
+Since `0.1.2` the gate does not glob your directory and it does not read your `.csproj` as XML. It asks MSBuild
 what the project compiles — for the whole import chain, so a `Directory.Build.props` or
 `Directory.Build.targets` beside the project counts exactly as much as the `.csproj` — and then,
 after building, it reads the **compiler's own record** of the compilation (the source-document table
@@ -200,22 +224,32 @@ name or its directory, so dropping your own `Generated.cs` into `obj/` does not 
 
 ### What the brick is compiled against
 
+**Everything in this section is `0.1.2` behaviour** unless it says otherwise.
+
 The analyzer leg and the mutation leg re-compile the brick source inside the certifying process, and
 they need the assemblies csc used — above all the one defining `Ashlar.Core.Domain.Bricks.Brick`,
-which every brick rule anchors on. The loader takes that reference set from the build the same way
-it takes the source set. The compiler's portable PDB records every assembly it compiled against (file
+which every brick rule anchors on. Since `0.1.2` the loader takes that reference set from the build
+the same way it takes the source set. The compiler's portable PDB records every assembly it compiled against (file
 name and MVID); MSBuild's `ReferencePathWithRefAssemblies` list, read in the same build invocation,
 says where each one lives; and a path is accepted for a recorded reference only when the file there
 carries the recorded MVID. Package assemblies are therefore read straight from the NuGet cache.
 Nothing has to be copied into the build output, and `CopyLocalLockFileAssemblies` is neither needed
 nor consulted.
 
-(Until this change the loader globbed `*.dll` out of the output directory, which for a stock library
+(In `0.1.1` the loader globbed `*.dll` out of the output directory, which for a stock library
 project holds only the brick itself, so every brick that referenced an Ashlar package failed the
 analyzer leg with `analyzer anchor type ... is not resolvable` unless its author set that property
-— the shipped template did not. The template now certifies exactly as `ashlar new brick` generates
-it; `BrickCertificationProjectLoaderReferenceTests.The_brick_template_certifies_exactly_as_scaffolded`
-substitutes the tokens, builds it and runs all five legs.)
+— the `0.1.1` template did not. Since `0.1.2` the template certifies exactly as `ashlar new brick`
+generates it; `BrickCertificationProjectLoaderReferenceTests.The_brick_template_certifies_exactly_as_scaffolded`
+substitutes the tokens, builds it and runs all five legs. The template a `0.1.1` CLI scaffolds is the
+old one and REJECTS under the `0.1.2` gate; regenerate it with a `0.1.2` CLI or from a checkout.)
+
+**Compile options travel with the references** (`0.1.2`). The in-process legs compile the brick with
+the build's own `DefineConstants`, `LangVersion` and `Nullable` settings, read from the same MSBuild
+evaluation as the source set, so an `#if` branch the build saw is the branch the analyzer and the
+mutants see. In `0.1.1` the in-process compilation used default options: two byte-identical sources
+whose `.csproj` differed only by `DefineConstants` certified identically, as though the conditional
+code did not exist.
 
 Two consequences:
 
@@ -234,10 +268,12 @@ Two consequences:
 are each one project, one source file, one `PackageReference` to `Ashlar.Brick.Contracts` and a
 witness beside the source; `ShippedSampleCertificationTests` drives this loader and gate over both
 tracked directories, so a change that stops either certifying fails `bash scripts/run-cert-gate.sh`.
-Neither did until the compiled-source-set change landed: `samples/Directory.Build.props` injected a
+Neither did before `0.1.2`: `samples/Directory.Build.props` injected a
 `<Compile Include="../../src/Ashlar.Compat/GlobalUsings.DomainBrick.cs" />` into both — bypass 3's
-exact shape, invisible to the old `.csproj`-only read — so the props file is now empty and each brick
-names its base type in its own file. If your own project sits under a `Directory.Build.props`, that is
+exact shape, invisible to the `0.1.1` `.csproj`-only read — so the props file is now empty and each
+brick names its base type in its own file. The reverse also holds: both samples as tracked at this
+line **REJECT under a `0.1.1` host**, whose loader cannot resolve their package references from the
+output folder. If your own project sits under a `Directory.Build.props`, that is
 the shape to look for first when the gate refuses a compile item from outside the brick directory.
 
 A certifiable brick project, complete:
@@ -282,9 +318,14 @@ Project references (a *host* project, not the brick project — the two-package 
 brick, not to the tool that certifies it):
 
 ```xml
-<PackageReference Include="Ashlar.Infrastructure" Version="0.1.1" />
-<PackageReference Include="Ashlar.Certification.Contracts" Version="0.1.1" />
+<PackageReference Include="Ashlar.Infrastructure" Version="0.1.2" />
+<PackageReference Include="Ashlar.Certification.Contracts" Version="0.1.2" />
 ```
+
+(`0.1.2` is the first version whose `BrickCertificationProjectLoader` behaves as this page says; with
+`0.1.1` the snippet below compiles and runs, but the loader is the `*.cs`-glob / output-folder one
+described in the callout at the top. `tools/Ashlar.CertifyBrick` in the repository is this same
+snippet, built against the checkout.)
 
 ```csharp
 using System.Text.Json;
@@ -320,8 +361,8 @@ return verify.Trusted ? 0 : 3;
 
 `BrickCertificationProjectLoader.LoadAsync` shells out to
 `dotnet msbuild <csproj> -restore -t:Build -c Release` on the brick project, so the machine running
-this needs a .NET SDK, not just a runtime. (One invocation, which both builds and reports what it
-compiled: a separate verification query runs under different MSBuild properties, and a target
+this needs a .NET SDK, not just a runtime. (Since `0.1.2`, one invocation, which both builds and
+reports what it compiled: a separate verification query runs under different MSBuild properties, and a target
 conditioned on one of them can then contribute to the build while staying dormant in the query.)
 Point it at a specific NuGet config with the `ASHLAR_CERT_NUGET_CONFIG` environment variable — it is
 passed on as `-p:RestoreConfigFile` — if the default source list is not what you want.
@@ -430,9 +471,11 @@ verifies and runs the brick untouched, referencing no gate and no generator.
 - **`CompilationReferences` is required in Shape B, and its absence fails closed.** Supply the
   assemblies the candidate compiles against or the analyzer leg refuses with `analyzer anchor type
   ... is not resolvable`. In a test, `AppDomain.CurrentDomain.GetAssemblies()` filtered to
-  non-dynamic assemblies with a `Location` is enough. In Shape A there is nothing to supply:
-  `BrickCertificationProjectLoader` resolves the set from the compiler's own record of the build,
-  and a stock brick project needs no property for it (see "What the brick is compiled against").
+  non-dynamic assemblies with a `Location` is enough. In Shape A there is nothing to supply since
+  `0.1.2`: `BrickCertificationProjectLoader` resolves the set from the compiler's own record of the
+  build, and a stock brick project needs no property for it (see "What the brick is compiled
+  against"). Under a `0.1.1` host, set `CopyLocalLockFileAssemblies=true` on the brick project or
+  the analyzer leg refuses it.
 - **`ManagePackageVersionsCentrally=false`** on any project under a directory that has a
   `Directory.Packages.props`, or restore will refuse your inline `Version` attributes.
 - **The brick must be deterministic by construction, and the gate checks less of that than the
@@ -461,7 +504,7 @@ verifies and runs the brick untouched, referencing no gate and no generator.
 
 ---
 
-*Code references on this page were read from `src/` at the `0.1.1` line; the consumer snippets are
-transcriptions of shapes that were driven end to end against published packages. The commands were
-not re-executed while this page was written. The claims in "What the brick is compiled against" and
-about the template certifying as scaffolded were executed, by the tests they name.*
+*Code references on this page were read from `src/` at the `0.1.2` line (unreleased at the time of
+writing; `0.1.1` is the latest on nuget.org). The consumer snippets are transcriptions of shapes that
+were driven end to end against published `0.1.1` packages, where the same API surface exists; the
+behaviours marked "since `0.1.2`" were executed only from a checkout, by the tests this page names.*
