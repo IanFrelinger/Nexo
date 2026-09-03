@@ -7,10 +7,10 @@ namespace Ashlar.Infrastructure.Certification.HotSwap;
 /// <remarks>
 /// Finalizing overlapping collectible <c>LoaderAllocator</c>s crashes the runtime
 /// (<c>LoaderAllocatorScout.Finalize</c> / <c>0x80131506</c>) and takes the whole process
-/// down rather than failing the caller. The mutation engine learned this first and
-/// serialized its own mutant contexts; the hot-swap host performs the same class of
-/// transitions, so both must share ONE gate — two independent semaphores would still
-/// allow a mutant context and a brick generation to be torn down concurrently.
+/// down rather than failing the caller. The mutation engine learned this first, back when it
+/// loaded mutants into collectible contexts in-process (it now replays them in a child
+/// process and loads nothing); the hot-swap host performs the same class of transitions, so
+/// every subsystem that still does must share this ONE gate.
 /// A context that is merely alive and serving does not hold the gate; only transitions do.
 /// </remarks>
 internal static class CollectibleLoadContextGate

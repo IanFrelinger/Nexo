@@ -95,7 +95,10 @@ public static class CertificationRecordSigning
     /// Records without a <see cref="CertificationRecordData.SchemaVersion"/> use the
     /// legacy v1 payload byte-for-byte, so pre-trust-loop signatures stay valid.
     /// Versioned records sign the extended payload, which additionally covers
-    /// <c>Gate</c>, the trust-loop evidence fields, and the Ed25519 public key.
+    /// <c>Gate</c>, the trust-loop evidence fields, and the Ed25519 public key; from
+    /// <see cref="CertificationRecordData.BoundedExecutionSchemaVersion"/> on it also covers
+    /// the timed-out and crashed mutant lists, so a record cannot be edited to move a
+    /// wall-clock kill into <c>killedMutants</c> and still verify.
     /// Both signature fields are structurally excluded. Mutant id lists and input
     /// entries are sorted for deterministic serialization; gate and attempt order
     /// is semantic and preserved.
@@ -105,6 +108,9 @@ public static class CertificationRecordSigning
     {
         if (record.SchemaVersion is null)
             return BuildLegacyPayload(record);
+
+        if (record.SchemaVersion.Value >= CertificationRecordData.BoundedExecutionSchemaVersion)
+            return JsonSerializer.Serialize(BuildBoundedExecutionPayload(record), PayloadOptions);
 
         var clone = new VersionedPayload(
             record.SchemaVersion.Value,
@@ -140,6 +146,45 @@ public static class CertificationRecordSigning
             record.Ed25519PublicKey);
         return JsonSerializer.Serialize(clone, PayloadOptions);
     }
+
+    /// <summary>
+    /// The v3 payload: the v2 fields in the v2 order, then the two lists v3 added. Appending
+    /// rather than interleaving keeps the two shapes easy to diff by eye.
+    /// </summary>
+    private static BoundedExecutionPayload BuildBoundedExecutionPayload(CertificationRecordData record) => new(
+        record.SchemaVersion!.Value,
+        record.Status,
+        record.Stage,
+        record.Admitted,
+        record.Signed,
+        record.Timestamp.UtcDateTime.ToString("O"),
+        record.BrickId,
+        record.ContentHash,
+        record.EscapeRate,
+        record.TotalMutants,
+        record.SurvivingMutants,
+        record.KilledMutants.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+        record.SurvivingMutantIds.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+        record.Reason,
+        record.Gate,
+        record.GatesPassed.Select(g => new GatePassPayload(g.Name, g.Version, g.Configuration)).ToArray(),
+        record.Inputs
+            .OrderBy(i => i.Kind, StringComparer.Ordinal)
+            .ThenBy(i => i.Id, StringComparer.Ordinal)
+            .Select(i => new InputPayload(i.Kind, i.Id, i.Hash))
+            .ToArray(),
+        record.Proposer is null
+            ? null
+            : new ProposerPayload(
+                record.Proposer.Identity,
+                record.Proposer.Parameters
+                    .OrderBy(p => p.Key, StringComparer.Ordinal)
+                    .ToDictionary(p => p.Key, p => p.Value),
+                record.Proposer.Seed),
+        record.Attempts.Select(a => new AttemptPayload(a.Index, a.Outcome, a.FailureCategory, a.DurationSeconds)).ToArray(),
+        record.Ed25519PublicKey,
+        record.TimedOutMutants.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+        record.CrashedMutants.OrderBy(x => x, StringComparer.Ordinal).ToArray());
 
     private static string BuildLegacyPayload(CertificationRecordData record)
     {
@@ -183,6 +228,30 @@ public static class CertificationRecordSigning
         ProposerPayload? Proposer,
         AttemptPayload[] Attempts,
         string? Ed25519PublicKey);
+
+    private sealed record BoundedExecutionPayload(
+        int SchemaVersion,
+        string Status,
+        string Stage,
+        bool Admitted,
+        bool Signed,
+        string Timestamp,
+        string BrickId,
+        string? ContentHash,
+        double? EscapeRate,
+        int? TotalMutants,
+        int? SurvivingMutants,
+        string[] KilledMutants,
+        string[] SurvivingMutantIds,
+        string? Reason,
+        string? Gate,
+        GatePassPayload[] GatesPassed,
+        InputPayload[] Inputs,
+        ProposerPayload? Proposer,
+        AttemptPayload[] Attempts,
+        string? Ed25519PublicKey,
+        string[] TimedOutMutants,
+        string[] CrashedMutants);
 
     private sealed record GatePassPayload(string Name, string? Version, string? Configuration);
 

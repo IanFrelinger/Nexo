@@ -53,14 +53,24 @@ try
             .ConfigureAwait(false);
     }
 
+    // Three ways a mutant dies, kept apart on the console as on the record: the witness caught it
+    // (mutants_killed), the wall clock stopped it (killed_by_timeout), or running it killed the
+    // process it ran in (killed_by_crash). Only the first says anything about the witness.
+    var record = decision.Record;
+    var mutantSummary =
+        $"mutants={record.TotalMutants} mutants_killed={record.KilledMutants.Count} "
+        + $"killed_by_timeout={record.TimedOutMutants.Count}{IdList(record.TimedOutMutants)} "
+        + $"killed_by_crash={record.CrashedMutants.Count}{IdList(record.CrashedMutants)}";
+
     if (!decision.Admitted)
     {
-        Console.Error.WriteLine($"REJECT ({decision.FailureCheck}): {decision.Record.Reason}");
+        Console.Error.WriteLine($"REJECT ({decision.FailureCheck}): {record.Reason}");
+        Console.Error.WriteLine($"REJECT brick={record.BrickId} {mutantSummary}");
         Console.Error.WriteLine($"Record: {recordPath}");
         return 1;
     }
 
-    Console.WriteLine($"ADMIT brick={decision.Record.BrickId} escape_rate={decision.Record.EscapeRate} mutants_killed={decision.Record.KilledMutants.Count}");
+    Console.WriteLine($"ADMIT brick={record.BrickId} escape_rate={record.EscapeRate} {mutantSummary}");
     Console.WriteLine($"Record: {recordPath}");
     return 0;
 }
@@ -77,3 +87,5 @@ catch (Exception ex)
     Console.Error.WriteLine($"Certification failed unexpectedly: {ex}");
     return 4;
 }
+
+static string IdList(IReadOnlyList<string> ids) => ids.Count == 0 ? string.Empty : $"[{string.Join(", ", ids)}]";

@@ -81,11 +81,21 @@ catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundExcept
 var gate = new CertificationGate(new CertificationRecordSigner());
 var decision = await gate.CertifyAsync(request).ConfigureAwait(false);
 
+// Kept apart on the console as on the record: the witness caught it (mutants_killed), the wall
+// clock stopped it (killed_by_timeout), or running it killed its process (killed_by_crash).
+var mutantSummary =
+    $"mutants={decision.Record.TotalMutants} mutants_killed={decision.Record.KilledMutants.Count} "
+    + $"killed_by_timeout={decision.Record.TimedOutMutants.Count}{IdList(decision.Record.TimedOutMutants)} "
+    + $"killed_by_crash={decision.Record.CrashedMutants.Count}{IdList(decision.Record.CrashedMutants)}";
+
 if (!decision.Admitted)
 {
     Console.Error.WriteLine($"Certification failed: {decision.FailureCheck} {decision.Record.Reason}");
+    Console.Error.WriteLine($"REJECT brick={decision.Record.BrickId} {mutantSummary}");
     return 2;
 }
+
+Console.WriteLine($"ADMIT brick={decision.Record.BrickId} escape_rate={decision.Record.EscapeRate} {mutantSummary}");
 
 var data = CertificationRecordMapper.ToData(decision.Record);
 var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
@@ -102,3 +112,5 @@ if (!verify.Trusted)
 Console.WriteLine($"Wrote content-bound record to {recordPath}");
 Console.WriteLine($"contentHash={data.ContentHash}");
 return 0;
+
+static string IdList(IReadOnlyList<string> ids) => ids.Count == 0 ? string.Empty : $"[{string.Join(", ", ids)}]";

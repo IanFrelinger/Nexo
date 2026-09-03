@@ -14,10 +14,12 @@ namespace Ashlar.Infrastructure.Certification;
 /// that brace — so two ordinary candidate shapes silently got no audit context at all: a brick
 /// with NO namespace (the first thing a newcomer writes), and a file-scoped namespace with no
 /// braced type after it. Those candidates still compiled, so nothing complained. What broke was
-/// the mutation leg: <c>MutantWitnessExecutor</c> constructs the execution context by finding
-/// <c>CertAuditContext</c> in the mutant assembly, so every mutant threw before it ran a single
-/// witness case, every throw was scored as a KILL, <c>escape_rate</c> came out 0.0, and the gate
-/// signed a record asserting the witness had teeth when the leg had proved nothing.</para>
+/// the mutation leg: the in-process mutant executor of the time constructed the execution
+/// context by finding <c>CertAuditContext</c> in the mutant assembly, so every mutant threw before
+/// it ran a single witness case, every throw was scored as a KILL, <c>escape_rate</c> came out 0.0,
+/// and the gate signed a record asserting the witness had teeth when the leg had proved nothing.
+/// (The replay runner now supplies its own context and needs nothing from the candidate, but the
+/// wrap stays unconditional: the analyzer fence and the compiler must keep seeing one text.)</para>
 ///
 /// <para>Appending at the end of the file — rather than threading the text for an insertion
 /// point — is what makes the injection unconditional. The audit context references nothing in

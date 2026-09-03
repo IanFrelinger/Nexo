@@ -19,17 +19,4 @@ internal sealed class CertificationHarnessException : InvalidOperationException
     /// <summary>Creates the exception with an underlying cause.</summary>
     public CertificationHarnessException(string message, Exception innerException)
         : base(message, innerException) { }
-
-    /// <summary>
-    /// The refusal raised when a compiled mutant carries no <c>CertAuditContext</c>. The
-    /// candidate wrapper appends one to every certification-path compile, so its absence means
-    /// the wrap did not run or did not run on this text — never that the mutant is dead.
-    /// </summary>
-    public static CertificationHarnessException MissingAuditContext(string unitId) => new(
-        $"Mutation harness cannot run mutant '{unitId}': the compiled assembly carries no "
-        + $"'{CandidateSourceWrapper.AuditContextTypeName}' type, so there is no execution context to "
-        + "drive the witness with. Every mutant would throw before running a single case and every "
-        + "throw would be scored as a kill, which is a mutation verdict with no evidence behind it. "
-        + "Fix: compile mutants through CandidateSourceWrapper.Wrap, which appends the audit context "
-        + "to every candidate unconditionally. Refusing rather than reporting an unearned escape_rate=0.");
 }
