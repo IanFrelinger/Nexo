@@ -15,6 +15,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// helper could flip the verdict. These facts pin the refusal that replaced it.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "SlowTier")]
 public sealed class BrickCertificationProjectLoaderTests : IDisposable
 {
     private readonly string _dir;

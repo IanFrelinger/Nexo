@@ -22,6 +22,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// anything that cannot be joined is a refusal by name, never a fallback to a partial set.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "SlowTier")]
 public sealed class BrickCertificationProjectLoaderReferenceTests : IDisposable
 {
     private readonly string _dir;

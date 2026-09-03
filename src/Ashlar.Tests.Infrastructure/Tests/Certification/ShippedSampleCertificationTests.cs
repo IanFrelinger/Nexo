@@ -29,6 +29,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// "assembly with same name is already loaded", which reads like a gate refusal and is not one.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "SlowTier")]
 public sealed class ShippedSampleCertificationTests
 {
     /// <summary>

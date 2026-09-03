@@ -25,6 +25,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// actually open.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "SlowTier")]
 public sealed class BrickCompiledSourceSetTests : IDisposable
 {
     private readonly string _dir;
