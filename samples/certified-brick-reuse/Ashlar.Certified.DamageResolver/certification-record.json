@@ -3,7 +3,7 @@
   "stage": "S0-S2",
   "admitted": true,
   "signed": true,
-  "timestamp": "2026-09-03T00:48:41.569858+00:00",
+  "timestamp": "2026-09-03T02:57:14.4813186+00:00",
   "brickId": "damage-resolver",
   "contentHash": "rPxj86wxnhQT1xexONKPrBL74GKnS0rrLC\u002BEg0f27fw=",
   "escapeRate": 0,
@@ -22,7 +22,7 @@
     "swap-arithmetic-op-50"
   ],
   "survivingMutantIds": [],
-  "signature": "UAvoxqM39tIWkU5CQMET64U4XspCYQfmbbaGh2OQt8M=",
+  "signature": "XM0tVqEbfJ6W8KhIKArBgdAZ66llhv4S00DlGgJjimE=",
   "reason": null,
   "gate": "Ashlar.Infrastructure.Certification.CertificationGate",
   "schemaVersion": 2,
@@ -58,6 +58,11 @@
       "kind": "witness",
       "id": "damage-resolver",
       "hash": "ylwnKKTH0rWrBf5CHS\u002BU3OXS4aPqbTwC3G\u002BBVQb2sgA="
+    },
+    {
+      "kind": "compile-options",
+      "id": "langVersion=12.0;checkOverflow=false;nullable=Enable;unsafe=false;symbols=NET,NET5_0_OR_GREATER,NET6_0_OR_GREATER,NET7_0_OR_GREATER,NET8_0,NET8_0_OR_GREATER,NETCOREAPP,NETCOREAPP1_0_OR_GREATER,NETCOREAPP1_1_OR_GREATER,NETCOREAPP2_0_OR_GREATER,NETCOREAPP2_1_OR_GREATER,NETCOREAPP2_2_OR_GREATER,NETCOREAPP3_0_OR_GREATER,NETCOREAPP3_1_OR_GREATER,RELEASE,TRACE;globalUsings=global using System.Collections.Generic; global using System.IO; global using System.Linq; global using System.Net.Http; global using System.Threading.Tasks; global using System.Threading; global using System;",
+      "hash": "rEtj4VFnJH8LYJJzNzaqRgG2\u002BN\u002BGe4L5Ve\u002BbFdk9/X0="
     }
   ],
   "proposer": null,

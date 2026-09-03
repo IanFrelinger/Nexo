@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Core.Domain.Bricks;
@@ -51,7 +53,7 @@ public static class BrickCertificationProjectLoader
         // Assembly.LoadFrom below, which executes the candidate's module initializers inside this
         // process. A payload smuggled in by a target is refused here rather than running first and
         // being refused afterwards.
-        AssertCompiledSetIsExactlyTheCertifiedSet(
+        var sdkGenerated = AssertCompiledSetIsExactlyTheCertifiedSet(
             csproj, projectDir,
             new Dictionary<string, byte[]>(PathComparer) { [Path.GetFullPath(sourceFile)] = sourceBytes },
             dllPath, build.Project);
@@ -59,6 +61,12 @@ public static class BrickCertificationProjectLoader
         // Likewise the assemblies the compiler compiled against — resolved and checked before the
         // candidate's code runs, for the same reason.
         var references = CollectReferences(build.Project, dllPath);
+
+        // And the options the compiler compiled WITH — preprocessor symbols, language version,
+        // overflow checking, nullable, unsafe, and the global usings in the SDK-generated files it
+        // compiled beside the brick. The in-process legs compile under these, or they judge a
+        // different program from the one in dllPath.
+        var compileOptions = ReadCompileOptions(csproj, projectDir, dllPath, sdkGenerated);
 
         var assembly = Assembly.LoadFrom(dllPath);
         var brickType = assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
@@ -79,7 +87,8 @@ public static class BrickCertificationProjectLoader
             SourceCode = sourceCode,
             ProjectPath = csproj,
             CompilationReferences = references,
-            BrickTypeName = brickType.FullName
+            BrickTypeName = brickType.FullName,
+            CompileOptions = compileOptions
         };
     }
 
@@ -301,7 +310,12 @@ public static class BrickCertificationProjectLoader
     /// content hash was taken over — not the file, which the build may since have rewritten.</param>
     /// <param name="assemblyPath">The built brick assembly.</param>
     /// <param name="built">The project as MSBuild reported it at the end of that build.</param>
-    internal static void AssertCompiledSetIsExactlyTheCertifiedSet(
+    /// <returns>
+    /// The compiled documents that were tolerated outside the hashed set — the SDK's own generated
+    /// files — so the caller can read the <c>global using</c> directives the compiler compiled from
+    /// them (see <see cref="ReadCompileOptions"/>).
+    /// </returns>
+    internal static IReadOnlyList<CompiledDocument> AssertCompiledSetIsExactlyTheCertifiedSet(
         string csprojPath,
         string projectDir,
         IReadOnlyDictionary<string, byte[]> certified,
@@ -316,6 +330,7 @@ public static class BrickCertificationProjectLoader
         }
         var documents = CompiledSourceDocuments.Read(assemblyPath);
         var sdkBoilerplate = SdkGeneratedFilesUnderIntermediateOutput(built);
+        var tolerated = new List<CompiledDocument>();
 
         var compiled = new HashSet<string>(PathComparer);
         foreach (var document in documents)
@@ -370,7 +385,10 @@ public static class BrickCertificationProjectLoader
 
             if (sdkBoilerplate.Contains(full))
             {
-                continue; // The SDK's own assembly-info boilerplate, in the SDK's own directory.
+                // The SDK's own boilerplate, in the SDK's own directory. Tolerated outside the
+                // hash — and handed back, because its global usings are part of the program.
+                tolerated.Add(document);
+                continue;
             }
 
             throw new InvalidOperationException(
@@ -401,6 +419,113 @@ public static class BrickCertificationProjectLoader
                 + "Directory.Build.props beside it). Refusing rather than signing a record about a file that is not "
                 + "in the brick.");
         }
+
+        return tolerated;
+    }
+
+    /// <summary>
+    /// The compile options the brick's build used, from the compiler's own record, plus the
+    /// <c>global using</c> directives it compiled from the SDK-generated files beside the brick.
+    /// </summary>
+    /// <remarks>
+    /// <para>The source text is half of a program; the options it is compiled under are the other
+    /// half. Two projects with a byte-identical <c>Brick.cs</c> — and so an identical signed content
+    /// hash — compiled different programs when one <c>.csproj</c> defined a symbol that switched a
+    /// <c>File.WriteAllText</c> into <c>ExecuteAsync</c>: the fence parsed the source with no symbols
+    /// and never saw the guarded lines, the mutation leg never mutated them, and both certified
+    /// ADMIT. No csproj edit is even needed — the SDK defines <c>NET</c>, <c>NET8_0</c> and
+    /// <c>NETCOREAPP</c> for every net8.0 project on its own. The same split exists for
+    /// <c>CheckForOverflowUnderflow</c> (a mutant compiled unchecked wraps where the shipped brick
+    /// throws, so the wrong options manufacture kills), for <c>LangVersion</c>, and for
+    /// <c>&lt;Using&gt;</c> items, which change how names bind without touching the source.</para>
+    ///
+    /// <para>The options come from the compilation-options block csc writes into the portable PDB
+    /// (<see cref="CompiledCompilationOptions"/>), not from MSBuild: the SDK appends the implicit
+    /// framework symbols to <c>DefineConstants</c> inside a target, a post-build property read is
+    /// mutable state belonging to the project under judgement, and any list of "the symbols the SDK
+    /// defines" is a model of the compiler rather than the compiler. The global usings come from the
+    /// SDK-generated files the compiler recorded compiling — the same tolerance
+    /// <see cref="AssertCompiledSetIsExactlyTheCertifiedSet"/> grants, narrowed the same way — with
+    /// each file's bytes checked against the compiler's own checksum before a directive is taken
+    /// from it, so a file rewritten after the compile binds nothing.</para>
+    ///
+    /// <para>Everything unreadable is a REFUSAL, here in the loader — before any leg runs and before
+    /// the candidate executes — with a message naming what could not be read: a PDB without the
+    /// record, a language version this gate's compiler does not know, a generated file that has
+    /// grown a declaration the legs would never see. Compiling under defaults instead is exactly
+    /// the bypass this method exists to close.</para>
+    /// </remarks>
+    /// <param name="csprojPath">The brick project, for rendering refusals.</param>
+    /// <param name="projectDir">The brick directory, for rendering paths in refusals.</param>
+    /// <param name="assemblyPath">The built brick assembly, whose PDB carries the compiler's record.</param>
+    /// <param name="sdkGenerated">The SDK-generated documents the compiler compiled beside the brick.</param>
+    internal static BrickCompileOptions ReadCompileOptions(
+        string csprojPath,
+        string projectDir,
+        string assemblyPath,
+        IReadOnlyList<CompiledDocument> sdkGenerated)
+    {
+        var name = Path.GetFileName(csprojPath);
+        var recorded = CompiledCompilationOptions.Read(assemblyPath);
+        var parseOptions = BrickCompilation.ParseOptions(recorded);
+
+        var globalUsings = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var document in sdkGenerated)
+        {
+            var full = Path.GetFullPath(document.Path);
+            byte[] bytes;
+            try
+            {
+                bytes = File.ReadAllBytes(full);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                throw new InvalidOperationException(
+                    $"Brick project refused: {name} was compiled from the SDK-generated file '{Relative(projectDir, full)}', "
+                    + $"which the gate can no longer read ({ex.Message}). That file is where the SDK writes the project's "
+                    + "global usings, and a global using changes how every name in the brick binds — so the analyzer "
+                    + "fence and the mutation leg cannot compile the program the build compiled without it. Fix: remove "
+                    + "the MSBuild target that deletes the intermediate output after the compile, then certify again. "
+                    + "Refusing rather than judging the brick under global usings the gate had to guess.", ex);
+            }
+
+            if (!CompiledSourceDocuments.ContentMatches(document, bytes))
+            {
+                throw new InvalidOperationException(
+                    $"Brick project refused: the SDK-generated file '{Relative(projectDir, full)}' on disk is not the text "
+                    + $"{name} was compiled from — the compiler's own checksum for it does not match. Something rewrote "
+                    + "it after the compile, and it is where the project's global usings live, so the gate cannot know "
+                    + "which usings the shipped program was bound with. Fix: remove the MSBuild target in the project or "
+                    + $"in the Directory.Build.props / Directory.Build.targets beside {name} that writes into the "
+                    + "intermediate output after CoreCompile, then certify again. Refusing rather than binding the "
+                    + "brick's names one way while the assembly bound them another.");
+            }
+
+            var unit = CSharpSyntaxTree.ParseText(Decode(bytes), parseOptions).GetCompilationUnitRoot();
+            if (unit.Members.Count > 0 || unit.Externs.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"Brick project refused: the SDK-generated file '{Relative(projectDir, full)}' that {name} was compiled "
+                    + "from contains declarations (or extern aliases), not just using directives and assembly attributes. "
+                    + "The analyzer fence and the mutation leg compile the brick's own source plus the build's global "
+                    + "usings, so code in that file would ship inside the certified assembly without any leg judging it. "
+                    + "Fix: remove the MSBuild target or item that puts code into the SDK's generated files, and keep "
+                    + "brick code in the brick's own single source file. Refusing rather than certifying an assembly the "
+                    + "gate did not read all of.");
+            }
+
+            foreach (var directive in unit.Usings)
+            {
+                if (directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword))
+                {
+                    globalUsings.Add(directive.NormalizeWhitespace().ToString());
+                }
+            }
+        }
+
+        var options = recorded with { GlobalUsings = globalUsings.ToArray() };
+        BrickCompilation.AssertHonourable(options);
+        return options;
     }
 
     /// <summary>

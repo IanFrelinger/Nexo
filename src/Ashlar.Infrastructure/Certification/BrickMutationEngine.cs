@@ -62,11 +62,14 @@ internal sealed class BrickMutationEngine
         IReadOnlyList<string> compilationReferences,
         CancellationToken cancellationToken,
         ICandidateExecutionBackend? backend = null,
-        AnalyzerFenceGate? analyzerFence = null)
+        AnalyzerFenceGate? analyzerFence = null,
+        BrickCompileOptions? compileOptions = null)
     {
         var survivors = new List<string>();
         var killed = new List<string>();
-        var mutations = AstMutationCatalog.CollectMutations(sourceCode, compilationReferences);
+        // Parsed, bound and — below — compiled under the BUILD's options, so the mutants are
+        // mutants of the program that shipped, not of a default parse of the same bytes.
+        var mutations = AstMutationCatalog.CollectMutations(sourceCode, compilationReferences, compileOptions);
 
         // Survivors are reported by id (kind, line, disambiguated with #2/#3 on collision so the
         // signed ledger is unambiguous). Keep each mutation's site so the rejection can say WHAT
@@ -91,7 +94,7 @@ internal sealed class BrickMutationEngine
             if (backend is not null)
             {
                 var image = await CompileMutantAsync(
-                    mutatedSource, compilationReferences, cancellationToken).ConfigureAwait(false);
+                    mutatedSource, compilationReferences, compileOptions, cancellationToken).ConfigureAwait(false);
                 if (image is null)
                     killed.Add(mutation.Id); // Non-compiling mutant: dead on arrival, as in-proc.
                 else
@@ -107,6 +110,7 @@ internal sealed class BrickMutationEngine
                 brickTypeName,
                 witness,
                 compilationReferences,
+                compileOptions,
                 cancellationToken).ConfigureAwait(false);
 
             if (!witnessPassed)
@@ -115,7 +119,7 @@ internal sealed class BrickMutationEngine
                 continue;
             }
 
-            if (await FenceWouldRejectAsync(mutatedSource, analyzerFence, compilationReferences, cancellationToken).ConfigureAwait(false))
+            if (await FenceWouldRejectAsync(mutatedSource, analyzerFence, compilationReferences, compileOptions, cancellationToken).ConfigureAwait(false))
                 killed.Add(mutation.Id); // Analyzer-dead: could never certify, so not an escape.
             else
                 survivors.Add(mutation.Id);
@@ -137,7 +141,7 @@ internal sealed class BrickMutationEngine
                     continue;
                 }
 
-                if (await FenceWouldRejectAsync(pendingSources[unit.UnitId], analyzerFence, compilationReferences, cancellationToken).ConfigureAwait(false))
+                if (await FenceWouldRejectAsync(pendingSources[unit.UnitId], analyzerFence, compilationReferences, compileOptions, cancellationToken).ConfigureAwait(false))
                     killed.Add(unit.UnitId); // Analyzer-dead, as in-proc.
                 else
                     survivors.Add(unit.UnitId);
@@ -210,6 +214,7 @@ internal sealed class BrickMutationEngine
         string mutatedSource,
         AnalyzerFenceGate? analyzerFence,
         IReadOnlyList<string> compilationReferences,
+        BrickCompileOptions? compileOptions,
         CancellationToken cancellationToken)
     {
         if (analyzerFence is null)
@@ -218,7 +223,7 @@ internal sealed class BrickMutationEngine
         try
         {
             var outcome = await analyzerFence.EvaluateAsync(
-                mutatedSource, compilationReferences, cancellationToken: cancellationToken).ConfigureAwait(false);
+                mutatedSource, compilationReferences, compileOptions: compileOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
             return !outcome.Passed;
         }
         catch (OperationCanceledException)
@@ -235,6 +240,7 @@ internal sealed class BrickMutationEngine
     private static async Task<byte[]?> CompileMutantAsync(
         string mutatedSource,
         IReadOnlyList<string> compilationReferences,
+        BrickCompileOptions? compileOptions,
         CancellationToken cancellationToken)
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "ashlar-cert-mut", Guid.NewGuid().ToString("N"));
@@ -244,11 +250,13 @@ internal sealed class BrickMutationEngine
             var assemblyName = $"MutantBrick_{Guid.NewGuid():N}";
             var outputPath = Path.Combine(tempDir, $"{assemblyName}.dll");
             var compiler = new RoslynCodeAnalysisService(NullLogger<RoslynCodeAnalysisService>.Instance);
-            var compile = await compiler.CompileAsync(
+            var compile = await BrickCompilation.CompileAsync(
+                compiler,
                 WrapWithGlobalUsings(mutatedSource),
                 assemblyName,
                 outputPath,
                 compilationReferences,
+                compileOptions,
                 cancellationToken).ConfigureAwait(false);
 
             if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
@@ -281,6 +289,7 @@ internal sealed class BrickMutationEngine
         string brickTypeName,
         WitnessSpec witness,
         IReadOnlyList<string> compilationReferences,
+        BrickCompileOptions? compileOptions,
         CancellationToken cancellationToken)
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "ashlar-cert-mut", Guid.NewGuid().ToString("N"));
@@ -296,6 +305,7 @@ internal sealed class BrickMutationEngine
                 brickTypeName,
                 witness,
                 compilationReferences,
+                compileOptions,
                 tempDir,
                 cancellationToken).ConfigureAwait(false);
 
@@ -328,6 +338,7 @@ internal sealed class BrickMutationEngine
         string brickTypeName,
         WitnessSpec witness,
         IReadOnlyList<string> compilationReferences,
+        BrickCompileOptions? compileOptions,
         string tempDir,
         CancellationToken cancellationToken)
     {
@@ -338,11 +349,13 @@ internal sealed class BrickMutationEngine
         try
         {
             var compiler = new RoslynCodeAnalysisService(NullLogger<RoslynCodeAnalysisService>.Instance);
-            var compile = await compiler.CompileAsync(
+            var compile = await BrickCompilation.CompileAsync(
+                compiler,
                 WrapWithGlobalUsings(sourceCode),
                 assemblyName,
                 outputPath,
                 compilationReferences,
+                compileOptions,
                 cancellationToken).ConfigureAwait(false);
 
             if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))

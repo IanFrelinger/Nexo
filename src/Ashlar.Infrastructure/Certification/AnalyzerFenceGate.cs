@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Ashlar.Analyzers;
+using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks.Ports;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
 
@@ -63,12 +64,20 @@ public sealed class AnalyzerFenceGate
     /// manifest-derived rules (A2), and, when it carries a declared touch-set, the touch-set
     /// reference rules (autonomy spec R3.2 analyzer leg) — over the candidate and produces
     /// the gate verdict.
+    ///
+    /// <para>The candidate is parsed and compiled under <paramref name="compileOptions"/> — the
+    /// build's own preprocessor symbols, language version, overflow checking, nullable context
+    /// and <c>global using</c> directives — so the fence judges the program the build compiled,
+    /// not a default parse of the same bytes. A <c>#if</c> branch the build compiled is code here
+    /// too; a name the build bound through a project-level alias binds the same way here. Null
+    /// means the candidate has no build to match, and keeps the in-process defaults.</para>
     /// </summary>
     public async Task<AnalyzerGateOutcome> EvaluateAsync(
         string candidateSource,
         IEnumerable<string>? compilationReferences,
         BrickConstraintManifest? constraintManifest = null,
         Ashlar.Core.Application.Autonomy.TouchSet? touchSet = null,
+        BrickCompileOptions? compileOptions = null,
         CancellationToken cancellationToken = default)
     {
         var floor = ResolveSeverityFloor();
@@ -99,7 +108,8 @@ public sealed class AnalyzerFenceGate
         try
         {
             var wrapped = CandidateSourceWrapper.Wrap(candidateSource);
-            var syntaxTree = CSharpSyntaxTree.ParseText(wrapped, cancellationToken: cancellationToken);
+            var syntaxTree = CSharpSyntaxTree.ParseText(
+                wrapped, BrickCompilation.ParseOptions(compileOptions), cancellationToken: cancellationToken);
 
             var references = RoslynCodeAnalysisService.BuildReferenceSet(compilationReferences);
             // The autonomy surface is [Experimental]; a candidate that reaches into it would
@@ -107,14 +117,17 @@ public sealed class AnalyzerFenceGate
             // analyzers - which is precisely the kernel-smuggling case the fence exists to NAME
             // (ASHLAR0014). Suppress the opt-in diagnostic here so the fence judges the candidate on
             // its rules; the certification build outside the fence still enforces it.
-            var fenceOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            var fenceOptions = BrickCompilation.CompilationOptions(compileOptions, OutputKind.DynamicallyLinkedLibrary)
                 .WithSpecificDiagnosticOptions(new Dictionary<string, ReportDiagnostic>
                 {
                     [Ashlar.Core.Application.Autonomy.AutonomyExperimental.DiagnosticId] = ReportDiagnostic.Suppress,
                 });
+            // The build's global usings ride beside the candidate as their own compilation unit,
+            // which is how csc saw them (obj/.../GlobalUsings.g.cs); findings that land in that
+            // unit are not the candidate's lines and map to line 0 below.
             var compilation = CSharpCompilation.Create(
                 "AnalyzerGateCandidate",
-                new[] { syntaxTree },
+                new[] { syntaxTree }.Concat(BrickCompilation.CompanionTrees(compileOptions, cancellationToken)),
                 references,
                 fenceOptions);
 
@@ -184,7 +197,7 @@ public sealed class AnalyzerFenceGate
             var findings = diagnostics
                 .Where(d => d.Id.StartsWith(DiagnosticIdPrefix, StringComparison.Ordinal) && d.Severity >= floor)
                 .OrderBy(d => d.Location.SourceSpan.Start)
-                .Select(d => ToFinding(d, candidateSource))
+                .Select(d => ToFinding(d, candidateSource, syntaxTree))
                 // Manifest and touch-set rules apply to every line of the compilation (unlike
                 // the brick-scoped catalog), so they also fire on the wrapper-injected
                 // preamble/audit text — code the proposer did not write and cannot repair.
@@ -241,14 +254,19 @@ public sealed class AnalyzerFenceGate
         }
     }
 
-    private static AnalyzerFinding ToFinding(Diagnostic diagnostic, string candidateSource)
+    private static AnalyzerFinding ToFinding(Diagnostic diagnostic, string candidateSource, SyntaxTree candidateTree)
     {
         var position = diagnostic.Location.GetLineSpan().StartLinePosition;
+        // A location in another tree — the build's global-usings unit — is not a candidate line,
+        // whatever its line number happens to be there.
+        var line = ReferenceEquals(diagnostic.Location.SourceTree, candidateTree)
+            ? CandidateSourceWrapper.MapToCandidateLine(candidateSource, position.Line + 1)
+            : 0;
         return new AnalyzerFinding(
             diagnostic.Id,
             diagnostic.Severity.ToString(),
             diagnostic.GetMessage(),
-            CandidateSourceWrapper.MapToCandidateLine(candidateSource, position.Line + 1),
+            line,
             position.Character + 1);
     }
 }
