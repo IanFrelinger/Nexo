@@ -37,7 +37,8 @@ public sealed class VacuousMutationLegTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset",
-                })
+                }),
+            MutationProbeWitnesses.ZeroErrorCase
         ]);
 
     // Observes errorCount only, so every mutant that can only change firstErrorMessage escapes.

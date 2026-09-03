@@ -26,7 +26,8 @@ public sealed class CertificationGateTeethTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset"
-                })
+                }),
+            MutationProbeWitnesses.ZeroErrorCase
         ]);
 
     private static readonly WitnessSpec WeakWitness = new(
@@ -92,7 +93,8 @@ public sealed class CertificationGateTeethTests
                     new Dictionary<string, object>(StrongWitness.Cases[0].ExpectedOutput)
                     {
                         [WitnessObservableOutput.SummaryKey] = "Found 2 ERROR line(s); first: First failure: connection reset",
-                    })
+                    }),
+                MutationProbeWitnesses.ZeroErrorCase
             ]);
         var wrongSummary = new WitnessSpec(
             "mutation-probe-brick",
@@ -102,7 +104,8 @@ public sealed class CertificationGateTeethTests
                     new Dictionary<string, object>(StrongWitness.Cases[0].ExpectedOutput)
                     {
                         [WitnessObservableOutput.SummaryKey] = "not what the brick says",
-                    })
+                    }),
+                MutationProbeWitnesses.ZeroErrorCase
             ]);
 
         var right = await gate.CertifyAsync(Request(withSummary));
@@ -290,7 +293,8 @@ public sealed class CertificationGateTeethTests
                         {
                             ["errorCount"] = 2,
                             ["firstErrorMessage"] = "First failure: connection reset"
-                        })
+                        }),
+                    MutationProbeWitnesses.ZeroErrorCase
                 ]),
             SourceCode = NondeterministicBrickSource.Code,
             ProjectPath = CreateCleanProjectFile(),
