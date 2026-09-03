@@ -90,7 +90,10 @@ would be misread as a pass, not because a problem was found:
   rules would silently no-op`. Every brick-scoped rule anchors on that type; without it they would
   all pass vacuously.
 
-Both are the reason you must supply `CompilationReferences` — see "Things that will bite you".
+Both are refusals about the reference set. In Shape A that set is the loader's job, not yours:
+`BrickCertificationProjectLoader` reads it out of the compiler's own record of the build (see "What
+the brick is compiled against"). Only Shape B, where you build the request by hand, has to supply
+`CompilationReferences` itself — see "Things that will bite you".
 
 ## The two-package rule (and the one-project rule)
 
@@ -195,6 +198,37 @@ intermediate output directory — `AssemblyInfo.cs`, `GlobalUsings.g.cs` and fri
 turns on MSBuild reporting that an SDK-shipped `.targets` file declared the item, not on the file's
 name or its directory, so dropping your own `Generated.cs` into `obj/` does not inherit it.
 
+### What the brick is compiled against
+
+The analyzer leg and the mutation leg re-compile the brick source inside the certifying process, and
+they need the assemblies csc used — above all the one defining `Ashlar.Core.Domain.Bricks.Brick`,
+which every brick rule anchors on. The loader takes that reference set from the build the same way
+it takes the source set. The compiler's portable PDB records every assembly it compiled against (file
+name and MVID); MSBuild's `ReferencePathWithRefAssemblies` list, read in the same build invocation,
+says where each one lives; and a path is accepted for a recorded reference only when the file there
+carries the recorded MVID. Package assemblies are therefore read straight from the NuGet cache.
+Nothing has to be copied into the build output, and `CopyLocalLockFileAssemblies` is neither needed
+nor consulted.
+
+(Until this change the loader globbed `*.dll` out of the output directory, which for a stock library
+project holds only the brick itself, so every brick that referenced an Ashlar package failed the
+analyzer leg with `analyzer anchor type ... is not resolvable` unless its author set that property
+— the shipped template did not. The template now certifies exactly as `ashlar new brick` generates
+it; `BrickCertificationProjectLoaderReferenceTests.The_brick_template_certifies_exactly_as_scaffolded`
+substitutes the tokens, builds it and runs all five legs.)
+
+Two consequences:
+
+- **A target that edits the reference list after the compile is refused, by name.** Remove an item
+  from `ReferencePathWithRefAssemblies` in an `AfterTargets="CoreCompile"` target, or replace the
+  assembly under a path, and the compiler's record no longer matches. The refusal names the
+  assembly and the target shape to remove; a build whose reference list comes back empty is
+  refused the same way rather than falling back to the output directory.
+- **The target framework's reference assemblies are verified but not handed on.** The certifying
+  process compiles against its own runtime's framework; giving Roslyn a second core library breaks
+  every predefined type. So a brick is analyzed against the framework of the machine certifying it,
+  not against the targeting pack it was built with.
+
 **The canonical sample does not satisfy this.** `samples/hello-brick/` — which
 [`AuthoringBricks.md`](AuthoringBricks.md) calls the primary path — uses a `ProjectReference` into
 `src/Ashlar.Core.Domain`, so the gate rejects it at the dependency leg. That is fine for what it is
@@ -223,9 +257,6 @@ A certifiable brick project, complete:
     <PackageId>Acme.Bricks.LateFee</PackageId>
     <!-- Required if any ancestor directory has a Directory.Packages.props. -->
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-    <!-- The loader collects compilation references from the build output folder;
-         package assemblies are not copied there by default. -->
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -242,6 +273,15 @@ Two shapes, both written against published packages only. Neither needs a checko
 
 Best when the brick is a separate project on disk and you want a signed
 `certification-record.json` on the other side. This is the shape a CI job wants.
+
+> **The candidate's code runs in the certifying process before any leg does.** `LoadAsync` runs
+> `dotnet build` on the brick project, which executes whatever MSBuild targets the project and any
+> `Directory.Build.props` / `Directory.Build.targets` beside it declare — an `<Exec>` task in one of
+> them runs with your privileges, before the source-set and reference-set checks have anything to
+> read. The loader then `Assembly.LoadFrom`s the built assembly and instantiates the brick type,
+> which runs the assembly's module initializers, its static constructors and the brick's own
+> constructor. All five legs run after that. Certify only code you would be willing to build and
+> load on that machine, or run the certifier in a throwaway container.
 
 Project references (a *host* project, not the brick project — the two-package rule applies to the
 brick, not to the tool that certifies it):
@@ -392,18 +432,25 @@ verifies and runs the brick untouched, referencing no gate and no generator.
 
 ## Things that will bite you
 
-- **`CompilationReferences` is required, and its absence fails closed.** Supply the assemblies the
-  candidate compiles against or the analyzer leg refuses with `analyzer anchor type ... is not
-  resolvable`. In a test, `AppDomain.CurrentDomain.GetAssemblies()` filtered to non-dynamic
-  assemblies with a `Location` is enough; `BrickCertificationProjectLoader` collects them from the
-  build output folder instead.
-- **`CopyLocalLockFileAssemblies=true` on the brick project** when using the loader — otherwise the
-  package assemblies are not in the build output and the reference set the loader collects is
-  incomplete.
+- **`CompilationReferences` is required in Shape B, and its absence fails closed.** Supply the
+  assemblies the candidate compiles against or the analyzer leg refuses with `analyzer anchor type
+  ... is not resolvable`. In a test, `AppDomain.CurrentDomain.GetAssemblies()` filtered to
+  non-dynamic assemblies with a `Location` is enough. In Shape A there is nothing to supply:
+  `BrickCertificationProjectLoader` resolves the set from the compiler's own record of the build,
+  and a stock brick project needs no property for it (see "What the brick is compiled against").
 - **`ManagePackageVersionsCentrally=false`** on any project under a directory that has a
   `Directory.Packages.props`, or restore will refuse your inline `Version` attributes.
-- **The brick must be deterministic by construction.** No clock, no I/O, no floating point, no
-  randomness, no ambient culture. Leg 4 will catch it, but it is cheaper to not write it.
+- **The brick must be deterministic by construction, and the gate checks less of that than the
+  word suggests.** Leg 4 runs each witness case twice under `AuditMode` and compares canonicalized
+  outputs, so it catches only what changes between two back-to-back runs on one machine. The
+  analyzer catalog names three shapes statically: `DateTime.Now` / `DateTimeOffset.Now`
+  (`UtcNow` is deliberately allowed), `new Random()` / `Random.Shared`, and mutable static fields
+  (`ASHLAR0006`–`0008`) — plus file and network access in the *constructor* only
+  (`ASHLAR0003` / `0004`), not in `ExecuteAsync`. So: I/O in `ExecuteAsync` that does not alter
+  the outputs is caught by nothing; `DateTime.UtcNow` passes the analyzer and passes leg 4 whenever
+  both runs round to the same value; floating-point and culture-dependent formatting differ across
+  machines rather than across two runs on one, and pass too. Write the brick as a pure function of
+  its declared inputs. The gate will not prove that for you.
 - **A gate run is not fast.** It builds the project, compiles the candidate, then compiles and runs
   a mutant per mutable site. A brick with twenty-odd mutants is seconds, not milliseconds.
 
@@ -421,4 +468,5 @@ verifies and runs the brick untouched, referencing no gate and no generator.
 
 *Code references on this page were read from `src/` at the `0.1.1` line; the consumer snippets are
 transcriptions of shapes that were driven end to end against published packages. The commands were
-not re-executed while this page was written.*
+not re-executed while this page was written. The claims in "What the brick is compiled against" and
+about the template certifying as scaffolded were executed, by the tests they name.*

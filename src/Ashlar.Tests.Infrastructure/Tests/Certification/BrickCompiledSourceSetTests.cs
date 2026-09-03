@@ -169,17 +169,21 @@ public sealed class BrickCompiledSourceSetTests : IDisposable
     }
 
     [Fact]
-    public void Unmanaged_payloads_in_the_build_output_are_not_handed_to_the_compiler()
+    public void Unmanaged_payloads_in_the_reported_reference_list_are_not_handed_to_the_compiler()
     {
         // Ashlar.Authoring — one of the two packages a brick may reference, and the one the CLI
         // scaffold emits — drags LLamaSharp's native binaries into runtimes/<rid>/native/. Passing
         // one of those as a metadata reference produces CS0009, and the fence then reported that
         // the CANDIDATE did not compile. The accusation was about source the author had written
-        // correctly, for a file the loader itself supplied.
+        // correctly, for a file the loader itself supplied. The loader now takes its candidates
+        // from the reference list the build reports rather than from the output directory, and
+        // the same two filters must hold on that list.
         var buildDir = Path.Combine(_dir, "out");
-        var managed = Path.Combine(buildDir, "Brick.dll");
+        var primary = Path.Combine(buildDir, "Brick.dll");
+        var managed = Path.Combine(buildDir, "Dependency.dll");
         Directory.CreateDirectory(buildDir);
-        File.Copy(typeof(object).Assembly.Location, managed);
+        File.Copy(typeof(object).Assembly.Location, primary);
+        File.Copy(typeof(System.Linq.Enumerable).Assembly.Location, managed);
 
         var native = Path.Combine(buildDir, "runtimes", "linux-x64", "native", "libllama.so.dll");
         Directory.CreateDirectory(Path.GetDirectoryName(native)!);
@@ -189,15 +193,19 @@ public sealed class BrickCompiledSourceSetTests : IDisposable
         var strayUnmanaged = Path.Combine(buildDir, "vendor.dll");
         File.WriteAllBytes(strayUnmanaged, [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]);
 
-        var references = BrickCertificationProjectLoader.CollectReferences(buildDir, managed);
+        var references = BrickCertificationProjectLoader.ResolveCompilerReferences(
+            "Brick.csproj",
+            [managed, native, strayUnmanaged],
+            [new CompiledMetadataReference("Dependency.dll", CompiledMetadataReferences.TryReadMvid(managed)!.Value, true, false)],
+            primary);
 
-        references.Should().Contain(managed);
+        references.Should().Contain(primary).And.Contain(managed);
         references.Should().NotContain(native, "runtimes/<rid>/native/ is the runtime graph, not the compile graph");
         references.Should().NotContain(strayUnmanaged, "a PE image with no metadata root cannot be a reference wherever it sits");
     }
 
     [Fact]
-    public void Every_managed_assembly_in_the_output_is_still_offered_to_the_compiler()
+    public void Every_managed_assembly_the_compiler_recorded_is_still_offered_to_the_compiler()
     {
         // The filter must not become a second bug: dropping a real dependency would make the
         // candidate genuinely fail to compile, which is the accusation this whole change removes.
@@ -205,11 +213,20 @@ public sealed class BrickCompiledSourceSetTests : IDisposable
         Directory.CreateDirectory(buildDir);
         var primary = Path.Combine(buildDir, "Brick.dll");
         var dependency = Path.Combine(buildDir, "Ashlar.Authoring.dll");
+        var second = Path.Combine(buildDir, "Ashlar.Core.Domain.dll");
         File.Copy(typeof(object).Assembly.Location, primary);
         File.Copy(typeof(System.Linq.Enumerable).Assembly.Location, dependency, overwrite: true);
+        File.Copy(typeof(Console).Assembly.Location, second, overwrite: true);
 
-        BrickCertificationProjectLoader.CollectReferences(buildDir, primary)
-            .Should().Contain(primary).And.Contain(dependency);
+        BrickCertificationProjectLoader.ResolveCompilerReferences(
+                "Brick.csproj",
+                [dependency, second],
+                [
+                    new CompiledMetadataReference("Ashlar.Authoring.dll", CompiledMetadataReferences.TryReadMvid(dependency)!.Value, true, false),
+                    new CompiledMetadataReference("Ashlar.Core.Domain.dll", CompiledMetadataReferences.TryReadMvid(second)!.Value, true, false)
+                ],
+                primary)
+            .Should().Contain(primary).And.Contain(dependency).And.Contain(second);
     }
 
     [Fact]
