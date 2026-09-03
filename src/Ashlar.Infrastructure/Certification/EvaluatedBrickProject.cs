@@ -64,7 +64,8 @@ internal sealed class EvaluatedBrickProject
         IReadOnlyList<EvaluatedItem> packageReferences,
         IReadOnlyList<EvaluatedItem> projectReferences,
         IReadOnlyList<EvaluatedItem> analyzers,
-        IReadOnlyList<EvaluatedItem> references)
+        IReadOnlyList<EvaluatedItem> references,
+        IReadOnlyList<EvaluatedItem> compilerReferences)
     {
         ProjectPath = projectPath;
         Properties = properties;
@@ -73,6 +74,7 @@ internal sealed class EvaluatedBrickProject
         ProjectReferences = projectReferences;
         Analyzers = analyzers;
         References = references;
+        CompilerReferences = compilerReferences;
     }
 
     /// <summary>Absolute path of the evaluated project file.</summary>
@@ -103,6 +105,20 @@ internal sealed class EvaluatedBrickProject
     /// passes through the <c>PackageReference</c> allow-list.
     /// </summary>
     public IReadOnlyList<EvaluatedItem> References { get; }
+
+    /// <summary>
+    /// Every <c>ReferencePathWithRefAssemblies</c> item — the resolved assembly paths the SDK's
+    /// <c>CoreCompile</c> target hands csc as <c>/reference</c>, package assemblies in the NuGet
+    /// cache and targeting-pack reference assemblies alike. Populated only by <see cref="Build"/>;
+    /// it is produced by targets, so an <see cref="Evaluate"/> answer reports it empty.
+    /// </summary>
+    /// <remarks>
+    /// This is where the references live, not proof of what was compiled against: it is a
+    /// post-build item list, and <see cref="CompiledSourceDocuments"/> explains why no such list
+    /// is an authority. <see cref="BrickCertificationProjectLoader"/> checks each path against the
+    /// MVID the compiler itself recorded for that reference before handing it on.
+    /// </remarks>
+    public IReadOnlyList<EvaluatedItem> CompilerReferences { get; }
 
     /// <summary>The value of one evaluated property, or <c>null</c> when MSBuild did not report it.</summary>
     public string? Property(string name) => Properties.TryGetValue(name, out var value) ? value : null;
@@ -221,7 +237,10 @@ internal sealed class EvaluatedBrickProject
         // Compile item — and Reference covers a raw assembly reference, which is a dependency that
         // never passes the PackageReference allow-list. Both were invisible to the XML scan.
         "Analyzer",
-        "Reference"
+        "Reference",
+        // The paths CoreCompile passes csc. A build-time item: MSBuild reports it as an empty list
+        // under a target-less evaluation, which is the answer that is wanted there.
+        "ReferencePathWithRefAssemblies"
     ];
 
     /// <summary>How long the gate will wait for an evaluation before calling it unanswerable.</summary>
@@ -503,7 +522,8 @@ internal sealed class EvaluatedBrickProject
             items["PackageReference"],
             items["ProjectReference"],
             items["Analyzer"],
-            items["Reference"]);
+            items["Reference"],
+            items["ReferencePathWithRefAssemblies"]);
     }
 
     private static List<EvaluatedItem> ReadItems(string projectPath, JsonElement array)

@@ -152,7 +152,12 @@ internal static class CompiledSourceDocuments
         return CryptographicOperations.FixedTimeEquals(actual, document.Checksum);
     }
 
-    private static Stream? OpenCandidate(string assemblyPath, string recordedPath)
+    /// <summary>
+    /// Opens the PDB the assembly's debug directory names, looking first where it was recorded and
+    /// then beside the assembly. Shared with <see cref="CompiledMetadataReferences"/>, which reads a
+    /// different table out of the same record.
+    /// </summary>
+    internal static Stream? OpenCandidate(string assemblyPath, string recordedPath)
     {
         foreach (var candidate in new[]
                  {

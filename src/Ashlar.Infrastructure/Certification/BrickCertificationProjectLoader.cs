@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
@@ -57,12 +56,15 @@ public static class BrickCertificationProjectLoader
             new Dictionary<string, byte[]>(PathComparer) { [Path.GetFullPath(sourceFile)] = sourceBytes },
             dllPath, build.Project);
 
+        // Likewise the assemblies the compiler compiled against — resolved and checked before the
+        // candidate's code runs, for the same reason.
+        var references = CollectReferences(build.Project, dllPath);
+
         var assembly = Assembly.LoadFrom(dllPath);
         var brickType = assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
             ?? throw new InvalidOperationException("No DomainBrick type in assembly");
 
         var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
-        var references = CollectReferences(buildDir, dllPath);
 
         var witness = new WitnessSpec(
             witnessDto.BrickId ?? brick.Id,
@@ -552,42 +554,208 @@ public static class BrickCertificationProjectLoader
     }
 
     /// <summary>
-    /// The managed assemblies in the brick's build output, as Roslyn metadata references.
+    /// The assemblies the brick was compiled against, as paths for Roslyn metadata references —
+    /// the compiler's own reference set, located through the build's, never the other way round.
     /// </summary>
     /// <remarks>
-    /// <para>Every <c>*.dll</c> under the output used to go in unfiltered. Most brick projects got
-    /// away with it; <c>Ashlar.Authoring</c> — one of the two packages a brick is ALLOWED to
-    /// reference, and the one the CLI scaffold emits — does not, because its transitive graph
-    /// copies LLamaSharp's unmanaged binaries into <c>runtimes/&lt;rid&gt;/native/</c>. Handing one of
-    /// those to <c>MetadataReference.CreateFromFile</c> produces CS0009 ("PE image doesn't contain
-    /// managed metadata") at compile time, and the analyzer fence then reported "candidate does not
-    /// compile, so analyzer silence would be meaningless" — blaming brick source that was perfectly
-    /// fine for a file the loader itself supplied.</para>
+    /// <para>This used to glob <c>*.dll</c> out of the build output directory. That directory is a
+    /// MODEL of the compiler's reference set, and a poor one: the SDK does not copy package
+    /// assemblies into a library's output (<c>CopyLocalLockFileAssemblies</c> defaults to off), so
+    /// a stock brick referencing <c>Ashlar.Authoring</c> — the shape <c>ashlar new brick</c>
+    /// scaffolds — built to an output holding only itself, Roslyn was handed no assembly defining
+    /// <c>Ashlar.Core.Domain.Bricks.Brick</c>, and the analyzer fence refused with "analyzer anchor
+    /// type ... is not resolvable" until the author added an MSBuild property the docs listed under
+    /// "things that will bite you". A scaffold that cannot be certified as scaffolded is a defect
+    /// in the gate, not in the scaffold.</para>
     ///
-    /// <para>Two filters, cheapest first: skip anything under a <c>runtimes/*/native/</c> segment
-    /// (where native payloads live by convention), then PROBE the rest — a PE file without a
-    /// metadata root is unmanaged whatever its path says, and the probe is what actually decides.
-    /// A file that cannot be opened or read as PE is skipped for the same reason: a reference the
-    /// compiler could not have used is not one to pass it.</para>
+    /// <para>The build already knows its reference set twice over, and this method uses both
+    /// halves for what each can honestly answer. MSBuild's <c>ReferencePathWithRefAssemblies</c>
+    /// items — asked for in the build's own invocation, see <see cref="EvaluatedBrickProject.Build"/>
+    /// — are the paths <c>CoreCompile</c> handed csc, so they say WHERE the assemblies live. But it
+    /// is a post-build item list, and <see cref="CompiledSourceDocuments"/> explains at length why
+    /// no such list is an authority on what was compiled: a target can edit it after the compile.
+    /// So membership is decided by the compiler's own record instead — the metadata-reference table
+    /// csc writes into the portable PDB (<see cref="CompiledMetadataReferences"/>), one file name
+    /// and one MVID per reference — and a path is accepted for a recorded reference only when the
+    /// file at that path HAS that MVID. A reference the compiler recorded that no reported file
+    /// matches is a refusal by name; a reported path the compiler did not record is simply not
+    /// handed on, because Roslyn is meant to see what csc saw and nothing else. The one deliberate
+    /// difference from "what csc saw": the target framework's reference assemblies are verified
+    /// like every other reference and then withheld, because the in-process compilation already
+    /// carries the host runtime's framework and a second core library breaks it — see the comment
+    /// in the method body.</para>
+    ///
+    /// <para>The two filters from the previous design are kept and now apply to the reported paths:
+    /// anything under a <c>runtimes/&lt;rid&gt;/native/</c> segment is skipped without being opened,
+    /// and everything else is probed for a managed metadata root before its MVID is read. Handing
+    /// an unmanaged file to <c>MetadataReference.CreateFromFile</c> produces CS0009 at compile
+    /// time and the fence then blames the candidate for the harness's own error; that happened
+    /// once, with LLamaSharp's natives, and it must not happen again whatever list they arrive in.
+    /// An unmanaged file has no MVID, so it can match no recorded reference either.</para>
+    ///
+    /// <para>Fail CLOSED, throughout. An empty reported list, a PDB without the record, a recorded
+    /// reference with no matching file: each is "the gate cannot establish what the brick was
+    /// compiled against", and each is a refusal naming what is missing rather than a fallback to a
+    /// partial set. A partial set is what the glob was.</para>
     /// </remarks>
-    internal static List<string> CollectReferences(string buildDir, string primaryDll)
+    /// <param name="built">The project as MSBuild reported it at the end of the build that
+    /// produced <paramref name="primaryDll"/>.</param>
+    /// <param name="primaryDll">The built brick assembly, whose PDB carries the compiler's record.</param>
+    internal static List<string> CollectReferences(EvaluatedBrickProject built, string primaryDll)
     {
-        var refs = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { primaryDll };
-        foreach (var dll in Directory.GetFiles(buildDir, "*.dll", SearchOption.AllDirectories))
+        var name = Path.GetFileName(built.ProjectPath);
+        if (built.CompilerReferences.Count == 0)
         {
-            if (IsUnderNativeRuntimesFolder(buildDir, dll) || !HasManagedMetadata(dll))
-                continue;
-            refs.Add(dll);
+            throw new InvalidOperationException(
+                $"Brick project refused: the build of {name} reported no compiler references at all "
+                + "(ReferencePathWithRefAssemblies was empty when the build finished). Every C# compilation "
+                + "references at least the target framework, so the list was emptied after CoreCompile ran, and "
+                + "the gate cannot locate the assemblies the brick was compiled against. Fix: remove the MSBuild "
+                + $"target in the project or in the Directory.Build.props / Directory.Build.targets beside {name} "
+                + "that removes items from ReferencePathWithRefAssemblies after the compile, then certify again. "
+                + "Refusing rather than analyzing the brick against a reference set the gate had to guess.");
         }
-        return refs.ToList();
+
+        var reported = new List<string>();
+        var framework = new HashSet<string>(PathComparer);
+        foreach (var item in built.CompilerReferences)
+        {
+            var path = string.IsNullOrWhiteSpace(item.FullPath) ? item.Identity : item.FullPath;
+            reported.Add(path);
+            if (string.IsNullOrWhiteSpace(item.Meta("FrameworkReferenceName")))
+            {
+                continue;
+            }
+
+            try
+            {
+                framework.Add(Path.GetFullPath(path));
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                // Unresolvable as a path, so ResolveCompilerReferences cannot match it either; if the
+                // compiler recorded it, that is the refusal.
+            }
+        }
+
+        var resolved = ResolveCompilerReferences(name, reported, CompiledMetadataReferences.Read(primaryDll), primaryDll);
+
+        // Every reference is verified above, framework included. The targeting pack's reference
+        // assemblies are then NOT handed on: the fence and the mutation leg compile inside this
+        // process, and RoslynCodeAnalysisService.BuildReferenceSet always supplies the running
+        // runtime's own framework assemblies first. Adding a second System.Runtime — the reference
+        // assembly, which defines System.Object itself rather than forwarding to a core library —
+        // leaves Roslyn with two candidate core libraries and no way to choose, and every predefined
+        // type then fails to resolve (CS0518 on System.Void, System.Object, System.String ...).
+        // Observed live on the first run of this method; the brick's own framework has always been
+        // the host's job here, and this keeps it that way.
+        return resolved.Where(path => !framework.Contains(path)).ToList();
     }
 
-    /// <summary>True for <c>runtimes/&lt;rid&gt;/native/...</c>, the convention location for the
-    /// unmanaged payloads NuGet copies alongside a managed graph.</summary>
-    private static bool IsUnderNativeRuntimesFolder(string buildDir, string file)
+    /// <summary>
+    /// Joins the paths the build reported to the references the compiler recorded, by MVID. Pure
+    /// apart from reading the files named, so the refusals can be pinned without a build.
+    /// </summary>
+    /// <param name="projectName">The brick project's file name, for the refusals.</param>
+    /// <param name="reportedPaths">Where MSBuild says the compiler's references live.</param>
+    /// <param name="recorded">What the compiler says it compiled against.</param>
+    /// <param name="primaryDll">The brick assembly itself, always first in the result.</param>
+    internal static List<string> ResolveCompilerReferences(
+        string projectName,
+        IReadOnlyList<string> reportedPaths,
+        IReadOnlyList<CompiledMetadataReference> recorded,
+        string primaryDll)
     {
-        var segments = Path.GetRelativePath(buildDir, file)
-            .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        // Every reported path the compiler COULD have opened, indexed by the identity the compiler
+        // recorded it under. Anything unmanaged is dropped here, before Roslyn can see it.
+        var byMvid = new Dictionary<Guid, string>();
+        // Both keyed by FILE NAME, because that is all the compiler records: when a recorded
+        // reference matches nothing, the reported path of the same name says which way it failed.
+        var unreadable = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var readableByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var reportedPath in reportedPaths)
+        {
+            string full;
+            try
+            {
+                full = Path.GetFullPath(reportedPath);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                unreadable.TryAdd(Path.GetFileName(reportedPath), reportedPath);
+                continue;
+            }
+
+            if (IsUnderNativeRuntimesFolder(full))
+            {
+                continue; // the runtime graph, not the compile graph — never a reference, whatever list it is in
+            }
+
+            var mvid = CompiledMetadataReferences.TryReadMvid(full);
+            if (mvid is null)
+            {
+                unreadable.TryAdd(Path.GetFileName(full), full);
+                continue;
+            }
+
+            readableByName.TryAdd(Path.GetFileName(full), full);
+            byMvid.TryAdd(mvid.Value, full); // the same module reported twice: one path is enough
+        }
+
+        var references = new List<string> { primaryDll };
+        var seen = new HashSet<string>(PathComparer) { primaryDll };
+        foreach (var reference in recorded)
+        {
+            if (byMvid.TryGetValue(reference.Mvid, out var path))
+            {
+                if (seen.Add(path))
+                {
+                    references.Add(path);
+                }
+
+                continue;
+            }
+
+            // Three different states end here, and the author needs to know which. Name it.
+            string because;
+            if (unreadable.TryGetValue(reference.FileName, out var unreadablePath))
+            {
+                because = $"the build reported it at '{unreadablePath}', but that file is missing, unreadable, or "
+                          + "not a managed assembly, so it cannot be what the compiler opened";
+            }
+            else if (readableByName.TryGetValue(reference.FileName, out var differentPath))
+            {
+                because = $"the build reported it at '{differentPath}', but the assembly at that path is a DIFFERENT "
+                          + $"module (its MVID is not {reference.Mvid:D}) from the one the compiler opened — it was "
+                          + "replaced after the compile";
+            }
+            else
+            {
+                because = "the reference list the build reported when it finished does not contain it — it was "
+                          + "removed from ReferencePathWithRefAssemblies after CoreCompile ran";
+            }
+
+            throw new InvalidOperationException(
+                $"Brick project refused: {projectName} was compiled against '{reference.FileName}' (MVID "
+                + $"{reference.Mvid:D}) — the compiler's own record says so — but the gate cannot locate that "
+                + $"assembly: {because}. The analyzer fence and the mutation leg re-compile the brick source "
+                + "against the compiler's references, and a reference the gate cannot find is one it would have "
+                + "to guess at or leave out, either of which judges a different program from the one that was "
+                + "built. Fix: remove the MSBuild target in the project or in the Directory.Build.props / "
+                + $"Directory.Build.targets beside {projectName} that edits ReferencePathWithRefAssemblies or "
+                + "replaces reference assemblies after the compile (an AfterTargets=\"CoreCompile\" target, or one "
+                + "that invokes the compiler itself), then certify again. Refusing rather than analyzing the "
+                + "brick against assemblies its compiler never saw.");
+        }
+
+        return references;
+    }
+
+    /// <summary>True for <c>.../runtimes/&lt;rid&gt;/native/...</c>, the convention location for the
+    /// unmanaged payloads NuGet ships alongside a managed graph.</summary>
+    private static bool IsUnderNativeRuntimesFolder(string file)
+    {
+        var segments = file.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         for (var i = 0; i + 2 < segments.Length; i++)
         {
             if (string.Equals(segments[i], "runtimes", StringComparison.OrdinalIgnoreCase)
@@ -598,25 +766,6 @@ public static class BrickCertificationProjectLoader
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// True when the file is a PE image carrying a managed metadata root — the exact condition
-    /// <c>MetadataReference.CreateFromFile</c> needs, asked directly instead of inferred from a
-    /// path or an extension.
-    /// </summary>
-    private static bool HasManagedMetadata(string file)
-    {
-        try
-        {
-            using var stream = File.OpenRead(file);
-            using var reader = new PEReader(stream);
-            return reader.HasMetadata;
-        }
-        catch (Exception ex) when (ex is IOException or BadImageFormatException or UnauthorizedAccessException)
-        {
-            return false;
-        }
     }
 
     private sealed class WitnessSpecDto
