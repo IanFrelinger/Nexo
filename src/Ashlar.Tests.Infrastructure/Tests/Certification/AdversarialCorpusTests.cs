@@ -46,11 +46,12 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// types — a wrong brick judged under the right fixture's name.</para>
 ///
 /// <para><b>Tier.</b> This class spawns a build and child processes per case; it carries
-/// <c>Tier=Build</c> beside <c>Category=Certification</c> so a fast-tier filter can leave it out
-/// without leaving the cert-gate.</para>
+/// <c>Category=SlowTier</c> beside <c>Category=Certification</c> so <c>scripts/run-cert-gate.sh
+/// --fast</c> can leave it out without leaving the cert-gate. The name is the one
+/// <c>SlowTierConventionTests</c> enforces and <c>CERT_GATE_FAST_FILTER</c> subtracts.</para>
 /// </summary>
 [Trait("Category", "Certification")]
-[Trait("Tier", "Build")]
+[Trait("Category", "SlowTier")]
 public sealed class AdversarialCorpusTests
 {
     private const string CorpusRelativePath = "tests/adversarial-corpus";

@@ -166,6 +166,7 @@ dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -
   --filter "FullyQualifiedName~AdversarialCorpusTests"
 ```
 
-The class carries `Category=Certification` (the cert-gate filter) and `Tier=Build` (it spawns a
-build and child processes per case), so a fast-tier run can leave it out without leaving the
-cert-gate.
+The class carries `Category=Certification` (the cert-gate filter) and `Category=SlowTier` (it spawns
+a build and child processes per case), so `scripts/run-cert-gate.sh --fast` can leave it out without
+leaving the cert-gate. `SlowTierConventionTests` fails naming any gate class that reaches a real
+build without that trait.

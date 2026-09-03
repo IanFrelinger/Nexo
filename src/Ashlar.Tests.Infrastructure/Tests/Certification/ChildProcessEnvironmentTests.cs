@@ -39,9 +39,13 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// keys, because "the keys are gone" is what a denylist proves and "nothing else crossed" is what
 /// an allowlist proves. The last test documents what the allowlist does NOT close.</para>
 ///
-/// <para>Every test here spawns real child processes; the timeouts are hang nets, not budgets.</para>
+/// <para>Every test here spawns real child processes, and one drives <c>EvaluatedBrickProject.Build</c>
+/// (a real <c>dotnet msbuild</c>); the timeouts are hang nets, not budgets. That makes the class the
+/// slow tier — <c>Category=SlowTier</c> — so <c>scripts/run-cert-gate.sh --fast</c> skips it and
+/// <c>SlowTierConventionTests</c> stops naming it.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "SlowTier")]
 public sealed class ChildProcessEnvironmentTests : IDisposable
 {
     /// <summary>
