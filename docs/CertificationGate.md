@@ -229,21 +229,16 @@ Two consequences:
   every predefined type. So a brick is analyzed against the framework of the machine certifying it,
   not against the targeting pack it was built with.
 
-**The canonical sample does not satisfy this.** `samples/hello-brick/` — which
-[`AuthoringBricks.md`](AuthoringBricks.md) calls the primary path — uses a `ProjectReference` into
-`src/Ashlar.Core.Domain`, so the gate rejects it at the dependency leg. That is fine for what it is
-(the smallest way to learn the `Brick` API inside a checkout) and wrong as a starting point for
-anything you intend to certify.
-
-**And as of the compiled-source-set change, neither does the other sample.**
-`samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/` is its own packable project
-referencing only `Ashlar.Brick.Contracts` — but `samples/Directory.Build.props` adds a
-`<Compile Include="../../src/Ashlar.Compat/GlobalUsings.DomainBrick.cs" Link="..." />` to it, and a
-compile item from outside the brick directory is now refused (it is bypass 3's exact shape: the
-`.csproj` was clean and the props file beside it was not). The sample was certifiable only because
-the gate used to read the `.csproj` alone. Until it is repaired — it needs the one-line alias
-`using DomainBrick = Ashlar.Core.Domain.Bricks.Brick;` inside its own source file instead of the
-linked global-usings file — **copy the complete project below rather than either sample.**
+**Both shipped samples satisfy this, and the cert-gate suite pins it.**
+`samples/hello-brick/HelloBrick/` and `samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/`
+are each one project, one source file, one `PackageReference` to `Ashlar.Brick.Contracts` and a
+witness beside the source; `ShippedSampleCertificationTests` drives this loader and gate over both
+tracked directories, so a change that stops either certifying fails `bash scripts/run-cert-gate.sh`.
+Neither did until the compiled-source-set change landed: `samples/Directory.Build.props` injected a
+`<Compile Include="../../src/Ashlar.Compat/GlobalUsings.DomainBrick.cs" />` into both — bypass 3's
+exact shape, invisible to the old `.csproj`-only read — so the props file is now empty and each brick
+names its base type in its own file. If your own project sits under a `Directory.Build.props`, that is
+the shape to look for first when the gate refuses a compile item from outside the brick directory.
 
 A certifiable brick project, complete:
 

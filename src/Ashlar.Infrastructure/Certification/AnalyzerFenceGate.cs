@@ -152,8 +152,8 @@ public sealed class AnalyzerFenceGate
                     "certification harness error, NOT a defect in the candidate: the compilation reference set "
                     + "contains files that are not managed assemblies, so the compiler could not open them "
                     + $"({UnmanagedReferenceDiagnosticId}). The candidate source was never judged. The reference set "
-                    + "comes from BrickCertificationProjectLoader.CollectReferences, which must pass only managed "
-                    + "assemblies from the brick's build output — native payloads under runtimes/<rid>/native/ "
+                    + "comes from BrickCertificationProjectLoader.CollectReferences, which must pass only the managed "
+                    + "assemblies the compiler itself recorded for the build — native payloads under runtimes/<rid>/native/ "
                     + "belong to the runtime graph, not the compile graph. Fix the harness, not the brick: "
                     + string.Join(" | ", compileErrors.Take(10).Select(e => e.ToString())),
                     floor,

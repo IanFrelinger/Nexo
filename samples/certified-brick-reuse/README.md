@@ -51,4 +51,4 @@ dotnet run --no-restore --project samples/certified-brick-reuse/ProjectB/Project
 
 Expected output: `TRUSTED finalDamage=40` (exit code `0`). Edit one character of `DamageResolverBrick.cs` and rerun to see `UNTRUSTED: content-hash-mismatch` (exit code `2`).
 
-Note: the tracked `certification-record.json` is the last export the maintainers committed; re-running the pack script re-signs it with your local key. The content hash is over the exact bytes of `DamageResolverBrick.cs`, which the repository stores with LF line endings — a checkout that rewrites them to CRLF (`core.autocrlf=true` on Windows) will report `UNTRUSTED: content-hash-mismatch` until the file is LF again.
+Note: the tracked `certification-record.json` is the last export the maintainers committed; re-running the pack script re-signs it with your local key. The content hash is over the exact bytes of `DamageResolverBrick.cs`, which `.gitattributes` pins to LF on every checkout (`eol=lf`) so that `core.autocrlf=true` on Windows leaves it alone; if a tool rewrites the file to CRLF anyway, Project B reports `UNTRUSTED: content-hash-mismatch` until the file is LF again.

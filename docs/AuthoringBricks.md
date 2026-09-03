@@ -121,26 +121,34 @@ If the brick will ever face the certification gate, this is the layout to start 
 
 One brick, one `.cs`, one `.csproj`, in its own directory. Add `Ashlar.Authoring` if the same project also needs `AddAshlarBrick<T>()`; add nothing else. `samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/` is the tracked example of exactly this shape, and [`docs/CertificationGate.md`](CertificationGate.md) is how you drive the gate over it.
 
-## Learning path: `samples/hello-brick` (ProjectReference, not certifiable)
+## Learning path: `samples/hello-brick` (package-only, certifiable)
 
-[`samples/hello-brick/`](../samples/hello-brick/) is the complete reference implementation of the `Brick` API and the fastest thing to run from a repository checkout — no feed, no restore, no packages. **It is deliberately not a certifiable brick:** it references the domain model by **`ProjectReference`** (`samples/hello-brick/HelloBrick/HelloBrick.csproj`), which the gate refuses outright with `ProjectReference forbidden: ...`. Use it to learn the API; use the section above as the starting point for anything you intend to certify.
+[`samples/hello-brick/`](../samples/hello-brick/) is the complete reference implementation of the `Brick` API and the smallest brick the certification gate admits. It has exactly the shape above: one project, one source file, one `PackageReference` to `Ashlar.Brick.Contracts` (`0.1.1`, on nuget.org), and a witness beside the source. `ShippedSampleCertificationTests` certifies it as checked in on every cert-gate run, so the sample can be copied as a starting point for a brick you intend to certify.
 
 ```xml
 <ItemGroup>
-  <ProjectReference Include="../../../src/Ashlar.Core.Domain/Ashlar.Core.Domain.csproj" />
+  <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.1" />
 </ItemGroup>
 ```
 
-Run it from the repository root:
+Run the smoke test from the repository root:
 
 ```bash
 dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj
 ```
 
-To start your own **uncertified** brick inside the checkout, copy `samples/hello-brick/` next to it, rename the projects, and keep the `ProjectReference` pointing at `src/Ashlar.Core.Domain/Ashlar.Core.Domain.csproj` (add `src/Ashlar.Authoring/Ashlar.Authoring.csproj` if you want `AddAshlarBrick<T>()` for host registration). One detail: the sample derives from `DomainBrick`, a `global using` alias for `Ashlar.Core.Domain.Bricks.Brick` that `samples/Directory.Build.props` injects **only** into the `HelloBrick` project name, so a renamed copy should derive from `Brick` directly (as the minimal example above does; if your own namespace starts with `Ashlar.` and you reference `Ashlar.Authoring`, the `Ashlar.Brick` namespace from `Ashlar.Brick.Contracts` shadows the short name, so write `Ashlar.Core.Domain.Bricks.Brick` or declare the same alias). The sample layout is:
+and certify it (`samples/hello-brick/README.md` lists the exit codes):
 
-- `HelloBrick/HelloBrick.csproj` — code-authored brick project.
-- `HelloBrick/HelloBrick.cs` — `public sealed class HelloBrick : DomainBrick` (= `Brick`).
+```bash
+dotnet run --project tools/Ashlar.ExportCertifiedBrick/ExportCertifiedBrick.csproj -- \
+  /tmp/hello-brick-record.json samples/hello-brick/HelloBrick
+```
+
+To start your own brick inside the checkout, copy `samples/hello-brick/` next to it and rename the projects; keep the `PackageReference`. Swapping it for a `ProjectReference` into `src/Ashlar.Core.Domain` builds without nuget.org but makes the brick uncertifiable (the gate refuses any `ProjectReference`). If your own namespace starts with `Ashlar.`, the `Ashlar.Brick` namespace from `Ashlar.Brick.Contracts` shadows the short name `Brick`, so write `Ashlar.Core.Domain.Bricks.Brick` in full, as `samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/` does. The sample layout is:
+
+- `HelloBrick/HelloBrick.csproj` — code-authored brick project (`PackageReference` only).
+- `HelloBrick/HelloBrick.cs` — `public sealed class HelloBrick : Brick`.
+- `HelloBrick/hello-brick.witness.json` — the witness the gate replays.
 - `HelloBrick.Tests/HelloBrick.Tests.csproj` — xUnit test project.
 - `HelloBrick.Tests/HelloBrickTests.cs` — smoke test for `ExecuteAsync`.
 
@@ -233,4 +241,4 @@ If the brick lives inside (or next to) a Ashlar checkout, replace the package re
 <ProjectReference Include="../../src/Ashlar.Authoring/Ashlar.Authoring.csproj" />
 ```
 
-and restore normally. This is the same shape as `samples/hello-brick` (which references `src/Ashlar.Core.Domain` directly).
+and restore normally. A brick built this way is uncertifiable (the gate refuses any `ProjectReference`); `samples/hello-brick` keeps the package reference for that reason.

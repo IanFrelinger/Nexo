@@ -25,7 +25,7 @@ The cert-gate suite drives the same loader and gate against this directory as ch
 
 The sample contains:
 
-- `HelloBrick/HelloBrick.csproj` — code-authored brick project: `PackageReference` to `Ashlar.Brick.Contracts 0.1.1`, versions pinned in the project (`ManagePackageVersionsCentrally=false`, the shape a brick has outside the checkout). `CopyLocalLockFileAssemblies=true` is a temporary requirement of the gate's analyzer leg, which compiles the source against the brick's own build output; the comment in the project says when to drop it.
+- `HelloBrick/HelloBrick.csproj` — code-authored brick project: `PackageReference` to `Ashlar.Brick.Contracts 0.1.1`, versions pinned in the project (`ManagePackageVersionsCentrally=false`, the shape a brick has outside the checkout). No `CopyLocalLockFileAssemblies`: the gate reads the brick's references from the compiler's own record of the build, not from the output folder.
 - `HelloBrick/HelloBrick.cs` — `public sealed class HelloBrick : Brick` (`Ashlar.Core.Domain.Bricks.Brick`, from the package). The whole brick is this one file; the certificate binds one content hash over one text.
 - `HelloBrick/hello-brick.witness.json` — the two witness cases the gate replays, covering both outputs (`message`, `implementation`) so every mutant the mutation leg derives from `ExecuteAsync` is observable.
 - `HelloBrick.Tests/HelloBrick.Tests.csproj` — xUnit test project.

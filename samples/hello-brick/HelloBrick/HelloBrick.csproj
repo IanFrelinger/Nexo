@@ -8,11 +8,6 @@
     <!-- Versions are pinned here, not in the repository's Directory.Packages.props, because this is the
          shape a brick has OUTSIDE the checkout: one project, one package. -->
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-    <!-- The gate's analyzer leg compiles the brick source against the DLLs in the brick's own build
-         output, and a library build does not copy package assemblies there by default — so without
-         this the leg cannot see Ashlar.Brick.Contracts and refuses. Loader limitation, being fixed at
-         the root; drop this once the loader resolves references itself. -->
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>

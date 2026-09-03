@@ -13,11 +13,6 @@
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>NU1701;NU1604</NoWarn>
-    <!-- The gate's analyzer leg compiles the brick source against the DLLs in the brick's own build
-         output, and a library build does not copy package assemblies there by default — so without
-         this the leg cannot see Ashlar.Brick.Contracts and refuses. Loader limitation, being fixed at
-         the root; drop this once the loader resolves references itself. -->
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>

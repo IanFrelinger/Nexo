@@ -31,7 +31,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/SELF-EXTEND-AUDIT.md` — background-agent self-extend safety audit (four invariants, all enforced on the live path as of 2026-08-16).
 - **`docs/CertificationGate.md`** — **the builder-facing gate page**: what a *witness* is, the five legs and what each refuses, how a package-only consumer invokes `CertifyAsync`, what a rejection looks like, and the two-package / own-project rule a certifiable brick must satisfy.
 - **`docs/OperatorLifecycle.md`** — the **operator persona**: `ashlar init` and the two documents, the operator-owned `ashlar.policy.yaml`, the `ashlar verify` VERIFIED→CERTIFIED reveal, the self-extend dial, `ashlar gates`, and `ashlar pkg` / `keys` trust.
-- `docs/AuthoringBricks.md` + `samples/hello-brick/README.md` — author a brick the gate can judge (the sample uses a `ProjectReference` into `src/`, which is convenient in a checkout and **not** certifiable — see `docs/CertificationGate.md`).
+- `docs/AuthoringBricks.md` + `samples/hello-brick/README.md` — author a brick the gate can judge (the sample is package-only and certifies as checked in — `ShippedSampleCertificationTests` pins it; `docs/CertificationGate.md` explains the shape).
 - `samples/autonomy-objectives/README.md` — a complete tracked objective + witness + recorded model proposal, and how to feed it to the loop.
 - `spikes/README.md` — what each spike under `spikes/` is, which ledger rows cite it, and why none of them is a supported entry point; `spikes/autonomy-first-flight/run-first-flight.ps1` flies one real iteration (Docker + Ollama).
 - `scripts/run-cert-gate.sh` + `scripts/cert-gate-config.sh` — reproduce the CI `cert-gate` locally with the same filter.
