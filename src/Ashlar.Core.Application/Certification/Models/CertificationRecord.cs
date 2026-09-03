@@ -43,6 +43,21 @@ public sealed record CertificationRecord
     /// <summary>Identifiers of mutants that survived certification.</summary>
     public IReadOnlyList<string> SurvivingMutantIds { get; init; } = Array.Empty<string>();
 
+    /// <summary>
+    /// Identifiers of mutants the WALL CLOCK stopped: they did not finish a witness case inside the
+    /// execution budget. Dead — they can never certify — but not caught by the witness, so they are
+    /// kept out of <see cref="KilledMutants"/>. Schema version 3 and later.
+    /// </summary>
+    public IReadOnlyList<string> TimedOutMutants { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Identifiers of mutants whose execution KILLED the process running them (stack overflow,
+    /// <c>Environment.Exit</c>, <c>FailFast</c>, an unhandled background-thread exception, an
+    /// out-of-memory abort). Dead, but not caught by the witness; kept out of
+    /// <see cref="KilledMutants"/>. Schema version 3 and later.
+    /// </summary>
+    public IReadOnlyList<string> CrashedMutants { get; init; } = Array.Empty<string>();
+
     /// <summary>Cryptographic signature of the admission record.</summary>
     public string? Signature { get; init; }
 

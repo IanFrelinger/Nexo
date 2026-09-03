@@ -322,7 +322,9 @@ public sealed class TrustLoopRecordSchemaTests
 
         decision.Admitted.Should().BeTrue();
         var record = decision.Record;
-        record.SchemaVersion.Should().Be(CertificationRecordData.TrustLoopSchemaVersion);
+        record.SchemaVersion.Should().Be(CertificationRecordData.CurrentSchemaVersion,
+            "a freshly minted record carries the current schema (v3 adds the timed-out / crashed mutant lists); "
+            + "TrustLoopSchemaVersion stays the v2 floor that older records verify against");
         record.GatesPassed.Select(g => g.Name).Should().Equal(
             "analyzer-gate", "correctness-witness", "mutation-gate", "determinism", "dependency-graph");
         record.GatesPassed[0].Configuration.Should()
@@ -357,7 +359,8 @@ public sealed class TrustLoopRecordSchemaTests
 
         decision.Admitted.Should().BeFalse();
         decision.FailureCheck.Should().Be("correctness");
-        decision.Record.SchemaVersion.Should().Be(CertificationRecordData.TrustLoopSchemaVersion);
+        decision.Record.SchemaVersion.Should().Be(CertificationRecordData.CurrentSchemaVersion,
+            "FAIL records are minted at the current schema too, so their mutant lists are readable by the same consumer");
         decision.Record.GatesPassed.Select(g => g.Name).Should().Equal(
             new[] { "analyzer-gate" },
             "the analyzer fence runs before correctness, so it is the only gate passed before a correctness failure (R2.4)");

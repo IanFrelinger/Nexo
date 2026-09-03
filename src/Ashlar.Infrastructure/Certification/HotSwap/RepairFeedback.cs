@@ -127,6 +127,14 @@ public static class RepairFeedback
                 case WitnessFindingKind.NoObservation:
                     sb.Append("no result was observed for this case");
                     break;
+                case WitnessFindingKind.TimedOut:
+                    sb.Append("execution did not finish inside the time budget");
+                    if (f.Detail is not null) sb.Append(" — ").Append(f.Detail);
+                    break;
+                case WitnessFindingKind.Crashed:
+                    sb.Append("execution crashed the process running it");
+                    if (f.Detail is not null) sb.Append(" — ").Append(f.Detail);
+                    break;
                 case WitnessFindingKind.MissingKey:
                     sb.Append(DescribeKey(f.Key)).Append(" was not produced");
                     if (policy.Disclosure == RepairDisclosure.Full && f.Expected is not null)

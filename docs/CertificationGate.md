@@ -73,11 +73,29 @@ how far the candidate got.
 | 0 | `recursion` | Generation lineage is coherent and under the depth ceiling. Absent lineage = human-authored, depth 0. | Runs before everything: an incoherent depth claim must not even be analyzed. Only relevant to the autonomy loop; hand-authored bricks pass trivially. |
 | 1 | `analyzer` | The candidate compiles, and the Ashlar analyzer catalog (plus any constraint-manifest rules) reports nothing at or above the severity floor. | A defect a deterministic analyzer can *name* should never cost a mutation run. |
 | 2 | `correctness` | Every witness case's actual output equals its expected output. | Cheap, and mutation testing is meaningless if the unmutated candidate is already wrong. |
-| 3 | `mutation` | The engine generates mutants of the source and requires `escape_rate == 0` — every mutant must be killed by some witness case. Zero mutants generated is also a failure. | This is what gives the certificate teeth: it audits the witness, not the candidate. |
+| 3 | `mutation` | The engine generates mutants of the source and requires `escape_rate == 0` — every mutant must be dead: killed by some witness case, stopped by the wall clock (`timedOutMutants`), or fatal to the process running it (`crashedMutants`). Zero mutants generated is also a failure. | This is what gives the certificate teeth: it audits the witness, not the candidate. The record keeps the three kinds of death apart, so a certificate never claims the witness caught what the clock caught. |
 | 4 | `determinism` | The same case run twice under `AuditMode` canonicalizes identically. A missing repeat is nondeterminism-by-absence, never vacuous agreement. | A nondeterministic brick cannot be certified against a fixed expected output. |
 | 5 | `dependency` | The brick project references no other project and only the two allowed packages (next section), and the source contains none of the forbidden kernel tokens. | Last because it is about *shape*, not behaviour — but it is not optional; see below. |
 
 Only after all five does the gate sign the record and return `Admitted = true`.
+
+**Where the brick actually runs.** Legs 2–4 execute author code — the candidate and every mutant of
+it — and none of it runs on the certifier's own threads. Unless the request names an execution
+backend (the autonomy loop's attested session), the gate compiles a small replay runner once per
+certification and launches it as a child process through the same `dotnet` host that is running the
+certifier; one child replays the candidate, another replays every mutant in turn, streaming one
+observation per case back over stdout. The certifier enforces the wall clock
+(`CandidateExecutionLimits`: 5 s per case, 30 s per unit, 10 min per certification, a 1 GiB heap,
+all recorded on the `correctness-witness` / `mutation-gate` passes as `perCaseTimeoutMs=…`). A mutant
+that loops forever times out and the child exits to shed the spinning thread; a mutant that
+overflows the stack, calls `Environment.Exit` or `FailFast`, throws on a background thread or
+allocates without bound kills the child, and the certifier reads the exit code and stderr, records
+the crash against that mutant, restarts the runner for the rest, and still returns a verdict. A
+CANDIDATE that does any of these is rejected at `correctness` with a `TimedOut` / `Crashed` finding.
+Before this, an honest brick with a plain countdown loop hung certification forever (the
+`shift-relational-boundary` mutant made `while (n > 0)` into `while (n >= 0)`), and an honest brick
+with a recursive helper took the certifier down with an uncatchable stack overflow — exit 134, no
+verdict, no message.
 
 **The gate reasons about its own epistemics.** Two of the refusals above exist because silence
 would be misread as a pass, not because a problem was found:
@@ -405,9 +423,13 @@ tell them apart at a glance. Ledger row S5 in
 
 An admitted record (`CertificationRecordData`, camelCase JSON) carries `status`, `admitted`,
 `signed`, `brickId`, `contentHash`, `escapeRate`, `totalMutants`, `killedMutants`,
-`survivingMutantIds`, `gatesPassed[]` (name, version, configuration), `signature`, `gate` and
-`schemaVersion`. A consumer who wants to *use* a certified brick without re-certifying it needs only
-`Ashlar.Certification.Contracts`:
+`survivingMutantIds`, `timedOutMutants`, `crashedMutants`, `gatesPassed[]` (name, version,
+configuration), `signature`, `gate` and `schemaVersion`. `totalMutants` is the sum of the four id
+lists; only `killedMutants` says anything about the witness. Records are minted at `schemaVersion`
+3 (`CertificationRecordData.CurrentSchemaVersion`), whose signed payload covers the two wall-clock
+lists; version-2 records already on disk keep verifying under the version-2 payload, and a record
+edited to move a timed-out id into `killedMutants` does not verify. A consumer who wants to *use* a
+certified brick without re-certifying it needs only `Ashlar.Certification.Contracts`:
 
 ```csharp
 var result = CertificationTrustVerifier.Verify(record, brickSource);
@@ -446,8 +468,15 @@ verifies and runs the brick untouched, referencing no gate and no generator.
   both runs round to the same value; floating-point and culture-dependent formatting differ across
   machines rather than across two runs on one, and pass too. Write the brick as a pure function of
   its declared inputs. The gate will not prove that for you.
-- **A gate run is not fast.** It builds the project, compiles the candidate, then compiles and runs
-  a mutant per mutable site. A brick with twenty-odd mutants is seconds, not milliseconds.
+- **A gate run is not fast.** It builds the project, compiles the candidate, then compiles a mutant
+  per mutable site and replays them all in a child process (one process start per certification
+  leg, plus one restart per mutant that hangs or crashes). A brick with twenty-odd mutants is
+  seconds, not milliseconds; a brick whose mutants can loop adds the per-case budget for each one.
+- **A mutant that times out or crashes is dead, not caught.** It appears under `timedOutMutants` or
+  `crashedMutants`, never under `killedMutants`, and the `ADMIT` line prints all three counts
+  (`mutants_killed=… killed_by_timeout=… killed_by_crash=…`). `escape_rate` is unaffected — the
+  mutant cannot certify — but the witness earned no credit for it; if most of a brick's mutants die
+  on the clock, the witness is not being audited and you should write cases that observe the loop.
 
 ## Where this is proven
 
