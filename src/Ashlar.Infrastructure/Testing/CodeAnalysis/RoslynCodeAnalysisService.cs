@@ -29,13 +29,33 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>Compile asynchronously.</summary>
+    /// <summary>Compile asynchronously, with the compiler's default parse and compilation options.</summary>
     public Task<CompilationResult> CompileAsync(
         string sourceCode,
         string assemblyName,
         string outputPath,
         IEnumerable<string>? references = null,
         CancellationToken cancellationToken = default)
+        => CompileAsync(
+            sourceCode, assemblyName, outputPath, references,
+            parseOptions: null, compilationOptions: null, additionalTrees: null, cancellationToken);
+
+    /// <summary>
+    /// Compile asynchronously under explicit options: how the source is parsed (language version,
+    /// preprocessor symbols), how it is compiled (overflow checking, nullable context, unsafe), and
+    /// which further trees — the build's <c>global using</c> file — are compiled beside it. Null for
+    /// any of the three keeps that default. The certification legs use this so every in-process
+    /// compile of a brick is the program its build compiled; see <c>BrickCompilation</c>.
+    /// </summary>
+    internal Task<CompilationResult> CompileAsync(
+        string sourceCode,
+        string assemblyName,
+        string outputPath,
+        IEnumerable<string>? references,
+        CSharpParseOptions? parseOptions,
+        CSharpCompilationOptions? compilationOptions,
+        IReadOnlyList<SyntaxTree>? additionalTrees,
+        CancellationToken cancellationToken)
     {
         return Task.Run(() =>
         {
@@ -48,17 +68,20 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                 _logger.LogInformation("Compiling C# code to assembly: {AssemblyName}", assemblyName);
 
                 // Parse the source code
-                var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, cancellationToken: cancellationToken);
+                var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, parseOptions, cancellationToken: cancellationToken);
 
             // Default references (core .NET libraries) plus any provided custom references.
             var allReferences = BuildReferenceSet(references);
 
             // Create compilation
+            IEnumerable<SyntaxTree> trees = additionalTrees is { Count: > 0 }
+                ? new[] { syntaxTree }.Concat(additionalTrees)
+                : new[] { syntaxTree };
             var compilation = CSharpCompilation.Create(
                 assemblyName,
-                new[] { syntaxTree },
+                trees,
                 allReferences,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+                compilationOptions ?? new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             // Ensure output directory exists
             var outputDir = Path.GetDirectoryName(outputPath);

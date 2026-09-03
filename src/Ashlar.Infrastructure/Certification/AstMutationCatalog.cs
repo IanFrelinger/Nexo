@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
 
 namespace Ashlar.Infrastructure.Certification;
@@ -111,11 +112,22 @@ internal static class AstMutationCatalog
     /// — the same set the certification compile will use for every mutant.
     /// </summary>
     public static IReadOnlyList<AstMutation> CollectMutations(
-        string sourceCode, IReadOnlyList<string>? compilationReferences)
+        string sourceCode, IReadOnlyList<string>? compilationReferences) =>
+        CollectMutations(sourceCode, compilationReferences, compileOptions: null);
+
+    /// <summary>
+    /// Collect mutations from the program the BUILD compiled. The candidate is parsed under
+    /// <paramref name="compileOptions"/> — its preprocessor symbols decide which <c>#if</c> branches
+    /// are code and which are trivia, so which nodes exist to be mutated at all — and bound under
+    /// them, so an operand's type is the type the build gave it. Null means no build to match and
+    /// reproduces the default parse exactly.
+    /// </summary>
+    public static IReadOnlyList<AstMutation> CollectMutations(
+        string sourceCode, IReadOnlyList<string>? compilationReferences, BrickCompileOptions? compileOptions)
     {
-        var tree = CSharpSyntaxTree.ParseText(sourceCode);
+        var tree = CSharpSyntaxTree.ParseText(sourceCode, BrickCompilation.ParseOptions(compileOptions));
         var root = tree.GetRoot();
-        var model = BindForOperatorMutants(tree, compilationReferences);
+        var model = BindForOperatorMutants(tree, compilationReferences, compileOptions);
         var mutations = new List<AstMutation>();
 
         CollectFlipBinaryComparisons(root, mutations);
@@ -164,18 +176,23 @@ internal static class AstMutationCatalog
     /// resolves there.
     /// </summary>
     private static SemanticModel BindForOperatorMutants(
-        SyntaxTree candidate, IReadOnlyList<string>? compilationReferences)
+        SyntaxTree candidate, IReadOnlyList<string>? compilationReferences, BrickCompileOptions? compileOptions)
     {
+        var parseOptions = BrickCompilation.ParseOptions(compileOptions);
         var preambleLines = CandidateSourceWrapper.Wrap(string.Empty)
             .Split('\n')
             .Select(line => line.StartsWith("using ", StringComparison.Ordinal) ? "global " + line : line);
-        var preamble = CSharpSyntaxTree.ParseText(string.Join("\n", preambleLines));
+        var preamble = CSharpSyntaxTree.ParseText(string.Join("\n", preambleLines), parseOptions);
+
+        // The build's own global usings bind beside the candidate too, as they did for csc.
+        var trees = new List<SyntaxTree> { candidate, preamble };
+        trees.AddRange(BrickCompilation.CompanionTrees(compileOptions));
 
         var compilation = CSharpCompilation.Create(
             "AshlarMutationCatalogBinding",
-            [candidate, preamble],
+            trees,
             RoslynCodeAnalysisService.BuildReferenceSet(compilationReferences),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            BrickCompilation.CompilationOptions(compileOptions, OutputKind.DynamicallyLinkedLibrary));
 
         return compilation.GetSemanticModel(candidate);
     }

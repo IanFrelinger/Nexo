@@ -216,6 +216,38 @@ intermediate output directory — `AssemblyInfo.cs`, `GlobalUsings.g.cs` and fri
 turns on MSBuild reporting that an SDK-shipped `.targets` file declared the item, not on the file's
 name or its directory, so dropping your own `Generated.cs` into `obj/` does not inherit it.
 
+### What the brick is compiled *under*
+
+The source text is half of a program; the options it is compiled under are the other half. The
+analyzer leg and the mutation leg re-compile the brick inside the certifying process, and they do it
+under the **build's own compile options**, read from the compiler's record of the build (the
+compilation-options block csc writes into the portable PDB): the preprocessor symbols — including
+`NET`, `NET8_0` and `NETCOREAPP`, which the SDK defines for every net8.0 project without a csproj
+edit — the language version, `CheckForOverflowUnderflow`, `Nullable` and `AllowUnsafeBlocks`; plus
+every `global using` the build compiled from its generated `GlobalUsings.g.cs` (so `<Using
+Include=... Alias=... />` items bind names in the fence exactly as they bound them in the assembly).
+
+Until this landed the legs parsed the source with Roslyn's defaults. Two projects with a
+byte-identical `Brick.cs` — the same signed `contentHash` — then compiled different programs: a
+`#if ASHLAR_EVIL` (or `#if NET8_0`) branch holding a `File.WriteAllText` was code in the build and
+disabled text to the fence and the mutation leg, and both projects certified ADMIT. A brick built
+with checked arithmetic had its mutants compiled unchecked, so every mutant wrapped where the
+shipped brick threw and the escape rate came out 0 for a witness with no teeth.
+
+Consequences:
+
+- **The record says which program was judged.** An admitted or rejected record carries a signed
+  `compile-options` input whose `id` is the canonical line
+  (`langVersion=12.0;checkOverflow=false;nullable=Enable;unsafe=false;symbols=...;globalUsings=...`).
+  It sits beside `contentHash` rather than inside it: the content hash is the identity every
+  downstream verifier recomputes from the source text alone, and both are under the signature.
+- **Options the gate cannot honour are refused before any leg runs**, by name: a `<LangVersion>`
+  newer than the gate's own compiler, a PDB whose options block is missing or rewritten, an SDK
+  generated file that has grown a declaration, a project `global using` alias named `DomainBrick`
+  for anything other than `Ashlar.Core.Domain.Bricks.Brick` (the harness injects that alias itself).
+- **Nothing is hard-coded.** The symbol list is whatever csc was given, so a new SDK that defines
+  a new symbol needs no change here.
+
 ### What the brick is compiled against
 
 The analyzer leg and the mutation leg re-compile the brick source inside the certifying process, and
@@ -424,7 +456,8 @@ tell them apart at a glance. Ledger row S5 in
 An admitted record (`CertificationRecordData`, camelCase JSON) carries `status`, `admitted`,
 `signed`, `brickId`, `contentHash`, `escapeRate`, `totalMutants`, `killedMutants`,
 `survivingMutantIds`, `timedOutMutants`, `crashedMutants`, `gatesPassed[]` (name, version,
-configuration), `signature`, `gate` and `schemaVersion`. `totalMutants` is the sum of the four id
+configuration), `inputs[]` (kind, id, hash — the witness, and the `compile-options` the program was
+judged under), `signature`, `gate` and `schemaVersion`. `totalMutants` is the sum of the four id
 lists; only `killedMutants` says anything about the witness. Records are minted at `schemaVersion`
 3 (`CertificationRecordData.CurrentSchemaVersion`), whose signed payload covers the two wall-clock
 lists; version-2 records already on disk keep verifying under the version-2 payload, and a record

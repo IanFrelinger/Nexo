@@ -141,6 +141,7 @@ public sealed class CertificationGate : ICertificationGate
             request.CompilationReferences,
             request.ConstraintManifest,
             request.TouchSet,
+            request.CompileOptions,
             cancellationToken).ConfigureAwait(false);
         analyzerGatePass = new CertificationGatePass
         {
@@ -231,7 +232,8 @@ public sealed class CertificationGate : ICertificationGate
             request.CompilationReferences,
             cancellationToken,
             backend,
-            _analyzerGate).ConfigureAwait(false);
+            _analyzerGate,
+            request.CompileOptions).ConfigureAwait(false);
 
         if (mutationResult.TotalMutants == 0)
         {
@@ -410,6 +412,11 @@ public sealed class CertificationGate : ICertificationGate
                     Hash = BrickContentHasher.ComputeSha256(witnessJson)
                 }
             };
+            // The program the legs judged is the source text PLUS the options it was compiled
+            // under; the content hash binds the first and this input binds the second, on PASS
+            // and FAIL alike, so a reader can see which program the verdict is about.
+            if (request.CompileOptions is { } compileOptions)
+                inputs.Add(compileOptions.ToCertificationInput());
             inputs.AddRange(request.AdditionalInputs);
             // Where execution happened is certificate-relevant on PASS and FAIL alike:
             // a verdict minted over backend observations names the backend.

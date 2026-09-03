@@ -29,6 +29,16 @@ public sealed record CertificationRequest
     public string? BrickTypeName { get; init; }
 
     /// <summary>
+    /// The compile options the brick's BUILD used — preprocessor symbols, language version, overflow
+    /// checking, nullable context, unsafe, and the <c>global using</c> directives the project injected.
+    /// Every in-process leg (the analyzer fence, the mutation catalog, each mutant compile) compiles
+    /// under these, so the program it judges is the program that was built; the record carries them
+    /// as a signed <c>compile-options</c> input. Null means there is no build to match — the
+    /// in-process compile IS the program — and the legs use their defaults.
+    /// </summary>
+    public BrickCompileOptions? CompileOptions { get; init; }
+
+    /// <summary>
     /// Extra hash-identified inputs to record on the certificate beyond the witness
     /// (trust-loop spec §2.1 <c>inputs</c>) — e.g. the assembled proposal context via
     /// <c>ProposalContext.ToCertificationInput</c>. Evidence, not a gate: entries are
