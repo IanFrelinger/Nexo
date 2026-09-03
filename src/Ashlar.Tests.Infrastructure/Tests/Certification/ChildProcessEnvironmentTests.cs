@@ -43,9 +43,22 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// (a real <c>dotnet msbuild</c>); the timeouts are hang nets, not budgets. That makes the class the
 /// slow tier — <c>Category=SlowTier</c> — so <c>scripts/run-cert-gate.sh --fast</c> skips it and
 /// <c>SlowTierConventionTests</c> stops naming it.</para>
+///
+/// <para><b>Why the collection.</b> Every test here sets <see cref="CertificationRecordSigning.HmacKeyEnvVar"/>
+/// (and startup-hook / roll-forward variables) in THIS process's environment, for as long as a real
+/// child build or process runs. That variable is not read once at startup: a
+/// <see cref="CertificationRecordSigner"/> built with no explicit key resolves it on every
+/// <c>Sign</c> AND every <c>Verify</c>, so a composition test on another xunit thread that admitted
+/// its constituents under the dev key and then verified them while this class had the operator
+/// key set saw "invalid certification signature" and failed on <c>constituents</c> instead of
+/// <c>mutation</c> — seen once the cert-gate ran on four threads. The "EnvironmentVariables"
+/// collection has <c>DisableParallelization = true</c>, which xunit honours by running its tests
+/// after every parallel collection has finished, alone; a class that mutates process-wide
+/// environment belongs in it, as <c>CertificationRecordSignerDevKeyTests</c> already does.</para>
 /// </summary>
 [Trait("Category", "Certification")]
 [Trait("Category", "SlowTier")]
+[Collection("EnvironmentVariables")]
 public sealed class ChildProcessEnvironmentTests : IDisposable
 {
     /// <summary>

@@ -55,7 +55,11 @@ public sealed class CompositionCertificationGateTeethTests
         });
 
         decision.Admitted.Should().BeFalse("weak witness must not admit when graph mutants survive");
-        decision.FailureCheck.Should().Be("mutation");
+        // The reason rides along so a wrong leg is diagnosable from the log alone: the one time this
+        // failed with "constituents" in the cert-gate, the message named no violation and the cause
+        // (another thread's signing-key environment variable) had to be reconstructed from source.
+        decision.FailureCheck.Should().Be("mutation", "the gate should have reached the mutation leg, but it stopped at {0}: {1}",
+            decision.FailureCheck, decision.Record.Reason);
         decision.Record.CompositionEscapeRate.Should().BeGreaterThan(0);
         decision.Record.SurvivingStructuralMutantIds.Should().NotBeEmpty();
     }
