@@ -39,7 +39,12 @@ internal sealed class BrickMutationEngine
         "mutate-string-literal",
         "remove-statement",
         "swap-logical-op",
-        "degrade-coalesce-assign"
+        "degrade-coalesce-assign",
+        "swap-arithmetic-op",
+        "swap-arithmetic-assign",
+        "shift-relational-boundary",
+        "swap-unary-op",
+        "remove-logical-not"
     ];
 
     /// <summary>
@@ -61,7 +66,7 @@ internal sealed class BrickMutationEngine
     {
         var survivors = new List<string>();
         var killed = new List<string>();
-        var mutations = AstMutationCatalog.CollectMutations(sourceCode);
+        var mutations = AstMutationCatalog.CollectMutations(sourceCode, compilationReferences);
 
         // Survivors are reported by id (kind, line, disambiguated with #2/#3 on collision so the
         // signed ledger is unambiguous). Keep each mutation's site so the rejection can say WHAT

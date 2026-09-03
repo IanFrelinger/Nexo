@@ -378,7 +378,8 @@ public sealed class TrustLoopRecordSchemaTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset"
-                })
+                }),
+            MutationProbeWitnesses.ZeroErrorCase
         ]);
 
     private static CertificationRecordData BuildLegacyRecord() => new()

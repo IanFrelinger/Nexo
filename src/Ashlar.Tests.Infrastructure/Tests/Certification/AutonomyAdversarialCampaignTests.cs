@@ -304,7 +304,8 @@ public sealed class AutonomyAdversarialCampaignTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset"
-                })
+                }),
+            MutationProbeWitnesses.ZeroErrorCase
         ]);
 
     private const string ProbeTemplate = """
