@@ -293,11 +293,14 @@ internal static class AstMutationCatalog
             if (node.Condition.Kind() == SyntaxKind.LogicalNotExpression)
                 continue;
 
+            // The new condition takes the old condition's trivia; the statement keeps its OWN. Its
+            // leading trivia can carry a `#if` directive, and a mutant that drops it leaves a dangling
+            // `#endif` — a mutant of the preprocessor, not of the program, which never compiles.
             var negated = node.WithCondition(
                 SyntaxFactory.PrefixUnaryExpression(
                     SyntaxKind.LogicalNotExpression,
-                    SyntaxFactory.ParenthesizedExpression(node.Condition.WithoutTrivia())))
-                .WithTriviaFrom(node.Condition);
+                    SyntaxFactory.ParenthesizedExpression(node.Condition.WithoutTrivia()))
+                .WithTriviaFrom(node.Condition));
 
             mutations.Add(Create(
                 root,

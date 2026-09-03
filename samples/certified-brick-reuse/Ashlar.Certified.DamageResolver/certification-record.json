@@ -3,20 +3,16 @@
   "stage": "S0-S2",
   "admitted": true,
   "signed": true,
-  "timestamp": "2026-09-03T03:02:11.0278198+00:00",
+  "timestamp": "2026-09-03T03:21:45.5638075+00:00",
   "brickId": "damage-resolver",
   "contentHash": "rPxj86wxnhQT1xexONKPrBL74GKnS0rrLC\u002BEg0f27fw=",
   "escapeRate": 0,
   "totalMutants": 6,
   "survivingMutants": 0,
   "killedMutants": [
-    "remove-statement-42",
     "mutate-int-literal-48",
     "mutate-int-literal-50",
-    "mutate-string-literal-42",
-    "mutate-string-literal-43",
-    "mutate-string-literal-44",
-    "mutate-string-literal-45",
+    "mutate-string-literal-53",
     "swap-arithmetic-op-48",
     "swap-arithmetic-op-48#2",
     "swap-arithmetic-op-50"
@@ -24,7 +20,7 @@
   "survivingMutantIds": [],
   "timedOutMutants": [],
   "crashedMutants": [],
-  "signature": "YC35snZTeJOcmM3lMxsQr28\u002BMYJzbmjA8xGwvcnVbUE=",
+  "signature": "eEOrfIm4wTnwMe4zefg7iigxrDLeU/4B\u002BWm0vvkV100=",
   "reason": null,
   "gate": "Ashlar.Infrastructure.Certification.CertificationGate",
   "schemaVersion": 3,
@@ -32,7 +28,7 @@
     {
       "name": "analyzer-gate",
       "version": "1",
-      "configuration": "analyzerAssemblyVersion=0.1.1.0;severityFloor=Warning;diagnosticsEvaluated=0;manifestRules=none;touchSet=none"
+      "configuration": "analyzerAssemblyVersion=0.1.2.0;severityFloor=Warning;diagnosticsEvaluated=0;manifestRules=none;touchSet=none"
     },
     {
       "name": "correctness-witness",

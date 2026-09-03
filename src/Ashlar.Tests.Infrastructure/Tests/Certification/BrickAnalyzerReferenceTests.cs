@@ -155,8 +155,10 @@ public sealed class BrickAnalyzerReferenceTests : IDisposable
         File.Exists(docs).Should().BeTrue(docs);
         var text = File.ReadAllText(docs);
 
-        text.Should().Contain("""<PackageReference Include="Ashlar.Analyzers" Version="0.1.1" ExcludeAssets="runtime;compile" />""");
-        text.Should().NotContain("""<PackageReference Include="Ashlar.Analyzers" Version="0.1.1" PrivateAssets="all" />""",
+        // The version shown is whichever line the page documents (0.1.2 is the first with an
+        // analyzers leg); the SHAPE is the invariant.
+        text.Should().MatchRegex("""<PackageReference Include="Ashlar\.Analyzers" Version="\d+\.\d+\.\d+" ExcludeAssets="runtime;compile" />""");
+        text.Should().NotMatchRegex("""<PackageReference Include="Ashlar\.Analyzers" Version="\d+\.\d+\.\d+" PrivateAssets="all" />""",
             "showing authors a shape the gate refuses is how the fix became the defect");
     }
 
