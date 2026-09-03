@@ -27,6 +27,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// anything unresolvable is a REFUSAL rather than an omission.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "SlowTier")]
 public sealed class BrickEvaluatedCompileSetTests : IDisposable
 {
     private readonly string _dir;

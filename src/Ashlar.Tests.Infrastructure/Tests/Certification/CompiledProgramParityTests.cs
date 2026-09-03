@@ -30,6 +30,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// in-process legs, which no unit of either can exercise alone.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "SlowTier")]
 public sealed class CompiledProgramParityTests : IDisposable
 {
     /// <summary>

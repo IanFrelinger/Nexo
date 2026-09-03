@@ -1,5 +1,10 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
@@ -72,6 +77,13 @@ internal sealed class LocalProcessExecutionBackend : ICandidateExecutionBackend,
     private readonly SemaphoreSlim _runnerBuild = new(1, 1);
     private string? _runnerPath;
     private int _jobCounter;
+
+    /// <summary>
+    /// How this backend got its runner: <c>true</c> when it compiled the runner itself, <c>false</c>
+    /// when it took a compiled runner from <see cref="RunnerCompileCache"/>, <c>null</c> before
+    /// the runner was needed. Observability for the cache's tests; the record does not carry it.
+    /// </summary>
+    internal bool? RunnerCompiledFresh { get; private set; }
 
     private LocalProcessExecutionBackend(
         string workDir,
@@ -486,7 +498,15 @@ internal sealed class LocalProcessExecutionBackend : ICandidateExecutionBackend,
         }
     }
 
-    private async Task<string> EnsureRunnerAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// The runner this backend launches, materialised on first use into the backend's own scratch
+    /// directory. Compiling it is the one Roslyn compile every certification pays that has nothing
+    /// to do with the candidate — the same source against the same reference set — so the
+    /// compiled image comes from <see cref="RunnerCompileCache"/> when this process has already
+    /// compiled it for that exact set, and is compiled here otherwise. Internal so the cache's
+    /// tests can drive the compile path without a job.
+    /// </summary>
+    internal async Task<string> EnsureRunnerAsync(CancellationToken cancellationToken)
     {
         if (_runnerPath is { } ready)
             return ready;
@@ -500,7 +520,9 @@ internal sealed class LocalProcessExecutionBackend : ICandidateExecutionBackend,
             var runnerDir = Path.Combine(_workDir, "runner");
             Directory.CreateDirectory(runnerDir);
             var dllPath = Path.Combine(runnerDir, WitnessReplayRunner.AssemblyName + ".dll");
-            await Task.Run(() => CompileRunner(dllPath, cancellationToken), cancellationToken).ConfigureAwait(false);
+            RunnerCompiledFresh = await Task.Run(
+                () => RunnerCompileCache.Materialize(WitnessReplayRunner.Source, BuildRunnerReferences(_references), dllPath, cancellationToken),
+                cancellationToken).ConfigureAwait(false);
             await File.WriteAllTextAsync(
                 Path.Combine(runnerDir, WitnessReplayRunner.AssemblyName + ".runtimeconfig.json"),
                 RuntimeConfigJson(), cancellationToken).ConfigureAwait(false);
@@ -513,11 +535,17 @@ internal sealed class LocalProcessExecutionBackend : ICandidateExecutionBackend,
         }
     }
 
-    private void CompileRunner(string dllPath, CancellationToken cancellationToken)
+    /// <summary>
+    /// The reference set the runner compiles against: the brick's own set — the compiler's record
+    /// of what the brick was built against, so the runner binds <c>Ashlar.Brick.Contracts</c>
+    /// exactly as the brick does — plus the shared-framework assemblies the runner's own code needs.
+    /// Order is deterministic (the brick's set in the order given, then
+    /// <see cref="RunnerFrameworkAssemblies"/> in declared order), so the same inputs always hash
+    /// to the same cache key.
+    /// </summary>
+    internal static List<MetadataReference> BuildRunnerReferences(IReadOnlyList<string> brickReferences)
     {
-        var tree = CSharpSyntaxTree.ParseText(
-            WitnessReplayRunner.Source, new CSharpParseOptions(LanguageVersion.CSharp12), cancellationToken: cancellationToken);
-        var references = RoslynCodeAnalysisService.BuildReferenceSet(_references);
+        var references = RoslynCodeAnalysisService.BuildReferenceSet(brickReferences);
         var present = new HashSet<string>(
             references.OfType<PortableExecutableReference>().Select(r => r.FilePath ?? string.Empty),
             StringComparer.OrdinalIgnoreCase);
@@ -531,6 +559,15 @@ internal sealed class LocalProcessExecutionBackend : ICandidateExecutionBackend,
                     references.Add(MetadataReference.CreateFromFile(path));
             }
         }
+
+        return references;
+    }
+
+    private static void CompileRunner(
+        string source, IReadOnlyList<MetadataReference> references, string dllPath, CancellationToken cancellationToken)
+    {
+        var tree = CSharpSyntaxTree.ParseText(
+            source, new CSharpParseOptions(LanguageVersion.CSharp12), cancellationToken: cancellationToken);
 
         var compilation = CSharpCompilation.Create(
             WitnessReplayRunner.AssemblyName,
@@ -741,6 +778,208 @@ internal sealed class LocalProcessExecutionBackend : ICandidateExecutionBackend,
             + "understand. Runner and certifier are compiled from the same source, so the protocol drifted; refusing "
             + "rather than comparing a value it cannot decode."),
     };
+
+    /// <summary>
+    /// Process-scoped cache of compiled runners, keyed by CONTENT: the runner source, the runtime
+    /// that will host it, and every reference in order — path and MVID. Two backends whose bricks
+    /// were built against the same set share one compile; a set that differs by one path, one
+    /// rebuilt assembly (same path, new MVID) or one character of runner source does not.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why a cache.</b> The runner is the one Roslyn compile in a certification that has
+    /// nothing to do with the candidate: identical source against an identical reference set, one
+    /// to two seconds of parse-bind-emit, once per certification — and a cert-gate run certifies
+    /// hundreds of times. The key is the complete input of that compile and nothing else, so a hit
+    /// is the image a fresh compile would have produced (up to Roslyn's per-emit MVID).</para>
+    ///
+    /// <para><b>Why process-scoped.</b> The directory carries the process id and start time and is
+    /// removed on exit; nothing this process compiled is offered to another process, and nothing
+    /// another process left behind is trusted here. A cross-process cache would also save the CLI's
+    /// single compile per invocation, at the price of executing an image out of a temp directory
+    /// this certifier did not write — a trade the gate does not make.</para>
+    ///
+    /// <para><b>Atomicity.</b> The image is copied into the cache under a staging name and moved
+    /// onto its final name, so a reader never sees a half-written file; misses on the same key
+    /// serialise on a per-key lock so a burst of identical backends compiles once and the rest
+    /// copy.</para>
+    /// </remarks>
+    internal static class RunnerCompileCache
+    {
+        private static readonly Lazy<string> CacheDirectoryLazy = new(CreateCacheDirectory);
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> KeyLocks = new(StringComparer.Ordinal);
+
+        /// <summary>
+        /// MVIDs of shared-framework assemblies — immutable for the life of this process (the
+        /// runtime has them mapped) — so the ~170 of them are read once, not once per certification.
+        /// Anything outside the runtime directory is read every time: a brick's own references can
+        /// be rebuilt between certifications, and a stale MVID would reuse across a different set.
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, string> FrameworkMvids = new(StringComparer.OrdinalIgnoreCase);
+
+        private static readonly string? RuntimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
+        private static readonly ConcurrentDictionary<string, int> CompilesByKey = new(StringComparer.Ordinal);
+        private static int _compileCount;
+
+        /// <summary>Runner compiles this process has performed (misses). Hits do not count.</summary>
+        internal static int CompileCount => Volatile.Read(ref _compileCount);
+
+        /// <summary>
+        /// Runner compiles this process has performed for one key. The per-key count is what a test
+        /// can assert on: the process-wide total moves whenever another test collection compiles
+        /// against another reference set, and the assembly runs collections in parallel.
+        /// </summary>
+        internal static int CompilesFor(string key) => CompilesByKey.TryGetValue(key, out var count) ? count : 0;
+
+        /// <summary>Where this process keeps its compiled runners.</summary>
+        internal static string CacheDirectory => CacheDirectoryLazy.Value;
+
+        /// <summary>
+        /// Puts a compiled runner for <paramref name="source"/> against <paramref name="references"/>
+        /// at <paramref name="dllPath"/>. Returns <c>true</c> when it compiled (a miss) and
+        /// <c>false</c> when it copied this process's earlier compile of the identical inputs (a hit).
+        /// </summary>
+        internal static bool Materialize(
+            string source, IReadOnlyList<MetadataReference> references, string dllPath, CancellationToken cancellationToken)
+        {
+            var key = ComputeKey(source, references);
+            var cached = Path.Combine(CacheDirectory, key + ".dll");
+            var gate = KeyLocks.GetOrAdd(key, static _ => new SemaphoreSlim(1, 1));
+            gate.Wait(cancellationToken);
+            try
+            {
+                if (File.Exists(cached))
+                {
+                    try
+                    {
+                        File.Copy(cached, dllPath, overwrite: true);
+                        return false;
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        // The image went away between the check and the copy — a temp sweeper, a
+                        // full disk. A miss is always safe; a failed hit must never be a failed
+                        // certification.
+                    }
+                }
+
+                CompileRunner(source, references, dllPath, cancellationToken);
+                Interlocked.Increment(ref _compileCount);
+                CompilesByKey.AddOrUpdate(key, 1, static (_, count) => count + 1);
+
+                var staging = cached + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                File.Copy(dllPath, staging);
+                File.Move(staging, cached, overwrite: true);
+                return true;
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        /// <summary>
+        /// SHA-256 over the runner source, the hosting runtime, and every reference in the order the
+        /// compiler sees it — full path and MVID, so a rebuilt assembly at the same path is another
+        /// key. A reference that is not a file on disk cannot be keyed by content and never hits.
+        /// </summary>
+        internal static string ComputeKey(string source, IReadOnlyList<MetadataReference> references)
+        {
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            Append(hash, "source", source);
+            Append(hash, "runtime", RuntimeInformation.FrameworkDescription);
+            Append(hash, "runtime-version", Environment.Version.ToString());
+            Append(hash, "rid", RuntimeInformation.RuntimeIdentifier);
+            Append(hash, "references", references.Count.ToString(CultureInfo.InvariantCulture));
+            foreach (var reference in references)
+            {
+                var path = (reference as PortableExecutableReference)?.FilePath;
+                if (string.IsNullOrEmpty(path))
+                {
+                    Append(hash, "reference-unkeyable", reference.Display + "\n" + Guid.NewGuid().ToString("N"));
+                    continue;
+                }
+
+                var fullPath = Path.GetFullPath(path);
+                Append(hash, "reference", fullPath + "\n" + MvidOf(fullPath));
+            }
+
+            return Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
+        }
+
+        private static void Append(IncrementalHash hash, string label, string value)
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(label));
+            hash.AppendData([0]);
+            hash.AppendData(Encoding.UTF8.GetBytes(value));
+            hash.AppendData([0]);
+        }
+
+        /// <summary>
+        /// The module version id the compiler stamped into the assembly at <paramref name="path"/>
+        /// — a fresh GUID per emit, so it identifies the build, not the file name. A file without
+        /// metadata or that cannot be read is keyed by its length and write time instead.
+        /// </summary>
+        internal static string MvidOf(string path)
+        {
+            var isFramework = RuntimeDirectory is not null
+                && string.Equals(Path.GetDirectoryName(path), RuntimeDirectory, StringComparison.OrdinalIgnoreCase);
+            if (isFramework && FrameworkMvids.TryGetValue(path, out var known))
+                return known;
+
+            string mvid;
+            try
+            {
+                using var stream = File.OpenRead(path);
+                using var pe = new PEReader(stream);
+                if (pe.HasMetadata)
+                {
+                    var metadata = pe.GetMetadataReader();
+                    mvid = metadata.GetGuid(metadata.GetModuleDefinition().Mvid).ToString("N");
+                }
+                else
+                {
+                    mvid = Stamp("no-metadata", path);
+                }
+            }
+            catch (Exception ex) when (ex is IOException or BadImageFormatException or UnauthorizedAccessException or InvalidOperationException)
+            {
+                mvid = Stamp("unreadable", path);
+            }
+
+            if (isFramework)
+                FrameworkMvids[path] = mvid;
+            return mvid;
+
+            static string Stamp(string kind, string path)
+            {
+                var info = new FileInfo(path);
+                return string.Create(CultureInfo.InvariantCulture, $"{kind}:{info.Length}:{info.LastWriteTimeUtc.Ticks}");
+            }
+        }
+
+        private static string CreateCacheDirectory()
+        {
+            long started;
+            try
+            {
+                started = Process.GetCurrentProcess().StartTime.ToUniversalTime().Ticks;
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or PlatformNotSupportedException or System.ComponentModel.Win32Exception)
+            {
+                started = Environment.TickCount64;
+            }
+
+            var directory = Path.Combine(
+                Path.GetTempPath(), "ashlar-cert-exec", "runner-cache",
+                string.Create(CultureInfo.InvariantCulture, $"{Environment.ProcessId}-{started}"));
+            Directory.CreateDirectory(directory);
+            // Best effort, like the backends' own scratch directories: nothing in it is meant to
+            // outlive this process, and a stale directory can never be read by another (the id and
+            // start time are in the path).
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => TryDeleteDirectory(directory);
+            return directory;
+        }
+    }
 
     private static void TryDeleteDirectory(string path)
     {
