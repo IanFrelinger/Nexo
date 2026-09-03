@@ -326,13 +326,16 @@ internal sealed class LocalProcessExecutionBackend : ICandidateExecutionBackend,
         };
         psi.ArgumentList.Add(runnerPath);
         psi.ArgumentList.Add(jobPath);
+        // The runner gets the allowlisted environment (ChildProcessEnvironment), not the certifier's:
+        // the candidate it executes must not be able to read the key that signs its own certificate,
+        // and a startup hook — code the runtime injects into every process it starts — is not on the
+        // list, so the runner executes exactly what the job names and nothing the certifier's
+        // environment adds. The bounds below are set after, on top of the allowlist.
+        ChildProcessEnvironment.Apply(psi);
         psi.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
         psi.Environment["DOTNET_NOLOGO"] = "1";
         psi.Environment["DOTNET_DbgEnableMiniDump"] = "0";
         psi.Environment["DOTNET_GCHeapHardLimit"] = "0x" + _limits.HeapLimitBytes.ToString("X", CultureInfo.InvariantCulture);
-        // A startup hook is code injected into every process the runtime starts. The runner
-        // executes exactly what the job names and nothing the certifier's environment adds.
-        psi.Environment.Remove("DOTNET_STARTUP_HOOKS");
 
         using var process = new Process { StartInfo = psi };
         try
