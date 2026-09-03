@@ -1,4 +1,6 @@
 #pragma warning disable ASHLAREXP001 // The gate enforces the experimental autonomy contract (touch-set, lineage) by design; see docs/SdkCompatibilityPolicy.md.
+using System.Globalization;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -19,6 +21,48 @@ public sealed class CertificationGate : ICertificationGate
     private static readonly CertificationGatePass DependencyGatePass = new() { Name = "dependency-graph", Version = GateVersion };
 
     private static readonly JsonSerializerOptions WitnessHashOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    /// <summary>
+    /// Who produced the record: the gate assembly, its informational version, the source revision
+    /// when the build stamped one (SourceLink writes it after the <c>+</c>; <c>unstamped</c> when it
+    /// did not), and the module version id — which, under this repository's <c>Deterministic</c>
+    /// builds, identifies the exact binary even when nothing else was stamped (a dev build carries
+    /// the SDK default <c>1.0.0</c>). Appended to every execution pass's configuration, so it is
+    /// under the signature without a schema change, and a record re-attributed to another certifier
+    /// does not verify. The mutation pass also names <see cref="AstMutationCatalog.CatalogVersion"/>,
+    /// because "every mutant was killed" says nothing without knowing which mutants a catalog of
+    /// that vintage could produce.
+    /// </summary>
+    internal static string CertifierIdentity { get; } = DescribeCertifier();
+
+    /// <summary>
+    /// The <c>compile-options</c> input recorded when the request carries no build to match
+    /// (<see cref="CertificationRequest.CompileOptions"/> null: a hot-swap generation, a generated
+    /// candidate). Stated rather than omitted, because an absent input reads as "not recorded" and
+    /// "compiled under the defaults, since there was no build" is a fact about the program judged.
+    /// </summary>
+    internal const string NoBuildCompileOptionsId = "default;reason=no-build";
+
+    private static readonly CertificationInput NoBuildCompileOptionsInput = new()
+    {
+        Kind = BrickCompileOptions.InputKind,
+        Id = NoBuildCompileOptionsId,
+        Hash = BrickContentHasher.ComputeSha256(NoBuildCompileOptionsId),
+    };
+
+    private static string DescribeCertifier()
+    {
+        var assembly = typeof(CertificationGate).Assembly;
+        var name = assembly.GetName();
+        var informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        var version = string.IsNullOrWhiteSpace(informational) ? name.Version?.ToString() ?? "unknown" : informational;
+        var plus = version.IndexOf('+');
+        var revision = plus >= 0 && plus + 1 < version.Length ? version[(plus + 1)..] : "unstamped";
+        if (plus >= 0)
+            version = version[..plus];
+        var mvid = typeof(CertificationGate).Module.ModuleVersionId.ToString("N", CultureInfo.InvariantCulture);
+        return $"certifier={name.Name}/{version};sourceRevision={revision};certifierMvid={mvid}";
+    }
 
     private readonly BrickMutationEngine _mutationEngine = new();
     private readonly CertificationRecordSigner _signer;
@@ -106,13 +150,18 @@ public sealed class CertificationGate : ICertificationGate
         // execution backend and the gate judges raw observations. A request may name its own
         // (the attested session); otherwise the gate replays in a bounded child process on this
         // machine. Nothing the author wrote ever runs on the certifier's own threads. The per-run
-        // gate passes record where execution happened and under what budget. Declared here for
-        // the same closure reason as the analyzer pass above.
+        // gate passes record where execution happened and under what budget — and, on every one
+        // of them, who the certifier was (CertifierIdentity); the mutation pass adds which catalog
+        // produced the mutants it killed. Declared here for the same closure reason as the analyzer
+        // pass above.
         var executionConfiguration = request.ExecutionBackend is { } namedBackend
-            ? $"execution={namedBackend.Describe()}"
-            : $"execution={LocalProcessExecutionBackend.Identity};{_executionLimits.Describe()}";
+            ? $"execution={namedBackend.Describe()};{CertifierIdentity}"
+            : $"execution={LocalProcessExecutionBackend.Identity};{_executionLimits.Describe()};{CertifierIdentity}";
         var correctnessPass = CorrectnessGatePass with { Configuration = executionConfiguration };
-        var mutationPass = MutationGatePass with { Configuration = $"escapeRateThreshold=0;{executionConfiguration}" };
+        var mutationPass = MutationGatePass with
+        {
+            Configuration = $"escapeRateThreshold=0;mutationCatalog={AstMutationCatalog.CatalogVersion};{executionConfiguration}",
+        };
         var determinismPass = DeterminismGatePass with { Configuration = executionConfiguration };
 
         // Autonomy spec R4.1/R4.2: the recursion check runs before EVERYTHING — an
@@ -414,9 +463,12 @@ public sealed class CertificationGate : ICertificationGate
             };
             // The program the legs judged is the source text PLUS the options it was compiled
             // under; the content hash binds the first and this input binds the second, on PASS
-            // and FAIL alike, so a reader can see which program the verdict is about.
-            if (request.CompileOptions is { } compileOptions)
-                inputs.Add(compileOptions.ToCertificationInput());
+            // and FAIL alike, so a reader can see which program the verdict is about. A request
+            // with no build behind it says so in the same slot (NoBuildCompileOptionsInput)
+            // instead of leaving it empty.
+            inputs.Add(request.CompileOptions is { } compileOptions
+                ? compileOptions.ToCertificationInput()
+                : NoBuildCompileOptionsInput);
             inputs.AddRange(request.AdditionalInputs);
             // Where execution happened is certificate-relevant on PASS and FAIL alike:
             // a verdict minted over backend observations names the backend.

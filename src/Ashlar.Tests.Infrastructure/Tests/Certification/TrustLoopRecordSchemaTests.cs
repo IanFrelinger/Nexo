@@ -284,7 +284,8 @@ public sealed class TrustLoopRecordSchemaTests
 
         decision.Admitted.Should().BeTrue();
         var data = CertificationRecordMapper.ToData(decision.Record);
-        data.Inputs.Should().HaveCount(2);
+        data.Inputs.Should().HaveCount(3,
+            "witness, the compile-options input (default;reason=no-build — this request has no build to match), and the context");
         data.Inputs[0].Kind.Should().Be("witness", "the witness input always comes first");
         data.Inputs.Should().ContainSingle(i =>
             i.Kind == "context" && i.Id == "mutation-probe-brick" && i.Hash == "assembled-context-hash");

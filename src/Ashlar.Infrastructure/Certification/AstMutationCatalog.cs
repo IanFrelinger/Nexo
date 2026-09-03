@@ -74,6 +74,42 @@ namespace Ashlar.Infrastructure.Certification;
 /// </remarks>
 internal static class AstMutationCatalog
 {
+    /// <summary>
+    /// The version of this catalog, recorded on every certificate's <c>mutation-gate</c> pass as
+    /// <c>mutationCatalog=…</c>. BUMP IT whenever <see cref="Kinds"/> changes, whenever what a kind
+    /// rewrites changes, or whenever the scope rules change (<see cref="MutationScope"/>,
+    /// <see cref="DiscardNonCompiling"/>, <see cref="IsLookupKey"/>): "every mutant was killed" is a
+    /// claim about the mutants a catalog of THIS vintage produces, and a reader comparing two records
+    /// needs to know whether the same catalog judged both. <c>AstMutationCatalogVersionTests</c> pins
+    /// the kind list and one fixture's exact mutant ids to this constant, so a catalog change without
+    /// a bump fails there and a bump without a re-pin fails there too.
+    /// <para>History. <c>1</c>: the <c>0.1.1</c> catalog — seven literal/statement kinds, four sites
+    /// per kind, <c>ExecuteAsync</c> only, never stamped on a record. <c>2</c>: <c>0.1.2</c> — the
+    /// operator family, every member body in scope with no cap, write-only constructor statements out
+    /// of scope, lookup-key literals skipped, non-compiling mutants discarded.</para>
+    /// </summary>
+    public const string CatalogVersion = "2";
+
+    /// <summary>
+    /// Every kind this catalog can emit, in the order they are collected. A mutant's id is
+    /// <c>{kind}-{line}</c> (with <c>#n</c> appended to repeats on one line).
+    /// </summary>
+    public static readonly IReadOnlyList<string> Kinds =
+    [
+        "flip-binary-op",
+        "negate-condition",
+        "mutate-int-literal",
+        "mutate-string-literal",
+        "remove-statement",
+        "swap-logical-op",
+        "degrade-coalesce-assign",
+        "swap-arithmetic-op",
+        "swap-arithmetic-assign",
+        "shift-relational-boundary",
+        "swap-unary-op",
+        "remove-logical-not",
+    ];
+
     /// <summary>Longest edit text carried on a <see cref="MutationSite"/> before truncation.</summary>
     private const int MaxSiteTextLength = 80;
 

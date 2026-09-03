@@ -521,6 +521,44 @@ verifies and runs the brick untouched, referencing no gate and no generator.
 > can be made to verify — are numbered in
 > [`certification-evidence.md`](certification-evidence.md) under "Known v0 limitations".
 
+## What the child processes see, and who signed (**since `0.1.2`**)
+
+The gate spawns two kinds of child process on the author's behalf: `dotnet msbuild` over the brick
+project (Shape A — and a project's targets run whatever the project says, `<Exec>` included), and the
+witness replay runner that executes the candidate and every mutant of it. Neither inherits the
+certifier's environment. Each gets an explicit allowlist copied by name from the certifier's own
+process (`ChildProcessEnvironment`): `PATH`, `HOME`, the temp and locale variables, the `DOTNET_*`
+host-location and first-run variables and the `NUGET_*` cache locations the SDK needs to restore and
+build, proxy settings, and on Windows the system paths (`SystemRoot`, `APPDATA`, …). Nothing else
+crosses — not `ASHLAR_CERT_*` (refused by prefix even if a future edit lists one), not
+`DOTNET_STARTUP_HOOKS`, not `DOTNET_ROLL_FORWARD`, not whatever else the operator's shell holds.
+Before this, both children inherited everything but a handful of MSBuild property names, so a target
+in the brick's `.csproj` — or the candidate's own `ExecuteAsync` — could read `ASHLAR_CERT_DEV_HMAC_KEY`
+and mint a record that verified under the operator's key. `ChildProcessEnvironmentTests` pins all
+three views: the environment a build target dumps, the environment the runner's candidate reports,
+and an end-to-end candidate that forges a record from inside the runner and gets one the verifier
+rejects.
+
+**What this does not close.** On Linux a child running as the same user can still read
+`/proc/<certifier pid>/environ` — the certifier's *initial* environment block, which is exactly where
+a key exported from the launching shell lives. `ChildProcessEnvironmentTests.KnownGap_…` documents
+that it is open (and goes red when a platform closes it). Closing it means not holding the key in the
+environment at all (a key file readable only by the certifier's user, or a signer the certifier calls
+and never sees the key of), or running the children under a different uid or in their own PID
+namespace, or `hidepid=2` on `/proc`. Until then, the allowlist is a defence against the *author's
+code*, not against a process that already shares your uid.
+
+**Who signed.** Every execution pass (`correctness-witness`, `mutation-gate`, `determinism`) carries
+`certifier=Ashlar.Infrastructure/<informational version>;sourceRevision=<sha or unstamped>;certifierMvid=<module version id>`
+in its `configuration` — the module version id identifies the exact gate binary under a
+`Deterministic` build even when no version or revision was stamped — and `mutation-gate` also carries
+`mutationCatalog=<version>` (`AstMutationCatalog.CatalogVersion`, bumped whenever the kinds or the
+scope rules change; `AstMutationCatalogVersionTests` pins it). These strings were already under the
+signature, so no schema bump: a record re-labelled to another certifier or catalog version does not
+verify. A request with no build behind it (a hot-swap generation, a generated candidate) records the
+`compile-options` input as `default;reason=no-build` instead of omitting it, so "compiled under the
+defaults" is stated rather than inferred from absence.
+
 ## Things that will bite you
 
 - **`CompilationReferences` is required in Shape B, and its absence fails closed.** Supply the

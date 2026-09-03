@@ -412,20 +412,15 @@ internal sealed class EvaluatedBrickProject
             psi.ArgumentList.Add(argument);
         }
         // Evaluation must answer for the AUTHOR's build, not for whatever build happens to be
-        // running this gate. MSBuild reads environment variables as properties, so a host that is
-        // itself an MSBuild process (a `dotnet test` run, the CI build) would otherwise inject its
-        // own TargetFramework — changing which conditioned ItemGroups contribute — and its own
-        // toolset paths, which point a nested evaluation at the wrong SDK.
-        foreach (var poisoned in new[]
-                 {
-                     "TargetFramework", "TargetFrameworks", "Configuration", "Platform",
-                     "MSBuildSDKsPath", "MSBuildExtensionsPath", "MSBuildExtensionsPath32",
-                     "MSBuildExtensionsPath64", "MSBUILD_EXE_PATH", "MSBuildStartupDirectory",
-                     "MSBuildLoadMicrosoftTargetsReadOnly"
-                 })
-        {
-            psi.Environment.Remove(poisoned);
-        }
+        // running this gate — and the author's build must not see what the certifier holds. MSBuild
+        // reads environment variables as properties, so a host that is itself an MSBuild process (a
+        // `dotnet test` run, the CI build) would otherwise inject its own TargetFramework — changing
+        // which conditioned ItemGroups contribute — and its own toolset paths, which point a nested
+        // evaluation at the wrong SDK. And a target in the author's project runs whatever it likes
+        // with whatever it inherits, which used to include the key that signs its own certificate.
+        // So the child gets an explicit allowlist (ChildProcessEnvironment), not this process's
+        // environment with a few names removed; the poison and the secrets are both simply absent.
+        ChildProcessEnvironment.Apply(psi);
         psi.Environment["MSBUILDTERMINALLOGGER"] = "off";
         psi.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
 
