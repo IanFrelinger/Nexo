@@ -321,7 +321,18 @@ public sealed class HotSwapProbeBrick : DomainBrick
             Timestamp = DateTimeOffset.UtcNow,
             BrickId = brickId,
             ContentHash = BrickContentHasher.ComputeSha256(source),
-            Gate = "watch-window-test-harness"
+            Gate = "watch-window-test-harness",
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+            Inputs =
+            [
+                new CertificationInput
+                {
+                    Kind = CertificationInputKinds.GateEmittedArtifact,
+                    Id = brickId,
+                    Hash = BrickContentHasher.ComputeSha256(source)
+                },
+                CertifierIdentity.ToInput()
+            ]
         };
         return record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
     }

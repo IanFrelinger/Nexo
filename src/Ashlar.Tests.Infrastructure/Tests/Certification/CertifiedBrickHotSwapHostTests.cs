@@ -1,6 +1,7 @@
 using System.Runtime.Loader;
 using FluentAssertions;
 using Ashlar.Certification.Contracts;
+using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
@@ -322,6 +323,7 @@ public sealed class HotSwapOtherBrick : DomainBrick
             BrickId = ProbeBrickId,
             ContentHash = BrickContentHasher.ComputeSha256(honest),
             Gate = "hot-swap-test-harness",
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
             Inputs =
             [
                 new CertificationInput
@@ -329,7 +331,8 @@ public sealed class HotSwapOtherBrick : DomainBrick
                     Kind = CertificationInputKinds.GateEmittedArtifact,
                     Id = honestPe.BrickTypeName,
                     Hash = honestPe.AssemblySha256
-                }
+                },
+                CertifierIdentity.ToInput()
             ]
         };
         var record = unsigned with { Signature = CertificationRecordSigning.Sign(unsigned, HmacKey) };
@@ -350,6 +353,41 @@ public sealed class HotSwapOtherBrick : DomainBrick
             "a PE that is not the certificate's gate-emitted artifact must not load");
     }
 
+    [Fact]
+    public async Task Swap_HmacEraRecordWithoutArtifact_Refuses()
+    {
+        using var host = CreateHost(new RecordingSink());
+        var source = ProbeSource("v1");
+        var unsigned = new CertificationRecordData
+        {
+            Status = "PASS",
+            Stage = "S0-S2",
+            Admitted = true,
+            Signed = true,
+            Timestamp = DateTimeOffset.UtcNow,
+            BrickId = ProbeBrickId,
+            ContentHash = BrickContentHasher.ComputeSha256(source),
+            Gate = "hot-swap-test-harness"
+        };
+        var record = unsigned with { Signature = CertificationRecordSigning.Sign(unsigned, HmacKey) };
+
+        var result = await host.SwapAsync(
+        [
+            new CertifiedBrickLoadRequest
+            {
+                BrickId = ProbeBrickId,
+                SourceCode = source,
+                Record = record
+            }
+        ]);
+
+        result.Swapped.Should().BeFalse();
+        result.Refusals.Should().Contain(r =>
+            r.FailureCode == "gate-emitted-artifact-missing"
+            || r.FailureCode == "certifier-identity-missing"
+            || r.FailureCode == "schema-version-below-floor");
+    }
+
     // ---------- helpers ----------
 
     private static bool HasGenerationContext() =>
@@ -362,21 +400,36 @@ public sealed class HotSwapOtherBrick : DomainBrick
     private static string ProbeSource(string marker) =>
         ProbeBrickTemplate.Replace("{MARKER}", marker);
 
-    private static CertifiedBrickLoadRequest ProbeRequest(string source) => new()
+    private static CertifiedBrickLoadRequest ProbeRequest(string source)
     {
-        BrickId = ProbeBrickId,
-        SourceCode = source,
-        Record = CertifyRecord(ProbeBrickId, source)
-    };
+        var pe = GateEmittedArtifactCompiler.Compile(
+            source, BrickCertificationProjectLoader.DefaultCompilationReferences());
+        return new CertifiedBrickLoadRequest
+        {
+            BrickId = ProbeBrickId,
+            SourceCode = source,
+            Record = CertifyRecord(ProbeBrickId, source, pe),
+            PrecompiledAssembly = pe.AssemblyBytes
+        };
+    }
 
-    private static CertifiedBrickLoadRequest OtherRequest() => new()
+    private static CertifiedBrickLoadRequest OtherRequest()
     {
-        BrickId = OtherBrickId,
-        SourceCode = OtherBrickSource,
-        Record = CertifyRecord(OtherBrickId, OtherBrickSource)
-    };
+        var pe = GateEmittedArtifactCompiler.Compile(
+            OtherBrickSource, BrickCertificationProjectLoader.DefaultCompilationReferences());
+        return new CertifiedBrickLoadRequest
+        {
+            BrickId = OtherBrickId,
+            SourceCode = OtherBrickSource,
+            Record = CertifyRecord(OtherBrickId, OtherBrickSource, pe),
+            PrecompiledAssembly = pe.AssemblyBytes
+        };
+    }
 
-    private static CertificationRecordData CertifyRecord(string brickId, string source)
+    private static CertificationRecordData CertifyRecord(
+        string brickId,
+        string source,
+        GateEmittedArtifact? pe = null)
     {
         var record = new CertificationRecordData
         {
@@ -387,7 +440,18 @@ public sealed class HotSwapOtherBrick : DomainBrick
             Timestamp = DateTimeOffset.UtcNow,
             BrickId = brickId,
             ContentHash = BrickContentHasher.ComputeSha256(source),
-            Gate = "hot-swap-test-harness"
+            Gate = "hot-swap-test-harness",
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+            Inputs =
+            [
+                new CertificationInput
+                {
+                    Kind = CertificationInputKinds.GateEmittedArtifact,
+                    Id = pe?.BrickTypeName ?? brickId,
+                    Hash = pe?.AssemblySha256 ?? BrickContentHasher.ComputeSha256(source)
+                },
+                CertifierIdentity.ToInput()
+            ]
         };
         return record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
     }

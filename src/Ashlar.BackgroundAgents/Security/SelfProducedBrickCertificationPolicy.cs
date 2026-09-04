@@ -56,7 +56,8 @@ public sealed class SelfProducedBrickCertificationPolicy : IPolicy
 
         var trust = CertificationTrustVerifier.Verify(
             CertificationRecordMapper.ToData(record),
-            content);
+            content,
+            options: CertificationVerifyOptions.Strict);
         if (!trust.Trusted)
         {
             reason = $"Self-produced brick admission refused for '{brickId}': {trust.FailureCode} — {trust.Reason}";

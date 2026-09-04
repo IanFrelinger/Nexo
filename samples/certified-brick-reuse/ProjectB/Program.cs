@@ -30,7 +30,24 @@ internal static class Program
             /// <param name="JSON."">Json.".</param>
             ?? throw new InvalidOperationException("Invalid certification record JSON.");
 
-        var trust = CertificationTrustVerifier.Verify(record, source);
+        var artifactPath = args.ElementAtOrDefault(2);
+        CertificationTrustResult trust;
+        if (!string.IsNullOrWhiteSpace(artifactPath))
+        {
+            var artifactBytes = await File.ReadAllBytesAsync(artifactPath).ConfigureAwait(false);
+            trust = CertificationTrustVerifier.Verify(
+                record,
+                source,
+                artifactBytes,
+                options: CertificationVerifyOptions.Strict);
+        }
+        else
+        {
+            trust = CertificationTrustVerifier.Verify(
+                record,
+                source,
+                options: CertificationVerifyOptions.Strict);
+        }
         if (!trust.Trusted)
         {
             Console.Error.WriteLine($"UNTRUSTED: {trust.FailureCode} — {trust.Reason}");
