@@ -17,6 +17,11 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Certifier-boundary inventory** (`ci/certifier-boundary-inventory.tsv`) — shrink-only freeze of Load/CreateInstance sites in `Ashlar.Infrastructure.Certification*`.
 - **C6 published-version lint** — docs that name a nuget.org pin key off `ci/published-version`, never `VERSION`.
 
+### Fixed
+
+- **Windows certification-record replace.** Concurrent `FileCertificationRecordStore.Save` calls for the same brick no longer throw `UnauthorizedAccessException` when Windows refuses `MoveFileEx` replace-existing; the store retries the staged move so a save in flight cannot fail another. The previous verdict stays on disk until a retry lands.
+- **Hot-swap fallback test** sets `ASHLAR_ALLOW_MOCK=1` so kernel-coverage exercises the documented echo fallback instead of the fail-closed `ModelUnavailableException`.
+
 ### Changed
 
 - **IL import fence is an allowlist**, not a `System.*` denylist. Round-10 attacks (reflective `Environment.Exit`, reading `ASHLAR_CERT_DEV_HMAC_KEY`, `AppDomain`/`AssemblyLoadContext`, filesystem writes) and round-11 attacks (P/Invoke with no IL body, `[ModuleInitializer]`, `typeof(System.IO.File)` / `ldtoken`, extra author `.cs` files) are corpus fixtures.
