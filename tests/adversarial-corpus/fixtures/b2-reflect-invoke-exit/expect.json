@@ -4,6 +4,6 @@
   "item": "B2",
   "phase": "load",
   "expect": "refuse",
-  "reasonContains": "System.Type::GetMethod",
-  "note": "Beat the v1 type-denylist fence: typeof(Environment).GetMethod(\"Exit\").Invoke reached a denied member reflectively."
+  "reasonContains": "System.Environment",
+  "note": "Beat the v1 type-denylist fence via typeof(Environment).GetMethod(\"Exit\").Invoke. allowlist-v3 refuses the Environment ldtoken before Type::GetMethod."
 }

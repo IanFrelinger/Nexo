@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Ashlar.Infrastructure.Certification;
 
 namespace Ashlar.Infrastructure.Testing.CodeAnalysis;
 
@@ -47,18 +48,20 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
             {
                 _logger.LogInformation("Compiling C# code to assembly: {AssemblyName}", assemblyName);
 
-                // Parse the source code
-                var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, cancellationToken: cancellationToken);
+                // Closed-world options: the same parse/emit surface as GateEmittedArtifactCompiler
+                // so judged mutants and the shipped artifact cannot drift on language version,
+                // unsafe, overflow, or optimization.
+                var syntaxTree = CSharpSyntaxTree.ParseText(
+                    sourceCode, BrickCompileOptions.ParseOptions, cancellationToken: cancellationToken);
 
             // Default references (core .NET libraries) plus any provided custom references.
             var allReferences = BuildReferenceSet(references);
 
-            // Create compilation
             var compilation = CSharpCompilation.Create(
                 assemblyName,
                 new[] { syntaxTree },
                 allReferences,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+                BrickCompileOptions.CompilationOptions);
 
             // Ensure output directory exists
             var outputDir = Path.GetDirectoryName(outputPath);

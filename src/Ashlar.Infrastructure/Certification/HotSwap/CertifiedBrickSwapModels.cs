@@ -35,10 +35,13 @@ public sealed record CertifiedBrickLoadRequest
     public AutonomousAdmission? Autonomous { get; init; }
 
     /// <summary>
-    /// Pre-compiled assembly image for this exact certified source. Populated by the
-    /// host's retention/rollback path so a rollback loads without any build (R5.1);
-    /// external callers leave it null. Verify-at-load still runs against
-    /// <see cref="SourceCode"/> either way.
+    /// Pre-compiled assembly image for this exact certified source. The loop and the
+    /// exporter pass the gate-emitted bytes so the first load is the judged PE, not a
+    /// second compile. The host also populates this on retention/rollback so a rollback
+    /// loads without any build (R5.1). Verify-at-load still runs against
+    /// <see cref="SourceCode"/> either way. When null, the host rematerializes with
+    /// <c>CandidateSourceWrapper</c> and <c>BrickCompileOptions</c> and still runs the
+    /// IL import fence before load.
     /// </summary>
     public byte[]? PrecompiledAssembly { get; init; }
 }

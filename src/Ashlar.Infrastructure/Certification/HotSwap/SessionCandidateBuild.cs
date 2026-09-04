@@ -296,9 +296,9 @@ public static class SessionCandidateBuild
     <OutputType>Library</OutputType>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+{BrickCompileOptions.MsBuildPropertyGroup}
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Candidate.cs" />

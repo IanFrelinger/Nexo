@@ -1,0 +1,9 @@
+{
+  "id": "b2-pinvoke-exit",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "P/Invoke",
+  "note": "Round-11 attack: InspectMethod skipped !HasBody, so DllImport/P/Invoke never appeared in the call walk."
+}

@@ -310,19 +310,41 @@ public sealed class AutonomousIterationHarness
             if (_executeCandidateInSession && session is not null)
                 executionBackend = new SessionExecutionBackend(session);
 
+            GateEmittedArtifact artifact;
+            try
+            {
+                artifact = GateEmittedArtifactCompiler.Compile(
+                    candidate.SourceCode, candidate.CompilationReferences);
+                IlImportFence.Inspect(artifact.AssemblyBytes);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return new IterationResult(IterationOutcome.ExplainedFailure,
+                    "gate-emitted compile or IL import fence refused the candidate: " + ex.Message,
+                    tier, null, attestation);
+            }
+
+            // In-process legs run the bytes the gate compiled. The session execution
+            // backend loads the session-built image instead; the artifact still binds
+            // the host compiler's closed-world emit of the same source.
+            var brick = executionBackend is null
+                ? CertifiedBrickActivator.Activate(artifact)
+                : candidate.Brick;
+
             var decision = await _gate.CertifyAsync(new CertificationRequest
             {
-                Brick = candidate.Brick,
+                Brick = brick,
                 Witness = candidate.Witness,
                 SourceCode = candidate.SourceCode,
                 ProjectPath = candidate.ProjectPath,
                 CompilationReferences = candidate.CompilationReferences,
-                BrickTypeName = candidate.BrickTypeName,
+                BrickTypeName = artifact.BrickTypeName,
                 ConstraintManifest = context.Manifest,
                 TouchSet = context.Touch,
                 Lineage = context.Lineage,
                 AdditionalInputs = environmentInputs,
                 ExecutionBackend = executionBackend,
+                EmittedArtifact = artifact,
             }, cancellationToken).ConfigureAwait(false);
 
             if (!decision.Admitted)
@@ -360,8 +382,9 @@ public sealed class AutonomousIterationHarness
                     BrickId = decision.Record.BrickId,
                     SourceCode = candidate.SourceCode,
                     Record = CertificationRecordMapper.ToData(decision.Record),
-                    BrickTypeName = candidate.BrickTypeName,
+                    BrickTypeName = artifact.BrickTypeName,
                     AdditionalCompilationReferences = candidate.CompilationReferences,
+                    PrecompiledAssembly = artifact.AssemblyBytes,
                     Autonomous = new AutonomousAdmission
                     {
                         Tier = tier.Tier,

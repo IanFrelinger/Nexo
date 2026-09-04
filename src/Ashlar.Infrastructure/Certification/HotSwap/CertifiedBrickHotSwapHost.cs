@@ -797,7 +797,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 else
                 {
                     var compile = await compiler.CompileAsync(
-                        WrapForRoslynCompile(request.SourceCode),
+                        CandidateSourceWrapper.Wrap(request.SourceCode),
                         assemblyName,
                         outputPath,
                         references,
@@ -814,6 +814,24 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                         });
                         continue;
                     }
+                }
+
+                byte[] loadedImage;
+                try
+                {
+                    loadedImage = File.ReadAllBytes(outputPath);
+                    IlImportFence.Inspect(loadedImage);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Load,
+                        FailureCode = "il-import-fence",
+                        Reason = ex.Message
+                    });
+                    continue;
                 }
 
                 Assembly assembly;
@@ -883,7 +901,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 bricks[request.BrickId] = brick;
                 // Captured for generation retention (R5.1): rollback reactivates from
                 // these exact bytes with no compiler involved.
-                emittedImages[request.BrickId] = File.ReadAllBytes(outputPath);
+                emittedImages[request.BrickId] = loadedImage;
             }
         }
         catch (OperationCanceledException)
@@ -1017,16 +1035,6 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             // best effort
         }
     }
-
-    private static string WrapForRoslynCompile(string sourceCode) =>
-        """
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using DomainBrick = Ashlar.Core.Domain.Bricks.Brick;
-
-""" + sourceCode;
 
     /// <summary>
     /// One immutable generation: its collectible context, its brick instances, and an

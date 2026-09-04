@@ -210,7 +210,19 @@ internal sealed class BrickMutationEngine
             if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
                 return null;
 
-            return await File.ReadAllBytesAsync(compile.AssemblyPath, cancellationToken).ConfigureAwait(false);
+            var bytes = await File.ReadAllBytesAsync(compile.AssemblyPath, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                IlImportFence.Inspect(bytes);
+            }
+            catch (InvalidOperationException)
+            {
+                // A mutant that escaped the source-level allowlist is a kill, not a
+                // candidate the certifier will load into its own process.
+                return null;
+            }
+
+            return bytes;
         }
         finally
         {
@@ -303,6 +315,16 @@ internal sealed class BrickMutationEngine
 
             if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
                 return (false, new WeakReference(null));
+
+            var image = await File.ReadAllBytesAsync(compile.AssemblyPath, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                IlImportFence.Inspect(image);
+            }
+            catch (InvalidOperationException)
+            {
+                return (false, new WeakReference(null));
+            }
 
             loadContext = new MutantAssemblyLoadContext(assemblyName);
             var assembly = loadContext.LoadFromAssemblyPath(compile.AssemblyPath);

@@ -66,6 +66,30 @@
       "class": "B",
       "item": "B2",
       "note": "Beat the v1 fence. Reflection reached a denied member, which is why the fence is now an allowlist."
+    },
+    {
+      "id": "a8-extra-source-file",
+      "class": "A",
+      "item": "A8",
+      "note": "Round-11 attack: extra author .cs files were neither judged nor shipped."
+    },
+    {
+      "id": "a8-ldtoken-io",
+      "class": "A",
+      "item": "A8",
+      "note": "Round-11 attack: typeof(System.IO.File) is ldtoken; the v2 fence only inspected calls."
+    },
+    {
+      "id": "b2-module-initializer",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-11 attack: [ModuleInitializer] runs at Assembly.Load."
+    },
+    {
+      "id": "b2-pinvoke-exit",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-11 attack: P/Invoke methods have no IL body, so the v2 call walk skipped them."
     }
   ]
 }

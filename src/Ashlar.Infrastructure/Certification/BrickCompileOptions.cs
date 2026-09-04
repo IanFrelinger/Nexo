@@ -30,5 +30,32 @@ public static class BrickCompileOptions
             allowUnsafe: false,
             checkOverflow: false,
             optimizationLevel: OptimizationLevel.Release,
+            nullableContextOptions: NullableContextOptions.Disable,
             concurrentBuild: false);
+
+    /// <summary>
+    /// Analyzer-fence options: same closed world, with the autonomy experimental
+    /// diagnostic suppressed so kernel-smuggling is named by ASHLAR0014 instead of
+    /// failing the compile-error guard.
+    /// </summary>
+    public static CSharpCompilationOptions ForAnalyzerFence() =>
+        CompilationOptions.WithSpecificDiagnosticOptions(new Dictionary<string, ReportDiagnostic>
+        {
+            [Ashlar.Core.Application.Autonomy.AutonomyExperimental.DiagnosticId] = ReportDiagnostic.Suppress,
+        });
+
+    /// <summary>
+    /// MSBuild properties that reproduce <see cref="CanonicalBlob"/> for the
+    /// in-session <c>dotnet build</c> path (same language, unsafe, overflow, and
+    /// optimization as the in-process compiler).
+    /// </summary>
+    public const string MsBuildPropertyGroup =
+        """
+            <LangVersion>12.0</LangVersion>
+            <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+            <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+            <Optimize>true</Optimize>
+            <Nullable>disable</Nullable>
+            <Deterministic>true</Deterministic>
+        """;
 }

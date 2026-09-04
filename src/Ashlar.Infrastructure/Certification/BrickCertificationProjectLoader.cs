@@ -22,9 +22,21 @@ public static class BrickCertificationProjectLoader
         var projectDir = Path.GetFullPath(brickProjectDirectory);
         var csproj = Directory.GetFiles(projectDir, "*.csproj").FirstOrDefault()
             ?? throw new FileNotFoundException($"No .csproj in {projectDir}");
-        var sourceFile = Directory.GetFiles(projectDir, "*.cs")
-            .FirstOrDefault(f => !f.EndsWith(".AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
-            ?? throw new FileNotFoundException($"No .cs source in {projectDir}");
+        var sourceFiles = Directory.GetFiles(projectDir, "*.cs")
+            .Where(f => !f.EndsWith(".AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (sourceFiles.Length == 0)
+            throw new FileNotFoundException($"No .cs source in {projectDir}");
+        if (sourceFiles.Length > 1)
+        {
+            throw new InvalidOperationException(
+                "single-source fence: the certifier compiles exactly one author .cs file. "
+                + $"Found {sourceFiles.Length} ({string.Join(", ", sourceFiles.Select(Path.GetFileName))}). "
+                + "Extra files are neither judged nor shipped, so they are refused.");
+        }
+
+        var sourceFile = sourceFiles[0];
 
         BuildSurfaceFence.Inspect(projectDir, csproj);
         var sourceCode = await StrictUtf8SourceDecoder.ReadFileAsync(sourceFile, cancellationToken)

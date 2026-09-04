@@ -1,0 +1,9 @@
+{
+  "id": "a8-extra-source-file",
+  "class": "A",
+  "item": "A8",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "single-source",
+  "note": "Round-11 attack: the loader compiled the first .cs file and ignored the rest, so judged≠the project the author handed over."
+}
