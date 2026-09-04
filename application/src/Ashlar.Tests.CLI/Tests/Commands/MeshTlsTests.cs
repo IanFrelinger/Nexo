@@ -149,7 +149,7 @@ public sealed class MeshTlsTests : IDisposable
     {
         using var ca = MakeCa("fleet-ca").cert;
         using var otherCa = MakeCa("outsider-ca").cert;
-        using var serverIssued = MakeLeaf("fleet-node", ca, serverAuth: true);
+        var serverIssued = MakeLeaf("fleet-node", ca, serverAuth: true);
         using var serverCert = serverIssued.cert;
         using var memberCert = MakeLeaf("member-1", ca, serverAuth: false).cert;
         using var outsiderCert = MakeLeaf("outsider", otherCa, serverAuth: false).cert;
