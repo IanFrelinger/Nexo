@@ -54,6 +54,12 @@ public sealed class CleanArtifactsTool : ITool
         var context = new ArtifactCleanupContext(RepoRoot: repoRoot);
 
         var result = await _cleanupService.CleanAsync(args.strategyId, context, ct).ConfigureAwait(false);
+        if (result is null)
+        {
+            var failed = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            failed.AddLog("clean_artifacts service returned no result");
+            return new ToolResult(failed, new { cleaned = false, error = "cleanup service returned no result" });
+        }
 
         var delta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
         delta.AddLog($"clean_artifacts:{result.StrategyId}:reclaimed={result.BytesReclaimed}");

@@ -22,6 +22,8 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Windows certification-record replace.** Concurrent `FileCertificationRecordStore.Save` calls for the same brick no longer throw `UnauthorizedAccessException` when Windows refuses `MoveFileEx` replace-existing; the store retries the staged move so a save in flight cannot fail another. The previous verdict stays on disk until a retry lands.
 - **Hot-swap fallback test** sets `ASHLAR_ALLOW_MOCK=1` so kernel-coverage exercises the documented echo fallback instead of the fail-closed `ModelUnavailableException`.
 - **`Ashlar.CertifyBrick` load/fence refusals** write a signed FAIL record (`LoadRefusalRecord`) instead of exiting with no file. A missing record reads as uncertified; a refuse must be evidence.
+- **`CleanArtifactsTool`** no longer null-derefs when the cleanup service returns nothing (Windows readiness used a Unix snapshot path that missed the mock).
+- **Mesh TLS tests** export the RSA key PEM at creation time so macOS Security.framework is not asked to re-export a PFX-loaded key.
 
 ### Changed
 

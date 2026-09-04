@@ -46,21 +46,28 @@ public sealed class MeshTlsTests : IDisposable
     // PKCS#12 round-trip so the returned cert owns a PERSISTENT private key — the inner RSA can be
     // disposed and the CA can still sign leaves (a `using var key` would invalidate the key handle).
     private static X509Certificate2 Persist(X509Certificate2 cert) =>
-        X509CertificateLoader.LoadPkcs12(cert.Export(X509ContentType.Pkcs12), password: null);
+        X509CertificateLoader.LoadPkcs12(
+            cert.Export(X509ContentType.Pkcs12),
+            password: null,
+            X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet);
 
-    private static X509Certificate2 MakeCa(string cn)
+    private static (X509Certificate2 cert, string keyPem) MakeCa(string cn)
     {
         using var key = RSA.Create(2048);
+        // Capture PEM before Persist. macOS Security.framework will not re-export a
+        // PFX-loaded key ("The key does not permit being exported").
+        var keyPem = key.ExportPkcs8PrivateKeyPem();
         var req = new CertificateRequest($"CN={cn}", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         req.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
         req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
         using var self = req.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(1));
-        return Persist(self);
+        return (Persist(self), keyPem);
     }
 
-    private static X509Certificate2 MakeLeaf(string cn, X509Certificate2 ca, bool serverAuth)
+    private static (X509Certificate2 cert, string keyPem) MakeLeaf(string cn, X509Certificate2 ca, bool serverAuth)
     {
         using var key = RSA.Create(2048);
+        var keyPem = key.ExportPkcs8PrivateKeyPem();
         var req = new CertificateRequest($"CN={cn}", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         req.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
         var eku = new OidCollection { new Oid(serverAuth ? "1.3.6.1.5.5.7.3.1" : "1.3.6.1.5.5.7.3.2") };
@@ -78,15 +85,15 @@ public sealed class MeshTlsTests : IDisposable
         // a sub-second (both computed from UtcNow.AddHours(1) moments apart) is rejected.
         using var cert = req.Create(ca, ca.NotBefore, ca.NotAfter, serial);
         using var withKey = cert.CopyWithPrivateKey(key);
-        return Persist(withKey);
+        return (Persist(withKey), keyPem);
     }
 
-    private (string cert, string key) WritePem(X509Certificate2 c, string name)
+    private (string cert, string key) WritePem(X509Certificate2 c, string keyPem, string name)
     {
         var certPath = Path.Combine(_dir, name + ".crt");
         var keyPath = Path.Combine(_dir, name + ".key");
         File.WriteAllText(certPath, c.ExportCertificatePem());
-        File.WriteAllText(keyPath, c.GetRSAPrivateKey()!.ExportPkcs8PrivateKeyPem());
+        File.WriteAllText(keyPath, keyPem);
         return (certPath, keyPath);
     }
 
@@ -140,13 +147,14 @@ public sealed class MeshTlsTests : IDisposable
     [Fact]
     public async Task Mtls_fleetMember_isAdmitted_stranger_andCertless_areRejected()
     {
-        using var ca = MakeCa("fleet-ca");
-        using var otherCa = MakeCa("outsider-ca");
-        using var serverCert = MakeLeaf("fleet-node", ca, serverAuth: true);
-        using var memberCert = MakeLeaf("member-1", ca, serverAuth: false);
-        using var outsiderCert = MakeLeaf("outsider", otherCa, serverAuth: false);
+        using var ca = MakeCa("fleet-ca").cert;
+        using var otherCa = MakeCa("outsider-ca").cert;
+        using var serverIssued = MakeLeaf("fleet-node", ca, serverAuth: true);
+        using var serverCert = serverIssued.cert;
+        using var memberCert = MakeLeaf("member-1", ca, serverAuth: false).cert;
+        using var outsiderCert = MakeLeaf("outsider", otherCa, serverAuth: false).cert;
 
-        var (sc, sk) = WritePem(serverCert, "server");
+        var (sc, sk) = WritePem(serverCert, serverIssued.keyPem, "server");
         var caPath = WriteCaPem(ca, "ca");
         var caBundle = MeshTls.LoadCaBundle(caPath);
 
@@ -204,11 +212,12 @@ public sealed class MeshTlsTests : IDisposable
     [Fact]
     public async Task Tls_serverOnly_encryptsAndServes_withCaValidation()
     {
-        using var ca = MakeCa("fleet-ca");
-        using var serverCert = MakeLeaf("fleet-node", ca, serverAuth: true);
+        using var ca = MakeCa("fleet-ca").cert;
+        var serverIssued = MakeLeaf("fleet-node", ca, serverAuth: true);
+        using var serverCert = serverIssued.cert;
         await File.WriteAllTextAsync(Path.Combine(_published, "demo-abcdef.ashpkg"), "{\"ok\":true}");
 
-        var (sc, sk) = WritePem(serverCert, "server");
+        var (sc, sk) = WritePem(serverCert, serverIssued.keyPem, "server");
         var caBundle = MeshTls.LoadCaBundle(WriteCaPem(ca, "ca"));
 
         var port = FreePort();
