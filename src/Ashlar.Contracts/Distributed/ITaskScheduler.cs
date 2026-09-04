@@ -34,13 +34,12 @@ public interface ITaskScheduler
 public sealed record ScheduledTaskHandle(string TaskId, string EnvelopeId)
 {
     /// <summary>
-    /// Validates identifiers on every construction path.
+    /// Builds a handle after rejecting blank identifiers.
     /// </summary>
-    public ScheduledTaskHandle
+    public static ScheduledTaskHandle Create(string taskId, string envelopeId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(TaskId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(EnvelopeId);
-        TaskId = TaskId.Trim();
-        EnvelopeId = EnvelopeId.Trim();
+        ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(envelopeId);
+        return new ScheduledTaskHandle(taskId.Trim(), envelopeId.Trim());
     }
 }

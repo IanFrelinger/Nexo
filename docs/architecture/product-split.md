@@ -49,9 +49,9 @@ enable under both profiles. Local MCP **server** stays allowed on
 cannot drift. `AddAshlarWorkstation` re-asserts the profile and
 `TrustEnabled=true` after any caller `configure` callback.
 
-Envelope, evidence, native-manifest, and scheduled-handle records validate on
-every construction path. `products/ashlar-cloud` must not `ProjectReference`
-`src/` or `commercial/`.
+Envelope, evidence, native-manifest, and scheduled-handle factories reject
+blank ids, undefined enums, malformed digests, and non-positive budgets.
+`products/ashlar-cloud` must not `ProjectReference` `src/` or `commercial/`.
 
 ## Extractable product trees (`products/`)
 

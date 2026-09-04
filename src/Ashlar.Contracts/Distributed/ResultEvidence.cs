@@ -37,26 +37,8 @@ public sealed record ResultEvidence(
     byte[]? Signature = null)
 {
     /// <summary>
-    /// Validates required fields on every construction path, including
-    /// <c>new</c>, <c>with</c>, and JSON deserialize.
-    /// </summary>
-    public ResultEvidence
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(EnvelopeId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(TaskId);
-        ArgumentNullException.ThrowIfNull(OutputHash);
-        DistributedContractGuard.Defined(Status, nameof(Status));
-        DistributedContractGuard.Timestamp(CompletedAtUtc, nameof(CompletedAtUtc));
-
-        EnvelopeId = EnvelopeId.Trim();
-        TaskId = TaskId.Trim();
-        OutputHash = Status == ResultEvidenceStatus.Succeeded
-            ? DistributedContractGuard.Digest(OutputHash, nameof(OutputHash))
-            : DistributedContractGuard.OptionalDigest(OutputHash, nameof(OutputHash));
-    }
-
-    /// <summary>
-    /// Builds evidence after rejecting blank required fields.
+    /// Builds evidence after rejecting blank required fields. Succeeded
+    /// evidence requires a digest; other statuses may use an empty hash.
     /// </summary>
     public static ResultEvidence Create(
         string envelopeId,
@@ -66,14 +48,26 @@ public sealed record ResultEvidence(
         DateTimeOffset completedAtUtc,
         string? certificationRecordId = null,
         string? detail = null,
-        byte[]? signature = null) =>
-        new(
-            envelopeId,
-            taskId,
+        byte[]? signature = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(envelopeId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
+        ArgumentNullException.ThrowIfNull(outputHash);
+        DistributedContractGuard.Defined(status, nameof(status));
+        DistributedContractGuard.Timestamp(completedAtUtc, nameof(completedAtUtc));
+
+        var hash = status == ResultEvidenceStatus.Succeeded
+            ? DistributedContractGuard.Digest(outputHash, nameof(outputHash))
+            : DistributedContractGuard.OptionalDigest(outputHash, nameof(outputHash));
+
+        return new ResultEvidence(
+            envelopeId.Trim(),
+            taskId.Trim(),
             status,
-            outputHash,
+            hash,
             completedAtUtc,
             certificationRecordId,
             detail,
             signature);
+    }
 }

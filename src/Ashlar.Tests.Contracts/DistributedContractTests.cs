@@ -97,7 +97,7 @@ public sealed class DistributedContractTests
     {
         var issued = DateTimeOffset.Parse("2026-09-04T12:00:00Z");
 
-        var badTarget = () => new ExecutionEnvelope(
+        var badTarget = () => ExecutionEnvelope.Create(
             "e", "n", (ExecutionTarget)99, "w", "sha256:abc", "p", issued);
         badTarget.Should().Throw<ArgumentOutOfRangeException>();
 
@@ -114,11 +114,11 @@ public sealed class DistributedContractTests
             "art", (NativeArtifactFormat)99, "sha256:wasm", "main");
         badFormat.Should().Throw<ArgumentOutOfRangeException>();
 
-        var badHandle = () => new ScheduledTaskHandle(" ", "env");
+        var badHandle = () => ScheduledTaskHandle.Create(" ", "env");
         badHandle.Should().Throw<ArgumentException>();
 
-        var viaNew = () => new ExecutionEnvelope(
+        var viaCreate = () => ExecutionEnvelope.Create(
             " ", "n", ExecutionTarget.Local, "w", "sha256:abc", "p", issued);
-        viaNew.Should().Throw<ArgumentException>();
+        viaCreate.Should().Throw<ArgumentException>();
     }
 }

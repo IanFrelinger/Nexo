@@ -5,13 +5,12 @@ namespace Ashlar.Cloud;
 /// <param name="DisplayName">Human-readable name.</param>
 public sealed record Organization(string OrganizationId, string DisplayName)
 {
-    /// <summary>Rejects blank identifiers on every construction path.</summary>
-    public Organization
+    /// <summary>Builds an organization after rejecting blank identifiers.</summary>
+    public static Organization Create(string organizationId, string displayName)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(OrganizationId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(DisplayName);
-        OrganizationId = OrganizationId.Trim();
-        DisplayName = DisplayName.Trim();
+        ArgumentException.ThrowIfNullOrWhiteSpace(organizationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+        return new Organization(organizationId.Trim(), displayName.Trim());
     }
 }
 
@@ -24,21 +23,24 @@ public sealed record OrganizationQuota(
     int MaxConcurrentTasks,
     long? MaxMonthlyTokenBudget)
 {
-    /// <summary>Rejects blank ids and non-positive ceilings on every construction path.</summary>
-    public OrganizationQuota
+    /// <summary>Builds a quota after rejecting blank ids and non-positive ceilings.</summary>
+    public static OrganizationQuota Create(
+        string organizationId,
+        int maxConcurrentTasks,
+        long? maxMonthlyTokenBudget)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(OrganizationId);
-        if (MaxConcurrentTasks < 1)
+        ArgumentException.ThrowIfNullOrWhiteSpace(organizationId);
+        if (maxConcurrentTasks < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(MaxConcurrentTasks), MaxConcurrentTasks, "Must be at least 1.");
+            throw new ArgumentOutOfRangeException(nameof(maxConcurrentTasks), maxConcurrentTasks, "Must be at least 1.");
         }
 
-        if (MaxMonthlyTokenBudget is < 0)
+        if (maxMonthlyTokenBudget is < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(MaxMonthlyTokenBudget), MaxMonthlyTokenBudget, "Must be null or non-negative.");
+            throw new ArgumentOutOfRangeException(nameof(maxMonthlyTokenBudget), maxMonthlyTokenBudget, "Must be null or non-negative.");
         }
 
-        OrganizationId = OrganizationId.Trim();
+        return new OrganizationQuota(organizationId.Trim(), maxConcurrentTasks, maxMonthlyTokenBudget);
     }
 }
 
@@ -47,13 +49,12 @@ public sealed record OrganizationQuota(
 /// <param name="PlanId">Commercial plan identifier.</param>
 public sealed record BillingAccount(string OrganizationId, string PlanId)
 {
-    /// <summary>Rejects blank identifiers on every construction path.</summary>
-    public BillingAccount
+    /// <summary>Builds a billing account after rejecting blank identifiers.</summary>
+    public static BillingAccount Create(string organizationId, string planId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(OrganizationId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(PlanId);
-        OrganizationId = OrganizationId.Trim();
-        PlanId = PlanId.Trim();
+        ArgumentException.ThrowIfNullOrWhiteSpace(organizationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(planId);
+        return new BillingAccount(organizationId.Trim(), planId.Trim());
     }
 }
 
@@ -85,7 +86,10 @@ public sealed class InMemoryOrganizationDirectory : IOrganizationDirectory
         ArgumentNullException.ThrowIfNull(organization);
         ArgumentNullException.ThrowIfNull(quota);
         ArgumentNullException.ThrowIfNull(billing);
-        ArgumentException.ThrowIfNullOrWhiteSpace(organization.OrganizationId);
+
+        organization = Organization.Create(organization.OrganizationId, organization.DisplayName);
+        quota = OrganizationQuota.Create(quota.OrganizationId, quota.MaxConcurrentTasks, quota.MaxMonthlyTokenBudget);
+        billing = BillingAccount.Create(billing.OrganizationId, billing.PlanId);
 
         if (!string.Equals(organization.OrganizationId, quota.OrganizationId, StringComparison.Ordinal) ||
             !string.Equals(organization.OrganizationId, billing.OrganizationId, StringComparison.Ordinal))

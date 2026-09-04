@@ -22,7 +22,7 @@ public sealed class InMemoryTaskScheduler : ITaskScheduler
         var taskId = $"task:{envelope.EnvelopeId}";
         if (_results.ContainsKey(taskId))
         {
-            return Task.FromResult(new ScheduledTaskHandle(taskId, envelope.EnvelopeId));
+            return Task.FromResult(ScheduledTaskHandle.Create(taskId, envelope.EnvelopeId));
         }
 
         var evidence = ResultEvidence.Create(
@@ -33,7 +33,7 @@ public sealed class InMemoryTaskScheduler : ITaskScheduler
             DateTimeOffset.UtcNow);
 
         _results[taskId] = evidence;
-        return Task.FromResult(new ScheduledTaskHandle(taskId, envelope.EnvelopeId));
+        return Task.FromResult(ScheduledTaskHandle.Create(taskId, envelope.EnvelopeId));
     }
 
     /// <inheritdoc />

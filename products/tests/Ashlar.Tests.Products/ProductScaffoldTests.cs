@@ -162,19 +162,19 @@ public sealed class ProductScaffoldTests
     [Fact]
     public void Cloud_directory_rejects_blank_and_non_positive_records()
     {
-        var blankOrg = () => new Organization(" ", "Northwind");
+        var blankOrg = () => Organization.Create(" ", "Northwind");
         blankOrg.Should().Throw<ArgumentException>();
 
-        var blankName = () => new Organization("org-1", " ");
+        var blankName = () => Organization.Create("org-1", " ");
         blankName.Should().Throw<ArgumentException>();
 
-        var zeroQuota = () => new OrganizationQuota("org-1", 0, null);
+        var zeroQuota = () => OrganizationQuota.Create("org-1", 0, null);
         zeroQuota.Should().Throw<ArgumentOutOfRangeException>();
 
-        var negativeBudget = () => new OrganizationQuota("org-1", 1, -1);
+        var negativeBudget = () => OrganizationQuota.Create("org-1", 1, -1);
         negativeBudget.Should().Throw<ArgumentOutOfRangeException>();
 
-        var blankPlan = () => new BillingAccount("org-1", " ");
+        var blankPlan = () => BillingAccount.Create("org-1", " ");
         blankPlan.Should().Throw<ArgumentException>();
     }
 

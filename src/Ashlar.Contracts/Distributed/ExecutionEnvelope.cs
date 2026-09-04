@@ -28,30 +28,8 @@ public sealed record ExecutionEnvelope(
     byte[]? Signature = null)
 {
     /// <summary>
-    /// Validates required fields on every construction path, including
-    /// <c>new</c>, <c>with</c>, and JSON deserialize.
-    /// </summary>
-    public ExecutionEnvelope
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(EnvelopeId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(SourceNodeId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(WorkloadKind);
-        ArgumentException.ThrowIfNullOrWhiteSpace(PayloadHash);
-        ArgumentException.ThrowIfNullOrWhiteSpace(PolicyPackId);
-        DistributedContractGuard.Defined(Target, nameof(Target));
-        DistributedContractGuard.Timestamp(IssuedAtUtc, nameof(IssuedAtUtc));
-        DistributedContractGuard.Duration(MaxDuration, nameof(MaxDuration));
-
-        EnvelopeId = EnvelopeId.Trim();
-        SourceNodeId = SourceNodeId.Trim();
-        WorkloadKind = WorkloadKind.Trim();
-        PayloadHash = DistributedContractGuard.Digest(PayloadHash, nameof(PayloadHash));
-        PolicyPackId = PolicyPackId.Trim();
-        AllowedCapabilities = DistributedContractGuard.Capabilities(AllowedCapabilities);
-    }
-
-    /// <summary>
-    /// Builds an envelope after rejecting blank required fields.
+    /// Builds an envelope after rejecting blank required fields, undefined
+    /// targets, missing timestamps, non-positive budgets, and malformed digests.
     /// </summary>
     public static ExecutionEnvelope Create(
         string envelopeId,
@@ -63,16 +41,27 @@ public sealed record ExecutionEnvelope(
         DateTimeOffset issuedAtUtc,
         IReadOnlyList<string>? allowedCapabilities = null,
         TimeSpan? maxDuration = null,
-        byte[]? signature = null) =>
-        new(
-            envelopeId,
-            sourceNodeId,
+        byte[]? signature = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(envelopeId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceNodeId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(workloadKind);
+        ArgumentException.ThrowIfNullOrWhiteSpace(payloadHash);
+        ArgumentException.ThrowIfNullOrWhiteSpace(policyPackId);
+        DistributedContractGuard.Defined(target, nameof(target));
+        DistributedContractGuard.Timestamp(issuedAtUtc, nameof(issuedAtUtc));
+        DistributedContractGuard.Duration(maxDuration, nameof(maxDuration));
+
+        return new ExecutionEnvelope(
+            envelopeId.Trim(),
+            sourceNodeId.Trim(),
             target,
-            workloadKind,
-            payloadHash,
-            policyPackId,
+            workloadKind.Trim(),
+            DistributedContractGuard.Digest(payloadHash, nameof(payloadHash)),
+            policyPackId.Trim(),
             issuedAtUtc,
-            allowedCapabilities,
+            DistributedContractGuard.Capabilities(allowedCapabilities),
             maxDuration,
             signature);
+    }
 }
