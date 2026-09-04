@@ -10,7 +10,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ### Changed
 
-- **Published pin is 0.1.2.** `ci/published-version` matches nuget.org and GHCR `nexo-cli:0.1.2`. Consumer-template pins follow the pin. The v0.1.2 `release.yml` pack-and-publish job timed out on nuget.org index lag after a successful push; visibility/registration polls now default to 40×15s (and raise a shorter repo-var budget) so the next tag does not fail the same way.
+- **Published pin is 0.1.2.** `ci/published-version` matches nuget.org and GHCR `nexo-cli:0.1.2`. Consumer-template pins follow the pin. The v0.1.2 `release.yml` pack-and-publish job timed out on nuget.org index lag after a successful push; visibility/registration polls now default to 40×15s (and raise a shorter repo-var budget) so the next tag does not fail the same way. nuget.org restore samples pin `System.Text.Encodings.Web` **10.0.11** so they do not NU1605 against the 0.1.2 graph.
 
 ## [0.1.2] - 2026-09-04
 
