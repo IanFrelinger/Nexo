@@ -83,6 +83,30 @@ public sealed class CertificationGate : ICertificationGate
         var contentHash = BrickContentHasher.ComputeSha256(request.SourceCode);
         var inputs = BuildInputs(request);
 
+        try
+        {
+            request = BindEmittedArtifact(request);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new CertificationDecision
+            {
+                Admitted = false,
+                FailureCheck = "load",
+                Record = BuildRecord(
+                    admitted: false,
+                    signed: false,
+                    status: "FAIL",
+                    brickId,
+                    timestamp,
+                    contentHash,
+                    ex.Message,
+                    mutation: null,
+                    gatesPassed: Array.Empty<CertificationGatePass>(),
+                    inputs)
+            };
+        }
+
         // Declared ahead of the recursion refusal because the shared Fail/GatesPassedBefore
         // closures reference it; it is re-assigned with the real per-run configuration once
         // the analyzer fence actually evaluates. A recursion refusal never reads it
@@ -392,6 +416,33 @@ public sealed class CertificationGate : ICertificationGate
                 request.Witness.BrickId);
             return request.AdditionalInputs;
         }
+    }
+
+    /// <summary>
+    /// When a PE is bound, the gate inspects and activates those bytes and witnesses
+    /// the resulting instance. A caller-supplied brick object is not the judged program.
+    /// </summary>
+    private static CertificationRequest BindEmittedArtifact(CertificationRequest request)
+    {
+        if (request.EmittedArtifact is not { } artifact)
+            return request;
+
+        var bytesHash = BrickContentHasher.ComputeSha256(artifact.AssemblyBytes);
+        if (!string.Equals(bytesHash, artifact.AssemblySha256, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "gate-emitted artifact hash does not match the supplied bytes.");
+
+        var sourceHash = BrickContentHasher.ComputeSha256(request.SourceCode);
+        if (!string.Equals(sourceHash, artifact.SourceSha256, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "gate-emitted artifact was not compiled from this request's source.");
+
+        var brick = CertifiedBrickActivator.Activate(artifact);
+        if (!string.Equals(brick.Id, request.Brick.Id, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(
+                $"gate-emitted brick Id '{brick.Id}' does not match request '{request.Brick.Id}'.");
+
+        return request with { Brick = brick, BrickTypeName = artifact.BrickTypeName };
     }
 
     private static void RecordCompileAuthority(CertificationRequest request, List<CertificationInput> inputs)

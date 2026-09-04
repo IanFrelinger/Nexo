@@ -1,4 +1,5 @@
 using System.Reflection;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks;
 
@@ -15,6 +16,11 @@ public static class CertifiedBrickActivator
     public static DomainBrick Activate(GateEmittedArtifact artifact)
     {
         ArgumentNullException.ThrowIfNull(artifact);
+        var actual = BrickContentHasher.ComputeSha256(artifact.AssemblyBytes);
+        if (!string.Equals(actual, artifact.AssemblySha256, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "gate-emitted artifact hash does not match the supplied bytes.");
+        IlImportFence.Inspect(artifact.AssemblyBytes);
         var assembly = Assembly.Load(artifact.AssemblyBytes);
         var type = assembly.GetType(artifact.BrickTypeName, throwOnError: false)
             ?? throw new InvalidOperationException(

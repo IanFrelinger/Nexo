@@ -2,6 +2,8 @@ using System.Text;
 using FluentAssertions;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
 using Xunit;
@@ -154,6 +156,116 @@ public sealed class GateEmittedArtifactTests
         CompilerCeiling.FormatRefusal(aboveCeiling)
             .Should().Contain("CSharp12").And.Contain("compiler-ceiling");
     }
+
+    [Fact]
+    public async Task Gate_RefusesArtifactWhoseHashDoesNotMatchBytes()
+    {
+        var dir = CreateTempProject(
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+            </Project>
+            """,
+            MutationProbeBrickSource.Code);
+        var witnessPath = Path.Combine(dir, "witness.json");
+        await File.WriteAllTextAsync(witnessPath, """
+            {"brickId":"mutation-probe-brick","cases":[{"input":{"logText":"ERROR a\nERROR b"},"expectedOutput":{"errorCount":2,"firstErrorMessage":"a"}}]}
+            """);
+
+        var request = await BrickCertificationProjectLoader.LoadAsync(dir, witnessPath);
+        var tampered = request.EmittedArtifact! with { AssemblySha256 = "not-the-hash" };
+        var decision = await new CertificationGate(new CertificationRecordSigner())
+            .CertifyAsync(request with { EmittedArtifact = tampered });
+
+        decision.Admitted.Should().BeFalse();
+        decision.FailureCheck.Should().Be("load");
+        decision.Record.Reason.Should().Contain("hash");
+    }
+
+    [Fact]
+    public async Task Gate_WitnessesActivatedPe_NotCallerBrickInstance()
+    {
+        var dir = CreateTempProject(
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+            </Project>
+            """,
+            MutationProbeBrickSource.Code);
+        var witnessPath = Path.Combine(dir, "witness.json");
+        await File.WriteAllTextAsync(witnessPath, """
+            {"brickId":"mutation-probe-brick","cases":[{"input":{"logText":"ERROR a\nERROR b"},"expectedOutput":{"errorCount":2,"firstErrorMessage":"a"}}]}
+            """);
+
+        var request = await BrickCertificationProjectLoader.LoadAsync(dir, witnessPath);
+        var exploding = new ExplodingProbeBrick();
+        var decision = await new CertificationGate(new CertificationRecordSigner())
+            .CertifyAsync(request with { Brick = exploding });
+
+        decision.Record.Reason.Should().NotContain(
+            "caller instance must not execute",
+            "WitnessRunner swallows ExecuteAsync exceptions; a FAIL with this reason means the caller brick was judged");
+        decision.FailureCheck.Should().NotBe("load");
+        decision.Record.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.GateEmittedArtifact);
+    }
+
+    [Fact]
+    public void Activator_InspectsIlBeforeLoad()
+    {
+        var artifact = GateEmittedArtifactCompiler.Compile(
+            """
+            using Ashlar.Core.Domain.Bricks;
+            using Ashlar.Core.Domain.Execution;
+            public sealed class ThreadBrick : DomainBrick
+            {
+                public ThreadBrick()
+                {
+                    Id = "thread-brick";
+                    Name = "ThreadBrick";
+                    Version = "1.0.0";
+                    Category = BrickCategory.Analysis;
+                    Description = "probe";
+                    Interface = new BrickInterface
+                    {
+                        Inputs = [new BrickInputDefinition("n", "int", "n")],
+                        Outputs = [new BrickOutputDefinition("n", "int", "n")]
+                    };
+                }
+                public override Task<BrickOutput> ExecuteAsync(
+                    BrickInput input, ImplementationType implementation, IExecutionContext context,
+                    CancellationToken cancellationToken = default)
+                {
+                    new System.Threading.Thread(() => { }).Start();
+                    var output = new BrickOutput { Summary = "ok" };
+                    output.Set("n", input.Get<int>("n"));
+                    return Task.FromResult(output);
+                }
+            }
+            """,
+            BrickCertificationProjectLoader.DefaultCompilationReferences());
+
+        var act = () => CertifiedBrickActivator.Activate(artifact);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*System.Threading.Thread*");
+    }
+
+        private sealed class ExplodingProbeBrick : DomainBrick
+        {
+            public ExplodingProbeBrick()
+            {
+                Id = "mutation-probe-brick";
+                Name = "Exploding";
+                Version = "1.0.0";
+                Category = BrickCategory.Analysis;
+                Description = "Must not execute";
+            }
+
+            public override Task<BrickOutput> ExecuteAsync(
+                BrickInput input,
+                ImplementationType implementation,
+                IExecutionContext context,
+                CancellationToken cancellationToken = default)
+                => throw new InvalidOperationException("caller instance must not execute");
+        }
 
     [Fact]
     public void StrictPreset_RefusesRecordWithoutArtifact()
