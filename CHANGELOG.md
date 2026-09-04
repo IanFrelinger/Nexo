@@ -27,6 +27,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Autonomy loop start test** waits for the start log instead of a 50ms delay, so a loaded macOS runner cannot `StopAsync` before `ExecuteAsync` logs the enforced hold.
 - **Background agent service tests** stop through `StopAsync` after observing `StartAllAsync`, instead of canceling the token passed to `StartAsync` (that token is linked into `ExecuteAsync` and raced a short delay on Windows).
 - **Production Readiness Gate v1** CLI checks expect the unconfigured default pipeline adapter to fail closed. They no longer require fabricated `pipeline run` success.
+- **Docs link check** retries once when `lychee-action` fails to download its binary (GitHub Releases SSL connect error 35), so an install flake is not reported as a broken doc link.
 
 ### Changed
 
