@@ -3,11 +3,11 @@
   "cases": [
     {
       "input": { "n": 3 },
-      "expectedOutput": { "n": 4 }
+      "expectedOutput": { "n": 4, "$summary": "ok" }
     },
     {
       "input": { "n": 0 },
-      "expectedOutput": { "n": 1 }
+      "expectedOutput": { "n": 1, "$summary": "ok" }
     }
   ]
 }

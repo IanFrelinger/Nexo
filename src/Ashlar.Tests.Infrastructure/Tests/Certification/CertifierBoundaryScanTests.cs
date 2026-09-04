@@ -56,7 +56,7 @@ public sealed class CertifierBoundaryScanTests
                         var api = callee.DeclaringType.FullName + "::" + callee.Name;
                         if (!WatchedApis.Contains(api))
                             continue;
-                        hits.Add($"{type.FullName}::{method.Name}\t{api}");
+                        hits.Add($"{NormalizeSite(type.FullName, method.Name)}\t{api}");
                     }
                 }
             }
@@ -70,6 +70,24 @@ public sealed class CertifierBoundaryScanTests
         stale.Should().BeEmpty(
             "inventory lists sites that no longer exist; shrink the list, do not keep ghosts:\n"
             + string.Join("\n", stale));
+    }
+
+    /// <summary>
+    /// Async/iterator state machines compile to <c>Type/&lt;Method&gt;d__N::MoveNext</c>.
+    /// Inventory rows name the source method so the freeze stays human-editable.
+    /// </summary>
+    internal static string NormalizeSite(string typeFullName, string methodName)
+    {
+        var generated = typeFullName.IndexOf("/<", StringComparison.Ordinal);
+        if (generated >= 0 && methodName == "MoveNext")
+        {
+            var start = generated + 2;
+            var end = typeFullName.IndexOf('>', start);
+            if (end > start)
+                return typeFullName[..generated] + "::" + typeFullName[start..end];
+        }
+
+        return typeFullName + "::" + methodName;
     }
 
     private static IEnumerable<TypeDefinition> Flatten(TypeDefinition type) =>
