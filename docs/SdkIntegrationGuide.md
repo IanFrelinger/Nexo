@@ -84,7 +84,7 @@ services.AddAshlar(opts =>
 });
 ```
 
-### 3. Air-Gapped Deployment
+### 3. Offline and workstation profiles
 
 Run Ashlar with no cloud connectivity. `AirGapped` is the slim profile (no
 trust, agents, or observation). For an IDE / workstation daemon that still

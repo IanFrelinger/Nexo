@@ -1,6 +1,6 @@
 # Hello Brick sample
 
-This is the complete code-brick reference sample used by [`docs/AuthoringBricks.md`](../../docs/AuthoringBricks.md), and the **primary** way to build a code brick today: it references `src/Ashlar.Core.Domain` by `ProjectReference`, so it needs no NuGet feed (Ashlar packages are not yet published to nuget.org).
+This is the complete code-brick reference sample used by [`docs/AuthoringBricks.md`](../../docs/AuthoringBricks.md), and the **primary** way to build a code brick from a checkout: it references `src/Ashlar.Core.Domain` by `ProjectReference`, so it needs no NuGet feed. Published packages pin `ci/published-version` (see [`docs/AuthoringBricks.md`](../../docs/AuthoringBricks.md) § Packages on nuget.org).
 
 Prerequisites: a repository checkout and the .NET SDK (`global.json` pins the version). Run it from the repository root:
 

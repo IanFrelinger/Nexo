@@ -7,7 +7,7 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>Ashlar.Workstation</RootNamespace>
-    <Description>Extractable Ashlar workstation host: SecureWorkstation composition for an air-gapped IDE daemon.</Description>
+    <Description>Extractable Ashlar workstation host: SecureWorkstation composition for an offline IDE daemon (not the AirGapped profile).</Description>
   </PropertyGroup>
 
   <ItemGroup>
