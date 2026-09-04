@@ -28,7 +28,8 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Background agent service tests** stop through `StopAsync` after observing `StartAllAsync`, instead of canceling the token passed to `StartAsync` (that token is linked into `ExecuteAsync` and raced a short delay on Windows).
 - **Production Readiness Gate v1** CLI checks expect the unconfigured default pipeline adapter to fail closed. They no longer require fabricated `pipeline run` success.
 - **Docs link check** retries once when `lychee-action` fails to download its binary (GitHub Releases SSL connect error 35), so an install flake is not reported as a broken doc link.
-- **Docker CLI waits are bounded for doctor and sandbox cancel.** `TimedProcess` kills the entire process tree on timeout or cancel (exit 124). Doctor container smoke is a timed `docker info` (8s), not a pull of `ghcr.io/ianfrelinger/nexo-cli:latest`. `ashlar validate` / `ci verify` still wait on `dotnet build`/`test` without an outer wall-clock cap.
+- **macOS NCR routing test** waits for the capability poller's VRAM snapshot instead of a 300ms delay, so a loaded runner cannot route to RunPod before local capacity is published.
+- **Compose Ubuntu test image** retries `apt-get update` on Hash Sum mismatch so a mirror flake is not reported as a product failure.
 
 ### Changed
 
