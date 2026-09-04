@@ -8,11 +8,15 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
+### Changed
+
+- **Published pin is 0.1.2.** `ci/published-version` matches nuget.org and GHCR `nexo-cli:0.1.2`. Consumer-template pins follow the pin. The v0.1.2 `release.yml` pack-and-publish job timed out on nuget.org index lag after a successful push; visibility/registration polls now default to 40×15s (and raise a shorter repo-var budget) so the next tag does not fail the same way. nuget.org restore samples pin `System.Text.Encodings.Web` **10.0.11** so they do not NU1605 against the 0.1.2 graph.
+
 ## [0.1.2] - 2026-09-04
 
 **Ashlar v0.1.2 — compile-authority.** A certificate names the bytes the certifier compiled and fenced. Disk certify and generate→certify mint `gate-emitted-artifact`. Production hot-swap and self-extend admission use `CertificationVerifyOptions.Strict`; hot-swap binds judged PE when the supplied image matches that input.
 
-`ci/published-version` stays `0.1.1` until `release.yml` finishes the nuget.org push. The 2-arg `Verify(record, source)` helper remains HMAC-era for callers that opt into it. Strict without artifact bytes still checks input kinds, not fence/identity hashes.
+The 2-arg `Verify(record, source)` helper remains HMAC-era for callers that opt into it. Strict without artifact bytes still checks input kinds, not fence/identity hashes.
 
 ### Added
 

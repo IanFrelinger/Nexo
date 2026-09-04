@@ -6,8 +6,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ID="${ASHLAR_NUGET_VERIFY_PACKAGE_ID:-Ashlar.Hosting.Bundle}"
 VER="${ASHLAR_NUGET_VERIFY_VERSION:?set ASHLAR_NUGET_VERIFY_VERSION (semver, no v prefix)}"
 VER="${VER#v}"
-ATTEMPTS="${ASHLAR_NUGET_VERIFY_ATTEMPTS:-12}"
+ATTEMPTS="${ASHLAR_NUGET_VERIFY_ATTEMPTS:-40}"
 SLEEP_SEC="${ASHLAR_NUGET_VERIFY_SLEEP_SEC:-15}"
+[[ -z "${ATTEMPTS}" ]] && ATTEMPTS=40
+[[ -z "${SLEEP_SEC}" ]] && SLEEP_SEC=15
+if [[ "${ASHLAR_NUGET_VERIFY_ALLOW_SHORT:-}" != "1" ]] && [[ "${ATTEMPTS}" -lt 40 ]]; then
+  echo "::notice::Raising nuget.org visibility poll ${ATTEMPTS} -> 40 (v0.1.2 index-lag timeout)"
+  ATTEMPTS=40
+fi
 
 id_lc="$(echo "$ID" | tr '[:upper:]' '[:lower:]')"
 ver_lc="$(echo "$VER" | tr '[:upper:]' '[:lower:]')"

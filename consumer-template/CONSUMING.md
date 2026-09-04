@@ -2,11 +2,11 @@
 
 Starter pins for **ashlar-ai-director**-style repos: authored brick + thin host + HTTP client. Copy `nuget.config` and `Directory.Packages.props` from this folder into your solution root.
 
-**Package version:** `0.1.1` — the current nuget.org release (`ci/published-version`). Repo `VERSION` may already read ahead of a release that has not been published; do not treat it as the public pin.
+**Package version:** `0.1.2` — the current nuget.org release (`ci/published-version`). Repo `VERSION` may already read ahead of a release that has not been published; do not treat it as the public pin.
 
-**On nuget.org since v0.1.1 (2026-09-01).** The full `Ashlar.*` graph (including `Ashlar.CLI`, `Ashlar.Authoring`, `Ashlar.Hosting.Bundle`) restores from plain nuget.org — no staging feed needed. The living proof is [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager), whose CI restores from nuget.org and nothing else. A staging feed (below) remains an option for pre-release testing; inside a checkout, a `ProjectReference` into `src/` (as in `samples/hello-brick/`) needs no feed at all.
+**On nuget.org since v0.1.1 (2026-09-01); current pin is v0.1.2 (2026-09-04).** The full `Ashlar.*` graph (including `Ashlar.CLI`, `Ashlar.Authoring`, `Ashlar.Hosting.Bundle`) restores from plain nuget.org — no staging feed needed. The living proof is [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager), whose CI restores from nuget.org and nothing else. A staging feed (below) remains an option for pre-release testing; inside a checkout, a `ProjectReference` into `src/` (as in `samples/hello-brick/`) needs no feed at all.
 
-## Package pins (`0.1.1`)
+## Package pins (`0.1.2`)
 
 | Package | Role |
 |---------|------|
@@ -20,17 +20,17 @@ Starter pins for **ashlar-ai-director**-style repos: authored brick + thin host 
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.1" />
-  <PackageReference Include="Ashlar.Authoring" Version="0.1.1" />
-  <PackageReference Include="Ashlar.Hosting.Bundle" Version="0.1.1" />
-  <PackageReference Include="Ashlar.Sdk" Version="0.1.1" />
-  <PackageReference Include="Ashlar.Client" Version="0.1.1" />
+  <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.2" />
+  <PackageReference Include="Ashlar.Authoring" Version="0.1.2" />
+  <PackageReference Include="Ashlar.Hosting.Bundle" Version="0.1.2" />
+  <PackageReference Include="Ashlar.Sdk" Version="0.1.2" />
+  <PackageReference Include="Ashlar.Client" Version="0.1.2" />
 </ItemGroup>
 ```
 
 With **central package management**, use `Directory.Packages.props` in this folder instead.
 
-> **Note:** the `0.1.1` graph pins `Microsoft.Extensions.*` at `10.0.11`. If your project explicitly references any `Microsoft.Extensions.*` package below that version, restore fails with `NU1605` (package downgrade) — align your pins to `>= 10.0.11`.
+> **Note:** the `0.1.2` graph pins `Microsoft.Extensions.*` at `10.0.11`. If your project explicitly references any `Microsoft.Extensions.*` package below that version, restore fails with `NU1605` (package downgrade) — align your pins to `>= 10.0.11`.
 
 ## Feed and token
 
@@ -40,7 +40,7 @@ With **central package management**, use `Directory.Packages.props` in this fold
 
 ## Layout (typical PoP)
 
-- **Brick project** — references `Ashlar.Authoring` (+ `Ashlar.Brick.Contracts` types); scaffold with `ashlar new brick --ashlar-version <version>` from a CLI tool-installed at the same version (`dotnet tool install --tool-path <dir> Ashlar.CLI --version <version> --add-source <feed>`; the CLI is not on nuget.org yet either, so `--add-source` must point at your feed).
+- **Brick project** — references `Ashlar.Authoring` (+ `Ashlar.Brick.Contracts` types); scaffold with `ashlar new brick --ashlar-version <version>` from a CLI tool-installed at the same version (`dotnet tool install --tool-path <dir> Ashlar.CLI --version <version>`).
 - **Host** — `Ashlar.Authoring` + `Ashlar.Hosting.Bundle`; register bricks with `AddAshlarBrick<T>()` before `AddAshlar()`; expose `GET /health` and `POST /api/bricks/{id}/execute` (see `scripts/verify-external-product-shape.sh` for a minimal reference).
 - **Client** — `Ashlar.Sdk`; call `IAshlarClient.InvokeAsync(HttpMethod.Post, "api/bricks/{id}/execute", …)` against the host base URL.
 
