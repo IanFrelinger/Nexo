@@ -37,6 +37,25 @@ public sealed record ResultEvidence(
     byte[]? Signature = null)
 {
     /// <summary>
+    /// Validates required fields on every construction path, including
+    /// <c>new</c>, <c>with</c>, and JSON deserialize.
+    /// </summary>
+    public ResultEvidence
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(EnvelopeId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(TaskId);
+        ArgumentNullException.ThrowIfNull(OutputHash);
+        DistributedContractGuard.Defined(Status, nameof(Status));
+        DistributedContractGuard.Timestamp(CompletedAtUtc, nameof(CompletedAtUtc));
+
+        EnvelopeId = EnvelopeId.Trim();
+        TaskId = TaskId.Trim();
+        OutputHash = Status == ResultEvidenceStatus.Succeeded
+            ? DistributedContractGuard.Digest(OutputHash, nameof(OutputHash))
+            : DistributedContractGuard.OptionalDigest(OutputHash, nameof(OutputHash));
+    }
+
+    /// <summary>
     /// Builds evidence after rejecting blank required fields.
     /// </summary>
     public static ResultEvidence Create(
@@ -47,20 +66,14 @@ public sealed record ResultEvidence(
         DateTimeOffset completedAtUtc,
         string? certificationRecordId = null,
         string? detail = null,
-        byte[]? signature = null)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(envelopeId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(taskId);
-        ArgumentNullException.ThrowIfNull(outputHash);
-
-        return new ResultEvidence(
-            envelopeId.Trim(),
-            taskId.Trim(),
+        byte[]? signature = null) =>
+        new(
+            envelopeId,
+            taskId,
             status,
-            outputHash.Trim(),
+            outputHash,
             completedAtUtc,
             certificationRecordId,
             detail,
             signature);
-    }
 }

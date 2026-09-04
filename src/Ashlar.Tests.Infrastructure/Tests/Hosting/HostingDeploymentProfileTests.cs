@@ -151,14 +151,17 @@ public sealed class HostingDeploymentProfileTests
         sp.GetRequiredService<IEndpointRegistry>().Should().NotBeOfType<InMemoryEndpointRegistry>();
     }
 
-    [Fact(Timeout = TestTimeouts.E2E)]
-    public async Task DeploymentProfile_SecureWorkstation_FromEnvironmentVariable()
+    [Theory(Timeout = TestTimeouts.E2E)]
+    [InlineData("secure-workstation")]
+    [InlineData("secureworkstation")]
+    [InlineData("workstation")]
+    public async Task DeploymentProfile_SecureWorkstation_FromEnvironmentVariable(string alias)
     {
         await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE");
         try
         {
-            Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", "secure-workstation");
+            Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", alias);
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddAshlar();

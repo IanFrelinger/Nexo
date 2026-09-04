@@ -33,6 +33,23 @@ public sealed record NativeArtifactManifest(
     IReadOnlyList<string>? AllowedCapabilities = null)
 {
     /// <summary>
+    /// Validates required fields on every construction path, including
+    /// <c>new</c>, <c>with</c>, and JSON deserialize.
+    /// </summary>
+    public NativeArtifactManifest
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(ArtifactId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ContentHash);
+        ArgumentException.ThrowIfNullOrWhiteSpace(EntryPoint);
+        DistributedContractGuard.Defined(Format, nameof(Format));
+
+        ArtifactId = ArtifactId.Trim();
+        ContentHash = DistributedContractGuard.Digest(ContentHash, nameof(ContentHash));
+        EntryPoint = EntryPoint.Trim();
+        AllowedCapabilities = DistributedContractGuard.Capabilities(AllowedCapabilities);
+    }
+
+    /// <summary>
     /// Builds a manifest after rejecting blank required fields.
     /// </summary>
     public static NativeArtifactManifest Create(
@@ -40,17 +57,6 @@ public sealed record NativeArtifactManifest(
         NativeArtifactFormat format,
         string contentHash,
         string entryPoint,
-        IReadOnlyList<string>? allowedCapabilities = null)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(artifactId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(contentHash);
-        ArgumentException.ThrowIfNullOrWhiteSpace(entryPoint);
-
-        return new NativeArtifactManifest(
-            artifactId.Trim(),
-            format,
-            contentHash.Trim(),
-            entryPoint.Trim(),
-            allowedCapabilities);
-    }
+        IReadOnlyList<string>? allowedCapabilities = null) =>
+        new(artifactId, format, contentHash, entryPoint, allowedCapabilities);
 }

@@ -23,11 +23,11 @@ public sealed class ValidateA2ATransportOptions : IValidateOptions<A2ATransportO
         var failures = new List<string>();
 
         var profile = Environment.GetEnvironmentVariable(DeploymentProfileVariable);
-        if (string.Equals(profile, "airgapped", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(profile, "air-gapped", StringComparison.OrdinalIgnoreCase))
+        if (AshlarDeploymentProfileEnvironment.ForbidsRemoteProtocolEgress(profile))
         {
+            var label = AshlarDeploymentProfileEnvironment.DisplayName(profile);
             failures.Add(
-                $"{nameof(A2ATransportOptions.Enabled)}=true is not permitted under the AirGapped deployment profile " +
+                $"{nameof(A2ATransportOptions.Enabled)}=true is not permitted under the {label} deployment profile " +
                 $"({DeploymentProfileVariable}={profile}). The A2A transport dials external agents and stays off.");
         }
 

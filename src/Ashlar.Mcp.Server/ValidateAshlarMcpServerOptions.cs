@@ -27,8 +27,7 @@ public sealed class ValidateAshlarMcpServerOptions : IValidateOptions<AshlarMcpS
         // (rather than trusting every host to check) keeps that promise even when an operator
         // copies an enabling env block onto the wrong machine.
         var profile = Environment.GetEnvironmentVariable(DeploymentProfileVariable);
-        if (string.Equals(profile, "airgapped", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(profile, "air-gapped", StringComparison.OrdinalIgnoreCase))
+        if (AshlarDeploymentProfileEnvironment.IsAirGapped(profile))
         {
             failures.Add(
                 $"{nameof(AshlarMcpServerOptions.Enabled)}=true is not permitted under the AirGapped deployment profile " +

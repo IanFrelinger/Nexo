@@ -31,4 +31,16 @@ public interface ITaskScheduler
 /// </summary>
 /// <param name="TaskId">Scheduler-assigned task id.</param>
 /// <param name="EnvelopeId">Envelope this task fulfills.</param>
-public sealed record ScheduledTaskHandle(string TaskId, string EnvelopeId);
+public sealed record ScheduledTaskHandle(string TaskId, string EnvelopeId)
+{
+    /// <summary>
+    /// Validates identifiers on every construction path.
+    /// </summary>
+    public ScheduledTaskHandle
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(TaskId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(EnvelopeId);
+        TaskId = TaskId.Trim();
+        EnvelopeId = EnvelopeId.Trim();
+    }
+}

@@ -36,30 +36,22 @@ public static partial class AshlarServiceCollectionExtensions
     private static bool TryParseDeploymentProfile(string? raw, out AshlarDeploymentProfile profile)
     {
         profile = AshlarDeploymentProfile.Full;
-        if (string.IsNullOrWhiteSpace(raw))
+        if (!AshlarDeploymentProfileEnvironment.TryParseKnown(raw, out var canonical))
         {
             return false;
         }
 
-        var normalized = raw.Trim().ToLowerInvariant();
-        profile = normalized switch
+        profile = canonical switch
         {
             "full" => AshlarDeploymentProfile.Full,
             "server" => AshlarDeploymentProfile.Server,
             "edge" => AshlarDeploymentProfile.Edge,
-            "airgapped" => AshlarDeploymentProfile.AirGapped,
             "air-gapped" => AshlarDeploymentProfile.AirGapped,
             "system" => AshlarDeploymentProfile.System,
-            "core" => AshlarDeploymentProfile.System,
-            "secureworkstation" => AshlarDeploymentProfile.SecureWorkstation,
             "secure-workstation" => AshlarDeploymentProfile.SecureWorkstation,
-            "workstation" => AshlarDeploymentProfile.SecureWorkstation,
-            _ => profile
+            _ => AshlarDeploymentProfile.Full
         };
-
-        return normalized is "full" or "server" or "edge" or "airgapped" or "air-gapped"
-            or "system" or "core"
-            or "secureworkstation" or "secure-workstation" or "workstation";
+        return true;
     }
 
     /// <summary>

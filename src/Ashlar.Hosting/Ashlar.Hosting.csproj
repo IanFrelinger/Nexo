@@ -21,6 +21,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Ashlar.Compat\AshlarDeploymentProfileEnvironment.cs" Link="AshlarDeploymentProfileEnvironment.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Ashlar.AI.Pipeline\Ashlar.AI.Pipeline.csproj" />
     <ProjectReference Include="..\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
     <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />
