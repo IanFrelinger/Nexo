@@ -24,12 +24,7 @@ public static class MeshTls
     public static X509Certificate2 LoadCertWithKey(string certPemPath, string keyPemPath)
     {
         using var fromPem = X509Certificate2.CreateFromPemFile(certPemPath, keyPemPath);
-        // Exportable + ephemeral: macOS Security.framework otherwise persists the PFX
-        // key as non-exportable, and SChannel on Windows still gets a materialized key.
-        return X509CertificateLoader.LoadPkcs12(
-            fromPem.Export(X509ContentType.Pkcs12),
-            password: null,
-            X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet);
+        return X509CertificateLoader.LoadPkcs12(fromPem.Export(X509ContentType.Pkcs12), password: null);
     }
 
     /// <summary>Loads one or more CA certificates from a PEM bundle.</summary>

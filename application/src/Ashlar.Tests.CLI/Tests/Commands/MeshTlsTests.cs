@@ -45,11 +45,9 @@ public sealed class MeshTlsTests : IDisposable
 
     // PKCS#12 round-trip so the returned cert owns a PERSISTENT private key — the inner RSA can be
     // disposed and the CA can still sign leaves (a `using var key` would invalidate the key handle).
+    // Do not pass EphemeralKeySet: SChannel on Windows then fails the TLS handshake with EOF.
     private static X509Certificate2 Persist(X509Certificate2 cert) =>
-        X509CertificateLoader.LoadPkcs12(
-            cert.Export(X509ContentType.Pkcs12),
-            password: null,
-            X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet);
+        X509CertificateLoader.LoadPkcs12(cert.Export(X509ContentType.Pkcs12), password: null);
 
     private static (X509Certificate2 cert, string keyPem) MakeCa(string cn)
     {

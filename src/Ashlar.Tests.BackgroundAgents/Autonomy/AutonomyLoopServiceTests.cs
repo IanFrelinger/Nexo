@@ -150,7 +150,14 @@ public sealed class AutonomyLoopServiceTests : IDisposable
             logger: logger);
 
         await loop.StartAsync(CancellationToken.None);
-        await Task.Delay(50);
+        // StartAsync returns before ExecuteAsync is scheduled. A fixed 50ms wait loses
+        // the start log on a loaded macOS runner when StopAsync cancels first.
+        await WaitUntilAsync(
+            () => logger.Messages.Any(m =>
+                m.Contains("Autonomy loop starting") &&
+                m.Contains("holdAdmission=True") &&
+                m.Contains("enforced by the harness")),
+            TimeSpan.FromSeconds(5));
         await loop.StopAsync(CancellationToken.None);
 
         logger.Messages.Should().Contain(m => m.Contains("Autonomy loop starting") && m.Contains("holdAdmission=True") && m.Contains("enforced by the harness"),
@@ -263,6 +270,20 @@ public sealed class AutonomyLoopServiceTests : IDisposable
             Reason = "Correctness check failed (scripted)",
         },
     };
+
+    private static async Task WaitUntilAsync(Func<bool> ready, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (!ready())
+        {
+            if (DateTime.UtcNow >= deadline)
+            {
+                return;
+            }
+
+            await Task.Delay(25);
+        }
+    }
 
     private static IReadOnlyList<string> TempProjectFiles() =>
         Directory.EnumerateFiles(Path.GetTempPath(), "ashlar-objective-*.csproj").OrderBy(p => p, StringComparer.Ordinal).ToList();
