@@ -8,7 +8,11 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
-0.1.2 is **not** tagged. Repo `VERSION` reads ahead of `ci/published-version` = `0.1.1`. Do not tag or publish until an operator says so. Default `CertificationTrustVerifier.Verify` remains HMAC-era (source + signature); `CertificationVerifyOptions.Strict` plus the artifact-bytes overload is what binds judged PE.
+## [0.1.2] - 2026-09-04
+
+**Ashlar v0.1.2 — compile-authority.** A certificate names the bytes the certifier compiled and fenced. Disk certify and generate→certify mint `gate-emitted-artifact`. Production hot-swap and self-extend admission use `CertificationVerifyOptions.Strict`; hot-swap binds judged PE when the supplied image matches that input.
+
+`ci/published-version` stays `0.1.1` until `release.yml` finishes the nuget.org push. The 2-arg `Verify(record, source)` helper remains HMAC-era for callers that opt into it. Strict without artifact bytes still checks input kinds, not fence/identity hashes.
 
 ### Added
 
@@ -32,12 +36,14 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Compose Ubuntu test image** retries `apt-get update` on Hash Sum mismatch so a mirror flake is not reported as a product failure.
 - **Certification gate binds judged PE.** When `EmittedArtifact` is set, the gate inspects and activates those bytes and witnesses the resulting instance. `CertifiedBrickActivator` inspects before `Assembly.Load`.
 - **`ci verify` / `release preflight` / `test-multi-env` / `runtime execute` children** run under `TimedProcess.OperatorCommandTimeout` (2h) with process-tree kill. Docker API `WaitContainer` is capped at 30 minutes.
+- **Consumer verify binds judged bytes.** Hot-swap and self-extend admission use `CertificationVerifyOptions.Strict`. When hot-swap is given a PE whose hash matches `gate-emitted-artifact`, it uses the artifact-bytes `Verify` overload. HMAC-era records without that input are refused at those hosts.
 
 ### Changed
 
 - **IL import fence is an allowlist**, not a `System.*` denylist. Round-10 attacks (reflective `Environment.Exit`, reading `ASHLAR_CERT_DEV_HMAC_KEY`, `AppDomain`/`AssemblyLoadContext`, filesystem writes) and round-11 attacks (P/Invoke with no IL body, `[ModuleInitializer]`, `typeof(System.IO.File)` / `ldtoken`, extra author `.cs` files) are corpus fixtures. Round-12 adds `Thread`/`ThreadPool` and `localloc` (stackalloc). Round-13 closes remaining fire-and-forget: `Timer`/`PeriodicTimer`, `Task.Run`/`Task.Start`/`TaskFactory.StartNew`, `async void`, and `CancellationTokenSource.CancelAfter`.
 - **Hot-swap loads a supplied PE only when its SHA-256 matches `gate-emitted-artifact`.** A mismatched or HMAC-era unbound image is rematerialized from wrapped source, never loaded.
-- **Generate→certify** inspects IL before `Assembly.Load` (`GeneratedBrickBuilder`).
+- **Generate→certify** compiles with `GateEmittedArtifactCompiler`, activates through `CertifiedBrickActivator`, and mints `gate-emitted-artifact` / `execution-mode=gate-emitted` the same way the disk loader does.
+- **Stable public API promoted.** Unshipped symbols in the stable-tier `PublicAPI.*.txt` files moved to `Shipped.txt` for the v0.1.2 promise.
 - **Compile-options parity.** Mutants (`RoslynCodeAnalysisService`), the analyzer fence, hot-swap rematerialize, and the in-session MSBuild project all use `BrickCompileOptions`. The autonomy harness activates the gate-emitted artifact and passes those bytes into the first swap.
 - **Release Manager extracted** to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) — the first out-of-tree consumer of the published packages (CI restores from nuget.org only; smoke-verified: all four deterministic agents register, run, and drain). Completes the graduation→extraction path LICENSING.md promised. `consumer-template/` refreshed to `0.1.1` and no longer claims the packages are unpublished.
 

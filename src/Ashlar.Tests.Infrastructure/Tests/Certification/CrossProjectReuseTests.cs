@@ -31,9 +31,13 @@ public sealed class CrossProjectReuseTests
         var artifact = await ProjectACertifiesDamageResolverAsync();
         var record = ProjectBTrustConsumer.FromInternalRecord(artifact.Record);
 
-        var trust = ProjectBTrustConsumer.VerifyArtifact(artifact.SourceCode, record);
+        var trust = ProjectBTrustConsumer.VerifyArtifact(
+            artifact.SourceCode,
+            record,
+            artifact.AssemblyBytes);
         trust.Trusted.Should().BeTrue($"expected TRUSTED, got {trust.FailureCode}: {trust.Reason}");
         record.ContentHash.Should().NotBeNullOrWhiteSpace();
+        record.Inputs.Should().Contain(i => i.Kind == Ashlar.Certification.Contracts.CertificationInputKinds.GateEmittedArtifact);
 
         var finalDamage = await ProjectBTrustConsumer.ExecuteDamageResolverSmokeAsync(
             artifact.SourceCode,
@@ -48,9 +52,22 @@ public sealed class CrossProjectReuseTests
         var record = ProjectBTrustConsumer.FromInternalRecord(artifact.Record);
         var tamperedSource = artifact.SourceCode.Replace("Math.Max(0, raw - armor)", "Math.Max(0, raw - armor + 1)");
 
-        var trust = ProjectBTrustConsumer.VerifyArtifact(tamperedSource, record);
+        var trust = ProjectBTrustConsumer.VerifyArtifact(tamperedSource, record, artifact.AssemblyBytes);
         trust.Trusted.Should().BeFalse("tampered brick must not be trusted");
         trust.FailureCode.Should().Be("content-hash-mismatch");
+    }
+
+    [Fact]
+    public async Task SwappedPe_ProjectB_RejectsArtifactHashMismatch()
+    {
+        var artifact = await ProjectACertifiesDamageResolverAsync();
+        var record = ProjectBTrustConsumer.FromInternalRecord(artifact.Record);
+        var swapped = artifact.AssemblyBytes.ToArray();
+        swapped[Math.Min(0x80, swapped.Length - 1)] ^= 0xFF;
+
+        var trust = ProjectBTrustConsumer.VerifyArtifact(artifact.SourceCode, record, swapped);
+        trust.Trusted.Should().BeFalse();
+        trust.FailureCode.Should().Be("artifact-hash-mismatch");
     }
 
     [Fact]
@@ -90,19 +107,23 @@ public sealed class CrossProjectReuseTests
             SourceCode = built.SourceCode,
             ProjectPath = built.ProjectPath,
             CompilationReferences = built.CompilationReferences,
-            BrickTypeName = built.BrickTypeName
+            BrickTypeName = built.BrickTypeName,
+            EmittedArtifact = built.EmittedArtifact
         }).ConfigureAwait(false);
 
         decision.Admitted.Should().BeTrue("project A must certify damage-resolver");
         decision.Record.ContentHash.Should().NotBeNullOrWhiteSpace();
 
-        /// <summary>Certified artifact.</summary>
-        return new CertifiedArtifact(built.SourceCode, decision.Record, built.BrickTypeName);
+        return new CertifiedArtifact(
+            built.SourceCode,
+            decision.Record,
+            built.BrickTypeName,
+            built.EmittedArtifact.AssemblyBytes);
     }
 
-    /// <summary>Tests for certified artifact.</summary>
-    /// <param name="SourceCode">Source code.</param>
-    /// <param name="Record">Record.</param>
-    /// <param name="BrickTypeName">Brick type name.</param>
-    private sealed record CertifiedArtifact(string SourceCode, CertificationRecord Record, string? BrickTypeName);
+    private sealed record CertifiedArtifact(
+        string SourceCode,
+        CertificationRecord Record,
+        string? BrickTypeName,
+        byte[] AssemblyBytes);
 }

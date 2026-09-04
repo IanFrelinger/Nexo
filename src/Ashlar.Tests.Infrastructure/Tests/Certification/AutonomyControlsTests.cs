@@ -2,6 +2,7 @@ using FluentAssertions;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Autonomy;
 using Ashlar.Core.Domain.Bricks;
+using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
 using Xunit;
 
@@ -192,7 +193,18 @@ public sealed class HotSwapProbeBrick : DomainBrick
             Timestamp = DateTimeOffset.UtcNow,
             BrickId = brickId,
             ContentHash = BrickContentHasher.ComputeSha256(source),
-            Gate = "autonomy-controls-test-harness"
+            Gate = "autonomy-controls-test-harness",
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+            Inputs =
+            [
+                new CertificationInput
+                {
+                    Kind = CertificationInputKinds.GateEmittedArtifact,
+                    Id = brickId,
+                    Hash = BrickContentHasher.ComputeSha256(source)
+                },
+                CertifierIdentity.ToInput()
+            ]
         };
         return record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
     }

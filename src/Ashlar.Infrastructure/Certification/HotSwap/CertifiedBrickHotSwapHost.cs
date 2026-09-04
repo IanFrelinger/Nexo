@@ -19,10 +19,10 @@ namespace Ashlar.Infrastructure.Certification.HotSwap;
 /// Trust properties (trust-loop integration plan §3):
 /// <list type="number">
 /// <item><description><b>Verify-at-load.</b> Every brick's certification record is re-verified
-/// against the exact source bytes being loaded (<see cref="CertificationTrustVerifier"/>),
-/// even though admission already verified once. A supplied PE is loaded only when its
-/// SHA-256 matches the record's <c>gate-emitted-artifact</c> input; otherwise the host
-/// rematerializes from wrapped source.</description></item>
+/// against the exact source bytes being loaded (<see cref="CertificationTrustVerifier"/>
+/// with <see cref="CertificationVerifyOptions.Strict"/>). When a supplied PE matches
+/// the record's <c>gate-emitted-artifact</c> hash, the artifact-bytes overload binds
+/// those bytes; otherwise the host rematerializes from wrapped source.</description></item>
 /// <item><description><b>Fail-closed swap.</b> Any verification, compile, load, or
 /// instantiation failure refuses the <em>entire</em> swap and leaves the previous
 /// generation serving. There is no partial swap.</description></item>
@@ -577,7 +577,19 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 continue;
             }
 
-            var trust = CertificationTrustVerifier.Verify(request.Record, request.SourceCode, _hmacKey);
+            var boundPe = BindPrecompiledAssembly(request);
+            var trust = boundPe is not null
+                ? CertificationTrustVerifier.Verify(
+                    request.Record,
+                    request.SourceCode,
+                    boundPe,
+                    _hmacKey,
+                    CertificationVerifyOptions.Strict)
+                : CertificationTrustVerifier.Verify(
+                    request.Record,
+                    request.SourceCode,
+                    _hmacKey,
+                    CertificationVerifyOptions.Strict);
             if (!trust.Trusted)
             {
                 refusals.Add(new BrickSwapRefusal

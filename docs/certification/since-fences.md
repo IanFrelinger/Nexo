@@ -96,14 +96,16 @@ of a release that has not been published.
   allowlist governs what a child is given, not what it can read.
 - Constructor / module-initializer *hangs* (infinite loops with no forbidden
   import) are still activation-time. Discovery is metadata-only; load is not.
-- Default consumer `CertificationTrustVerifier.Verify(record, source)` is still
-  HMAC-era. Production hot-swap, self-extend admission, and the sample reuse
-  host use that overload unless the caller opts into `Strict` and the
-  artifact-bytes overload. Strict checks input **kinds**, not fence/identity
-  **hashes**. Only `Ashlar.ExportCertifiedBrick` uses Strict + artifact bytes.
-- Generate→certify (`GenerateAndCertifyService`) still mints
-  `execution-mode=in-process-fixture` (no `gate-emitted-artifact` input) even
-  though `GeneratedBrickBuilder` fences before load.
+- The 2-arg `CertificationTrustVerifier.Verify(record, source)` helper is still
+  HMAC-era for callers that opt into it. Production hot-swap, self-extend
+  admission, and the reuse sample use `Strict`. Hot-swap uses the artifact-bytes
+  overload when the supplied PE matches `gate-emitted-artifact`; otherwise it
+  rematerializes from source after a Strict kind check. Strict still checks
+  input **kinds**, not fence/identity **hashes**, unless the caller also passes
+  artifact bytes.
+- Generate→certify now mints `gate-emitted-artifact` and
+  `execution-mode=gate-emitted`. In-process unit tests that construct a brick
+  fixture without `EmittedArtifact` still record `in-process-fixture`.
 - `CancellationToken.Register` on the host token remains allowed (cooperative
   cancel). `Thread` / `ThreadPool` / `Timer` / `PeriodicTimer` / `Task.Run` /
   `Task.Factory.StartNew` / `async void` / `CancellationTokenSource.CancelAfter`

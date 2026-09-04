@@ -1,9 +1,5 @@
-using System.Reflection;
-using Microsoft.Extensions.Logging.Abstractions;
-using Ashlar.Core.Application.Adaptation.Models;
+using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks;
-using Ashlar.Core.Domain.Execution;
-using Ashlar.Infrastructure.Testing.CodeAnalysis;
 
 namespace Ashlar.Infrastructure.Adaptation.Generation;
 
@@ -13,9 +9,11 @@ namespace Ashlar.Infrastructure.Adaptation.Generation;
 /// <param name="SourceCode">Generated brick source code.</param>
 /// <param name="ProjectPath">Path to the generated brick project.</param>
 /// <param name="CompilationReferences">Assembly references used during compilation.</param>
+/// <param name="EmittedArtifact">Closed-world PE the gate will inspect, activate, and bind.</param>
 public sealed record BuiltGeneratedBrick(
     DomainBrick Brick,
     string BrickTypeName,
     string SourceCode,
     string ProjectPath,
-    IReadOnlyList<string> CompilationReferences);
+    IReadOnlyList<string> CompilationReferences,
+    GateEmittedArtifact EmittedArtifact);

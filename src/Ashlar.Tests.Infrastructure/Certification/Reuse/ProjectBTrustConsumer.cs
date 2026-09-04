@@ -12,7 +12,17 @@ namespace Ashlar.Tests.Infrastructure.Certification.Reuse;
 public static class ProjectBTrustConsumer
 {
     public static CertificationTrustResult VerifyArtifact(string brickSource, CertificationRecordData record) =>
-        CertificationTrustVerifier.Verify(record, brickSource);
+        CertificationTrustVerifier.Verify(record, brickSource, options: CertificationVerifyOptions.Strict);
+
+    public static CertificationTrustResult VerifyArtifact(
+        string brickSource,
+        CertificationRecordData record,
+        byte[] artifactBytes) =>
+        CertificationTrustVerifier.Verify(
+            record,
+            brickSource,
+            artifactBytes,
+            options: CertificationVerifyOptions.Strict);
 
     public static async Task<int> ExecuteDamageResolverSmokeAsync(
         string brickSource,
