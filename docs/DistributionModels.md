@@ -28,7 +28,8 @@ Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one
 | **Mesh / federation (open peers)** | Peer config, local mesh primitives, worker executor | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, **`docs/MeshVirtualLab.md`** |
 | **Mesh fleet director (commercial)** | `Ashlar.Commercial.Fleet.Host`, `/api/mesh/*` director APIs | Image tag + API key + peer registration key | **`.docker/Dockerfile.fleet-host`**, **`scripts/commercial-fleet-host-smoke.sh`**, mesh-lab peer-a |
 
-**Publication status:** **0.1.1** is on nuget.org (`ci/published-version`). Repo `VERSION` may already read **0.1.2** for an unpublished cut — do not treat that as the public pin. GHCR `nexo-cli:0.1.1` is the operator image. Until the next tag, NuGet rows that name a newer version are proven against **local folder feeds** (`nuget-local-pack-consumer`, `scripts/verify-standalone-brick-authoring.sh`) plus `ProjectReference` into `src/` (`samples/hello-brick/` is the smallest example).
+**Publication status:** **0.1.1** is on nuget.org (`ci/published-version`).
+Repo `VERSION` may already read ahead of that pin for an unpublished cut — do not treat the repo file as the public pin. GHCR `nexo-cli:0.1.1` is the operator image. Until the next tag, NuGet rows that name a newer version are proven against **local folder feeds** (`nuget-local-pack-consumer`, `scripts/verify-standalone-brick-authoring.sh`) plus `ProjectReference` into `src/` (`samples/hello-brick/` is the smallest example).
 
 ## Golden reference pins (copy/paste)
 
