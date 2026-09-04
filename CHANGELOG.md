@@ -30,6 +30,8 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Docs link check** retries once when `lychee-action` fails to download its binary (GitHub Releases SSL connect error 35), so an install flake is not reported as a broken doc link.
 - **macOS NCR routing test** waits for the capability poller's VRAM snapshot instead of a 300ms delay, so a loaded runner cannot route to RunPod before local capacity is published.
 - **Compose Ubuntu test image** retries `apt-get update` on Hash Sum mismatch so a mirror flake is not reported as a product failure.
+- **Certification gate binds judged PE.** When `EmittedArtifact` is set, the gate inspects and activates those bytes and witnesses the resulting instance. `CertifiedBrickActivator` inspects before `Assembly.Load`.
+- **`ci verify` / `release preflight` / `test-multi-env` / `runtime execute` children** run under `TimedProcess.OperatorCommandTimeout` (2h) with process-tree kill. Docker API `WaitContainer` is capped at 30 minutes.
 
 ### Changed
 

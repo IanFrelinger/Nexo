@@ -299,16 +299,9 @@ internal sealed partial class ExecuteHandler(
         foreach (var arg in args)
             psi.ArgumentList.Add(arg);
 
-        using var process = Process.Start(psi);
-        if (process == null)
-            return new RuntimeSubprocessResult(1, string.Empty, "Failed to start runtime subprocess.");
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-        var stderrTask = process.StandardError.ReadToEndAsync(ct);
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-        var stdout = await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-        return new RuntimeSubprocessResult(process.ExitCode, stdout, stderr);
+        var run = await TimedProcess.RunAsync(psi, TimedProcess.OperatorCommandTimeout, ct)
+            .ConfigureAwait(false);
+        return new RuntimeSubprocessResult(run.ExitCode, run.StdOut, run.StdErr);
     }
 
 

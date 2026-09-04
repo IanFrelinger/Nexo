@@ -4,6 +4,7 @@ using Ashlar.Core.Application.Adaptation.Models;
 using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
+using Ashlar.Infrastructure.HostProcess;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
 
 namespace Ashlar.Infrastructure.Adaptation.Generation;
@@ -163,11 +164,8 @@ using DomainBrick = Ashlar.Core.Domain.Bricks.Brick;
             UseShellExecute = false
         };
 
-        using var process = System.Diagnostics.Process.Start(psi)
-            ?? throw new InvalidOperationException("Failed to start dotnet build");
-        var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        var stderr = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        return (process.ExitCode, stdout + stderr);
+        var run = await TimedProcess.RunAsync(psi, TimedProcess.RemediationTimeout, cancellationToken)
+            .ConfigureAwait(false);
+        return (run.ExitCode, run.StdOut + run.StdErr);
     }
 }

@@ -14,6 +14,15 @@ namespace Ashlar.Tests.Infrastructure.Tests.ProcessExecution;
 public sealed class TimedProcessTests
 {
     [Fact]
+    public void OperatorAndDockerCeilings_AreBounded()
+    {
+        TimedProcess.OperatorCommandTimeout.Should().Be(TimeSpan.FromHours(2));
+        TimedProcess.DockerWaitTimeout.Should().Be(TimeSpan.FromMinutes(30));
+        TimedProcess.OperatorCommandTimeout.Should().BeGreaterThan(TimeSpan.Zero);
+        TimedProcess.DockerWaitTimeout.Should().BeGreaterThan(TimeSpan.Zero);
+    }
+
+    [Fact]
     public async Task RunAsync_TimeoutKillsProcessTree()
     {
         var sw = Stopwatch.StartNew();

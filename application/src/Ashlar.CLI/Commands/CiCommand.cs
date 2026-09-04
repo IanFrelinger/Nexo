@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Ashlar.Core.Application.Paths;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands;
 
@@ -250,30 +251,24 @@ public sealed class CiCommand : Command
         string workingDirectory,
         IReadOnlyDictionary<string, string>? extraEnv = null)
     {
-        using var process = new Process
+        var psi = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = arguments,
-                WorkingDirectory = workingDirectory,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            }
+            FileName = fileName,
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
         };
         if (extraEnv is not null)
         {
             foreach (var (key, value) in extraEnv)
-                process.StartInfo.Environment[key] = value;
+                psi.Environment[key] = value;
         }
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        await process.WaitForExitAsync();
-        return process.ExitCode;
+
+        var run = await TimedProcess.RunAsync(psi, TimedProcess.OperatorCommandTimeout).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(run.StdOut))
+            Console.Write(run.StdOut);
+        if (!string.IsNullOrEmpty(run.StdErr))
+            Console.Error.Write(run.StdErr);
+        return run.ExitCode;
     }
 
     private static List<ReleaseBundleStep> BuildReleaseBundleSteps(string profile, string cliProject, string repoRoot)

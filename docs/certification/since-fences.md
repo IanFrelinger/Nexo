@@ -54,6 +54,9 @@ of a release that has not been published.
   inputs. Exporters write `gate-emitted-brick.dll` next to the record.
   `CertificationTrustVerifier.Verify(..., artifactBytes)` binds those bytes.
   `CertificationVerifyOptions.Strict` requires the artifact and the judge.
+  When `EmittedArtifact` is set, the gate re-inspects and re-activates those
+  bytes and witnesses the resulting instance — a caller-supplied brick object
+  is not the judged program. `CertifiedBrickActivator` inspects before load.
 
 ## Class B — certifier boundary
 
@@ -79,9 +82,6 @@ of a release that has not been published.
   containment of the in-process legs is deferred.
 - In-process unit tests that construct a brick fixture still execute that
   fixture; they record `execution-mode=in-process-fixture` and do not ship.
-- Default `CertificationTrustVerifier.Verify` still accepts HMAC-era records
-  that omit the artifact hash. `CertificationVerifyOptions.Strict` is the
-  preset that means "this certificate names the bytes it judged."
 - Parent-directory `Directory.Build.props` is not inspected. The certifier
   never runs MSBuild on author files, so ancestor props are inert; a
   regression that reintroduced `dotnet build` on an in-repo sample would also
@@ -96,11 +96,24 @@ of a release that has not been published.
   allowlist governs what a child is given, not what it can read.
 - Constructor / module-initializer *hangs* (infinite loops with no forbidden
   import) are still activation-time. Discovery is metadata-only; load is not.
+- Default consumer `CertificationTrustVerifier.Verify(record, source)` is still
+  HMAC-era. Production hot-swap, self-extend admission, and the sample reuse
+  host use that overload unless the caller opts into `Strict` and the
+  artifact-bytes overload. Strict checks input **kinds**, not fence/identity
+  **hashes**. Only `Ashlar.ExportCertifiedBrick` uses Strict + artifact bytes.
+- Generate→certify (`GenerateAndCertifyService`) still mints
+  `execution-mode=in-process-fixture` (no `gate-emitted-artifact` input) even
+  though `GeneratedBrickBuilder` fences before load.
 - `CancellationToken.Register` on the host token remains allowed (cooperative
   cancel). `Thread` / `ThreadPool` / `Timer` / `PeriodicTimer` / `Task.Run` /
   `Task.Factory.StartNew` / `async void` / `CancellationTokenSource.CancelAfter`
   are refused.
-- Default consumer `CertificationTrustVerifier.Verify(record, source)` is still
-  HMAC-era. Production hot-swap, self-extend admission, and the sample reuse
-  host use that overload unless the caller opts into `Strict` and the
-  artifact-bytes overload.
+- Direct `repo.fs.write` is outside the mediated write floor (`PathAllowlist`
+  includes `.ashlar/` and `application/`; `ToolSandbox` is lexical-only).
+- `AddAshlarAutonomySessionReaper` is opt-in and not registered by default
+  hosts. `--allow-mock` still defaults true on self-extend/runtime CLI.
+- Record JSON + DLL export is two writes, not one atomic pair.
+- Unbounded-wait leftovers: `ashlar validate` has no outer wall-clock cap
+  (blame-hang 120s on tests). `ci verify` / `release preflight` /
+  `test-multi-env` now use `TimedProcess.OperatorCommandTimeout` (2h) and
+  kill the process tree. Docker API `WaitContainer` is capped at 30 minutes.

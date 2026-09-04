@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Ashlar.CLI.Output;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands;
 
@@ -364,22 +365,13 @@ public class TestMultiEnvCommand
             FileName = fileName,
             Arguments = arguments,
             WorkingDirectory = workingDir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
         };
-        using var process = Process.Start(psi);
-        if (process == null) return -1;
-        var outTask = process.StandardOutput.ReadToEndAsync();
-        var errTask = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        var stdout = await outTask;
-        var stderr = await errTask;
+        var run = await TimedProcess.RunAsync(psi, TimedProcess.OperatorCommandTimeout).ConfigureAwait(false);
         if (!string.IsNullOrEmpty(captureToFile))
-            await File.WriteAllTextAsync(captureToFile, stdout + "\n" + stderr);
-        if (console != null && !string.IsNullOrEmpty(stderr)) console.WriteError(stderr);
-        return process.ExitCode;
+            await File.WriteAllTextAsync(captureToFile, run.StdOut + "\n" + run.StdErr);
+        if (console != null && !string.IsNullOrEmpty(run.StdErr))
+            console.WriteError(run.StdErr);
+        return run.ExitCode;
     }
 
     private static (int passed, int failed, int total) ParseTestOutput(string output)

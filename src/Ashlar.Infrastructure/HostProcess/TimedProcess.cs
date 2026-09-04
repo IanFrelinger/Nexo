@@ -23,6 +23,15 @@ public static class TimedProcess
     public static readonly TimeSpan RemediationTimeout = TimeSpan.FromMinutes(10);
 
     /// <summary>
+    /// Ceiling for long operator commands (<c>ci verify</c>, <c>release preflight</c>,
+    /// multi-env docker test). Bounded so a wedged child cannot freeze the host forever.
+    /// </summary>
+    public static readonly TimeSpan OperatorCommandTimeout = TimeSpan.FromHours(2);
+
+    /// <summary>Ceiling for Docker API <c>WaitContainer</c> when the caller passes no token.</summary>
+    public static readonly TimeSpan DockerWaitTimeout = TimeSpan.FromMinutes(30);
+
+    /// <summary>
     /// Starts <paramref name="startInfo"/>, captures stdout/stderr, and waits until exit,
     /// <paramref name="timeout"/>, or <paramref name="cancellationToken"/>.
     /// </summary>
