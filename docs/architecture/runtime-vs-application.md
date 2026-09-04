@@ -45,7 +45,7 @@ Version all packages from the same release (same `PackageVersion` when packing).
 
 ## Application layer
 
-Product-specific deployables and descriptors stay under **`application/src/`** (CLI/API) and **`products/`** (extractable workstation/cluster/cloud/native) in this repo. If you maintain a **separate** product repository, keep private integrations, bespoke DTOs, and composition overrides there and reference the runtime packages above. The kernel must never take a `ProjectReference` to `application/` or `products/`.
+Product-specific deployables and descriptors stay under **`application/src/`** (CLI/API) and **`products/`** (extractable workstation/cluster/cloud/native) in this repo. If you maintain a **separate** product repository, keep private integrations, bespoke DTOs, and composition overrides there and reference the runtime packages above. The kernel must never take a `ProjectReference` to `products/`. Non-test kernel projects must not reference `application/` (`Ashlar.Tests.Infrastructure` hosts `Ashlar.API` in-process).
 
 ## Solution files
 

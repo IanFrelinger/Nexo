@@ -20,8 +20,9 @@ ashlar-native  →  ashlar
 
 Ashlar must never reference a product project. Products consume
 `Ashlar.Hosting`, `Ashlar.Contracts`, and `Ashlar.Client` only. The
-dependency-boundary gate rejects `src/` → `products/` and `src/` →
-`application/` `ProjectReference`s.
+dependency-boundary gate rejects `src/` → `products/` and non-test `src/` →
+`application/` `ProjectReference`s. The existing exception is
+`Ashlar.Tests.Infrastructure` hosting `Ashlar.API` in-process.
 
 ## Stay in this repository (framework)
 

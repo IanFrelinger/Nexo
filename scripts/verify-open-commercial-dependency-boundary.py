@@ -215,11 +215,17 @@ def main() -> int:
         except FileNotFoundError:
             continue  # already reported by check 1
         for ref_rel in refs:
-            if (
-                ref_rel.startswith("applications/")
-                or ref_rel.startswith("application/")
-                or ref_rel.startswith("products/")
-            ):
+            if ref_rel.startswith("applications/") or ref_rel.startswith("products/"):
+                errors.append(
+                    f"core project references application project: {project.rel} -> {ref_rel}"
+                )
+                continue
+
+            # application/ hosts are products. The one existing exception is
+            # infrastructure tests hosting Ashlar.API in-process
+            # (WebApplicationFactory). New kernel libraries must not take this
+            # dependency; new test projects under src/Ashlar.Tests.* may.
+            if ref_rel.startswith("application/") and "/Ashlar.Tests." not in project.rel:
                 errors.append(
                     f"core project references application project: {project.rel} -> {ref_rel}"
                 )
