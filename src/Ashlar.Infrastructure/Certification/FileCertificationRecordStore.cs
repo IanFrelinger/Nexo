@@ -67,47 +67,13 @@ public sealed class FileCertificationRecordStore : ICertificationRecordStore
         try
         {
             File.WriteAllText(tmp, json);
-            ReplaceIntoPlace(tmp, path);
+            AtomicRecordReplace.IntoPlace(tmp, path);
         }
         catch
         {
             // Only ever this call's own staging file — never a name another writer could hold.
             try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* a stray staging file is inert */ }
             throw;
-        }
-    }
-
-    /// <summary>
-    /// Moves <paramref name="staged"/> over <paramref name="destination"/>, retrying the
-    /// Windows sharing collision that makes a concurrent overwrite throw instead of replace.
-    /// </summary>
-    /// <remarks>
-    /// Unix <c>rename</c> replaces unconditionally. Windows <c>MoveFileEx(...,
-    /// MOVEFILE_REPLACE_EXISTING)</c> fails with access-denied when another writer (or a
-    /// reader that opened the destination) still holds the file. The staged bytes are this
-    /// call's private file, so a failed move leaves them in place for the next attempt; the
-    /// live record is the last successful replace, never a mix of two writers.
-    /// </remarks>
-    private static void ReplaceIntoPlace(string staged, string destination)
-    {
-        const int maxAttempts = 32;
-        for (var attempt = 1; ; attempt++)
-        {
-            try
-            {
-                File.Move(staged, destination, overwrite: true);
-                return;
-            }
-            catch (Exception ex) when (
-                attempt < maxAttempts &&
-                File.Exists(staged) &&
-                (ex is IOException || ex is UnauthorizedAccessException))
-            {
-                if (attempt < 8)
-                    Thread.SpinWait(64 * attempt);
-                else
-                    Thread.Sleep(TimeSpan.FromMilliseconds(Math.Min(50, 2 * attempt)));
-            }
         }
     }
 

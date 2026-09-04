@@ -98,6 +98,49 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
+    public void ReplaceRetriesWindowsSharingDenial_ThenLandsTheStagedRecord()
+    {
+        var dest = Path.Combine(TempDir, "retry-dest.json");
+        var staged = dest + $".{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(dest, "previous-verdict");
+        File.WriteAllText(staged, "new-verdict");
+
+        var attempts = 0;
+        AtomicRecordReplace.IntoPlace(staged, dest, (source, destination) =>
+        {
+            attempts++;
+            if (attempts < 3)
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            File.Move(source, destination, overwrite: true);
+        });
+
+        attempts.Should().Be(3, "two sharing denials must be retried, not surfaced");
+        File.ReadAllText(dest).Should().Be("new-verdict");
+        File.Exists(staged).Should().BeFalse();
+    }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
+    public void ReplaceExhaustsRetries_ThenThrows_LeavingThePreviousVerdict()
+    {
+        var dest = Path.Combine(TempDir, "retry-exhausted.json");
+        var staged = dest + $".{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(dest, "previous-verdict");
+        File.WriteAllText(staged, "new-verdict");
+
+        var attempts = 0;
+        var act = () => AtomicRecordReplace.IntoPlace(staged, dest, (_, _) =>
+        {
+            attempts++;
+            throw new UnauthorizedAccessException("Access to the path is denied.");
+        });
+
+        act.Should().Throw<UnauthorizedAccessException>();
+        attempts.Should().Be(AtomicRecordReplace.MaxAttempts);
+        File.ReadAllText(dest).Should().Be("previous-verdict", "a persistent denial must not shred the live record");
+        File.Exists(staged).Should().BeTrue("the staged file stays for the caller to clean up");
+    }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
     public Task AStrayStagingFile_IsNotReadAsARecord()
     {
         // A crash between staging and moving leaves a staging file behind. It must be inert:
