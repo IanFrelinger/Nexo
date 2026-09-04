@@ -1,5 +1,7 @@
+using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Ashlar.Abstractions.Routing;
 using Ashlar.BackgroundAgents.Registry;
 using Ashlar.BackgroundAgents.Trust;
@@ -8,8 +10,13 @@ using Ashlar.Cluster;
 using Ashlar.Contracts.Distributed;
 using Ashlar.Core.Application.Configuration.Ports;
 using Ashlar.Hosting;
+using Ashlar.Infrastructure.Execution;
+using Ashlar.Mcp.Client;
+using Ashlar.Mcp.Server;
 using Ashlar.Native;
 using Ashlar.Runtime.Routing;
+using Ashlar.Transport.A2A;
+using Ashlar.Transport.A2A.Server;
 using Ashlar.Transport.Grpc;
 using Ashlar.Workstation;
 using Xunit;
@@ -61,6 +68,15 @@ public sealed class ProductScaffoldTests
 
         var canceled = () => scheduler.ScheduleAsync(envelope, new CancellationToken(canceled: true));
         await canceled.Should().ThrowAsync<OperationCanceledException>();
+
+        var differentHash = envelope with { PayloadHash = "sha256:other" };
+        var conflict = () => scheduler.ScheduleAsync(differentHash);
+        await conflict.Should().ThrowAsync<InvalidOperationException>().WithMessage("*different payload hash*");
+
+        var concurrent = new InMemoryTaskScheduler();
+        var handles = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => concurrent.ScheduleAsync(envelope)));
+        handles.Select(h => h.TaskId).Distinct().Should().ContainSingle();
+        (await concurrent.GetResultAsync(handles[0].TaskId))!.OutputHash.Should().Be("sha256:payload");
     }
 
     [Fact]
@@ -141,6 +157,20 @@ public sealed class ProductScaffoldTests
             envelope);
         mismatch.Status.Should().Be(ResultEvidenceStatus.Rejected);
         mismatch.Detail.Should().Contain("hash");
+
+        var oop = await host.ExecuteAsync(
+            NativeArtifactManifest.Create("art-o", NativeArtifactFormat.OutOfProcessWorker, "sha256:wasm", "main"),
+            envelope);
+        oop.Status.Should().Be(ResultEvidenceStatus.Succeeded);
+
+        var canceled = () => host.ExecuteAsync(
+            NativeArtifactManifest.Create("art-c", NativeArtifactFormat.WebAssembly, "sha256:wasm", "_start"),
+            envelope,
+            new CancellationToken(canceled: true));
+        await canceled.Should().ThrowAsync<OperationCanceledException>();
+
+        var nullManifest = () => host.ExecuteAsync(null!, envelope);
+        await nullManifest.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -156,7 +186,53 @@ public sealed class ProductScaffoldTests
         using var sp = services.BuildServiceProvider(validateScopes: true);
 
         sp.GetRequiredService<ICloudSanitizationProxy>().Should().NotBeNull();
+        sp.GetRequiredService<IProviderFactory>().Should().BeOfType<SanitizingProviderFactory>();
         sp.GetService<IGrpcChannelFactory>().Should().BeNull();
+    }
+
+    [Fact]
+    public void Workstation_composition_refuses_remote_protocols_without_env_var()
+    {
+        var prev = Environment.GetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE");
+        Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", null);
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddAshlarWorkstation();
+            using var sp = services.BuildServiceProvider(validateScopes: true);
+            sp.GetService<IGrpcChannelFactory>().Should().BeNull();
+
+            var client = new AshlarMcpClientOptions { Enabled = true };
+            client.Servers.Add(new McpServerEndpointOptions
+            {
+                Name = "github",
+                Url = "https://mcp.example.com/mcp",
+            });
+            new ValidateAshlarMcpClientOptions().Validate(null, client).Failed.Should().BeTrue();
+
+            new ValidateA2ATransportOptions()
+                .Validate(null, new A2ATransportOptions { Enabled = true })
+                .Failed.Should().BeTrue();
+
+            new ValidateAshlarA2AServerOptions()
+                .Validate(null, new AshlarA2AServerOptions
+                {
+                    Enabled = true,
+                    PublicBaseUrl = "https://peer.example.com",
+                    DefaultExecutionTimeout = TimeSpan.FromSeconds(30),
+                })
+                .Failed.Should().BeTrue();
+
+            new ValidateAshlarMcpServerOptions()
+                .Validate(null, new AshlarMcpServerOptions { Enabled = true, ServerName = "ashlar-ide" })
+                .Succeeded.Should().BeTrue();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", prev);
+            AshlarDeploymentProfileEnvironment.ClearResolved();
+        }
     }
 
     [Fact]
@@ -217,9 +293,9 @@ public sealed class ProductScaffoldTests
         }
     }
 
-    private static string FindRepoRoot()
+    private static string FindRepoRoot([CallerFilePath] string? sourceFile = null)
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        var dir = new DirectoryInfo(Path.GetDirectoryName(sourceFile) ?? AppContext.BaseDirectory);
         while (dir is not null)
         {
             if (File.Exists(Path.Combine(dir.FullName, "Ashlar.sln")))

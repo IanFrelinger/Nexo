@@ -9,15 +9,18 @@ internal static class DistributedContractGuard
             return null;
         }
 
-        foreach (var item in capabilities)
+        var trimmed = new string[capabilities.Count];
+        for (var i = 0; i < capabilities.Count; i++)
         {
-            if (string.IsNullOrWhiteSpace(item))
+            if (string.IsNullOrWhiteSpace(capabilities[i]))
             {
                 throw new ArgumentException("Capability names must be non-blank.", nameof(capabilities));
             }
+
+            trimmed[i] = capabilities[i].Trim();
         }
 
-        return capabilities;
+        return trimmed;
     }
 
     internal static void Timestamp(DateTimeOffset value, string paramName)

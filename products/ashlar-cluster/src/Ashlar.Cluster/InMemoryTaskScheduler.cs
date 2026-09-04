@@ -18,13 +18,10 @@ public sealed class InMemoryTaskScheduler : ITaskScheduler
     {
         ArgumentNullException.ThrowIfNull(envelope);
         cancellationToken.ThrowIfCancellationRequested();
+        ArgumentException.ThrowIfNullOrWhiteSpace(envelope.EnvelopeId);
 
         var taskId = $"task:{envelope.EnvelopeId}";
-        if (_results.ContainsKey(taskId))
-        {
-            return Task.FromResult(ScheduledTaskHandle.Create(taskId, envelope.EnvelopeId));
-        }
-
+        var handle = ScheduledTaskHandle.Create(taskId, envelope.EnvelopeId);
         var evidence = ResultEvidence.Create(
             envelope.EnvelopeId,
             taskId,
@@ -32,8 +29,24 @@ public sealed class InMemoryTaskScheduler : ITaskScheduler
             envelope.PayloadHash,
             DateTimeOffset.UtcNow);
 
-        _results[taskId] = evidence;
-        return Task.FromResult(ScheduledTaskHandle.Create(taskId, envelope.EnvelopeId));
+        if (_results.TryAdd(taskId, evidence))
+        {
+            return Task.FromResult(handle);
+        }
+
+        if (!_results.TryGetValue(taskId, out var existing))
+        {
+            throw new InvalidOperationException(
+                $"Envelope '{envelope.EnvelopeId}' was dropped during schedule.");
+        }
+
+        if (!string.Equals(existing.OutputHash, envelope.PayloadHash, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Envelope '{envelope.EnvelopeId}' is already scheduled with a different payload hash.");
+        }
+
+        return Task.FromResult(handle);
     }
 
     /// <inheritdoc />

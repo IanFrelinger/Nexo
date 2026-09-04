@@ -47,7 +47,10 @@ enable under both profiles. Local MCP **server** stays allowed on
 `AirGapped`. Profile aliases are parsed by one linked helper
 (`AshlarDeploymentProfileEnvironment`) so hosting and protocol assemblies
 cannot drift. `AddAshlarWorkstation` re-asserts the profile and
-`TrustEnabled=true` after any caller `configure` callback.
+`TrustEnabled=true` after any caller `configure` callback. `AddAshlar`
+records the resolved profile so MCP/A2A validators refuse remote egress
+even when the env var is unset. Underscore aliases (`secure_workstation`,
+`air_gapped`) parse the same as hyphenated ones.
 
 Envelope, evidence, native-manifest, and scheduled-handle factories reject
 blank ids, undefined enums, malformed digests, and non-positive budgets.

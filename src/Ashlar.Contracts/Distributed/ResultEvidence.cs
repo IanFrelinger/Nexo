@@ -37,8 +37,8 @@ public sealed record ResultEvidence(
     byte[]? Signature = null)
 {
     /// <summary>
-    /// Builds evidence after rejecting blank required fields. Succeeded
-    /// evidence requires a digest; other statuses may use an empty hash.
+    /// Builds evidence after rejecting blank required fields. Succeeded and
+    /// failed evidence require a digest; rejected-before-execution may be empty.
     /// </summary>
     public static ResultEvidence Create(
         string envelopeId,
@@ -56,7 +56,7 @@ public sealed record ResultEvidence(
         DistributedContractGuard.Defined(status, nameof(status));
         DistributedContractGuard.Timestamp(completedAtUtc, nameof(completedAtUtc));
 
-        var hash = status == ResultEvidenceStatus.Succeeded
+        var hash = status is ResultEvidenceStatus.Succeeded or ResultEvidenceStatus.Failed
             ? DistributedContractGuard.Digest(outputHash, nameof(outputHash))
             : DistributedContractGuard.OptionalDigest(outputHash, nameof(outputHash));
 

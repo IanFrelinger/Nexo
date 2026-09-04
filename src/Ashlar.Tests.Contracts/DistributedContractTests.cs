@@ -28,6 +28,12 @@ public sealed class DistributedContractTests
         envelope.PolicyPackId.Should().Be("pack-1");
         envelope.AllowedCapabilities.Should().Equal("fs.read");
 
+        var trimmedCaps = ExecutionEnvelope.Create(
+            "env-2", "node-a", ExecutionTarget.Local, "brick.execute", "sha256:abc", "pack-1",
+            DateTimeOffset.Parse("2026-09-04T12:00:00Z"),
+            allowedCapabilities: new[] { " fs.read " });
+        trimmedCaps.AllowedCapabilities.Should().Equal("fs.read");
+
         var act = () => ExecutionEnvelope.Create(
             "", "n", ExecutionTarget.Local, "w", "h", "p", DateTimeOffset.UtcNow);
         act.Should().Throw<ArgumentException>();
@@ -88,8 +94,13 @@ public sealed class DistributedContractTests
         missingHash.Should().Throw<ArgumentException>();
 
         var missingTime = () => ResultEvidence.Create(
-            "env", "task", ResultEvidenceStatus.Failed, string.Empty, default);
+            "env", "task", ResultEvidenceStatus.Rejected, string.Empty, default);
         missingTime.Should().Throw<ArgumentOutOfRangeException>();
+
+        var failedNeedsHash = () => ResultEvidence.Create(
+            "env", "task", ResultEvidenceStatus.Failed, string.Empty,
+            DateTimeOffset.Parse("2026-09-04T12:00:00Z"));
+        failedNeedsHash.Should().Throw<ArgumentException>();
     }
 
     [Fact]
