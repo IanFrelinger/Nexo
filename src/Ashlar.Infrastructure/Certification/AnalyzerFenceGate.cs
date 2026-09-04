@@ -92,24 +92,19 @@ public sealed class AnalyzerFenceGate
         try
         {
             var wrapped = CandidateSourceWrapper.Wrap(candidateSource);
-            var syntaxTree = CSharpSyntaxTree.ParseText(wrapped, cancellationToken: cancellationToken);
+            var syntaxTree = CSharpSyntaxTree.ParseText(
+                wrapped, BrickCompileOptions.ParseOptions, cancellationToken: cancellationToken);
 
             var references = RoslynCodeAnalysisService.BuildReferenceSet(compilationReferences);
-            // The autonomy surface is [Experimental]; a candidate that reaches into it would
-            // otherwise fail the compile-error guard below with ASHLAREXP001 and never reach the
-            // analyzers - which is precisely the kernel-smuggling case the fence exists to NAME
-            // (ASHLAR0014). Suppress the opt-in diagnostic here so the fence judges the candidate on
-            // its rules; the certification build outside the fence still enforces it.
-            var fenceOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                .WithSpecificDiagnosticOptions(new Dictionary<string, ReportDiagnostic>
-                {
-                    [Ashlar.Core.Application.Autonomy.AutonomyExperimental.DiagnosticId] = ReportDiagnostic.Suppress,
-                });
+            // Closed-world options plus ASHLAREXP001 suppress: a candidate that reaches the
+            // autonomy surface would otherwise fail the compile-error guard and never reach
+            // the analyzers — which is precisely the kernel-smuggling case the fence exists
+            // to NAME (ASHLAR0014).
             var compilation = CSharpCompilation.Create(
                 "AnalyzerGateCandidate",
                 new[] { syntaxTree },
                 references,
-                fenceOptions);
+                BrickCompileOptions.ForAnalyzerFence());
 
             // Every brick-scoped rule anchors on the canonical Brick type and silently no-ops
             // without it. In a certification context that silence is fail-open; convert it to an

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.CLI.Runtime;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands;
 
@@ -618,7 +619,12 @@ public sealed class SelfExtendCommand : Command
         if (dockerCli.ExitCode != 0)
             return new VisualInfraReadiness(false, "Visual QA infra missing docker CLI.");
 
-        var dockerInfo = await RunProcessAsync("bash", repoRoot, new[] { "-lc", "docker info > /dev/null 2>&1" }, ct).ConfigureAwait(false);
+        var dockerInfo = await RunProcessAsync(
+            "bash",
+            repoRoot,
+            new[] { "-lc", "docker info > /dev/null 2>&1" },
+            ct,
+            TimedProcess.DaemonProbeTimeout).ConfigureAwait(false);
         if (dockerInfo.ExitCode != 0)
             return new VisualInfraReadiness(false, "Visual QA infra missing usable Docker daemon.");
 
@@ -911,31 +917,24 @@ public sealed class SelfExtendCommand : Command
         string fileName,
         string workingDirectory,
         IEnumerable<string> args,
-        CancellationToken ct)
+        CancellationToken ct,
+        TimeSpan? timeout = null)
     {
         var psi = new ProcessStartInfo
         {
             FileName = fileName,
             WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
         };
         foreach (var arg in args)
             psi.ArgumentList.Add(arg);
 
-        using var process = Process.Start(psi);
-        if (process == null)
-            return (1, string.Empty, "Failed to start test process.");
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-        var stderrTask = process.StandardError.ReadToEndAsync(ct);
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-        var stdout = await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-        if (!string.IsNullOrWhiteSpace(stderr))
-            Console.Error.WriteLine(stderr.Trim());
-        return (process.ExitCode, stdout, stderr);
+        var result = await TimedProcess.RunAsync(psi, timeout ?? Timeout.InfiniteTimeSpan, ct)
+            .ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(result.StdErr))
+            Console.Error.WriteLine(result.StdErr.Trim());
+        if (result.TimedOut)
+            return (TimedProcess.TimeoutExitCode, result.StdOut, result.StdErr);
+        return (result.ExitCode, result.StdOut, result.StdErr);
     }
 
     private sealed record QaGateResult(bool Ran, bool Passed, string Summary);

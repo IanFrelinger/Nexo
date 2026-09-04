@@ -35,6 +35,12 @@ try
         JsonSerializer.Serialize(decision.Record, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
         .ConfigureAwait(false);
 
+    if (request.EmittedArtifact is { } artifact)
+    {
+        var artifactPath = Path.Combine(recordDir, CertifiedArtifactExporter.ArtifactFileName);
+        await File.WriteAllBytesAsync(artifactPath, artifact.AssemblyBytes).ConfigureAwait(false);
+    }
+
     if (!string.Equals(recordPath, Path.Combine(recordDir, $"{decision.Record.BrickId}.json"), StringComparison.OrdinalIgnoreCase))
     {
         await File.WriteAllTextAsync(
@@ -56,6 +62,37 @@ try
 }
 catch (Exception ex)
 {
-    Console.Error.WriteLine($"Certification failed: {ex.Message}");
+    // A load/fence refusal used to print the exception and exit with no file.
+    // "No record" is what Get() returns for an unsigned or missing file, so the
+    // refuse was indistinguishable from "never certified." Persist a signed FAIL.
+    var brickId = TryWitnessBrickId(witnessPath) ?? new DirectoryInfo(brickDir).Name;
+    var refusal = LoadRefusalRecord.Create(signer, brickId, ex.Message);
+    try
+    {
+        store.Save(refusal);
+        File.WriteAllText(
+            recordPath,
+            JsonSerializer.Serialize(refusal, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    }
+    catch
+    {
+        /* still fail closed — the process exit is the refusal */
+    }
+
+    Console.Error.WriteLine($"REJECT (load): {ex.Message}");
+    Console.Error.WriteLine($"Record: {recordPath}");
     return 1;
+}
+
+static string? TryWitnessBrickId(string path)
+{
+    try
+    {
+        using var doc = JsonDocument.Parse(File.ReadAllText(path));
+        return doc.RootElement.TryGetProperty("brickId", out var id) ? id.GetString() : null;
+    }
+    catch
+    {
+        return null;
+    }
 }

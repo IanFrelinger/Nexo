@@ -87,8 +87,8 @@ jobs:
           TMP_ROOT="$RUNNER_TEMP"
           TEMPLATE_PATH="$TMP_ROOT/pipeline_gate_demo.json"
           VALIDATE_LOG="$TMP_ROOT/gate-validate.log"
-          SUCCESS_LOG="$TMP_ROOT/gate-run-success.log"
-          FALLBACK_LOG="$TMP_ROOT/gate-run-fallback.log"
+          UNCONFIGURED_LOG="$TMP_ROOT/gate-run-unconfigured.log"
+          HOOKS_LOG="$TMP_ROOT/gate-run-hooks.log"
           DIAGNOSTICS_LOG="$TMP_ROOT/gate-diagnostics.log"
 
           cat > "$TEMPLATE_PATH" <<'JSON'
@@ -105,10 +105,27 @@ jobs:
           }
           JSON
 
+          run_expecting_failure() {
+            local log="$1"
+            shift
+            set +e
+            "$@" | tee "$log"
+            local exit_code=$?
+            set -e
+            if [ "$exit_code" -eq 0 ]; then
+              echo "expected non-zero from: $*"
+              exit 1
+            fi
+          }
+
           dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline validate --template "$TEMPLATE_PATH" | tee "$VALIDATE_LOG"
-          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-success --format-json | tee "$SUCCESS_LOG"
+          run_expecting_failure "$UNCONFIGURED_LOG" \
+            dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-unconfigured --format-json
+          # Test hooks inject extra failures; they must not restore fabricated success
+          # for the unconfigured default adapter.
           ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
-          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee "$FALLBACK_LOG"
+            run_expecting_failure "$HOOKS_LOG" \
+            dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-hooks --input "fail:hybrid:deterministic=true" --format-json
           dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline diagnostics --format-json | tee "$DIAGNOSTICS_LOG"
 
           python - <<'PY'
@@ -123,21 +140,22 @@ jobs:
                   raise SystemExit(f"No JSON payload found in {path}")
               return json.loads(json_lines[-1])
 
+          def assert_fail_closed(payload: dict, label: str) -> None:
+              if payload.get("ok"):
+                  raise SystemExit(f"{label}: unconfigured pipeline run must not report ok=true")
+              data = payload.get("data") or {}
+              if data.get("state") != "Failed":
+                  raise SystemExit(f"{label}: expected state Failed, got {data.get('state')}")
+              ingest = next((s for s in data.get("stages", []) if s.get("stageId") == "ingest"), None)
+              if ingest is None:
+                  raise SystemExit(f"{label}: missing ingest stage")
+              error = ingest.get("error") or ""
+              if "No deterministic pipeline adapter is configured" not in error:
+                  raise SystemExit(f"{label}: ingest did not fail closed on the placeholder adapter: {error!r}")
+
           tmp_root = os.environ["RUNNER_TEMP"]
-          success = parse_final_json(os.path.join(tmp_root, "gate-run-success.log"))
-          fallback = parse_final_json(os.path.join(tmp_root, "gate-run-fallback.log"))
-
-          if not success.get("ok"):
-              raise SystemExit("Success run did not return ok=true")
-          if success.get("data", {}).get("state") != "Completed":
-              raise SystemExit("Success run did not complete")
-
-          stages = fallback.get("data", {}).get("stages", [])
-          hybrid = next((s for s in stages if s.get("stageId") == "hybrid"), None)
-          if hybrid is None:
-              raise SystemExit("Fallback run missing hybrid stage result")
-          if hybrid.get("workerType") != "Agentic":
-              raise SystemExit(f"Fallback run did not switch to Agentic worker, got {hybrid.get('workerType')}")
+          assert_fail_closed(parse_final_json(os.path.join(tmp_root, "gate-run-unconfigured.log")), "unconfigured")
+          assert_fail_closed(parse_final_json(os.path.join(tmp_root, "gate-run-hooks.log")), "test-hooks")
           PY
 
       - name: Durable resume checks (LiteDb)
@@ -149,19 +167,26 @@ jobs:
           RESUME_SOURCE_LOG="$TMP_ROOT/gate-resume-source.log"
           RESUME_TARGET_LOG="$TMP_ROOT/gate-resume-target.log"
 
-          set +e
-          ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
-          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee "$RESUME_SOURCE_LOG"
-          source_exit=$?
-          set -e
+          run_expecting_failure() {
+            local log="$1"
+            shift
+            set +e
+            "$@" | tee "$log"
+            local exit_code=$?
+            set -e
+            if [ "$exit_code" -eq 0 ]; then
+              echo "expected non-zero from: $*"
+              exit 1
+            fi
+          }
 
-          if [ "$source_exit" -eq 0 ]; then
-            echo "Expected source run to fail for resume scenario"
-            exit 1
-          fi
+          ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
+            run_expecting_failure "$RESUME_SOURCE_LOG" \
+            dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json
 
           ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" \
-          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee "$RESUME_TARGET_LOG"
+            run_expecting_failure "$RESUME_TARGET_LOG" \
+            dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json
 
           python - <<'PY'
           import os
@@ -181,10 +206,13 @@ jobs:
 
           if source.get("data", {}).get("state") != "Failed":
               raise SystemExit("Source run is expected to fail for durable resume check")
-          if not target.get("ok"):
-              raise SystemExit("Resumed target run did not return ok=true")
-          if target.get("data", {}).get("state") != "Completed":
-              raise SystemExit("Resumed target run did not complete")
+          if target.get("ok"):
+              raise SystemExit("Resumed target must not report ok=true without a configured adapter")
+          if target.get("data", {}).get("state") != "Failed":
+              raise SystemExit(f"Resumed target must stay Failed, got {target.get('data', {}).get('state')}")
+          err = json.dumps(target)
+          if "no prior run was found" in err:
+              raise SystemExit("Resume did not find the persisted source run")
           PY
 
       - name: Cleanup temp artifacts
@@ -200,8 +228,8 @@ jobs:
           path: |
             test-results/**/*.trx
             ${{ runner.temp }}/gate-validate.log
-            ${{ runner.temp }}/gate-run-success.log
-            ${{ runner.temp }}/gate-run-fallback.log
+            ${{ runner.temp }}/gate-run-unconfigured.log
+            ${{ runner.temp }}/gate-run-hooks.log
             ${{ runner.temp }}/gate-diagnostics.log
             ${{ runner.temp }}/gate-resume-source.log
             ${{ runner.temp }}/gate-resume-target.log

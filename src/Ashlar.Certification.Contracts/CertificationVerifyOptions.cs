@@ -22,6 +22,18 @@ public sealed class CertificationVerifyOptions
     public static CertificationVerifyOptions Default { get; } = new();
 
     /// <summary>
+    /// Consumer completeness floor: refuse legacy schema and records that do not name a
+    /// gate-emitted artifact and a certifier identity. Does not require Ed25519 (that is a
+    /// separate trust-root choice) so HMAC-era records that already close class A still verify.
+    /// </summary>
+    public static CertificationVerifyOptions Strict { get; } = new()
+    {
+        MinimumSchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+        RequireGateEmittedArtifact = true,
+        RequireCertifierIdentity = true,
+    };
+
+    /// <summary>
     /// Lowest <see cref="CertificationRecordData.SchemaVersion"/> this verifier accepts. A
     /// record below the floor is refused outright, before any signature is examined; a null
     /// schema version counts as 0.
@@ -65,9 +77,26 @@ public sealed class CertificationVerifyOptions
     /// </remarks>
     public IReadOnlyCollection<string>? TrustedEd25519PublicKeys { get; init; }
 
+    /// <summary>
+    /// When true, a record without a <c>gate-emitted-artifact</c> input is refused. That input
+    /// is the hash of the assembly the certifier compiled and shipped; without it a consumer
+    /// cannot tell judged bytes from some other compile of the same source.
+    /// </summary>
+    public bool RequireGateEmittedArtifact { get; init; }
+
+    /// <summary>
+    /// When true, a record without a <c>certifier-identity</c> input is refused. The identity
+    /// names the judge; a certificate that omits it cannot be attributed to a gate.
+    /// </summary>
+    public bool RequireCertifierIdentity { get; init; }
+
     /// <summary>True when any strictness beyond today's behaviour is configured.</summary>
     public bool IsStrict =>
-        MinimumSchemaVersion > 0 || RequireEd25519Signature || PinningEnabled;
+        MinimumSchemaVersion > 0
+        || RequireEd25519Signature
+        || PinningEnabled
+        || RequireGateEmittedArtifact
+        || RequireCertifierIdentity;
 
     /// <summary>True when a non-empty trusted-key set is configured.</summary>
     public bool PinningEnabled => TrustedEd25519PublicKeys is { Count: > 0 };

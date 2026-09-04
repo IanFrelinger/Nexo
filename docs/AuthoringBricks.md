@@ -83,9 +83,9 @@ Ashlar also has an adaptive manifest path: `INewBrickGenerator.GenerateAsync(...
 
 Use **code-authored bricks** when you want to ship source-controlled domain logic with tests and stable package/version ownership. Use the **manifest generator** when Ashlar is inferring a candidate brick from observed workflow patterns. Both paths describe the same conceptual brick surface; code bricks are the developer-authored, reviewable path.
 
-## Packages are not on nuget.org yet
+## Packages on nuget.org
 
-**Nothing has been published.** No `v*` tag or GitHub release has been cut, `release.yml` / `release-nuget.yml` have never run, and `Ashlar.CLI`, `Ashlar.Authoring`, `Ashlar.Hosting` and `Ashlar.Hosting.Bundle` all return 404 on nuget.org. Any instruction of the form `dotnet tool install --global Ashlar.CLI` or `<PackageReference Include="Ashlar.Authoring" ... />` therefore fails today unless **you** supply the packages from a local folder feed. The rest of this page is written for that reality: start from the `ProjectReference` sample, and use the local-feed recipe only when you specifically want to exercise the standalone (`ashlar new brick`) shape.
+Published feed version is **`0.1.1`** (`ci/published-version`). Repo `VERSION` may already read ahead of that for an unpublished cut — do not treat `VERSION` as the public pin. `Ashlar.CLI`, `Ashlar.Authoring`, `Ashlar.Hosting`, and `Ashlar.Hosting.Bundle` restore from nuget.org at **0.1.1**. A checkout still works with `ProjectReference` (next section) if you do not want the feed.
 
 ## Primary path: `samples/hello-brick` (ProjectReference)
 
@@ -118,7 +118,7 @@ To start your own brick, copy `samples/hello-brick/` next to it (or anywhere ins
 ashlar new brick MyThing --ashlar-version 1.2.3
 ```
 
-Because `Ashlar.Authoring` is not on nuget.org, restoring the generated project fails with `NU1101: Unable to find package Ashlar.Authoring` until you make the package restorable (next section). Inside a checkout you can run the CLI without installing it:
+Because an unpublished CLI version may generate a `PackageReference` to a version that is not on the feed yet, restoring a freshly scaffolded project can fail with `NU1101` until you pin `--ashlar-version` to **`0.1.1`** (`ci/published-version`) or use a local folder feed (next section). Inside a checkout you can run the CLI without installing it:
 
 ```bash
 dotnet run --project application/src/Ashlar.CLI -- new brick Hello --output /tmp/hello-brick --ashlar-version 9.9.9-local

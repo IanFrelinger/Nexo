@@ -1,0 +1,9 @@
+{
+  "id": "b2-timer-callback",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.Threading.Timer",
+  "note": "Round-13 attack: Timer callbacks run on the certifier thread pool after ExecuteAsync returns."
+}

@@ -93,9 +93,42 @@ public sealed class VirtualProductionNcrRoutingHost : IAsyncDisposable
         var host = builder.Build();
         await host.StartAsync(cancellationToken).ConfigureAwait(false);
 
-        await Task.Delay(opts.PostStartDelay, cancellationToken).ConfigureAwait(false);
+        var result = new VirtualProductionNcrRoutingHost(host, runPodApi, meshPath, savedEnv);
+        await WaitForNcrSnapshotAsync(result, opts, cancellationToken).ConfigureAwait(false);
+        return result;
+    }
 
-        return new VirtualProductionNcrRoutingHost(host, runPodApi, meshPath, savedEnv);
+    /// <summary>
+    /// The poller's first refresh runs inside <c>ExecuteAsync</c> after <c>StartAsync</c>
+    /// returns. A fixed delay misses on a loaded macOS runner and routes to RunPod
+    /// because the unpublished snapshot still reads 0 VRAM.
+    /// </summary>
+    private static async Task WaitForNcrSnapshotAsync(
+        VirtualProductionNcrRoutingHost host,
+        VirtualProductionNcrRoutingHostOptions opts,
+        CancellationToken cancellationToken)
+    {
+        long? expectedVram = null;
+        if (opts.EnvironmentOverrides.TryGetValue("ASHLAR_AVAILABLE_VRAM_BYTES", out var raw)
+            && long.TryParse(raw, out var parsed))
+        {
+            expectedVram = parsed;
+        }
+
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+        while (DateTime.UtcNow < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var snap = host.GetNcrSnapshot();
+            if (expectedVram is { } vram && snap.AvailableVramBytes == vram)
+                return;
+            if (expectedVram is null)
+                break;
+            await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (expectedVram is null)
+            await Task.Delay(opts.PostStartDelay, cancellationToken).ConfigureAwait(false);
     }
 
     private static Dictionary<string, string?> ApplyEnvironmentOverrides(VirtualProductionNcrRoutingHostOptions opts)

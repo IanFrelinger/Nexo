@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 using Ashlar.Core.Application.Paths;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands;
 
@@ -175,24 +176,17 @@ public sealed class ReleaseCommand : Command
 
     private static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory)
     {
-        using var process = new Process
+        var psi = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = arguments,
-                WorkingDirectory = workingDirectory,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            }
+            FileName = fileName,
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
         };
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        await process.WaitForExitAsync().ConfigureAwait(false);
-        return process.ExitCode;
+        var run = await TimedProcess.RunAsync(psi, TimedProcess.OperatorCommandTimeout).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(run.StdOut))
+            Console.Write(run.StdOut);
+        if (!string.IsNullOrEmpty(run.StdErr))
+            Console.Error.Write(run.StdErr);
+        return run.ExitCode;
     }
 }

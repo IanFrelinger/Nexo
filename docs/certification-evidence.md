@@ -2,7 +2,7 @@
 
 Falsifiable proof ledger for atom certification, general generation, composition certification, and dogfood. Each row cites how it was proven and the CI run (when applicable).
 
-Version pin: `0.1.0` (from `VERSION`)
+Version pin: published feed `0.1.1` (`ci/published-version`). Repo `VERSION` is not the public pin.
 
 ## Proof index
 

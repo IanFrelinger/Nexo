@@ -1,12 +1,16 @@
-using System.Reflection;
 using System.Text.Json;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
 namespace Ashlar.Infrastructure.Certification;
 
-/// <summary>Loads brick projects and witness specs from disk into certification requests.</summary>
+/// <summary>
+/// Loads brick projects from disk into certification requests.
+/// The certifier compiles the source itself (A8): author MSBuild is fenced, never executed,
+/// type discovery is metadata-only, and the emitted bytes travel with the request.
+/// </summary>
 public static class BrickCertificationProjectLoader
 {
     /// <summary>Load asynchronously.</summary>
@@ -18,32 +22,34 @@ public static class BrickCertificationProjectLoader
         var projectDir = Path.GetFullPath(brickProjectDirectory);
         var csproj = Directory.GetFiles(projectDir, "*.csproj").FirstOrDefault()
             ?? throw new FileNotFoundException($"No .csproj in {projectDir}");
-        var sourceFile = Directory.GetFiles(projectDir, "*.cs")
-            .FirstOrDefault(f => !f.EndsWith(".AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
-            ?? throw new FileNotFoundException($"No .cs source in {projectDir}");
+        var sourceFiles = Directory.GetFiles(projectDir, "*.cs")
+            .Where(f => !f.EndsWith(".AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (sourceFiles.Length == 0)
+            throw new FileNotFoundException($"No .cs source in {projectDir}");
+        if (sourceFiles.Length > 1)
+        {
+            throw new InvalidOperationException(
+                "single-source fence: the certifier compiles exactly one author .cs file. "
+                + $"Found {sourceFiles.Length} ({string.Join(", ", sourceFiles.Select(Path.GetFileName))}). "
+                + "Extra files are neither judged nor shipped, so they are refused.");
+        }
 
-        var sourceCode = await File.ReadAllTextAsync(sourceFile, cancellationToken).ConfigureAwait(false);
-        var witnessJson = await File.ReadAllTextAsync(witnessSpecPath, cancellationToken).ConfigureAwait(false);
+        var sourceFile = sourceFiles[0];
+
+        BuildSurfaceFence.Inspect(projectDir, csproj);
+        var sourceCode = await StrictUtf8SourceDecoder.ReadFileAsync(sourceFile, cancellationToken)
+            .ConfigureAwait(false);
+        var witnessJson = await StrictUtf8SourceDecoder.ReadFileAsync(witnessSpecPath, cancellationToken)
+            .ConfigureAwait(false);
         var witnessDto = JsonSerializer.Deserialize<WitnessSpecDto>(witnessJson, JsonOptions)
             ?? throw new InvalidOperationException("Witness spec is empty");
 
-        var buildDir = Path.Combine(Path.GetTempPath(), "ashlar-cert-build", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(buildDir);
-
-        var build = await RunDotnetBuildAsync(csproj, buildDir, cancellationToken).ConfigureAwait(false);
-        if (build.ExitCode != 0)
-            throw new InvalidOperationException($"dotnet build failed: {build.Output}");
-
-        var dllPath = Directory.GetFiles(buildDir, "*.dll", SearchOption.AllDirectories)
-            .FirstOrDefault(f => Path.GetFileName(f).Contains(Path.GetFileNameWithoutExtension(csproj), StringComparison.OrdinalIgnoreCase))
-            ?? throw new FileNotFoundException("Built brick assembly not found");
-
-        var assembly = Assembly.LoadFrom(dllPath);
-        var brickType = assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
-            ?? throw new InvalidOperationException("No DomainBrick type in assembly");
-
-        var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
-        var references = CollectReferences(buildDir, dllPath);
+        var references = DefaultCompilationReferences();
+        var artifact = GateEmittedArtifactCompiler.Compile(sourceCode, references);
+        IlImportFence.Inspect(artifact.AssemblyBytes);
+        var brick = CertifiedBrickActivator.Activate(artifact);
 
         var witness = new WitnessSpec(
             witnessDto.BrickId ?? brick.Id,
@@ -58,43 +64,23 @@ public static class BrickCertificationProjectLoader
             SourceCode = sourceCode,
             ProjectPath = csproj,
             CompilationReferences = references,
-            BrickTypeName = brickType.FullName
+            BrickTypeName = artifact.BrickTypeName,
+            EmittedArtifact = artifact
         };
     }
 
-    private static async Task<(int ExitCode, string Output)> RunDotnetBuildAsync(
-        string csproj,
-        string outputDir,
-        CancellationToken cancellationToken)
+    internal static List<string> DefaultCompilationReferences()
     {
-        var configFile = Environment.GetEnvironmentVariable("ASHLAR_CERT_NUGET_CONFIG");
-        var configArg = string.IsNullOrWhiteSpace(configFile)
-            ? string.Empty
-            : $" --configfile \"{configFile}\"";
-
-        var psi = new System.Diagnostics.ProcessStartInfo
+        var refs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string? path)
         {
-            FileName = "dotnet",
-            Arguments =
-                $"build \"{csproj}\" -c Release -o \"{outputDir}\" -v q{configArg} " +
-                "-p:TreatWarningsAsErrors=false -p:NuGetAudit=false",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-        using var process = System.Diagnostics.Process.Start(psi)
-            ?? throw new InvalidOperationException("Failed to start dotnet build");
-        var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        var stderr = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        return (process.ExitCode, stdout + stderr);
-    }
+            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                refs.Add(path);
+        }
 
-    private static List<string> CollectReferences(string buildDir, string primaryDll)
-    {
-        var refs = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { primaryDll };
-        foreach (var dll in Directory.GetFiles(buildDir, "*.dll", SearchOption.AllDirectories))
-            refs.Add(dll);
+        Add(typeof(DomainBrick).Assembly.Location);
+        Add(typeof(BrickInput).Assembly.Location);
+        Add(typeof(IExecutionContext).Assembly.Location);
         return refs.ToList();
     }
 

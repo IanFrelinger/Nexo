@@ -3,6 +3,7 @@ using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
 using System.Runtime.InteropServices;
 using System.Text;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.Infrastructure.Testing.Docker;
 
@@ -145,7 +146,9 @@ public class DockerService : IDockerService, IDisposable
             await _dockerClient.Containers.StartContainerAsync(containerId, new ContainerStartParameters(), cancellationToken);
 
             // Wait for container to finish
-            var waitResponse = await _dockerClient.Containers.WaitContainerAsync(containerId, cancellationToken);
+            using var waitCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            waitCts.CancelAfter(TimedProcess.DockerWaitTimeout);
+            var waitResponse = await _dockerClient.Containers.WaitContainerAsync(containerId, waitCts.Token);
             var exitCode = (int)waitResponse.StatusCode;
 
             // Get logs
@@ -176,7 +179,7 @@ public class DockerService : IDockerService, IDisposable
                     await _dockerClient.Containers.RemoveContainerAsync(
                         containerId,
                         new ContainerRemoveParameters { Force = true },
-                        cancellationToken);
+                        CancellationToken.None);
                 }
                 catch (Exception ex)
                 {

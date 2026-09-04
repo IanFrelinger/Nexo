@@ -28,11 +28,19 @@ if (!decision.Admitted)
 }
 
 var data = CertificationRecordMapper.ToData(decision.Record);
-var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-Directory.CreateDirectory(Path.GetDirectoryName(recordPath)!);
-await File.WriteAllTextAsync(recordPath, json).ConfigureAwait(false);
+if (request.EmittedArtifact is null)
+{
+    Console.Error.WriteLine("Certification produced no gate-emitted artifact; refusing to export an author-built binary.");
+    return 4;
+}
 
-var verify = CertificationTrustVerifier.Verify(data, request.SourceCode);
+await CertifiedArtifactExporter.WriteAsync(recordPath, data, request.EmittedArtifact).ConfigureAwait(false);
+
+var verify = CertificationTrustVerifier.Verify(
+    data,
+    request.SourceCode,
+    request.EmittedArtifact.AssemblyBytes,
+    options: CertificationVerifyOptions.Strict);
 if (!verify.Trusted)
 {
     Console.Error.WriteLine($"Post-export verify failed: {verify.FailureCode} {verify.Reason}");
@@ -40,5 +48,7 @@ if (!verify.Trusted)
 }
 
 Console.WriteLine($"Wrote content-bound record to {recordPath}");
+Console.WriteLine($"Wrote gate-emitted assembly to {Path.Combine(Path.GetDirectoryName(recordPath)!, CertifiedArtifactExporter.ArtifactFileName)}");
 Console.WriteLine($"contentHash={data.ContentHash}");
+Console.WriteLine($"artifactHash={request.EmittedArtifact.AssemblySha256}");
 return 0;

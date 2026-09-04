@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using Ashlar.CLI.Runtime;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands.Runtime;
 /// <summary>Handles execute requests.</summary>
@@ -196,16 +197,17 @@ internal sealed partial class ExecuteHandler(
         psi.ArgumentList.Add("-lc");
         psi.ArgumentList.Add(script);
 
-        using var process = Process.Start(psi);
-        if (process == null)
-            return new RuntimeSubprocessResult(1, string.Empty, $"Failed to start shell probe: {script}");
+        var result = await TimedProcess.RunAsync(psi, TimedProcess.DaemonProbeTimeout, ct).ConfigureAwait(false);
+        if (result.TimedOut)
+        {
+            var timeoutNote = $"Probe timed out after {TimedProcess.DaemonProbeTimeout.TotalSeconds:0}s.";
+            var stderr = string.IsNullOrWhiteSpace(result.StdErr)
+                ? timeoutNote
+                : timeoutNote + " " + result.StdErr.Trim();
+            return new RuntimeSubprocessResult(TimedProcess.TimeoutExitCode, result.StdOut, stderr);
+        }
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-        var stderrTask = process.StandardError.ReadToEndAsync(ct);
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-        var stdout = await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-        return new RuntimeSubprocessResult(process.ExitCode, stdout, stderr);
+        return new RuntimeSubprocessResult(result.ExitCode, result.StdOut, result.StdErr);
     }
 
 
@@ -297,16 +299,9 @@ internal sealed partial class ExecuteHandler(
         foreach (var arg in args)
             psi.ArgumentList.Add(arg);
 
-        using var process = Process.Start(psi);
-        if (process == null)
-            return new RuntimeSubprocessResult(1, string.Empty, "Failed to start runtime subprocess.");
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-        var stderrTask = process.StandardError.ReadToEndAsync(ct);
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-        var stdout = await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-        return new RuntimeSubprocessResult(process.ExitCode, stdout, stderr);
+        var run = await TimedProcess.RunAsync(psi, TimedProcess.OperatorCommandTimeout, ct)
+            .ConfigureAwait(false);
+        return new RuntimeSubprocessResult(run.ExitCode, run.StdOut, run.StdErr);
     }
 
 

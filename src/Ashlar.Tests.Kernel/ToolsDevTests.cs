@@ -602,15 +602,19 @@ public class ToolsDevTests
     [Fact]
     public async Task CleanArtifactsTool_uses_repo_root_from_snapshot()
     {
+        // Unix "/repo/root" is not a full path on Windows (GetFullPath turns it into
+        // "<drive>:\repo\root"), so the mock never matched and CleanAsync returned null.
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "ashlar-clean-snap-" + Guid.NewGuid().ToString("N")));
+
         var cleanup = new Mock<IArtifactCleanupService>();
         cleanup.Setup(s => s.CleanAsync(
                 "incomplete-blobs",
-                It.Is<ArtifactCleanupContext?>(c => c!.RepoRoot == "/repo/root"),
+                It.Is<ArtifactCleanupContext?>(c => c!.RepoRoot == root),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ArtifactCleanupResult("incomplete-blobs", 10, Array.Empty<string>(), Array.Empty<string>()));
 
         var tool = new CleanArtifactsTool(cleanup.Object);
-        var snap = new WorldSnapshot(0, new Dictionary<string, object?> { ["RepoRoot"] = "/repo/root" });
+        var snap = new WorldSnapshot(0, new Dictionary<string, object?> { ["RepoRoot"] = root });
         var result = await tool.InvokeAsync(
             Call(CleanArtifactsTool.IdConstant, new { strategyId = "incomplete-blobs" }),
             snap,

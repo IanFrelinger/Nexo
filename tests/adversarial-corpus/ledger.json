@@ -1,0 +1,119 @@
+{
+  "schema": "ashlar-adversarial-corpus/v1",
+  "fixtures": [
+    {
+      "id": "a3-author-msbuild-target",
+      "class": "A",
+      "item": "A3b",
+      "note": "Author Target/Exec must be refused before restore so judged≠built cannot hide in MSBuild."
+    },
+    {
+      "id": "a3-author-nuget-config",
+      "class": "A",
+      "item": "A3a",
+      "note": "Author NuGet.Config is a toolchain file; the certifier does not evaluate it."
+    },
+    {
+      "id": "a4-constructor-exit",
+      "class": "B",
+      "item": "A4/A5",
+      "note": "Constructor Environment.Exit is an IL-fence refusal; discovery never ran the constructor."
+    },
+    {
+      "id": "a4-constructor-hang",
+      "class": "B",
+      "item": "A4",
+      "note": "Metadata-only discovery returns a type name without executing a spinning constructor."
+    },
+    {
+      "id": "a4-nested-private-brick",
+      "class": "A",
+      "item": "A4",
+      "note": "Found by the round-10 attack pass: discovery returned an unresolvable bare nested name."
+    },
+    {
+      "id": "a8-gate-emitted-hash-bind",
+      "class": "A",
+      "item": "A8",
+      "note": "Loader emits artifact bytes; the certificate binds their hash."
+    },
+    {
+      "id": "b2-appdomain-assemblies",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. AppDomain enumeration of the certifier's assemblies."
+    },
+    {
+      "id": "b2-assembly-load-context",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. AssemblyLoadContext could load code the gate never judged."
+    },
+    {
+      "id": "b2-file-write",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. Author logic wrote to the certifier's filesystem."
+    },
+    {
+      "id": "b2-read-signing-key",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. Reading ASHLAR_CERT_DEV_HMAC_KEY in-process was a path to forging certificates."
+    },
+    {
+      "id": "b2-reflect-invoke-exit",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. Reflection reached a denied member, which is why the fence is now an allowlist."
+    },
+    {
+      "id": "a8-extra-source-file",
+      "class": "A",
+      "item": "A8",
+      "note": "Round-11 attack: extra author .cs files were neither judged nor shipped."
+    },
+    {
+      "id": "a8-ldtoken-io",
+      "class": "A",
+      "item": "A8",
+      "note": "Round-11 attack: typeof(System.IO.File) is ldtoken; the v2 fence only inspected calls."
+    },
+    {
+      "id": "b2-module-initializer",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-11 attack: [ModuleInitializer] runs at Assembly.Load."
+    },
+    {
+      "id": "b2-pinvoke-exit",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-11 attack: P/Invoke methods have no IL body, so the v2 call walk skipped them."
+    },
+    {
+      "id": "b2-thread-start",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-12 attack: Thread.Start outlives the witness return inside the certifier process."
+    },
+    {
+      "id": "b2-stackalloc-exhaust",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-12 attack: stackalloc lowers to localloc and can exhaust the certifier stack."
+    },
+    {
+      "id": "b2-timer-callback",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-13 attack: Timer callbacks outlive the witness return inside the certifier process."
+    },
+    {
+      "id": "b2-task-run",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-13 attack: Task.Run is fire-and-forget on the certifier thread pool."
+    }
+  ]
+}

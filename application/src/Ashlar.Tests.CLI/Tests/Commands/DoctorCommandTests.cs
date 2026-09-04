@@ -87,6 +87,15 @@ public sealed class DoctorCommandTests : UnitTestBase
             AssertTrue(
                 doc.RootElement.GetProperty("checks").GetProperty("dependencyCheck").GetProperty("supported").GetBoolean(),
                 "dependencyCheck.supported should be true on supported hosts.");
+            var containerCommand = doc.RootElement
+                .GetProperty("checks")
+                .GetProperty("containerSmoke")
+                .GetProperty("command")
+                .GetString();
+            AssertEqual(
+                "docker info",
+                containerCommand,
+                "container smoke must probe the daemon; it must not pull a remote image on every doctor run.");
         }
         finally
         {

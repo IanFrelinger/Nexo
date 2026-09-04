@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Ashlar.Core.Application.Adaptation.Models;
 using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
+using Ashlar.Infrastructure.Certification;
+using Ashlar.Infrastructure.HostProcess;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
 
 namespace Ashlar.Infrastructure.Adaptation.Generation;
@@ -49,15 +51,8 @@ public static class GeneratedBrickBuilder
             ?? throw new FileNotFoundException("Built generated brick assembly not found");
 
         var assemblyBytes = await File.ReadAllBytesAsync(dllPath, cancellationToken).ConfigureAwait(false);
-        var assembly = Assembly.Load(assemblyBytes);
-        var brickType = assembly.GetType(brickTypeName)
-            ?? assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
-            ?? throw new InvalidOperationException("No DomainBrick type found in generated assembly");
-
-        var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
-        var references = Directory.GetFiles(buildDir, "*.dll", SearchOption.AllDirectories).Distinct().ToList();
-
-        return new BuiltGeneratedBrick(brick, brickType.FullName!, manifest.ImplementationSource, projectPath, references);
+        return LoadFencedBrick(assemblyBytes, brickTypeName, manifest, projectPath,
+            Directory.GetFiles(buildDir, "*.dll", SearchOption.AllDirectories).Distinct().ToList());
     }
 
     private static async Task<BuiltGeneratedBrick> BuildWithRoslynAsync(
@@ -87,13 +82,27 @@ public static class GeneratedBrickBuilder
             throw new InvalidOperationException($"Roslyn compile failed: {string.Join("; ", compile.Errors)}");
 
         var assemblyBytes = await File.ReadAllBytesAsync(compile.AssemblyPath, cancellationToken).ConfigureAwait(false);
-        var assembly = Assembly.Load(assemblyBytes);
-        var brickType = assembly.GetType(brickTypeName)
-            ?? assembly.GetTypes().First(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract);
-        var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
         var projectPath = Path.Combine(projectDir, $"{className}.csproj");
         await File.WriteAllTextAsync(projectPath, CreateProjectFile(assemblyName), cancellationToken).ConfigureAwait(false);
+        return LoadFencedBrick(assemblyBytes, brickTypeName, manifest, projectPath, references);
+    }
 
+    private static BuiltGeneratedBrick LoadFencedBrick(
+        byte[] assemblyBytes,
+        string brickTypeName,
+        BrickManifest manifest,
+        string projectPath,
+        IReadOnlyList<string> references)
+    {
+        IlImportFence.Inspect(assemblyBytes);
+        var assembly = Assembly.Load(assemblyBytes);
+        var brickType = assembly.GetType(brickTypeName)
+            ?? assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
+            ?? throw new InvalidOperationException("No DomainBrick type found in generated assembly");
+        if (!typeof(DomainBrick).IsAssignableFrom(brickType) || brickType.IsAbstract)
+            throw new InvalidOperationException($"Generated type '{brickType.FullName}' is not a concrete DomainBrick");
+
+        var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
         return new BuiltGeneratedBrick(
             brick,
             brickType.FullName!,
@@ -155,11 +164,8 @@ using DomainBrick = Ashlar.Core.Domain.Bricks.Brick;
             UseShellExecute = false
         };
 
-        using var process = System.Diagnostics.Process.Start(psi)
-            ?? throw new InvalidOperationException("Failed to start dotnet build");
-        var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        var stderr = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        return (process.ExitCode, stdout + stderr);
+        var run = await TimedProcess.RunAsync(psi, TimedProcess.RemediationTimeout, cancellationToken)
+            .ConfigureAwait(false);
+        return (run.ExitCode, run.StdOut + run.StdErr);
     }
 }

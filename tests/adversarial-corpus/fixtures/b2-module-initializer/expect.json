@@ -1,0 +1,9 @@
+{
+  "id": "b2-module-initializer",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "ModuleInitializer",
+  "note": "Round-11 attack: [ModuleInitializer] runs at Assembly.Load, before CreateInstance and before any call-opcode walk of ExecuteAsync."
+}

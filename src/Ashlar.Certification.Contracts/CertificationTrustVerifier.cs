@@ -104,8 +104,68 @@ public static class CertificationTrustVerifier
                 $"Brick source hash does not match certified content (expected {record.ContentHash}, got {actualHash}).");
         }
 
+        if (strictness.RequireCertifierIdentity
+            && !HasInputKind(record, CertificationInputKinds.CertifierIdentity))
+        {
+            return Untrusted(
+                "certifier-identity-missing",
+                "Certification record does not name its judge (certifier-identity input) and this verifier requires one.");
+        }
+
+        if (strictness.RequireGateEmittedArtifact
+            && !HasInputKind(record, CertificationInputKinds.GateEmittedArtifact))
+        {
+            return Untrusted(
+                "gate-emitted-artifact-missing",
+                "Certification record does not bind a gate-emitted assembly and this verifier requires one.");
+        }
+
         return new CertificationTrustResult(true, null, null);
     }
+
+    /// <summary>
+    /// Verifies a record against both source and the gate-emitted assembly bytes that a
+    /// consumer is about to load. Source binding plus artifact-hash binding is what makes
+    /// "judged = shipped" checkable outside the certifier.
+    /// </summary>
+    public static CertificationTrustResult Verify(
+        CertificationRecordData record,
+        string brickSource,
+        byte[] artifactBytes,
+        string? hmacKey = null,
+        CertificationVerifyOptions? options = null)
+    {
+        var sourceResult = Verify(record, brickSource, hmacKey, options);
+        if (!sourceResult.Trusted)
+            return sourceResult;
+
+        if (artifactBytes is null || artifactBytes.Length == 0)
+            return Untrusted("artifact-bytes-missing", "Gate-emitted assembly bytes were not supplied.");
+
+        var expected = FindInputHash(record, CertificationInputKinds.GateEmittedArtifact);
+        if (expected is null)
+        {
+            return Untrusted(
+                "gate-emitted-artifact-missing",
+                "Certification record does not bind a gate-emitted assembly.");
+        }
+
+        var actual = BrickContentHasher.ComputeSha256(artifactBytes);
+        if (!string.Equals(actual, expected, StringComparison.Ordinal))
+        {
+            return Untrusted(
+                "artifact-hash-mismatch",
+                $"Gate-emitted assembly hash does not match the certificate (expected {expected}, got {actual}).");
+        }
+
+        return new CertificationTrustResult(true, null, null);
+    }
+
+    private static bool HasInputKind(CertificationRecordData record, string kind) =>
+        record.Inputs.Any(i => string.Equals(i.Kind, kind, StringComparison.Ordinal));
+
+    private static string? FindInputHash(CertificationRecordData record, string kind) =>
+        record.Inputs.FirstOrDefault(i => string.Equals(i.Kind, kind, StringComparison.Ordinal))?.Hash;
 
     private static CertificationTrustResult Untrusted(string code, string reason) =>
         new(false, code, reason);

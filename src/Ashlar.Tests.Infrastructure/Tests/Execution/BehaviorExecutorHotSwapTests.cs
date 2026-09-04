@@ -186,22 +186,23 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         var model = new HotSwappableModel(providerBacked, loggerFactory.CreateLogger<HotSwappableModel>());
 
         // Force a provider that is typically unavailable in CI (no API key), ensuring fallback.
-        await WithEnv("ASHLAR_MODEL_PROVIDER", "openai", async () =>
+        // Echo fallback is fail-closed unless ASHLAR_ALLOW_MOCK=1 — same contract as
+        // HotSwappableModelGapCoverageTests and ProviderFactory.
+        await WithEnv("ASHLAR_ALLOW_MOCK", "1", async () =>
         {
-            /// <summary>With env.</summary>
-            /// <param name="(">(.</param>
-            await WithEnv("OPENAI_API_KEY", null, async () =>
+            await WithEnv("ASHLAR_MODEL_PROVIDER", "openai", async () =>
             {
-                var input = new ModelInput(new List<(string role, string content)>
+                await WithEnv("OPENAI_API_KEY", null, async () =>
                 {
-                    ("system", "ashlar.model.provider=openai"),
-                    ("user", "hello")
-                });
+                    var input = new ModelInput(new List<(string role, string content)>
+                    {
+                        ("system", "ashlar.model.provider=openai"),
+                        ("user", "hello")
+                    });
 
-                var outp = await model.CompleteAsync(input, CancellationToken.None);
-                /// <summary>Assert equal.</summary>
-                /// <param name="behavior"">Behavior".</param>
-                AssertEqual("hello", outp.Text, "Should fall back to deterministic echo behavior");
+                    var outp = await model.CompleteAsync(input, CancellationToken.None);
+                    AssertEqual("hello", outp.Text, "Should fall back to deterministic echo behavior");
+                });
             });
         });
     }

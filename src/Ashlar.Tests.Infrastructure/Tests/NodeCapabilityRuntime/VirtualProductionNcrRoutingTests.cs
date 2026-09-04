@@ -115,6 +115,20 @@ public sealed class VirtualProductionNcrRoutingTests
         return target;
     }
 
+    private static async Task WaitForNcrVramAsync(
+        VirtualProductionNcrRoutingHost env,
+        long minimumVramBytes,
+        int timeoutMs = 10_000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        var available = env.GetNcrSnapshot().AvailableVramBytes;
+        while (available < minimumVramBytes && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(50);
+            available = env.GetNcrSnapshot().AvailableVramBytes;
+        }
+    }
+
     [Fact(Timeout = TestTimeouts.HostTouching)]
     public async Task CapabilityRoutingBrick_executes_locally_via_ProviderFactory_when_ncr_snapshot_satisfies_job()
     {
@@ -130,6 +144,9 @@ public sealed class VirtualProductionNcrRoutingTests
             MinimumVramBytes = 4L * 1024 * 1024 * 1024,
             ComputeClass = GpuComputeClass.Medium
         };
+
+        // Same discipline as the peer-flip test: wait for the poller, do not guess 300ms.
+        await WaitForNcrVramAsync(env, reqs.MinimumVramBytes);
 
         var brick = env.GetCapabilityRoutingBrick();
         var result = await brick.ExecuteAsync(
