@@ -38,11 +38,13 @@ public static class IlImportFence
         + "Ashlar.Core.Domain.Bricks|Ashlar.Core.Domain.Execution;"
         + "deny-type=System.Environment|System.AppDomain|System.AppContext|System.Activator|System.GC|"
         + "System.Console|System.OperatingSystem|System.Delegate|System.MulticastDelegate|"
-        + "System.Runtime.CompilerServices.Unsafe|System.Threading.Thread|System.Threading.ThreadPool;"
+        + "System.Runtime.CompilerServices.Unsafe|System.Threading.Thread|System.Threading.ThreadPool|"
+        + "System.Threading.Timer|System.Threading.PeriodicTimer;"
         + "deny-attr=ModuleInitializerAttribute|DllImportAttribute|LibraryImportAttribute|UnmanagedCallersOnlyAttribute;"
-        + "deny-pinvoke=true;deny-calli=true;deny-localloc=true;"
+        + "deny-pinvoke=true;deny-calli=true;deny-localloc=true;deny-async-void=true;"
         + "inspect=body|signature|fields|ldtoken|pinvoke|attributes|localloc;"
-        + "deny-member=System.Type::*(except GetTypeFromHandle);"
+        + "deny-member=System.Type::*(except GetTypeFromHandle)|Task::Run|Task::Start|TaskFactory::StartNew|"
+        + "CancellationTokenSource::CancelAfter;"
         + "deny-iface=Ashlar.Core.Domain.Execution.IExecutionContext";
 
     /// <summary>
@@ -91,10 +93,24 @@ public static class IlImportFence
         "System.Delegate",
         "System.MulticastDelegate",
         "System.Runtime.CompilerServices.Unsafe",
-        // Thread / ThreadPool are ambient certifier handles: fire-and-forget Start()
-        // outlives the witness return. Task/async remain allowed.
+        // Thread / ThreadPool / Timer are ambient certifier handles: fire-and-forget
+        // work outlives the witness return. Awaited Task/async remain allowed.
         "System.Threading.Thread",
         "System.Threading.ThreadPool",
+        "System.Threading.Timer",
+        "System.Threading.PeriodicTimer",
+    };
+
+    /// <summary>
+    /// Members inside an otherwise-allowed type that start work the witness does not
+    /// await. <c>Task.Delay</c> / <c>FromResult</c> / <c>WhenAll</c> stay permitted.
+    /// </summary>
+    private static readonly HashSet<(string Type, string Member)> DeniedMembers = new()
+    {
+        ("System.Threading.Tasks.Task", "Run"),
+        ("System.Threading.Tasks.Task", "Start"),
+        ("System.Threading.Tasks.TaskFactory", "StartNew"),
+        ("System.Threading.CancellationTokenSource", "CancelAfter"),
     };
 
     /// <summary>
@@ -220,6 +236,13 @@ public static class IlImportFence
                 + "Native interop is outside the brick API allowlist and is refused.");
         }
 
+        if (IsAsyncVoid(method))
+        {
+            throw new InvalidOperationException(
+                $"il-import fence: '{site}' is async void. "
+                + "Fire-and-forget async methods outlive the witness return and are refused.");
+        }
+
         if (!method.HasBody)
             return;
 
@@ -319,6 +342,31 @@ public static class IlImportFence
                 $"il-import fence: '{site}' calls 'System.Type::{memberName}'. "
                 + "Only typeof(...) is permitted; reflecting over types is refused.");
         }
+
+        if (DeniedMembers.Contains((fullName, memberName)))
+        {
+            throw new InvalidOperationException(
+                $"il-import fence: '{site}' calls '{fullName}::{memberName}'. "
+                + "Fire-and-forget scheduling inside the certifier process is refused.");
+        }
+    }
+
+    private static bool IsAsyncVoid(MethodDefinition method)
+    {
+        if (method.ReturnType.MetadataType != MetadataType.Void)
+            return false;
+        foreach (var attribute in method.CustomAttributes)
+        {
+            if (string.Equals(
+                    attribute.AttributeType.Name,
+                    "AsyncStateMachineAttribute",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void VerifyType(string site, TypeReference type, HashSet<string>? skipDenied = null)

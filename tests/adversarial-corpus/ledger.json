@@ -102,6 +102,18 @@
       "class": "B",
       "item": "B2",
       "note": "Round-12 attack: stackalloc lowers to localloc and can exhaust the certifier stack."
+    },
+    {
+      "id": "b2-timer-callback",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-13 attack: Timer callbacks outlive the witness return inside the certifier process."
+    },
+    {
+      "id": "b2-task-run",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-13 attack: Task.Run is fire-and-forget on the certifier thread pool."
     }
   ]
 }

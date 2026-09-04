@@ -32,7 +32,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ### Changed
 
-- **IL import fence is an allowlist**, not a `System.*` denylist. Round-10 attacks (reflective `Environment.Exit`, reading `ASHLAR_CERT_DEV_HMAC_KEY`, `AppDomain`/`AssemblyLoadContext`, filesystem writes) and round-11 attacks (P/Invoke with no IL body, `[ModuleInitializer]`, `typeof(System.IO.File)` / `ldtoken`, extra author `.cs` files) are corpus fixtures. Round-12 adds `Thread`/`ThreadPool` and `localloc` (stackalloc).
+- **IL import fence is an allowlist**, not a `System.*` denylist. Round-10 attacks (reflective `Environment.Exit`, reading `ASHLAR_CERT_DEV_HMAC_KEY`, `AppDomain`/`AssemblyLoadContext`, filesystem writes) and round-11 attacks (P/Invoke with no IL body, `[ModuleInitializer]`, `typeof(System.IO.File)` / `ldtoken`, extra author `.cs` files) are corpus fixtures. Round-12 adds `Thread`/`ThreadPool` and `localloc` (stackalloc). Round-13 closes remaining fire-and-forget: `Timer`/`PeriodicTimer`, `Task.Run`/`Task.Start`/`TaskFactory.StartNew`, `async void`, and `CancellationTokenSource.CancelAfter`.
 - **Hot-swap loads a supplied PE only when its SHA-256 matches `gate-emitted-artifact`.** A mismatched or HMAC-era unbound image is rematerialized from wrapped source, never loaded.
 - **Generate→certify** inspects IL before `Assembly.Load` (`GeneratedBrickBuilder`).
 - **Compile-options parity.** Mutants (`RoslynCodeAnalysisService`), the analyzer fence, hot-swap rematerialize, and the in-session MSBuild project all use `BrickCompileOptions`. The autonomy harness activates the gate-emitted artifact and passes those bytes into the first swap.

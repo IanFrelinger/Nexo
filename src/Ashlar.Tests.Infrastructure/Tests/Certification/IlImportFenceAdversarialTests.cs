@@ -128,7 +128,11 @@ public sealed class IlImportFenceAdversarialTests
         IlImportFence.InventoryBlob.Should().Contain("deny-pinvoke=true");
         IlImportFence.InventoryBlob.Should().Contain("deny-calli=true");
         IlImportFence.InventoryBlob.Should().Contain("deny-localloc=true");
+        IlImportFence.InventoryBlob.Should().Contain("deny-async-void=true");
         IlImportFence.InventoryBlob.Should().Contain("System.Threading.Thread");
+        IlImportFence.InventoryBlob.Should().Contain("System.Threading.Timer");
+        IlImportFence.InventoryBlob.Should().Contain("Task::Run");
+        IlImportFence.InventoryBlob.Should().Contain("TaskFactory::StartNew");
     }
 
     [Fact]
@@ -145,6 +149,38 @@ public sealed class IlImportFenceAdversarialTests
         var artifact = Compile(StackallocSource());
         var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
         act.Should().Throw<InvalidOperationException>().WithMessage("*localloc*");
+    }
+
+    [Fact]
+    public void Fence_RefusesTimer()
+    {
+        var artifact = Compile(TimerSource());
+        var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*System.Threading.Timer*");
+    }
+
+    [Fact]
+    public void Fence_RefusesTaskRun()
+    {
+        var artifact = Compile(TaskRunSource());
+        var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Task::Run*");
+    }
+
+    [Fact]
+    public void Fence_RefusesTaskFactoryStartNew()
+    {
+        var artifact = Compile(TaskFactoryStartNewSource());
+        var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*TaskFactory::StartNew*");
+    }
+
+    [Fact]
+    public void Fence_RefusesAsyncVoid()
+    {
+        var artifact = Compile(AsyncVoidSource());
+        var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*async void*");
     }
 
     [Fact]
@@ -252,6 +288,29 @@ public sealed class IlImportFenceAdversarialTests
         "StackallocBrick",
         "stackalloc",
         executeExtra: "Span<byte> buf = stackalloc byte[64]; n += buf.Length;");
+
+    private static string TimerSource() => Honest(
+        "TimerBrick",
+        "timer",
+        executeExtra: "new Timer(_ => { }, null, 0, Timeout.Infinite);");
+
+    private static string TaskRunSource() => Honest(
+        "TaskRunBrick",
+        "task-run",
+        executeExtra: "_ = Task.Run(() => { });");
+
+    private static string TaskFactoryStartNewSource() => Honest(
+        "StartNewBrick",
+        "start-new",
+        executeExtra: "Task.Factory.StartNew(() => { });");
+
+    private static string AsyncVoidSource() => Honest(
+        "AsyncVoidBrick",
+        "async-void",
+        extraMembers: """
+            private static async void Fire() { await Task.Delay(1); }
+            """,
+        executeExtra: "Fire();");
 
     private static string Honest(string className, string id, string extraMembers = "", string executeExtra = "") =>
         $$"""
