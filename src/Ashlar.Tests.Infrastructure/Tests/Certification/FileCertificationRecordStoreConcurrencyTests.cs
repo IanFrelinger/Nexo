@@ -98,7 +98,7 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void ReplaceRetriesWindowsSharingDenial_ThenLandsTheStagedRecord()
+    public Task ReplaceRetriesWindowsSharingDenial_ThenLandsTheStagedRecord()
     {
         var dest = Path.Combine(TempDir, "retry-dest.json");
         var staged = dest + $".{Guid.NewGuid():N}.tmp";
@@ -117,10 +117,11 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
         attempts.Should().Be(3, "two sharing denials must be retried, not surfaced");
         File.ReadAllText(dest).Should().Be("new-verdict");
         File.Exists(staged).Should().BeFalse();
+        return Task.CompletedTask;
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void ReplaceExhaustsRetries_ThenThrows_LeavingThePreviousVerdict()
+    public Task ReplaceExhaustsRetries_ThenThrows_LeavingThePreviousVerdict()
     {
         var dest = Path.Combine(TempDir, "retry-exhausted.json");
         var staged = dest + $".{Guid.NewGuid():N}.tmp";
@@ -138,6 +139,7 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
         attempts.Should().Be(AtomicRecordReplace.MaxAttempts);
         File.ReadAllText(dest).Should().Be("previous-verdict", "a persistent denial must not shred the live record");
         File.Exists(staged).Should().BeTrue("the staged file stays for the caller to clean up");
+        return Task.CompletedTask;
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
