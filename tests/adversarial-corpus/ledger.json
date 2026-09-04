@@ -1,0 +1,35 @@
+{
+  "schema": "ashlar-adversarial-corpus/v1",
+  "fixtures": [
+    {
+      "id": "a3-author-msbuild-target",
+      "class": "A",
+      "item": "A3b",
+      "note": "Author Target/Exec must be refused before restore so judged≠built cannot hide in MSBuild."
+    },
+    {
+      "id": "a3-author-nuget-config",
+      "class": "A",
+      "item": "A3a",
+      "note": "Author NuGet.Config is a toolchain file; the certifier does not evaluate it."
+    },
+    {
+      "id": "a4-constructor-exit",
+      "class": "B",
+      "item": "A4/A5",
+      "note": "Constructor Environment.Exit is an IL-fence refusal; discovery never ran the constructor."
+    },
+    {
+      "id": "a4-constructor-hang",
+      "class": "B",
+      "item": "A4",
+      "note": "Metadata-only discovery returns a type name without executing a spinning constructor."
+    },
+    {
+      "id": "a8-gate-emitted-hash-bind",
+      "class": "A",
+      "item": "A8",
+      "note": "Loader emits artifact bytes; the certificate binds their hash."
+    }
+  ]
+}

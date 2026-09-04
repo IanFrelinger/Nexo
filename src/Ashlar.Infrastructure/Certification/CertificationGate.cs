@@ -364,6 +364,7 @@ public sealed class CertificationGate : ICertificationGate
                 }
             };
             inputs.AddRange(request.AdditionalInputs);
+            RecordCompileAuthority(request, inputs);
             // Where execution happened is certificate-relevant on PASS and FAIL alike:
             // a verdict minted over backend observations names the backend.
             if (request.ExecutionBackend is { } executionBackend)
@@ -390,6 +391,43 @@ public sealed class CertificationGate : ICertificationGate
                 "Witness spec for {BrickId} could not be serialized for input hashing; omitting the witness input",
                 request.Witness.BrickId);
             return request.AdditionalInputs;
+        }
+    }
+
+    private static void RecordCompileAuthority(CertificationRequest request, List<CertificationInput> inputs)
+    {
+        inputs.Add(CertifierIdentity.ToInput());
+        inputs.Add(new CertificationInput
+        {
+            Kind = CertificationInputKinds.CompileOptions,
+            Id = BrickCompileOptions.LanguageVersionName,
+            Hash = BrickContentHasher.ComputeSha256(BrickCompileOptions.CanonicalBlob)
+        });
+
+        if (request.EmittedArtifact is { } artifact)
+        {
+            inputs.Add(new CertificationInput
+            {
+                Kind = CertificationInputKinds.GateEmittedArtifact,
+                Id = artifact.BrickTypeName,
+                Hash = artifact.AssemblySha256
+            });
+            inputs.Add(IlImportFence.ToInput());
+            inputs.Add(new CertificationInput
+            {
+                Kind = CertificationInputKinds.ExecutionMode,
+                Id = "gate-emitted",
+                Hash = BrickContentHasher.ComputeSha256("gate-emitted")
+            });
+        }
+        else
+        {
+            inputs.Add(new CertificationInput
+            {
+                Kind = CertificationInputKinds.ExecutionMode,
+                Id = "in-process-fixture",
+                Hash = BrickContentHasher.ComputeSha256("in-process-fixture")
+            });
         }
     }
 

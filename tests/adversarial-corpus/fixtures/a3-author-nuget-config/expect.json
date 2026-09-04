@@ -1,0 +1,8 @@
+{
+  "id": "a3-author-nuget-config",
+  "class": "A",
+  "item": "A3a",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "NuGet.Config"
+}

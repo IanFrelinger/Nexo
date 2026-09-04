@@ -35,6 +35,12 @@ try
         JsonSerializer.Serialize(decision.Record, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
         .ConfigureAwait(false);
 
+    if (request.EmittedArtifact is { } artifact)
+    {
+        var artifactPath = Path.Combine(recordDir, CertifiedArtifactExporter.ArtifactFileName);
+        await File.WriteAllBytesAsync(artifactPath, artifact.AssemblyBytes).ConfigureAwait(false);
+    }
+
     if (!string.Equals(recordPath, Path.Combine(recordDir, $"{decision.Record.BrickId}.json"), StringComparison.OrdinalIgnoreCase))
     {
         await File.WriteAllTextAsync(

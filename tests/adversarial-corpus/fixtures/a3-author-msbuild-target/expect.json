@@ -1,0 +1,8 @@
+{
+  "id": "a3-author-msbuild-target",
+  "class": "A",
+  "item": "A3b",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "Target"
+}

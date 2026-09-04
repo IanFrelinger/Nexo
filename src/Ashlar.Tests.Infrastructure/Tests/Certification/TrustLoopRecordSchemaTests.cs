@@ -284,10 +284,12 @@ public sealed class TrustLoopRecordSchemaTests
 
         decision.Admitted.Should().BeTrue();
         var data = CertificationRecordMapper.ToData(decision.Record);
-        data.Inputs.Should().HaveCount(2);
         data.Inputs[0].Kind.Should().Be("witness", "the witness input always comes first");
         data.Inputs.Should().ContainSingle(i =>
             i.Kind == "context" && i.Id == "mutation-probe-brick" && i.Hash == "assembled-context-hash");
+        data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CertifierIdentity);
+        data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CompileOptions);
+        data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.ExecutionMode);
 
         var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey);
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
