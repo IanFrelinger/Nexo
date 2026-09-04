@@ -3,7 +3,17 @@ namespace Ashlar.Cloud;
 /// <summary>Hosted organization record. Not a kernel type.</summary>
 /// <param name="OrganizationId">Stable org id.</param>
 /// <param name="DisplayName">Human-readable name.</param>
-public sealed record Organization(string OrganizationId, string DisplayName);
+public sealed record Organization(string OrganizationId, string DisplayName)
+{
+    /// <summary>Rejects blank identifiers on every construction path.</summary>
+    public Organization
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(OrganizationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(DisplayName);
+        OrganizationId = OrganizationId.Trim();
+        DisplayName = DisplayName.Trim();
+    }
+}
 
 /// <summary>Quota ceiling for one organization.</summary>
 /// <param name="OrganizationId">Owning org.</param>
@@ -12,12 +22,40 @@ public sealed record Organization(string OrganizationId, string DisplayName);
 public sealed record OrganizationQuota(
     string OrganizationId,
     int MaxConcurrentTasks,
-    long? MaxMonthlyTokenBudget);
+    long? MaxMonthlyTokenBudget)
+{
+    /// <summary>Rejects blank ids and non-positive ceilings on every construction path.</summary>
+    public OrganizationQuota
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(OrganizationId);
+        if (MaxConcurrentTasks < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaxConcurrentTasks), MaxConcurrentTasks, "Must be at least 1.");
+        }
+
+        if (MaxMonthlyTokenBudget is < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(MaxMonthlyTokenBudget), MaxMonthlyTokenBudget, "Must be null or non-negative.");
+        }
+
+        OrganizationId = OrganizationId.Trim();
+    }
+}
 
 /// <summary>Billing account attached to an organization.</summary>
 /// <param name="OrganizationId">Owning org.</param>
 /// <param name="PlanId">Commercial plan identifier.</param>
-public sealed record BillingAccount(string OrganizationId, string PlanId);
+public sealed record BillingAccount(string OrganizationId, string PlanId)
+{
+    /// <summary>Rejects blank identifiers on every construction path.</summary>
+    public BillingAccount
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(OrganizationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(PlanId);
+        OrganizationId = OrganizationId.Trim();
+        PlanId = PlanId.Trim();
+    }
+}
 
 /// <summary>Directory of hosted organizations and their quotas.</summary>
 public interface IOrganizationDirectory

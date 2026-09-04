@@ -41,7 +41,17 @@ dependency-boundary gate rejects `src/` → `products/` and non-test `src/` →
 `AirGapped` is a slim offline profile. It is **not** the workstation profile:
 it excludes trust, background agents, RAG, and observation.
 `SecureWorkstation` keeps those local capabilities and still excludes runtime
-transport / cloud egress.
+transport / cloud egress. MCP **client** and A2A (client and server) refuse to
+enable under both profiles. Local MCP **server** stays allowed on
+`SecureWorkstation` for an IDE stdio tool surface; it stays forbidden on
+`AirGapped`. Profile aliases are parsed by one linked helper
+(`AshlarDeploymentProfileEnvironment`) so hosting and protocol assemblies
+cannot drift. `AddAshlarWorkstation` re-asserts the profile and
+`TrustEnabled=true` after any caller `configure` callback.
+
+Envelope, evidence, native-manifest, and scheduled-handle records validate on
+every construction path. `products/ashlar-cloud` must not `ProjectReference`
+`src/` or `commercial/`.
 
 ## Extractable product trees (`products/`)
 

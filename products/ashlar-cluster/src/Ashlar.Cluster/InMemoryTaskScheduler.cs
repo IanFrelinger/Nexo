@@ -20,6 +20,11 @@ public sealed class InMemoryTaskScheduler : ITaskScheduler
         cancellationToken.ThrowIfCancellationRequested();
 
         var taskId = $"task:{envelope.EnvelopeId}";
+        if (_results.ContainsKey(taskId))
+        {
+            return Task.FromResult(new ScheduledTaskHandle(taskId, envelope.EnvelopeId));
+        }
+
         var evidence = ResultEvidence.Create(
             envelope.EnvelopeId,
             taskId,

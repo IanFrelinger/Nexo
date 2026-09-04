@@ -50,11 +50,17 @@ public sealed class ProductScaffoldTests
         handle.TaskId.Should().Be("task:env-1");
         handle.EnvelopeId.Should().Be("env-1");
 
+        var again = await scheduler.ScheduleAsync(envelope);
+        again.TaskId.Should().Be(handle.TaskId);
+
         var evidence = await scheduler.GetResultAsync(handle.TaskId);
         evidence.Should().NotBeNull();
         evidence!.Status.Should().Be(ResultEvidenceStatus.Succeeded);
         evidence.OutputHash.Should().Be("sha256:payload");
         evidence.EnvelopeId.Should().Be("env-1");
+
+        var canceled = () => scheduler.ScheduleAsync(envelope, new CancellationToken(canceled: true));
+        await canceled.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -138,13 +144,92 @@ public sealed class ProductScaffoldTests
     }
 
     [Fact]
+    public void Workstation_locks_secure_profile_and_trust_after_caller_configure()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddAshlarWorkstation(options =>
+        {
+            options.TrustEnabled = false;
+            options.DeploymentProfile = AshlarDeploymentProfile.Full;
+        });
+        using var sp = services.BuildServiceProvider(validateScopes: true);
+
+        sp.GetRequiredService<ICloudSanitizationProxy>().Should().NotBeNull();
+        sp.GetService<IGrpcChannelFactory>().Should().BeNull();
+    }
+
+    [Fact]
+    public void Cloud_directory_rejects_blank_and_non_positive_records()
+    {
+        var blankOrg = () => new Organization(" ", "Northwind");
+        blankOrg.Should().Throw<ArgumentException>();
+
+        var blankName = () => new Organization("org-1", " ");
+        blankName.Should().Throw<ArgumentException>();
+
+        var zeroQuota = () => new OrganizationQuota("org-1", 0, null);
+        zeroQuota.Should().Throw<ArgumentOutOfRangeException>();
+
+        var negativeBudget = () => new OrganizationQuota("org-1", 1, -1);
+        negativeBudget.Should().Throw<ArgumentOutOfRangeException>();
+
+        var blankPlan = () => new BillingAccount("org-1", " ");
+        blankPlan.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
     public void Cloud_project_has_no_kernel_project_reference()
     {
-        var cloudCsproj = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
-            "ashlar-cloud", "src", "Ashlar.Cloud", "Ashlar.Cloud.csproj"));
+        var repo = FindRepoRoot();
+        var cloudCsproj = Path.Combine(repo, "products", "ashlar-cloud", "src", "Ashlar.Cloud", "Ashlar.Cloud.csproj");
         File.Exists(cloudCsproj).Should().BeTrue(cloudCsproj);
         File.ReadAllText(cloudCsproj).Should().NotContain("ProjectReference");
+    }
+
+    [Fact]
+    public void Product_projects_do_not_reference_commercial_or_kernel_from_cloud()
+    {
+        var repo = FindRepoRoot();
+        var productsRoot = Path.Combine(repo, "products");
+        foreach (var csproj in Directory.GetFiles(productsRoot, "*.csproj", SearchOption.AllDirectories))
+        {
+            var text = File.ReadAllText(csproj);
+            text.Should().NotContain("commercial/", because: csproj);
+
+            var rel = Path.GetRelativePath(repo, csproj).Replace('\\', '/');
+            if (rel.StartsWith("products/ashlar-cloud/", StringComparison.Ordinal))
+            {
+                text.Should().NotContain("ProjectReference", because: csproj);
+            }
+        }
+
+        foreach (var source in Directory.GetFiles(
+                     Path.Combine(productsRoot, "ashlar-cloud"), "*.cs", SearchOption.AllDirectories))
+        {
+            var kernelImports = File.ReadAllLines(source)
+                .Select(static line => line.TrimStart())
+                .Where(static line =>
+                    line.StartsWith("using Ashlar.", StringComparison.Ordinal) &&
+                    !line.StartsWith("using Ashlar.Cloud", StringComparison.Ordinal))
+                .ToArray();
+            kernelImports.Should().BeEmpty(because: source);
+        }
+    }
+
+    private static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "Ashlar.sln")))
+            {
+                return dir.FullName;
+            }
+
+            dir = dir.Parent;
+        }
+
+        throw new InvalidOperationException("Could not locate Ashlar.sln from " + AppContext.BaseDirectory);
     }
 }

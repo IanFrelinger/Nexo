@@ -25,8 +25,9 @@ public static class WorkstationHostBuilder
 
         services.AddAshlarProfile(AshlarDeploymentProfile.SecureWorkstation, options =>
         {
-            options.TrustEnabled = true;
             configure?.Invoke(options);
+            options.TrustEnabled = true;
+            options.DeploymentProfile = AshlarDeploymentProfile.SecureWorkstation;
         });
 
         return services;

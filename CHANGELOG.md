@@ -11,7 +11,16 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 ### Added
 
 - **Product split scaffolds** under `products/` (workstation, cluster, cloud, native) and framework distributed contracts (`ExecutionEnvelope`, `ResultEvidence`, `ITaskScheduler`, `INativeExecutionHost`).
-- **`AshlarDeploymentProfile.SecureWorkstation`** — local trust, agents, RAG, and observation without runtime transport. `AirGapped` remains the slim offline profile.
+- **`AshlarDeploymentProfile.SecureWorkstation`** — local trust, agents, RAG, and observation without runtime transport. `AirGapped` remains the slim offline profile. MCP client and A2A refuse enablement under SecureWorkstation; local MCP server remains allowed.
+- **`products-gate`** runs extractable product scaffolds plus `DistributedContractTests`.
+
+### Fixed
+
+- **Test ownership** registers `products/tests/Ashlar.Tests.Products` so cert-gate cannot miss the new suite.
+- **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.
+- **Distributed contracts** validate on every construction path (`new` / `with` / JSON): defined enums, digest charset, positive duration, and succeeded evidence requiring a hash.
+- **SecureWorkstation composition** cannot be weakened by a later `configure` callback (profile and `TrustEnabled` are re-asserted).
+- **ashlar-cloud** records reject blank ids / non-positive quotas, and the dependency-boundary gate forbids cloud → `src/` or `commercial/` references.
 
 ## [0.1.2] - 2026-09-04
 
