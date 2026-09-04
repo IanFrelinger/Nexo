@@ -132,7 +132,14 @@ echo "doc prints: $DOC_CMD"
 timeout 180 env $DOC_CMD >"$OUT/api-verbatim.log" 2>&1 &
 V_PID=$!
 for _ in $(seq 1 60); do
-  grep -qE 'Now listening on:|Unable to run your project|error' "$OUT/api-verbatim.log" 2>/dev/null && break
+  # Do not match a bare "error" substring. MCP/A2A map-disabled info lines and MSBuild
+  # "0 Error(s)" made the old pattern stop before Kestrel printed "Now listening on:".
+  if grep -q 'Now listening on:' "$OUT/api-verbatim.log" 2>/dev/null; then
+    break
+  fi
+  if grep -qE 'Unable to run your project|Hosting failed to start|Build FAILED' "$OUT/api-verbatim.log" 2>/dev/null; then
+    break
+  fi
   kill -0 $V_PID 2>/dev/null || break
   sleep 2
 done
