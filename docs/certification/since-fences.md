@@ -82,7 +82,9 @@ of a release that has not been published.
 - Session-built PE bytes (when the in-session build/execute legs are on) are
   not the same image as the host `GateEmittedArtifact`. The certificate binds
   source + toolchain (`session-build`) separately from the host emit.
-- `Ashlar.CertifyBrick`'s unexpected-exception path prints raw exception text.
+- `Ashlar.CertifyBrick` persists a signed FAIL record (`LoadRefusalRecord`, stage
+  `load`) when the loader or IL fence throws, so a refuse is ledger evidence
+  rather than a missing file. The process still exits 1.
 - On Linux a same-uid child can read `/proc/<pid>/environ`; the environment
   allowlist governs what a child is given, not what it can read.
 - Constructor / module-initializer *hangs* (infinite loops with no forbidden

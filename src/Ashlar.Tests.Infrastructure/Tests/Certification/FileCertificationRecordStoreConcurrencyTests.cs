@@ -143,6 +143,28 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
+    public Task LoadRefusal_PersistsAVerifiableFail_AndNeverAdmits()
+    {
+        var signer = new CertificationRecordSigner();
+        var store = new FileCertificationRecordStore(TempDir, signer);
+        var record = LoadRefusalRecord.Create(
+            signer,
+            BrickId,
+            "il-import fence: P/Invoke to libc!exit");
+
+        store.Save(record);
+
+        var loaded = store.Get(BrickId);
+        loaded.Should().NotBeNull("a load refuse must be evidence, not an absent file");
+        loaded!.Admitted.Should().BeFalse();
+        loaded.Status.Should().Be("FAIL");
+        loaded.Stage.Should().Be(LoadRefusalRecord.Stage);
+        loaded.Reason.Should().Contain("P/Invoke");
+        store.IsAdmitted(BrickId).Should().BeFalse();
+        return Task.CompletedTask;
+    }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
     public Task AStrayStagingFile_IsNotReadAsARecord()
     {
         // A crash between staging and moving leaves a staging file behind. It must be inert:
