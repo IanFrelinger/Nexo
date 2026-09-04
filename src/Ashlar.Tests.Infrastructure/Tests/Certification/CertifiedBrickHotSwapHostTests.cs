@@ -3,6 +3,7 @@ using FluentAssertions;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
+using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
 using Xunit;
 
@@ -298,6 +299,55 @@ public sealed class HotSwapOtherBrick : DomainBrick
         using var host = CreateHost(new RecordingSink());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => Execute(host, ProbeBrickId));
+    }
+
+    [Fact]
+    public async Task Swap_MismatchedPrecompiledAssembly_RematerializesCertifiedSource()
+    {
+        using var host = CreateHost(new RecordingSink());
+        var honest = ProbeSource("honest");
+        var evil = ProbeSource("evil");
+        var honestPe = GateEmittedArtifactCompiler.Compile(
+            honest, BrickCertificationProjectLoader.DefaultCompilationReferences());
+        var evilPe = GateEmittedArtifactCompiler.Compile(
+            evil, BrickCertificationProjectLoader.DefaultCompilationReferences());
+
+        var unsigned = new CertificationRecordData
+        {
+            Status = "PASS",
+            Stage = "S0-S2",
+            Admitted = true,
+            Signed = true,
+            Timestamp = DateTimeOffset.UtcNow,
+            BrickId = ProbeBrickId,
+            ContentHash = BrickContentHasher.ComputeSha256(honest),
+            Gate = "hot-swap-test-harness",
+            Inputs =
+            [
+                new CertificationInput
+                {
+                    Kind = CertificationInputKinds.GateEmittedArtifact,
+                    Id = honestPe.BrickTypeName,
+                    Hash = honestPe.AssemblySha256
+                }
+            ]
+        };
+        var record = unsigned with { Signature = CertificationRecordSigning.Sign(unsigned, HmacKey) };
+
+        var result = await host.SwapAsync(
+        [
+            new CertifiedBrickLoadRequest
+            {
+                BrickId = ProbeBrickId,
+                SourceCode = honest,
+                Record = record,
+                PrecompiledAssembly = evilPe.AssemblyBytes
+            }
+        ]);
+
+        result.Swapped.Should().BeTrue(Describe(result));
+        (await Execute(host, ProbeBrickId)).Get<string>("marker").Should().Be("honest",
+            "a PE that is not the certificate's gate-emitted artifact must not load");
     }
 
     // ---------- helpers ----------

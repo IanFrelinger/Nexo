@@ -31,7 +31,9 @@ of a release that has not been published.
   `ModuleInitializer`). Reflection, I/O, process, environment, interop, and
   assembly loading are refusals. Round 10 beat the type-denylist five ways;
   round 11 beat the v2 call-only allowlist via P/Invoke, module initializers,
-  and `ldtoken`. Each of those attacks is now a corpus fixture.
+  and `ldtoken`. Round 12 closed `Thread`/`ThreadPool` (fire-and-forget
+  outliving the witness) and `localloc` (stackalloc). Each of those attacks
+  is now a corpus fixture.
 - The loader refuses a second author `.cs` file (judged would not have been
   the project the author handed over) and compiles under
   `BrickCompileOptions` (C# 12, no unsafe, Release). Mutants, the analyzer
@@ -41,7 +43,11 @@ of a release that has not been published.
 - `CertifiedBrickActivator` is the single disk-path activation site. The
   autonomy harness activates the gate-emitted artifact for in-process legs
   and passes those bytes into the first hot-swap so the host does not
-  recompile.
+  recompile. A hot-swap `PrecompiledAssembly` loads only when its SHA-256
+  matches the record's `gate-emitted-artifact` input; otherwise the host
+  rematerializes from wrapped source.
+- `GeneratedBrickBuilder` (generate→certify) runs `IlImportFence.Inspect`
+  before `Assembly.Load`.
 - The certificate records `gate-emitted-artifact`, `compile-options`,
   `certifier-identity`, `il-import-fence`, and `execution-mode` as signed
   inputs. Exporters write `gate-emitted-brick.dll` next to the record.
@@ -51,7 +57,7 @@ of a release that has not been published.
 ## Class B — certifier boundary
 
 - `ci/certifier-boundary-inventory.tsv` is a shrink-only freeze of
-  `Assembly.LoadFrom` / `LoadFromAssemblyPath` / `Activator.CreateInstance`
+  `Assembly.Load` / `LoadFrom` / `LoadFromAssemblyPath` / `Activator.CreateInstance`
   inside `Ashlar.Infrastructure.Certification*`.
 - `CertifierBoundaryScanTests` fails on a new site or a ghost row.
 
@@ -89,3 +95,10 @@ of a release that has not been published.
   allowlist governs what a child is given, not what it can read.
 - Constructor / module-initializer *hangs* (infinite loops with no forbidden
   import) are still activation-time. Discovery is metadata-only; load is not.
+- `Task.Run` / async fire-and-forget after `ExecuteAsync` returns is still
+  allowed (`System.Threading.Tasks` is on the allowlist). `Thread`/`ThreadPool`
+  are refused.
+- Default consumer `CertificationTrustVerifier.Verify(record, source)` is still
+  HMAC-era. Production hot-swap, self-extend admission, and the sample reuse
+  host use that overload unless the caller opts into `Strict` and the
+  artifact-bytes overload.

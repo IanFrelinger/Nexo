@@ -8,7 +8,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
-0.1.2 is ready to cut (repo `VERSION` reads ahead of `ci/published-version` = `0.1.1`). Do not tag or publish until an operator says so.
+0.1.2 is **not** tagged. Repo `VERSION` reads ahead of `ci/published-version` = `0.1.1`. Do not tag or publish until an operator says so. Default `CertificationTrustVerifier.Verify` remains HMAC-era (source + signature); `CertificationVerifyOptions.Strict` plus the artifact-bytes overload is what binds judged PE.
 
 ### Added
 
@@ -28,11 +28,13 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Background agent service tests** stop through `StopAsync` after observing `StartAllAsync`, instead of canceling the token passed to `StartAsync` (that token is linked into `ExecuteAsync` and raced a short delay on Windows).
 - **Production Readiness Gate v1** CLI checks expect the unconfigured default pipeline adapter to fail closed. They no longer require fabricated `pipeline run` success.
 - **Docs link check** retries once when `lychee-action` fails to download its binary (GitHub Releases SSL connect error 35), so an install flake is not reported as a broken doc link.
-- **Docker CLI waits are bounded.** `TimedProcess` kills the entire process tree on timeout or cancel (exit 124). Doctor container smoke is a timed `docker info` (8s), not a pull of `ghcr.io/ianfrelinger/nexo-cli:latest`. A wedged Docker Desktop no longer freezes `doctor`, `validate`, or sandbox timeouts.
+- **Docker CLI waits are bounded for doctor and sandbox cancel.** `TimedProcess` kills the entire process tree on timeout or cancel (exit 124). Doctor container smoke is a timed `docker info` (8s), not a pull of `ghcr.io/ianfrelinger/nexo-cli:latest`. `ashlar validate` / `ci verify` still wait on `dotnet build`/`test` without an outer wall-clock cap.
 
 ### Changed
 
-- **IL import fence is an allowlist**, not a `System.*` denylist. Round-10 attacks (reflective `Environment.Exit`, reading `ASHLAR_CERT_DEV_HMAC_KEY`, `AppDomain`/`AssemblyLoadContext`, filesystem writes) and round-11 attacks (P/Invoke with no IL body, `[ModuleInitializer]`, `typeof(System.IO.File)` / `ldtoken`, extra author `.cs` files) are corpus fixtures.
+- **IL import fence is an allowlist**, not a `System.*` denylist. Round-10 attacks (reflective `Environment.Exit`, reading `ASHLAR_CERT_DEV_HMAC_KEY`, `AppDomain`/`AssemblyLoadContext`, filesystem writes) and round-11 attacks (P/Invoke with no IL body, `[ModuleInitializer]`, `typeof(System.IO.File)` / `ldtoken`, extra author `.cs` files) are corpus fixtures. Round-12 adds `Thread`/`ThreadPool` and `localloc` (stackalloc).
+- **Hot-swap loads a supplied PE only when its SHA-256 matches `gate-emitted-artifact`.** A mismatched or HMAC-era unbound image is rematerialized from wrapped source, never loaded.
+- **Generate→certify** inspects IL before `Assembly.Load` (`GeneratedBrickBuilder`).
 - **Compile-options parity.** Mutants (`RoslynCodeAnalysisService`), the analyzer fence, hot-swap rematerialize, and the in-session MSBuild project all use `BrickCompileOptions`. The autonomy harness activates the gate-emitted artifact and passes those bytes into the first swap.
 - **Release Manager extracted** to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) — the first out-of-tree consumer of the published packages (CI restores from nuget.org only; smoke-verified: all four deterministic agents register, run, and drain). Completes the graduation→extraction path LICENSING.md promised. `consumer-template/` refreshed to `0.1.1` and no longer claims the packages are unpublished.
 

@@ -1,6 +1,7 @@
 # B5 frozen inventory. Columns: site<TAB>api<TAB>reason
 # Shrink-only: a vanished site is a test failure. A new site is a test failure.
 # Scope: Ashlar.Infrastructure.Certification* (the certifier process).
+Ashlar.Infrastructure.Certification.CertifiedBrickActivator::Activate	System.Reflection.Assembly::Load	gate-emitted in-memory activation after metadata-only discovery and IL fence
 Ashlar.Infrastructure.Certification.CertifiedBrickActivator::Activate	System.Activator::CreateInstance	gate-emitted disk activation after metadata-only discovery
 Ashlar.Infrastructure.Certification.BrickMutationEngine::ExecuteMutantAsync	System.Runtime.Loader.AssemblyLoadContext::LoadFromAssemblyPath	in-process mutant isolation
 Ashlar.Infrastructure.Certification.BrickMutationEngine::ExecuteMutantAsync	System.Activator::CreateInstance	in-process mutant construct

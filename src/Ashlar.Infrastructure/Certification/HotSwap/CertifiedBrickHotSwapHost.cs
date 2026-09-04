@@ -20,8 +20,9 @@ namespace Ashlar.Infrastructure.Certification.HotSwap;
 /// <list type="number">
 /// <item><description><b>Verify-at-load.</b> Every brick's certification record is re-verified
 /// against the exact source bytes being loaded (<see cref="CertificationTrustVerifier"/>),
-/// even though admission already verified once — the artifact may have changed since.
-/// Hash mismatch refuses the load.</description></item>
+/// even though admission already verified once. A supplied PE is loaded only when its
+/// SHA-256 matches the record's <c>gate-emitted-artifact</c> input; otherwise the host
+/// rematerializes from wrapped source.</description></item>
 /// <item><description><b>Fail-closed swap.</b> Any verification, compile, load, or
 /// instantiation failure refuses the <em>entire</em> swap and leaves the previous
 /// generation serving. There is no partial swap.</description></item>
@@ -787,12 +788,14 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 };
                 references.AddRange(request.AdditionalCompilationReferences);
 
-                // Rollback path (R5.1): a retained generation reactivates from its exact
-                // emitted image — no compiler runs. Verify-at-load already re-checked the
-                // source hash against the certificate before this frame.
-                if (request.PrecompiledAssembly is { } image)
+                // Rollback / autonomy may supply a PE. Load it only when the certificate
+                // names those exact bytes. An unbound or mismatched image is rematerialized
+                // from wrapped source — never loaded. HMAC-era records without an artifact
+                // input take the rematerialize path for the same reason.
+                var precompiled = BindPrecompiledAssembly(request);
+                if (precompiled is not null)
                 {
-                    File.WriteAllBytes(outputPath, image);
+                    File.WriteAllBytes(outputPath, precompiled);
                 }
                 else
                 {
@@ -1034,6 +1037,26 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         {
             // best effort
         }
+    }
+
+    /// <summary>
+    /// Returns the supplied PE only when the certificate names those exact bytes.
+    /// Unbound or mismatched images are discarded so Materialize rematerializes from source.
+    /// </summary>
+    private static byte[]? BindPrecompiledAssembly(CertifiedBrickLoadRequest request)
+    {
+        var image = request.PrecompiledAssembly;
+        if (image is null || image.Length == 0)
+            return null;
+
+        var expected = request.Record.Inputs
+            .FirstOrDefault(i => string.Equals(i.Kind, CertificationInputKinds.GateEmittedArtifact, StringComparison.Ordinal))
+            ?.Hash;
+        if (string.IsNullOrWhiteSpace(expected))
+            return null;
+
+        var actual = BrickContentHasher.ComputeSha256(image);
+        return string.Equals(actual, expected, StringComparison.Ordinal) ? image : null;
     }
 
     /// <summary>

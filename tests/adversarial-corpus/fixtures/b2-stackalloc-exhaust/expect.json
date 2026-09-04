@@ -1,0 +1,9 @@
+{
+  "id": "b2-stackalloc-exhaust",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "localloc",
+  "note": "Round-12 attack: stackalloc lowers to localloc and can exhaust the certifier stack."
+}

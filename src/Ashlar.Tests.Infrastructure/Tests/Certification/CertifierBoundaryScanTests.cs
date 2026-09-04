@@ -6,8 +6,8 @@ using Xunit;
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 
 /// <summary>
-/// B5: hermetic Mono.Cecil scan of the certifier. <c>Assembly.LoadFrom</c> /
-/// <c>LoadFromAssemblyPath</c> / <c>Activator.CreateInstance</c> may appear only on
+/// B5: hermetic Mono.Cecil scan of the certifier. <c>Assembly.Load</c> /
+/// <c>LoadFrom</c> / <c>LoadFromAssemblyPath</c> / <c>Activator.CreateInstance</c> may appear only on
 /// the frozen inventory. A new call site is a regression, not a silent exception.
 /// </summary>
 [Trait("Category", "Certification")]
@@ -22,6 +22,7 @@ public sealed class CertifierBoundaryScanTests
     {
         "System.Reflection.Assembly::LoadFrom",
         "System.Reflection.Assembly::LoadFile",
+        "System.Reflection.Assembly::Load",
         "System.Runtime.Loader.AssemblyLoadContext::LoadFromAssemblyPath",
         "System.Activator::CreateInstance"
     };

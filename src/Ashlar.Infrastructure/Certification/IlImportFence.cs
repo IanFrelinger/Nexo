@@ -38,10 +38,10 @@ public static class IlImportFence
         + "Ashlar.Core.Domain.Bricks|Ashlar.Core.Domain.Execution;"
         + "deny-type=System.Environment|System.AppDomain|System.AppContext|System.Activator|System.GC|"
         + "System.Console|System.OperatingSystem|System.Delegate|System.MulticastDelegate|"
-        + "System.Runtime.CompilerServices.Unsafe;"
+        + "System.Runtime.CompilerServices.Unsafe|System.Threading.Thread|System.Threading.ThreadPool;"
         + "deny-attr=ModuleInitializerAttribute|DllImportAttribute|LibraryImportAttribute|UnmanagedCallersOnlyAttribute;"
-        + "deny-pinvoke=true;deny-calli=true;"
-        + "inspect=body|signature|fields|ldtoken|pinvoke|attributes;"
+        + "deny-pinvoke=true;deny-calli=true;deny-localloc=true;"
+        + "inspect=body|signature|fields|ldtoken|pinvoke|attributes|localloc;"
         + "deny-member=System.Type::*(except GetTypeFromHandle);"
         + "deny-iface=Ashlar.Core.Domain.Execution.IExecutionContext";
 
@@ -91,6 +91,10 @@ public static class IlImportFence
         "System.Delegate",
         "System.MulticastDelegate",
         "System.Runtime.CompilerServices.Unsafe",
+        // Thread / ThreadPool are ambient certifier handles: fire-and-forget Start()
+        // outlives the witness return. Task/async remain allowed.
+        "System.Threading.Thread",
+        "System.Threading.ThreadPool",
     };
 
     /// <summary>
@@ -226,6 +230,13 @@ public static class IlImportFence
                 throw new InvalidOperationException(
                     $"il-import fence: '{site}' uses calli (a function pointer). "
                     + "Unmanaged calling conventions are refused inside a certified brick.");
+            }
+
+            if (instruction.OpCode == OpCodes.Localloc)
+            {
+                throw new InvalidOperationException(
+                    $"il-import fence: '{site}' uses localloc (stackalloc). "
+                    + "Unbounded stack allocation inside the certifier process is refused.");
             }
 
             if (instruction.OpCode == OpCodes.Ldtoken)

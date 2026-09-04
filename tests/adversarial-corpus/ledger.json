@@ -90,6 +90,18 @@
       "class": "B",
       "item": "B2",
       "note": "Round-11 attack: P/Invoke methods have no IL body, so the v2 call walk skipped them."
+    },
+    {
+      "id": "b2-thread-start",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-12 attack: Thread.Start outlives the witness return inside the certifier process."
+    },
+    {
+      "id": "b2-stackalloc-exhaust",
+      "class": "B",
+      "item": "B2",
+      "note": "Round-12 attack: stackalloc lowers to localloc and can exhaust the certifier stack."
     }
   ]
 }

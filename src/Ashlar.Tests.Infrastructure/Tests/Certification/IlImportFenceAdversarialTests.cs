@@ -127,6 +127,24 @@ public sealed class IlImportFenceAdversarialTests
         input.Hash.Should().Be(BrickContentHasher.ComputeSha256(IlImportFence.InventoryBlob));
         IlImportFence.InventoryBlob.Should().Contain("deny-pinvoke=true");
         IlImportFence.InventoryBlob.Should().Contain("deny-calli=true");
+        IlImportFence.InventoryBlob.Should().Contain("deny-localloc=true");
+        IlImportFence.InventoryBlob.Should().Contain("System.Threading.Thread");
+    }
+
+    [Fact]
+    public void Fence_RefusesThreadStart()
+    {
+        var artifact = Compile(ThreadStartSource());
+        var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*System.Threading.Thread*");
+    }
+
+    [Fact]
+    public void Fence_RefusesLocalloc()
+    {
+        var artifact = Compile(StackallocSource());
+        var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*localloc*");
     }
 
     [Fact]
@@ -224,6 +242,16 @@ public sealed class IlImportFenceAdversarialTests
         "ldtoken",
         extraMembers: "private static readonly object FileToken = typeof(System.IO.File);",
         executeExtra: "object boxed = FileToken;");
+
+    private static string ThreadStartSource() => Honest(
+        "ThreadStartBrick",
+        "thread-start",
+        executeExtra: "new System.Threading.Thread(() => { }).Start();");
+
+    private static string StackallocSource() => Honest(
+        "StackallocBrick",
+        "stackalloc",
+        executeExtra: "Span<byte> buf = stackalloc byte[64]; n += buf.Length;");
 
     private static string Honest(string className, string id, string extraMembers = "", string executeExtra = "") =>
         $$"""
