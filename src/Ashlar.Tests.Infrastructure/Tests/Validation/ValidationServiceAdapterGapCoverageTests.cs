@@ -181,6 +181,7 @@ public class ValidationServiceAdapterGapCoverageTests
     [InlineData("src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj", true)]
     [InlineData("src/Ashlar.Transport.A2A.Server.Tests/Ashlar.Transport.A2A.Server.Tests.csproj", true)]
     [InlineData("tests/anything/Whatever.csproj", true)]
+    [InlineData("tests/adversarial-corpus/fixtures/b2-pinvoke-exit/project/Brick.csproj", false)]
     [InlineData("src/Ashlar.Runtime/Ashlar.Runtime.csproj", false)]
     [InlineData("tools/copy-assemblies.csproj", false)]
     [InlineData("samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj", false)]

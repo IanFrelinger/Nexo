@@ -310,26 +310,47 @@ public sealed class AutonomousIterationHarness
             if (_executeCandidateInSession && session is not null)
                 executionBackend = new SessionExecutionBackend(session);
 
-            GateEmittedArtifact artifact;
+            // Real brick source: emit, fence, and (for in-process legs) activate those
+            // bytes. Identity-handle probes and incomplete proposals compile to no
+            // DomainBrick — keep the supplied handle so the gate can still name the
+            // in-process wiring refusal. A compile error or IL-fence hit is a refusal.
+            GateEmittedArtifact? artifact = null;
+            var brick = candidate.Brick;
+            var brickTypeName = candidate.BrickTypeName;
             try
             {
                 artifact = GateEmittedArtifactCompiler.Compile(
                     candidate.SourceCode, candidate.CompilationReferences);
-                IlImportFence.Inspect(artifact.AssemblyBytes);
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("contains no public, non-nested, concrete type", StringComparison.Ordinal))
+            {
+                artifact = null;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 return new IterationResult(IterationOutcome.ExplainedFailure,
-                    "gate-emitted compile or IL import fence refused the candidate: " + ex.Message,
+                    "gate-emitted compile refused the candidate: " + ex.Message,
                     tier, null, attestation);
             }
 
-            // In-process legs run the bytes the gate compiled. The session execution
-            // backend loads the session-built image instead; the artifact still binds
-            // the host compiler's closed-world emit of the same source.
-            var brick = executionBackend is null
-                ? CertifiedBrickActivator.Activate(artifact)
-                : candidate.Brick;
+            if (artifact is not null)
+            {
+                try
+                {
+                    IlImportFence.Inspect(artifact.AssemblyBytes);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return new IterationResult(IterationOutcome.ExplainedFailure,
+                        "IL import fence refused the candidate: " + ex.Message,
+                        tier, null, attestation);
+                }
+
+                brickTypeName = artifact.BrickTypeName;
+                if (executionBackend is null)
+                    brick = CertifiedBrickActivator.Activate(artifact);
+            }
 
             var decision = await _gate.CertifyAsync(new CertificationRequest
             {
@@ -338,7 +359,7 @@ public sealed class AutonomousIterationHarness
                 SourceCode = candidate.SourceCode,
                 ProjectPath = candidate.ProjectPath,
                 CompilationReferences = candidate.CompilationReferences,
-                BrickTypeName = artifact.BrickTypeName,
+                BrickTypeName = brickTypeName,
                 ConstraintManifest = context.Manifest,
                 TouchSet = context.Touch,
                 Lineage = context.Lineage,
@@ -382,9 +403,9 @@ public sealed class AutonomousIterationHarness
                     BrickId = decision.Record.BrickId,
                     SourceCode = candidate.SourceCode,
                     Record = CertificationRecordMapper.ToData(decision.Record),
-                    BrickTypeName = artifact.BrickTypeName,
+                    BrickTypeName = brickTypeName,
                     AdditionalCompilationReferences = candidate.CompilationReferences,
-                    PrecompiledAssembly = artifact.AssemblyBytes,
+                    PrecompiledAssembly = artifact?.AssemblyBytes,
                     Autonomous = new AutonomousAdmission
                     {
                         Tier = tier.Tier,
