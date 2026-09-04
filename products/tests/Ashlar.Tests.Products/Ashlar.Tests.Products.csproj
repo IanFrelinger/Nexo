@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../ashlar-workstation/src/Ashlar.Workstation/Ashlar.Workstation.csproj" />
+    <ProjectReference Include="../../ashlar-cluster/src/Ashlar.Cluster/Ashlar.Cluster.csproj" />
+    <ProjectReference Include="../../ashlar-cloud/src/Ashlar.Cloud/Ashlar.Cloud.csproj" />
+    <ProjectReference Include="../../ashlar-native/src/Ashlar.Native/Ashlar.Native.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+</Project>
