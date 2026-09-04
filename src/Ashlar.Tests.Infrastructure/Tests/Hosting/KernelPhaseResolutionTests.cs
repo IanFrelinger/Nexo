@@ -38,6 +38,7 @@ public sealed class KernelPhaseResolutionTests
             { AshlarDeploymentProfile.Edge, KernelProfileExpectations.Edge },
             { AshlarDeploymentProfile.AirGapped, KernelProfileExpectations.AirGapped },
             { AshlarDeploymentProfile.System, KernelProfileExpectations.System },
+            { AshlarDeploymentProfile.SecureWorkstation, KernelProfileExpectations.SecureWorkstation },
         };
 
     [Theory(Timeout = TestTimeouts.E2E)]
@@ -180,6 +181,18 @@ public sealed class KernelPhaseResolutionTests
             BackgroundAgents: false,
             GrpcChannelFactory: false,
             CloudSanitization: false,
+            EndpointRegistryNotInMemory: true);
+
+        public static KernelProfileExpectations SecureWorkstation { get; } = new(
+            LoopKernel: true,
+            ConfigurationService: true,
+            Model: true,
+            ProviderFactory: true,
+            PipelineValidator: true,
+            PatternStore: true,
+            BackgroundAgents: true,
+            GrpcChannelFactory: false,
+            CloudSanitization: true,
             EndpointRegistryNotInMemory: true);
     }
 }

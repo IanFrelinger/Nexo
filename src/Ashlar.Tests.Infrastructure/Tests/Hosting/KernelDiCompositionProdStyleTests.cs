@@ -94,6 +94,7 @@ public sealed class KernelDiCompositionProdStyleTests : IDisposable
     [Theory(Timeout = TestTimeouts.E2E)]
     [InlineData(AshlarDeploymentProfile.Full, true)]
     [InlineData(AshlarDeploymentProfile.AirGapped, false)]
+    [InlineData(AshlarDeploymentProfile.SecureWorkstation, true)]
     public async Task ObservationCore_IsRegisteredExactlyOnce(AshlarDeploymentProfile profile, bool pipelineActive)
     {
         await Task.CompletedTask;

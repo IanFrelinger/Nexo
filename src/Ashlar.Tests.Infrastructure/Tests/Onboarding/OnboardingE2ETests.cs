@@ -378,6 +378,7 @@ public sealed class OnboardingE2ETests : IDisposable
     [InlineData(AshlarDeploymentProfile.Edge)]
     [InlineData(AshlarDeploymentProfile.AirGapped)]
     [InlineData(AshlarDeploymentProfile.System)]
+    [InlineData(AshlarDeploymentProfile.SecureWorkstation)]
     public async Task HostBootstrap_AllProfiles_ResolveConfigService(AshlarDeploymentProfile profile)
     {
         await Task.CompletedTask;
