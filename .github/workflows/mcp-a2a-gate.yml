@@ -1,6 +1,21 @@
 name: MCP + A2A protocol gate
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/mcp-a2a-gate.yml"
+      - "src/Ashlar.Mcp.Server/**"
+      - "src/Ashlar.Mcp.Server.Host/**"
+      - "src/Ashlar.Mcp.Server.Tests/**"
+      - "src/Ashlar.Mcp.Client/**"
+      - "src/Ashlar.Mcp.Client.Tests/**"
+      - "src/Ashlar.Transport.A2A/**"
+      - "src/Ashlar.Transport.A2A.Server/**"
+      - "src/Ashlar.Transport.A2A.Tests/**"
+      - "src/Ashlar.Transport.A2A.Server.Tests/**"
+      - "src/Ashlar.Runtime/Transport/**"
+      - "src/Ashlar.Compat/AshlarDeploymentProfileEnvironment.cs"
+      - "application/src/Ashlar.API/**"
   push:
     branches:
       - master
@@ -19,6 +34,7 @@ on:
       - "src/Ashlar.Transport.A2A.Tests/**"
       - "src/Ashlar.Transport.A2A.Server.Tests/**"
       - "src/Ashlar.Runtime/Transport/**"
+      - "src/Ashlar.Compat/AshlarDeploymentProfileEnvironment.cs"
       - "application/src/Ashlar.API/**"
   workflow_dispatch:
 
