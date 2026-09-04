@@ -6,7 +6,7 @@ Maps `AshlarKernelRegistrar` phases (registration order in `AshlarKernelRegistra
 
 | Phase | Name | Module gates | Primary services | Automated proof |
 |-------|------|--------------|------------------|-----------------|
-| 01 | Configuration & NCR | `IncludeNodeCapabilityRuntime` | `RemoteCapabilitiesOptions`, RunPod routing | `KernelPhaseResolutionTests` (Full/AirGapped) |
+| 01 | Configuration & NCR | `IncludeNodeCapabilityRuntime` | `RemoteCapabilitiesOptions`, RunPod routing | `KernelPhaseResolutionTests` (6-profile matrix including SecureWorkstation) |
 | 02 | CQRS & validation | Always | MediatR, `ValidationBehavior` | Build + `IValidationService` (Full) |
 | 03 | Configuration adapter | Always | `IConfigurationService` | All profiles in `HostingDeploymentProfileTests` |
 | 04 | Loop kernel | Always | `ILoopKernel` | `KernelPhaseResolutionTests` all profiles |
@@ -16,11 +16,11 @@ Maps `AshlarKernelRegistrar` phases (registration order in `AshlarKernelRegistra
 | 08 | Copilot task store | Always | `ICopilotTaskStore` | Resolve on Full (optional assert) |
 | 09 | Knowledge query | Always (lazy deps) | `IKnowledgeQueryService` | Full profile only in resolution tests |
 | 10 | Pipeline composition | `IncludePipelineComposition` | `IPipelineTemplateValidator` | Edge/Full/AirGapped in resolution tests |
-| 11 | Background agents & RAG | `IncludeBackgroundAgents`, `IncludeBackgroundAgentRag` | `IBackgroundAgentRegistry` | Full only; absent Edge/System |
+| 11 | Background agents & RAG | `IncludeBackgroundAgents`, `IncludeBackgroundAgentRag` | `IBackgroundAgentRegistry` | Full and SecureWorkstation; absent Edge/System/AirGapped |
 | 12 | Observation | `IncludeObservationPipeline` && !`DisableObservationPipeline` | `IPatternStore` | `HostingE2ESmokeTests`, observation integration |
 | 13 | Model decorator chain | Always | `IModel`, `HotSwappableModel` | All profiles resolve `IModel` |
 | 14 | Ephemeral lifecycle | Env `ASHLAR_EPHEMERAL*` | `IEphemeralModelLifecycle` | Env-gated; manual |
-| 15 | Trust & provider factory | `IncludeTrustServices`, env trust/load | `IProviderFactory`, `ICloudSanitizationProxy` | Trust tests; Full vs AirGapped |
+| 15 | Trust & provider factory | `IncludeTrustServices`, env trust/load | `IProviderFactory`, `ICloudSanitizationProxy` | Trust tests; Full/SecureWorkstation vs AirGapped (trust still needs `TrustEnabled` / `ASHLAR_TRUST_ENABLED`) |
 | 16 | Execution core | Always | `IBehaviorExecutor`, `ITextFileSystem` | Workflow executor tests |
 | 17 | Workflow executor | Always | `WorkflowExecutor` (scoped) | `WorkflowExecutorIntegrationTests` |
 | 18 | Analysis & validation | Always | `IAnalysisService`, `IValidationService` | `HostingE2ESmokeTests.ValidateAsync` |

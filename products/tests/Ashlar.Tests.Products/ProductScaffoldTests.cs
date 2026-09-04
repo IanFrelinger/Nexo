@@ -236,6 +236,29 @@ public sealed class ProductScaffoldTests
     }
 
     [Fact]
+    public void AirGapped_composition_refuses_mcp_server_without_env_var()
+    {
+        var prev = Environment.GetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE");
+        Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", null);
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddAshlarProfile(AshlarDeploymentProfile.AirGapped);
+            using var sp = services.BuildServiceProvider(validateScopes: true);
+
+            new ValidateAshlarMcpServerOptions()
+                .Validate(null, new AshlarMcpServerOptions { Enabled = true, ServerName = "ashlar-ide" })
+                .Failed.Should().BeTrue();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", prev);
+            AshlarDeploymentProfileEnvironment.ClearResolved();
+        }
+    }
+
+    [Fact]
     public void Cloud_directory_rejects_blank_and_non_positive_records()
     {
         var blankOrg = () => Organization.Create(" ", "Northwind");

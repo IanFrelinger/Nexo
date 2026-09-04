@@ -1,8 +1,10 @@
 # Framework vs product split
 
-Ashlar is the **framework**. Guard, Forge, Mesh Exchange, the air-gapped
-workstation, the cluster engine, the hosted control plane, and the native host
-are **products**. This document is the placement rule for new code.
+Ashlar is the **framework**. The extractable product scaffolds in this
+repository are the SecureWorkstation IDE daemon, the cluster engine, the
+hosted control plane, and the native host. Guard, Forge, and Mesh Exchange
+are products of the same kind but are **not** in-tree scaffolds yet. This
+document is the placement rule for new code.
 
 ## Rule
 
@@ -18,11 +20,16 @@ ashlar-workstation  →  ashlar
 ashlar-native  →  ashlar
 ```
 
-Ashlar must never reference a product project. Products consume
-`Ashlar.Hosting`, `Ashlar.Contracts`, and `Ashlar.Client` only. The
-dependency-boundary gate rejects `src/` → `products/` and non-test `src/` →
-`application/` `ProjectReference`s. The existing exception is
-`Ashlar.Tests.Infrastructure` hosting `Ashlar.API` in-process.
+Ashlar must never reference a product project. Products consume framework
+packages only. In-tree scaffolds take `ProjectReference`s to `Ashlar.Hosting`
+and/or `Ashlar.Contracts` (workstation: both; cluster and native: Contracts;
+cloud: none, so the scaffold cannot invert the split). `Ashlar.Client` is the
+remote HTTP consumer package — not a required product dependency.
+`products/ashlar-cloud` must not `ProjectReference` `src/` or `commercial/`
+(NuGet after extraction). The dependency-boundary gate rejects `src/` →
+`products/` and non-test `src/` → `application/` `ProjectReference`s. The
+existing exception is `Ashlar.Tests.Infrastructure` hosting `Ashlar.API`
+in-process.
 
 ## Stay in this repository (framework)
 
@@ -41,20 +48,35 @@ dependency-boundary gate rejects `src/` → `products/` and non-test `src/` →
 `AirGapped` is a slim offline profile. It is **not** the workstation profile:
 it excludes trust, background agents, RAG, and observation.
 `SecureWorkstation` keeps those local capabilities and still excludes runtime
-transport / cloud egress. MCP **client** and A2A (client and server) refuse to
-enable under both profiles. Local MCP **server** stays allowed on
-`SecureWorkstation` for an IDE stdio tool surface; it stays forbidden on
-`AirGapped`. Profile aliases are parsed by one linked helper
-(`AshlarDeploymentProfileEnvironment`) so hosting and protocol assemblies
-cannot drift. `AddAshlarWorkstation` re-asserts the profile and
-`TrustEnabled=true` after any caller `configure` callback. `AddAshlar`
-records the resolved profile so MCP/A2A validators refuse remote egress
-even when the env var is unset. Underscore aliases (`secure_workstation`,
-`air_gapped`) parse the same as hyphenated ones.
+transport (gRPC remote execution). Cloud providers remain opt-in via
+trust/provider configuration, not a profile kill-switch.
+
+Do not set `ASHLAR_DEPLOYMENT_PROFILE=air-gapped` (or `airgapped` /
+`air_gapped`) expecting an IDE workstation. Use `secure-workstation`,
+`workstation`, or `secure_workstation`, or call `AddAshlarWorkstation()`. A
+host that only sets the env var still needs `ASHLAR_TRUST_ENABLED=1` (or
+`TrustEnabled = true`) because the profile registers trust services but does
+not enable them by itself.
+
+MCP **client** and A2A (client and server) refuse to enable under both
+profiles. Local MCP **server** stays allowed on `SecureWorkstation` for an IDE
+stdio tool surface; it stays forbidden on `AirGapped`. Profile aliases are
+parsed by one linked helper (`AshlarDeploymentProfileEnvironment`) so hosting
+and protocol assemblies cannot drift. `AddAshlarWorkstation` re-asserts the
+profile and `TrustEnabled=true` after any caller `configure` callback.
+`AddAshlar` records the resolved profile so MCP/A2A validators (including the
+MCP server AirGapped refusal) honor that value even when the env var is unset.
+Underscore aliases (`secure_workstation`, `air_gapped`) parse the same as
+hyphenated ones.
 
 Envelope, evidence, native-manifest, and scheduled-handle factories reject
 blank ids, undefined enums, malformed digests, and non-positive budgets.
-`products/ashlar-cloud` must not `ProjectReference` `src/` or `commercial/`.
+
+Stay in this monorepo until the consumer shape is stable. The future GitHub
+homes named in the product READMEs are **not** created in this increment;
+extraction follows the
+[release-manager](https://github.com/IanFrelinger/ashlar-release-manager)
+pattern.
 
 ## Extractable product trees (`products/`)
 
@@ -62,7 +84,7 @@ blank ids, undefined enums, malformed digests, and non-positive budgets.
 |------|-------------|----------|-------|
 | `products/ashlar-workstation` | `ashlar-workstation` | `SecureWorkstation`, IDE contracts | Daemon UX, VS Code extension, installers |
 | `products/ashlar-cluster` | `ashlar-cluster` | `ITaskScheduler`, envelopes | Scheduler, GPU workers, k8s |
-| `products/ashlar-cloud` | `ashlar-cloud` | Cluster protocol + org/billing stubs | Hosted control plane, OIDC, quotas |
+| `products/ashlar-cloud` | `ashlar-cloud` | Cluster protocol + org/billing stubs | Hosted control-plane stubs (orgs, quotas, billing); OIDC planned |
 | `products/ashlar-native` | `ashlar-native` | `INativeExecutionHost` | WASM / out-of-process workers |
 
 Existing in-repo surfaces that will move with those products later (not in this
@@ -73,10 +95,6 @@ increment):
   open single-node API
 - `commercial/` Fleet / MeshDirector → cluster overlay or a commercial repo
   (not moved here)
-
-`gh` cannot create the GitHub repositories from this agent. Extraction follows
-the release-manager pattern: grow the tree here, then split when the consumer
-shape is stable.
 
 ## Native code
 

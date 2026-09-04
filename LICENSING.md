@@ -204,9 +204,9 @@ non-production test environments, solely to evaluate Ashlar. You may not deploy 
 production, offer it as a service, or redistribute it (in source or binary form) without a
 separate written agreement. Forking this repository on GitHub, and modifying your fork,
 for the evaluation uses permitted above is not redistribution for purposes of this
-paragraph. The open core under `src/`, `application/`, `apps/runtime-studio/`,
-`samples/`, `tools/`, `docs/`, and `spikes/` is Apache-2.0 and unaffected by this
-paragraph.
+paragraph. The open core under `src/`, `application/`, `products/`,
+`apps/runtime-studio/`, `samples/`, `tools/`, `docs/`, and `spikes/` is Apache-2.0
+and unaffected by this paragraph.
 
 Production use, or any use beyond evaluation, requires a written commercial agreement:
 contact **icfrelinger@gmail.com** with "Ashlar commercial" in the subject line.

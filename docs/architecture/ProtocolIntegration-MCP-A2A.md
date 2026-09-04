@@ -30,7 +30,10 @@ and is unaffected.
    `Ashlar.Hosting` NuGet pack graph.
 2. **Fail-closed everywhere.** Every surface has `Enabled=false` defaults, explicit allowlists
    that default to empty, `ValidateOnStart` options validation, and a hard refusal to enable
-   under `ASHLAR_DEPLOYMENT_PROFILE=airgapped`.
+   MCP **client** and A2A (client and server) under `AirGapped` **and** `SecureWorkstation`.
+   MCP **server** is refused under `AirGapped` only (local IDE stdio stays allowed on
+   `SecureWorkstation`). Validators honor the profile `AddAshlar` recorded, not only the
+   `ASHLAR_DEPLOYMENT_PROFILE` env var.
 3. **Existing seams, not parallel plumbing.** Tools flow through `ITool`/`ToolSchema`
    (`src/Ashlar.Abstractions`), agents will flow through `IAgentTransport` + endpoint routing,
    and HTTP exposure lands behind the Ashlar API middleware chain under `/api/...`.
@@ -156,7 +159,7 @@ runtime's `AddAshlarRuntimeTransport` now wraps the remote side in a scheme-disp
 whenever `AgentTransportSchemeRegistration`s exist in DI — with none registered the composition
 is byte-for-byte the old gRPC-only behavior. Hosts opt in with
 `services.AddAshlarA2ATransport(configuration)` **before** `AddAshlar()`
-(`Ashlar:A2A:Transport:Enabled=true`; refused under AirGapped).
+(`Ashlar:A2A:Transport:Enabled=true`; refused under AirGapped and SecureWorkstation).
 
 Correlation, span, and ambient barrier context propagate as protocol metadata
 (`ashlar.correlationId`, `ashlar.barrier`, …) on both the message and the request — the A2A

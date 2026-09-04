@@ -30,7 +30,7 @@ public static partial class AshlarServiceCollectionExtensions
 
         throw new InvalidOperationException(
             $"ASHLAR_DEPLOYMENT_PROFILE='{raw}' is not recognized. " +
-            "Valid values: full, server, edge, air-gapped, secure-workstation, workstation, system.");
+            "Valid values: full, server, edge, air-gapped, air_gapped, secure-workstation, secure_workstation, workstation, system.");
     }
 
     private static bool TryParseDeploymentProfile(string? raw, out AshlarDeploymentProfile profile)

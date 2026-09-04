@@ -4,7 +4,8 @@ namespace Ashlar.Transport.A2A;
 
 /// <summary>
 /// Fail-closed startup validation for <see cref="A2ATransportOptions"/> — the A2A client
-/// transport dials external agents, so it refuses to enable under the AirGapped profile and
+/// transport dials external agents, so it refuses to enable under AirGapped and
+/// SecureWorkstation (`ForbidsRemoteProtocolEgress`) and
 /// verifies referenced API-key environment variables are present at boot.
 /// </summary>
 public sealed class ValidateA2ATransportOptions : IValidateOptions<A2ATransportOptions>

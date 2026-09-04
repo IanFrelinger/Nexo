@@ -43,7 +43,7 @@ services.AddAshlar(options =>
 
 - **Bricks:** Implement `Brick` (domain behavior unit). Register via `sdk.RegisterBrick<T>()`.
 - **Agents:** Implement `IAgent` and provide an `AgentCard`. Register via `sdk.RegisterAgent<T>()` + `sdk.RegisterAgentCard(...)`.
-- **Background agents:** Configure via agent set JSON (see `apps/release-manager/config/`).
+- **Background agents:** Configure via agent set JSON (see `apps/runtime-studio/config/` in this repo, or the extracted [ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) configs).
 
 ## Reference Integration
 
@@ -95,14 +95,15 @@ needs local trust and agents, use `SecureWorkstation` instead (or
 services.AddAshlarProfile(AshlarDeploymentProfile.AirGapped, opts =>
 {
     opts.StrictMode.Enabled = true;
-    opts.TrustEnabled = true;
+    // TrustEnabled=true is a no-op here: AirGapped does not register trust services.
 });
 // Set ASHLAR_ALLOW_MOCK=1 or use Ollama locally
 
 services.AddAshlarProfile(AshlarDeploymentProfile.SecureWorkstation, opts =>
 {
-    opts.TrustEnabled = true; // product must opt in; the profile only registers the services
+    opts.TrustEnabled = true; // required: the profile registers trust services but does not enable them
 });
+// Or: services.AddAshlarWorkstation(); // re-asserts SecureWorkstation + TrustEnabled after configure
 ```
 
 ## CI Validation

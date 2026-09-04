@@ -26,7 +26,8 @@ public sealed class ValidateAshlarMcpServerOptions : IValidateOptions<AshlarMcpS
         // The air-gapped profile promises "no protocol ingress/egress". Refusing enablement here
         // (rather than trusting every host to check) keeps that promise even when an operator
         // copies an enabling env block onto the wrong machine.
-        var profile = Environment.GetEnvironmentVariable(DeploymentProfileVariable);
+        var profile = AshlarDeploymentProfileEnvironment.Effective(
+            Environment.GetEnvironmentVariable(DeploymentProfileVariable));
         if (AshlarDeploymentProfileEnvironment.IsAirGapped(profile))
         {
             failures.Add(

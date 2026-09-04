@@ -78,7 +78,7 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 
 - **Not a hosted SaaS or chatbot.** You run it (CLI, API, container, or embedded in your app); nothing is sent to a Ashlar-operated service.
 - **Not cloud-dependent.** Cloud providers are opt-in execution targets, not requirements. Air-gapped and local-only deployments are first-class.
-- **Not a drop-in IDE plugin.** Ashlar is a runtime and orchestration layer, not an editor extension.
+- **Not a drop-in IDE plugin by itself.** Ashlar is a runtime and orchestration layer. The extractable workstation product (`products/ashlar-workstation`, `SecureWorkstation` profile) plus `extensions/ashlar-vscode/` is the IDE path — not `ASHLAR_DEPLOYMENT_PROFILE=air-gapped`. See [`docs/architecture/product-split.md`](docs/architecture/product-split.md).
 - **Local-first by default.** Production network exposure requires auth + TLS; the shipped defaults are HTTP-only with no auth for local use (see the [Quick Start note](#quick-start-5-minutes)).
 
 ## Subsystem map
@@ -362,14 +362,14 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 ├── tools/                        # certify/export brick, devlog publisher
 ├── deploy/                       # compose/ stacks and k8s/ manifests
 ├── infra/                        # terraform
-├── extensions/                   # ashlar-vscode
+├── extensions/                   # ashlar-vscode (→ ashlar-workstation product)
 ├── consumer-template/            # nuget.config + Directory.Packages.props for external consumers
 ├── config/                       # trust policy packs
 ├── scripts/                      # setup, install, CI, release helpers
 ├── .devcontainer/
 ├── .docker/
 ├── .github/
-├── Ashlar.sln                      # everything open + 3 commercial projects (62 projects)
+├── Ashlar.sln                      # everything open + 3 commercial projects (63 projects; does not include products/)
 ├── Ashlar.Kernel.sln               # kernel libraries + kernel tests (no CLI/API)
 ├── Ashlar.Runtime.sln              # embeddable runtime graph (no application/)
 ├── Ashlar.Demos.sln                # docs/demos/* clients
@@ -408,6 +408,11 @@ bash scripts/run-cert-gate.sh
 
 # broader local CLI test runner path
 dotnet run --project application/src/Ashlar.CLI -- test local
+
+# extractable product scaffolds (same commands as products-gate)
+dotnet test products/Ashlar.Products.sln
+dotnet test src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj \
+  --filter FullyQualifiedName~DistributedContractTests
 ```
 
 Testing strategy and guard rails:
