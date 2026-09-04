@@ -1,0 +1,9 @@
+{
+  "id": "b2-reflect-invoke-exit",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.Type::GetMethod",
+  "note": "Beat the v1 type-denylist fence: typeof(Environment).GetMethod(\"Exit\").Invoke reached a denied member reflectively."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "b2-file-write",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.IO",
+  "note": "Beat the v1 fence: author logic wrote to the certifier's filesystem during the witness leg."
+}

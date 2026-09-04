@@ -26,10 +26,46 @@
       "note": "Metadata-only discovery returns a type name without executing a spinning constructor."
     },
     {
+      "id": "a4-nested-private-brick",
+      "class": "A",
+      "item": "A4",
+      "note": "Found by the round-10 attack pass: discovery returned an unresolvable bare nested name."
+    },
+    {
       "id": "a8-gate-emitted-hash-bind",
       "class": "A",
       "item": "A8",
       "note": "Loader emits artifact bytes; the certificate binds their hash."
+    },
+    {
+      "id": "b2-appdomain-assemblies",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. AppDomain enumeration of the certifier's assemblies."
+    },
+    {
+      "id": "b2-assembly-load-context",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. AssemblyLoadContext could load code the gate never judged."
+    },
+    {
+      "id": "b2-file-write",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. Author logic wrote to the certifier's filesystem."
+    },
+    {
+      "id": "b2-read-signing-key",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. Reading ASHLAR_CERT_DEV_HMAC_KEY in-process was a path to forging certificates."
+    },
+    {
+      "id": "b2-reflect-invoke-exit",
+      "class": "B",
+      "item": "B2",
+      "note": "Beat the v1 fence. Reflection reached a denied member, which is why the fence is now an allowlist."
     }
   ]
 }

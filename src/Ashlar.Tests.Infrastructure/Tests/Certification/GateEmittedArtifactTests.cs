@@ -46,7 +46,7 @@ public sealed class GateEmittedArtifactTests
             BrickCertificationProjectLoader.DefaultCompilationReferences());
 
         var act = () => IlImportFence.Inspect(artifact.AssemblyBytes);
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Environment::Exit*");
+        act.Should().Throw<InvalidOperationException>().WithMessage("*System.Environment*");
     }
 
     [Fact]

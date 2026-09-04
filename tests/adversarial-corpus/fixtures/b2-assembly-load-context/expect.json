@@ -1,0 +1,9 @@
+{
+  "id": "b2-assembly-load-context",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.Runtime.Loader",
+  "note": "Beat the v1 fence: AssemblyLoadContext was reachable, so a brick could load code the gate never judged."
+}

@@ -4,5 +4,5 @@
   "item": "A4/A5",
   "phase": "load",
   "expect": "refuse",
-  "reasonContains": "Environment::Exit"
+  "reasonContains": "System.Environment"
 }

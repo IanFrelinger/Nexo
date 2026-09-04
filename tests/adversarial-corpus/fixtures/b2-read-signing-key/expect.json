@@ -1,0 +1,9 @@
+{
+  "id": "b2-read-signing-key",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.Environment",
+  "note": "Beat the v1 fence: author logic runs in-process during the witness leg, so reading ASHLAR_CERT_DEV_HMAC_KEY from the certifier's own environment was a path to forging certificates."
+}

@@ -31,6 +31,13 @@ public static class MetadataBrickDiscovery
                 continue;
             if ((type.Attributes & TypeAttributes.Interface) != 0)
                 continue;
+            // A nested or non-public type cannot be the shipped brick: the host resolves it
+            // by name and constructs it. Reporting one would hand back a name that does not
+            // round-trip through Assembly.GetType.
+            if (!type.IsNested && (type.Attributes & TypeAttributes.VisibilityMask) != TypeAttributes.Public)
+                continue;
+            if (type.IsNested)
+                continue;
             if (!InheritsBrick(reader, type))
                 continue;
 
@@ -46,7 +53,8 @@ public static class MetadataBrickDiscovery
 
         return found
             ?? throw new InvalidOperationException(
-                $"gate-emitted artifact contains no concrete type derived from {BrickMetadataName}");
+                "gate-emitted artifact contains no public, non-nested, concrete type derived from "
+                + BrickMetadataName);
     }
 
     private static bool InheritsBrick(MetadataReader reader, TypeDefinition type)
