@@ -155,6 +155,7 @@ public sealed class HostingDeploymentProfileTests
     [InlineData("secure-workstation")]
     [InlineData("secureworkstation")]
     [InlineData("workstation")]
+    [InlineData("secure_workstation")]
     public async Task DeploymentProfile_SecureWorkstation_FromEnvironmentVariable(string alias)
     {
         await Task.CompletedTask;

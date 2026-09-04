@@ -44,6 +44,7 @@ public sealed class ValidateAshlarMcpClientOptionsTests
     [InlineData("secure-workstation")]
     [InlineData("workstation")]
     [InlineData("SecureWorkstation")]
+    [InlineData("secure_workstation")]
     public void Enabled_under_secure_workstation_profile_fails(string profile)
     {
         Environment.SetEnvironmentVariable(ValidateAshlarMcpClientOptions.DeploymentProfileVariable, profile);

@@ -23,8 +23,10 @@ public sealed class ValidateAshlarA2AServerOptionsTests
 
     [Theory]
     [InlineData("airgapped", "AirGapped")]
+    [InlineData("air_gapped", "AirGapped")]
     [InlineData("secure-workstation", "SecureWorkstation")]
     [InlineData("workstation", "SecureWorkstation")]
+    [InlineData("secure_workstation", "SecureWorkstation")]
     public void Enabled_under_no_egress_profiles_fails(string profile, string label)
     {
         Environment.SetEnvironmentVariable(ValidateAshlarA2AServerOptions.DeploymentProfileVariable, profile);

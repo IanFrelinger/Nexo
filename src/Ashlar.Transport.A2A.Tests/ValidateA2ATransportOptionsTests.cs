@@ -16,6 +16,7 @@ public sealed class ValidateA2ATransportOptionsTests
     [Theory]
     [InlineData("secure-workstation")]
     [InlineData("workstation")]
+    [InlineData("secure_workstation")]
     public void Enabled_under_secure_workstation_profile_fails(string profile)
     {
         Environment.SetEnvironmentVariable(ValidateA2ATransportOptions.DeploymentProfileVariable, profile);

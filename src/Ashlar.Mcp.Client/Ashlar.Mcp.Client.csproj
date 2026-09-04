@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Ashlar.Compat\AshlarDeploymentProfileEnvironment.cs" Link="AshlarDeploymentProfileEnvironment.cs" />
     <ProjectReference Include="..\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
   </ItemGroup>
 

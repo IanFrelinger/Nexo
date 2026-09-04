@@ -14,7 +14,7 @@ on:
       - "src/Ashlar.Transport.A2A.Tests/**"
       - "src/Ashlar.Transport.A2A.Server.Tests/**"
       - "src/Ashlar.Runtime/Transport/**"
-      - "src/Ashlar.Compat/AshlarDeploymentProfileEnvironment.cs"
+      - "src/Ashlar.Abstractions/AshlarDeploymentProfileEnvironment.cs"
       - "application/src/Ashlar.API/**"
   push:
     branches:
@@ -34,7 +34,7 @@ on:
       - "src/Ashlar.Transport.A2A.Tests/**"
       - "src/Ashlar.Transport.A2A.Server.Tests/**"
       - "src/Ashlar.Runtime/Transport/**"
-      - "src/Ashlar.Compat/AshlarDeploymentProfileEnvironment.cs"
+      - "src/Ashlar.Abstractions/AshlarDeploymentProfileEnvironment.cs"
       - "application/src/Ashlar.API/**"
   workflow_dispatch:
 
