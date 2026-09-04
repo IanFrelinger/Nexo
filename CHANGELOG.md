@@ -8,8 +8,19 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
+0.1.2 is ready to cut (repo `VERSION` reads ahead of `ci/published-version` = `0.1.1`). Do not tag or publish until an operator says so.
+
+### Added
+
+- **Compile-authority fences (certificate means the bytes).** The certifier no longer `dotnet build`s author projects. It compiles the candidate itself (`GateEmittedArtifactCompiler`) under closed-world `BrickCompileOptions` (C# 12, no unsafe, Release), discovers types from PE metadata, allowlist-fences the IL (`allowlist-v3`: signatures, `ldtoken`, P/Invoke, `calli`, module initializers), activates those bytes, and binds `gate-emitted-artifact` / `compile-options` / `il-import-fence` / `certifier-identity` into the signed record. Exporters write `gate-emitted-brick.dll`. `CertificationVerifyOptions.Strict` requires the artifact.
+- **Adversarial corpus** at `tests/adversarial-corpus/` replayed by `AdversarialCorpusTests` (cert-gate). Living-oracle: an intentional verdict change updates `expect.json` in the same commit.
+- **Certifier-boundary inventory** (`ci/certifier-boundary-inventory.tsv`) — shrink-only freeze of Load/CreateInstance sites in `Ashlar.Infrastructure.Certification*`.
+- **C6 published-version lint** — docs that name a nuget.org pin key off `ci/published-version`, never `VERSION`.
+
 ### Changed
 
+- **IL import fence is an allowlist**, not a `System.*` denylist. Round-10 attacks (reflective `Environment.Exit`, reading `ASHLAR_CERT_DEV_HMAC_KEY`, `AppDomain`/`AssemblyLoadContext`, filesystem writes) and round-11 attacks (P/Invoke with no IL body, `[ModuleInitializer]`, `typeof(System.IO.File)` / `ldtoken`, extra author `.cs` files) are corpus fixtures.
+- **Compile-options parity.** Mutants (`RoslynCodeAnalysisService`), the analyzer fence, hot-swap rematerialize, and the in-session MSBuild project all use `BrickCompileOptions`. The autonomy harness activates the gate-emitted artifact and passes those bytes into the first swap.
 - **Release Manager extracted** to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) — the first out-of-tree consumer of the published packages (CI restores from nuget.org only; smoke-verified: all four deterministic agents register, run, and drain). Completes the graduation→extraction path LICENSING.md promised. `consumer-template/` refreshed to `0.1.1` and no longer claims the packages are unpublished.
 
 ## [0.1.1] - 2026-09-01
