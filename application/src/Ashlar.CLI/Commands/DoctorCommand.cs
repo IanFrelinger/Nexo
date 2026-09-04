@@ -1,8 +1,8 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands;
 
@@ -72,15 +72,27 @@ public sealed class DoctorCommand : Command
         var osSupported = OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
         var dependencyOk = dependencyAssessment.Supported && !dependencyAssessment.MissingRequired.Any();
         var cliCommand = "dotnet run --project application/src/Ashlar.CLI -- --help";
-        var containerCommand = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help";
+        // Daemon liveness only. Pulling ghcr.io/ianfrelinger/nexo-cli:latest on every
+        // doctor/validate/test invocation is what wedged Docker Desktop on a full local run.
+        var containerCommand = "docker info";
+        const string recommendedContainerRun = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help";
 
-        var (cliExitCode, _, cliStderr) = await RunShellCaptureAsync(cliCommand, ct).ConfigureAwait(false);
-        var cliSmokePassed = cliExitCode == 0;
-        var cliSmokeError = cliSmokePassed ? string.Empty : cliStderr.Trim();
+        var cliResult = await TimedProcess.RunShellAsync(cliCommand, TimedProcess.CliSmokeTimeout, ct).ConfigureAwait(false);
+        var cliSmokePassed = cliResult.ExitCode == 0 && !cliResult.TimedOut;
+        var cliSmokeError = cliSmokePassed
+            ? string.Empty
+            : cliResult.TimedOut
+                ? $"cli smoke timed out after {TimedProcess.CliSmokeTimeout.TotalSeconds:0}s"
+                : cliResult.StdErr.Trim();
 
-        var (containerExitCode, _, containerStderr) = await RunShellCaptureAsync(containerCommand, ct).ConfigureAwait(false);
-        var containerSmokePassed = containerExitCode == 0;
-        var containerSmokeError = containerSmokePassed ? string.Empty : containerStderr.Trim();
+        var containerResult = await TimedProcess.RunShellAsync(containerCommand, TimedProcess.DaemonProbeTimeout, ct)
+            .ConfigureAwait(false);
+        var containerSmokePassed = containerResult.ExitCode == 0 && !containerResult.TimedOut;
+        var containerSmokeError = containerSmokePassed
+            ? string.Empty
+            : containerResult.TimedOut
+                ? $"docker daemon did not answer within {TimedProcess.DaemonProbeTimeout.TotalSeconds:0}s"
+                : containerResult.StdErr.Trim();
 
         var overallOk = osSupported && dependencyOk && cliSmokePassed;
         var remediation = new DoctorRemediationReport();
@@ -106,9 +118,14 @@ public sealed class DoctorCommand : Command
                 dependencyAssessment = postAssessment;
                 dependencyOk = postAssessment.Supported && !postAssessment.MissingRequired.Any();
 
-                var (postCliExitCode, _, postCliStderr) = await RunShellCaptureAsync(cliCommand, ct).ConfigureAwait(false);
-                cliSmokePassed = postCliExitCode == 0;
-                cliSmokeError = cliSmokePassed ? string.Empty : postCliStderr.Trim();
+                var postCli = await TimedProcess.RunShellAsync(cliCommand, TimedProcess.CliSmokeTimeout, ct)
+                    .ConfigureAwait(false);
+                cliSmokePassed = postCli.ExitCode == 0 && !postCli.TimedOut;
+                cliSmokeError = cliSmokePassed
+                    ? string.Empty
+                    : postCli.TimedOut
+                        ? $"cli smoke timed out after {TimedProcess.CliSmokeTimeout.TotalSeconds:0}s"
+                        : postCli.StdErr.Trim();
                 overallOk = osSupported && dependencyOk && cliSmokePassed;
             }
         }
@@ -157,7 +174,7 @@ public sealed class DoctorCommand : Command
                 nextSteps = new
                 {
                     devContainer = "Open repo in Cursor/VS Code → Dev Containers: Reopen in Container",
-                    containerRun = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help",
+                    containerRun = recommendedContainerRun,
                     doctorFix = "dotnet run --project application/src/Ashlar.CLI -- doctor --fix --yes"
                 }
             };
@@ -209,7 +226,7 @@ public sealed class DoctorCommand : Command
             Console.WriteLine($"overall: {(overallOk ? "PASS" : "FAIL")}");
             Console.WriteLine("recommended next steps:");
             Console.WriteLine("  - dev container: Reopen in Container (.devcontainer/)");
-            Console.WriteLine("  - container lane: docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help");
+            Console.WriteLine($"  - container lane: {recommendedContainerRun}");
             Console.WriteLine("  - remediation lane: dotnet run --project application/src/Ashlar.CLI -- doctor --fix --yes");
 
             if (readiness is not null)
@@ -226,41 +243,5 @@ public sealed class DoctorCommand : Command
         }
 
         return overallOk ? 0 : 1;
-    }
-
-    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunShellCaptureAsync(string command, CancellationToken ct)
-    {
-        var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        var psi = new ProcessStartInfo
-        {
-            FileName = isWindows ? "powershell" : "bash",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-
-        if (isWindows)
-        {
-            psi.ArgumentList.Add("-NoProfile");
-            psi.ArgumentList.Add("-Command");
-            psi.ArgumentList.Add(command);
-        }
-        else
-        {
-            psi.ArgumentList.Add("-lc");
-            psi.ArgumentList.Add(command);
-        }
-
-        using var process = Process.Start(psi);
-        if (process == null)
-            return (1, string.Empty, "Failed to start process.");
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-        var stderrTask = process.StandardError.ReadToEndAsync(ct);
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-
-        var stdout = await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-        return (process.ExitCode, stdout, stderr);
     }
 }

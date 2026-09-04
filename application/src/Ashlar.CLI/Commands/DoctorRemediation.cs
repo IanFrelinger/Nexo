@@ -1,5 +1,4 @@
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands;
 
@@ -154,31 +153,9 @@ internal static class DoctorRemediation
 
     private static async Task<int> RunShellAsync(string command, CancellationToken cancellationToken)
     {
-        var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        var psi = new ProcessStartInfo
-        {
-            FileName = isWindows ? "powershell" : "bash",
-            UseShellExecute = false,
-        };
-
-        if (isWindows)
-        {
-            psi.ArgumentList.Add("-NoProfile");
-            psi.ArgumentList.Add("-Command");
-            psi.ArgumentList.Add(command);
-        }
-        else
-        {
-            psi.ArgumentList.Add("-lc");
-            psi.ArgumentList.Add(command);
-        }
-
-        using var process = Process.Start(psi);
-        if (process == null)
-            return 1;
-
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        return process.ExitCode;
+        var result = await TimedProcess.RunShellAsync(command, TimedProcess.RemediationTimeout, cancellationToken)
+            .ConfigureAwait(false);
+        return result.TimedOut ? TimedProcess.TimeoutExitCode : result.ExitCode;
     }
 
     private sealed record DoctorRemediationAction(

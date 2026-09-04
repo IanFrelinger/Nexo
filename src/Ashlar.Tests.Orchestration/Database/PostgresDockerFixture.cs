@@ -45,7 +45,8 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
         _containerName = "ashlar-pg-cov-" + Guid.NewGuid().ToString("N")[..10];
         var start = await RunProcessAsync(
             "docker",
-            $"run -d --rm --name {_containerName} -e POSTGRES_PASSWORD=postgres -p 127.0.0.1::5432 postgres:16-alpine");
+            $"run -d --rm --name {_containerName} -e POSTGRES_PASSWORD=postgres -p 127.0.0.1::5432 postgres:16-alpine",
+            TimeSpan.FromSeconds(60));
         if (start.ExitCode != 0)
         {
             SkipReason = $"Failed to start Postgres container: {start.StdErr}";
@@ -54,7 +55,7 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
 
         _ownsContainer = true;
 
-        var portResult = await RunProcessAsync("docker", $"port {_containerName} 5432/tcp");
+        var portResult = await RunProcessAsync("docker", $"port {_containerName} 5432/tcp", TimeSpan.FromSeconds(8));
         if (portResult.ExitCode != 0)
         {
             SkipReason = $"Failed to resolve Postgres port: {portResult.StdErr}";
@@ -94,14 +95,14 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
         if (string.IsNullOrWhiteSpace(_containerName))
             return;
 
-        await RunProcessAsync("docker", $"stop {_containerName}");
+        await RunProcessAsync("docker", $"stop {_containerName}", TimeSpan.FromSeconds(15));
         _containerName = null;
         _ownsContainer = false;
     }
 
     private static async Task<bool> IsDockerAvailableAsync()
     {
-        var result = await RunProcessAsync("docker", "info");
+        var result = await RunProcessAsync("docker", "info", TimeSpan.FromSeconds(8));
         return result.ExitCode == 0;
     }
 
@@ -121,7 +122,10 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
         }
     }
 
-    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunProcessAsync(string file, string args)
+    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunProcessAsync(
+        string file,
+        string args,
+        TimeSpan timeout)
     {
         try
         {
@@ -139,9 +143,38 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
             };
 
             process.Start();
-            var stdout = await process.StandardOutput.ReadToEndAsync();
-            var stderr = await process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync();
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            var stderrTask = process.StandardError.ReadToEndAsync();
+            using var timeoutCts = new CancellationTokenSource(timeout);
+            try
+            {
+                await process.WaitForExitAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                        process.Kill(entireProcessTree: true);
+                }
+                catch
+                {
+                    // already gone
+                }
+
+                try
+                {
+                    await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(2));
+                }
+                catch (TimeoutException)
+                {
+                }
+
+                return (124, string.Empty, $"docker '{args}' did not finish within {timeout.TotalSeconds:0}s.");
+            }
+
+            var stdout = await stdoutTask;
+            var stderr = await stderrTask;
             return (process.ExitCode, stdout, stderr);
         }
         catch (Exception ex) when (ex is Win32Exception or FileNotFoundException)

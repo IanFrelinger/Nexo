@@ -86,7 +86,7 @@ fi
 # of Docker -- a property of one test environment -- as though it were a product claim, and duly failed
 # on a CI runner that has Docker while doctor was reporting correctly.
 SMOKE=$(grep -ioE 'container smoke: *[a-z]+' "$OUT/doctor.log" | head -1 | sed 's/.*: *//' | tr 'A-Z' 'a-z')
-if docker info >/dev/null 2>&1; then
+if timeout 8 docker info >/dev/null 2>&1; then
   if [ "$SMOKE" = "pass" ]; then
     result 0 doctor-container-truthful PASS "docker reachable and doctor says 'container smoke: pass'"
   else

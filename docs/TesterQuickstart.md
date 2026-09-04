@@ -27,9 +27,9 @@ Run from the repository root (the doctor's CLI smoke check re-invokes `dotnet ru
 dotnet run --project application/src/Ashlar.CLI -- doctor
 ```
 
-Look for the `overall: PASS` line (it is followed by a few "recommended next steps"). `container smoke: warn` is normal when Docker is absent; the container lane is optional. Add `--json` for machine-readable output.
+Look for the `overall: PASS` line (it is followed by a few "recommended next steps"). `container smoke: warn` is normal when Docker is absent or the daemon does not answer within eight seconds; the container lane is optional. Add `--json` for machine-readable output.
 
-Known trap: `doctor` probes `docker info` with no timeout (`application/src/Ashlar.CLI/Commands/BootstrapRuntime.cs`, the `docker` dependency probe). If Docker Desktop is installed but its daemon is wedged, `doctor` hangs at that probe; quit Docker Desktop (or run with the Docker CLI off `PATH`) and re-run.
+`doctor` probes the Docker **daemon** with a timed `docker info` (eight seconds, then the process tree is killed). It does **not** pull `ghcr.io/ianfrelinger/nexo-cli:latest` as a blocking smoke. If Docker Desktop is installed but wedged, expect `container smoke: warn` and `docker daemon did not answer within 8s` rather than a hang. The recommended next step still names `docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help` for an operator who wants the published image.
 
 ## 3. The hero: submit a task, read the audit trail
 

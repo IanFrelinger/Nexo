@@ -14,23 +14,11 @@ internal static class MeshLabProcessRunner
         TimeSpan? timeout = null,
         CancellationToken cancellationToken = default)
     {
-        using var timeoutCts = timeout.HasValue
-            ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
-            : null;
-        if (timeout.HasValue && timeoutCts is not null)
-            timeoutCts.CancelAfter(timeout.Value);
-
-        var effectiveCt = timeoutCts?.Token ?? cancellationToken;
-
         var psi = new ProcessStartInfo
         {
             FileName = fileName,
             Arguments = arguments,
             WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
         };
 
         if (environment is not null)
@@ -44,32 +32,18 @@ internal static class MeshLabProcessRunner
             }
         }
 
-        using var process = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start: {fileName}");
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(effectiveCt);
-        var stderrTask = process.StandardError.ReadToEndAsync(effectiveCt);
-
-        try
+        var result = await Ashlar.Infrastructure.HostProcess.TimedProcess.RunAsync(
+                psi,
+                timeout ?? Timeout.InfiniteTimeSpan,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (result.TimedOut)
         {
-            await process.WaitForExitAsync(effectiveCt).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (timeout.HasValue)
-        {
-            try
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            catch
-            {
-                // ignored
-            }
-
             throw new TimeoutException(
-                $"Process timed out after {timeout.Value.TotalSeconds:F0}s: {fileName} {arguments}");
+                $"Process timed out after {timeout!.Value.TotalSeconds:F0}s: {fileName} {arguments}");
         }
 
-        var stdout = await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-        return (process.ExitCode, stdout, stderr);
+        return (result.ExitCode, result.StdOut, result.StdErr);
     }
 
     public static async Task AssertSuccessAsync(
