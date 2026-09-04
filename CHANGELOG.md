@@ -25,6 +25,8 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **`CleanArtifactsTool`** no longer null-derefs when the cleanup service returns nothing (Windows readiness used a Unix snapshot path that missed the mock).
 - **Mesh TLS tests** export the RSA key PEM at creation time so macOS Security.framework is not asked to re-export a PFX-loaded key. Production `LoadCertWithKey` stays on the persistent PKCS#12 path SChannel accepts (no `EphemeralKeySet`).
 - **Autonomy loop start test** waits for the start log instead of a 50ms delay, so a loaded macOS runner cannot `StopAsync` before `ExecuteAsync` logs the enforced hold.
+- **Background agent service tests** stop through `StopAsync` after observing `StartAllAsync`, instead of canceling the token passed to `StartAsync` (that token is linked into `ExecuteAsync` and raced a short delay on Windows).
+- **Production Readiness Gate v1** CLI checks expect the unconfigured default pipeline adapter to fail closed. They no longer require fabricated `pipeline run` success.
 
 ### Changed
 

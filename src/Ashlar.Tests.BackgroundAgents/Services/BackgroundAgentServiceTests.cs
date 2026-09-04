@@ -39,14 +39,7 @@ public sealed class BackgroundAgentServiceTests
         registry.Setup(r => r.StartAllAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         var service = CreateService(registry.Object, CreateLoaderForAgent("enabled-agent"));
-        using var cts = new CancellationTokenSource();
-
-        await service.StartAsync(cts.Token);
-        await Task.Delay(150);
-        cts.Cancel();
-
-        await service.ExecuteTask!;
-        await service.StopAsync(CancellationToken.None);
+        await RunUntilRegistryStartedAsync(service, registry);
 
         registry.Verify(r => r.RegisterAsync(
             It.IsAny<IAgent>(),
@@ -80,13 +73,7 @@ public sealed class BackgroundAgentServiceTests
             .Build();
 
         var service = CreateService(registry.Object, CreateLoader(config));
-        using var cts = new CancellationTokenSource();
-
-        await service.StartAsync(cts.Token);
-        await Task.Delay(100);
-        cts.Cancel();
-        await service.ExecuteTask!;
-        await service.StopAsync(CancellationToken.None);
+        await RunUntilRegistryStartedAsync(service, registry);
 
         registry.Verify(
             r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()),
@@ -128,13 +115,7 @@ public sealed class BackgroundAgentServiceTests
             .Build();
 
         var service = CreateService(registry.Object, CreateLoader(config));
-        using var cts = new CancellationTokenSource();
-
-        await service.StartAsync(cts.Token);
-        await Task.Delay(150);
-        cts.Cancel();
-        await service.ExecuteTask!;
-        await service.StopAsync(CancellationToken.None);
+        await RunUntilRegistryStartedAsync(service, registry);
 
         registry.Verify(
             r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "good-agent"), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()),
@@ -161,12 +142,38 @@ public sealed class BackgroundAgentServiceTests
             null);
 
         var service = CreateService(Mock.Of<IBackgroundAgentRegistry>(), badLoader);
-        using var cts = new CancellationTokenSource();
 
-        await service.StartAsync(cts.Token);
+        await service.StartAsync(CancellationToken.None);
         var act = async () => await service.ExecuteTask!;
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Agent ID is required*");
         await service.StopAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Hosted <see cref="BackgroundService.StartAsync"/> links the caller's token into
+    /// <c>ExecuteAsync</c>. Canceling that token (or racing a short <c>Task.Delay</c>
+    /// against it) surfaces <see cref="TaskCanceledException"/> from <c>ExecuteTask</c>
+    /// on a loaded Windows runner. Drive the loop with <see cref="CancellationToken.None"/>
+    /// and stop through <c>StopAsync</c> once the registry start has been observed.
+    /// </summary>
+    private static async Task RunUntilRegistryStartedAsync(
+        BackgroundAgentService service,
+        Mock<IBackgroundAgentRegistry> registry,
+        TimeSpan? timeout = null)
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        registry.Setup(r => r.StartAllAsync(It.IsAny<CancellationToken>()))
+            .Callback<CancellationToken>(_ => started.TrySetResult())
+            .Returns(Task.CompletedTask);
+
+        await service.StartAsync(CancellationToken.None);
+        await started.Task.WaitAsync(timeout ?? TimeSpan.FromSeconds(5));
+        await service.StopAsync(CancellationToken.None);
+        if (service.ExecuteTask is { } exec)
+        {
+            try { await exec; }
+            catch (OperationCanceledException) { /* host shutdown */ }
+        }
     }
 
     private static BackgroundAgentService CreateService(IBackgroundAgentRegistry registry, BackgroundAgentConfigLoader loader)
