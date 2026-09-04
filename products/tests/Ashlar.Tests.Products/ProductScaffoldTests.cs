@@ -295,17 +295,39 @@ public sealed class ProductScaffoldTests
 
     private static string FindRepoRoot([CallerFilePath] string? sourceFile = null)
     {
-        var dir = new DirectoryInfo(Path.GetDirectoryName(sourceFile) ?? AppContext.BaseDirectory);
-        while (dir is not null)
+        foreach (var start in RepoRootStarts(sourceFile))
         {
-            if (File.Exists(Path.Combine(dir.FullName, "Ashlar.sln")))
+            var dir = new DirectoryInfo(start);
+            while (dir is not null)
             {
-                return dir.FullName;
-            }
+                if (File.Exists(Path.Combine(dir.FullName, "Ashlar.sln")) ||
+                    File.Exists(Path.Combine(dir.FullName, "products", "Ashlar.Products.sln")))
+                {
+                    return dir.FullName;
+                }
 
-            dir = dir.Parent;
+                dir = dir.Parent;
+            }
         }
 
-        throw new InvalidOperationException("Could not locate Ashlar.sln from " + AppContext.BaseDirectory);
+        throw new InvalidOperationException(
+            "Could not locate Ashlar.sln from " + AppContext.BaseDirectory +
+            " cwd=" + Directory.GetCurrentDirectory() +
+            " source=" + sourceFile);
+    }
+
+    private static IEnumerable<string> RepoRootStarts(string? sourceFile)
+    {
+        if (!string.IsNullOrWhiteSpace(sourceFile) && File.Exists(sourceFile))
+        {
+            var fromSource = Path.GetDirectoryName(sourceFile);
+            if (!string.IsNullOrWhiteSpace(fromSource))
+            {
+                yield return fromSource;
+            }
+        }
+
+        yield return AppContext.BaseDirectory;
+        yield return Directory.GetCurrentDirectory();
     }
 }
