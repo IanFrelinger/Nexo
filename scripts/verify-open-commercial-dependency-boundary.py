@@ -6,7 +6,7 @@ Checks:
   1. No OPEN .csproj may ProjectReference a COMMERCIAL .csproj.
   2. Every COMMERCIAL .csproj directory contains COMMERCIAL-LICENSE.md.
   3. Every OPEN packable .csproj resolves PackageLicenseExpression=Apache-2.0.
-  4. No core (src/) .csproj may ProjectReference an applications/ .csproj.
+  4. No core (src/) .csproj may ProjectReference an application/, applications/, or products/ .csproj.
 
 Optional allowlists (repo-relative paths, # comments allowed):
   scripts/dependency-boundary.open-to-commercial.allowlist.txt
@@ -215,7 +215,11 @@ def main() -> int:
         except FileNotFoundError:
             continue  # already reported by check 1
         for ref_rel in refs:
-            if ref_rel.startswith("applications/"):
+            if (
+                ref_rel.startswith("applications/")
+                or ref_rel.startswith("application/")
+                or ref_rel.startswith("products/")
+            ):
                 errors.append(
                     f"core project references application project: {project.rel} -> {ref_rel}"
                 )

@@ -29,18 +29,18 @@ Maps `AshlarKernelRegistrar` phases (registration order in `AshlarKernelRegistra
 
 ## Deployment profile × modules
 
-| Module | Full | Server | Edge | AirGapped | System |
-|--------|:----:|:------:|:----:|:---------:|:------:|
-| NCR | ✓ | ✓ | | ✓ | |
-| Runtime transport | ✓ | ✓ | | | |
-| Persistence | ✓ | ✓ | ✓ | ✓ | |
-| Adaptation | ✓ | ✓ | | ✓ | |
-| Pipelines | ✓ | ✓ | ✓ | ✓ | |
-| Background agents | ✓ | ✓ | | | |
-| Observation | ✓ | ✓ | | | |
-| Trust services | ✓ | ✓ | | | |
-| Workflow integrations | ✓ | ✓ | | | |
-| Testing adapters | ✓ | ✓ | | | |
+| Module | Full | Server | Edge | AirGapped | System | SecureWorkstation |
+|--------|:----:|:------:|:----:|:---------:|:------:|:-----------------:|
+| NCR | ✓ | ✓ | | ✓ | | ✓ |
+| Runtime transport | ✓ | ✓ | | | | |
+| Persistence | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| Adaptation | ✓ | ✓ | | ✓ | | ✓ |
+| Pipelines | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| Background agents | ✓ | ✓ | | | | ✓ |
+| Observation | ✓ | ✓ | | | | ✓ |
+| Trust services | ✓ | ✓ | | | | ✓ |
+| Workflow integrations | ✓ | ✓ | | | | ✓ |
+| Testing adapters | ✓ | ✓ | | | | |
 
 ## Gaps (explicit)
 

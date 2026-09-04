@@ -8,6 +8,7 @@ This monorepo keeps **kernel/runtime libraries** under `src/` and **open applica
 |----------|------|
 | `src/` | Execution kernel: abstractions, core, hosting library, infrastructure, orchestration, runtime, agents, transport/protocol adapters (gRPC, MCP, A2A), ingress adapters, and tests for the kernel graph |
 | `application/src/` | Open product hosts: `Ashlar.API`, `Ashlar.CLI`, plus `Ashlar.Tests.CLI` |
+| `products/` | Extractable product scaffolds (workstation, cluster, cloud, native). Future own repos. See [`product-split.md`](product-split.md). |
 | `commercial/` | Commercial fleet-governance tier: Fleet, MeshDirector, and their tests |
 
 ## Runtime layer (NuGet / embeddable graph)
@@ -44,7 +45,7 @@ Version all packages from the same release (same `PackageVersion` when packing).
 
 ## Application layer
 
-Product-specific deployables and descriptors stay under **`application/src/`** in this repo. If you maintain a **separate** product repository, keep private integrations, bespoke DTOs, and composition overrides there and reference the runtime packages above.
+Product-specific deployables and descriptors stay under **`application/src/`** (CLI/API) and **`products/`** (extractable workstation/cluster/cloud/native) in this repo. If you maintain a **separate** product repository, keep private integrations, bespoke DTOs, and composition overrides there and reference the runtime packages above. The kernel must never take a `ProjectReference` to `application/` or `products/`.
 
 ## Solution files
 

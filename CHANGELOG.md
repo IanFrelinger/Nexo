@@ -8,6 +8,11 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
+### Added
+
+- **Product split scaffolds** under `products/` (workstation, cluster, cloud, native) and framework distributed contracts (`ExecutionEnvelope`, `ResultEvidence`, `ITaskScheduler`, `INativeExecutionHost`).
+- **`AshlarDeploymentProfile.SecureWorkstation`** — local trust, agents, RAG, and observation without runtime transport. `AirGapped` remains the slim offline profile.
+
 ## [0.1.2] - 2026-09-04
 
 **Ashlar v0.1.2 — compile-authority.** A certificate names the bytes the certifier compiled and fenced. Disk certify and generate→certify mint `gate-emitted-artifact`. Production hot-swap and self-extend admission use `CertificationVerifyOptions.Strict`; hot-swap binds judged PE when the supplied image matches that input.

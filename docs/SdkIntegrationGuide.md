@@ -86,7 +86,10 @@ services.AddAshlar(opts =>
 
 ### 3. Air-Gapped Deployment
 
-Run Ashlar with no cloud connectivity:
+Run Ashlar with no cloud connectivity. `AirGapped` is the slim profile (no
+trust, agents, or observation). For an IDE / workstation daemon that still
+needs local trust and agents, use `SecureWorkstation` instead (or
+`products/ashlar-workstation` `AddAshlarWorkstation()`).
 
 ```csharp
 services.AddAshlarProfile(AshlarDeploymentProfile.AirGapped, opts =>
@@ -95,6 +98,11 @@ services.AddAshlarProfile(AshlarDeploymentProfile.AirGapped, opts =>
     opts.TrustEnabled = true;
 });
 // Set ASHLAR_ALLOW_MOCK=1 or use Ollama locally
+
+services.AddAshlarProfile(AshlarDeploymentProfile.SecureWorkstation, opts =>
+{
+    opts.TrustEnabled = true; // product must opt in; the profile only registers the services
+});
 ```
 
 ## CI Validation

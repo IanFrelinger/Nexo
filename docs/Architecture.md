@@ -74,7 +74,7 @@ Ashlar is a private AI platform built on modular, contract-based components (bri
 ### Hosting
 
 - **AddAshlar()**: Registers all kernel services
-- **AddAshlarProfile(...)**: Registers environment-specific module sets (`Full`, `Server`, `Edge`, `AirGapped`, `System`) to peel optional dependencies.
+- **AddAshlarProfile(...)**: Registers environment-specific module sets (`Full`, `Server`, `Edge`, `AirGapped`, `System`, `SecureWorkstation`) to peel optional dependencies.
 - **AddAshlarOpenTelemetry()**: Optional metrics export
 
 ## Data Flow

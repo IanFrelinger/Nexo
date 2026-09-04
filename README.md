@@ -353,6 +353,7 @@ The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it
 Nexo/                             # the repo/clone directory (github.com/IanFrelinger/Nexo; the product is Ashlar)
 ├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
 ├── application/src/              # Ashlar.CLI, Ashlar.API hosts + Ashlar.Tests.CLI (open)
+├── products/                     # extractable product scaffolds (workstation, cluster, cloud, native)
 ├── apps/                         # runtime-studio config (extraction scheduled; release-manager extracted 2026-09-01)
 ├── commercial/                   # Fleet, MeshDirector + tests (not Apache-2.0; LICENSING.md)
 ├── docs/                         # architecture, operations, mesh, release, SDK, demos/, samples/, runbooks
@@ -387,6 +388,7 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 | Kernel libraries only | `Ashlar.Kernel.sln` / `Ashlar.Runtime.sln` | Kernel.sln adds kernel test projects; Runtime.sln is the NuGet-publishable graph. |
 | ProdStyle test gate | `Ashlar.PrimeTime.slnf` (`make test-prime-time`) | Seven open `Ashlar.Tests.*` assemblies. |
 | Hosts as the application gate builds them | `application/Ashlar.Application.sln` | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` — open only. |
+| Extractable product scaffolds | `products/Ashlar.Products.sln` | Workstation, cluster, cloud, native. See [`docs/architecture/product-split.md`](docs/architecture/product-split.md). |
 | Demos | `Ashlar.Demos.sln` | Avalonia, Blazor, console clients. |
 | Commercial verticals | project paths under `commercial/` | Not in the quickstart; see [`LICENSING.md`](LICENSING.md). |
 
