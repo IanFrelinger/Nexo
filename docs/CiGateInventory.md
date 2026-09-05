@@ -105,7 +105,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |
 | `pack-hosting-graph-alignment.yml` | Pack hosting graph alignment | `master`/`main`; `src/**/*.csproj`, pack scripts, NugetOrgRestoreVerify sample |
 | `perf-gate.yml` | perf-gate | `master` only; `scripts/perf-gate*.sh`, Orchestration/BackgroundAgents tests |
-| `production-readiness-gate-v1.yml` | Production Readiness Gate v1 | pipelines sources/tests, CLI, readiness docs |
+| `production-readiness-gate-v1.yml` | Production Readiness Gate v1 / `scripts/production-readiness-gate-v1-tests.sh` | pipelines sources/tests, CLI, readiness docs — counted Pipelines 68 (net8 + net10) + host-DI 2 |
 | `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule** |
 | `runtime-release-gate.yml` | Runtime Release Gate | `master`/`main`; CLI runtime/release commands, `docs/runtime/benchmarks/**` |
 

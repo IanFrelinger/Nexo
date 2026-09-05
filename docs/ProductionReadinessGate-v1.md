@@ -125,9 +125,7 @@ dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj
 ### 4.2 Pipeline correctness checks
 
 ```bash
-dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~Pipelines"
-dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 --filter "FullyQualifiedName~Pipelines"
-dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~HostingE2ESmokeTests.AddAshlar_RegistersObservationPipeline_ByDefault|FullyQualifiedName~Pipelines.PipelineServiceCollectionExtensionsTests.AddAshlar_RegistersPipelineCompositionLayerByDefault"
+make production-readiness-gate-v1-tests   # counted Pipelines 68 (net8 + net10) + host-DI smoke 2
 ```
 
 ### 4.3 CLI operational checks

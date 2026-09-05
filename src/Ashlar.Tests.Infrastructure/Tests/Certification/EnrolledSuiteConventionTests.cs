@@ -264,6 +264,29 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void ProductionReadinessGate_RunsCountedPipelineAndHostDiSuites()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/production-readiness-gate-v1-tests.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 68");
+        text.Should().Contain("--min-tests 2");
+        text.Should().Contain("FullyQualifiedName~Pipelines");
+        text.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
+    }
+
+    [Fact]
+    public void ProductionReadinessGateWorkflow_InvokesCountedScript()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/production-readiness-gate-v1.yml"));
+        text.Should().Contain("scripts/production-readiness-gate-v1-tests.sh");
+        text.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
+    }
+
+    [Fact]
     public void McpA2AGate_RunsCountedAdapterAndProdStyleSuites()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

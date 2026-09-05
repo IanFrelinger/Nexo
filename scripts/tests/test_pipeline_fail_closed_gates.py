@@ -111,6 +111,30 @@ class FailClosedHelperTests(unittest.TestCase):
         self.assertIn("must not report ok=true", result.stderr + result.stdout)
 
 
+class ProductionReadinessGateCountedTests(unittest.TestCase):
+    def test_script_runs_counted_pipeline_and_host_di_suites(self) -> None:
+        text = (ROOT / "scripts" / "production-readiness-gate-v1-tests.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 68", text)
+        self.assertIn("--min-tests 2", text)
+        self.assertIn('FullyQualifiedName~Pipelines', text)
+        self.assertIn("AddAshlar_RegistersObservationPipeline_ByDefault", text)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            text,
+        )
+
+    def test_workflow_invokes_counted_script(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("scripts/production-readiness-gate-v1-tests.sh", text)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            text,
+        )
+
+
 class MirrorScriptContractTests(unittest.TestCase):
     def test_local_gates_call_shared_helper(self) -> None:
         for script in MIRROR_SCRIPTS:
