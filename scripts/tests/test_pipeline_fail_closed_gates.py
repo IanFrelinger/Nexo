@@ -400,6 +400,29 @@ class KernelTierCCountedTests(unittest.TestCase):
         )
 
 
+class DistributionMatrixIAshlarClientCountedTests(unittest.TestCase):
+    def test_distribution_matrix_runs_counted_iashlar_client_slice(self) -> None:
+        script = (
+            ROOT / "scripts" / "distribution-matrix-iashlar-client.sh"
+        ).read_text(encoding="utf-8")
+        workflow = (
+            ROOT / ".github" / "workflows" / "distribution-matrix-gate.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", script)
+        self.assertIn("--min-tests 1", script)
+        self.assertIn("Virtual_prod_IAshlarClient_GetStatusAsync", script)
+        self.assertIn("-f net10.0", script)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            script,
+        )
+        self.assertIn("scripts/distribution-matrix-iashlar-client.sh", workflow)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            workflow,
+        )
+
+
 class KernelTierECountedTests(unittest.TestCase):
     def test_kernel_gate_tier_e_runs_counted_otel_and_performance_slices(self) -> None:
         text = (ROOT / "scripts" / "kernel-gate-tier-e.sh").read_text(encoding="utf-8")

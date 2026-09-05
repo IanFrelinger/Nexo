@@ -218,6 +218,24 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void DistributionMatrixGate_RunsCountedIAshlarClientSlice()
+    {
+        var script = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/distribution-matrix-iashlar-client.sh"));
+        var workflow = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/distribution-matrix-gate.yml"));
+        script.Should().Contain("run-dotnet-test-counted.py");
+        script.Should().Contain("--min-tests 1");
+        script.Should().Contain("Virtual_prod_IAshlarClient_GetStatusAsync");
+        script.Should().Contain("-f net10.0");
+        script.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
+        workflow.Should().Contain("scripts/distribution-matrix-iashlar-client.sh");
+        workflow.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
+    }
+
+    [Fact]
     public void KernelTierE_RunsCountedOpenTelemetryAndPerformanceSlices()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
