@@ -1,0 +1,13 @@
+---
+description: Release readiness never implies authorization to publish or mutate production.
+alwaysApply: true
+---
+
+Do not publish packages or images, create or push tags/releases, upload release
+assets, deploy, change branch protection/rulesets, rotate credentials, or
+modify production settings unless the user explicitly authorizes that exact
+side effect.
+
+An instruction to audit, prepare, validate, harden, or make a release READY
+authorizes repository changes and read-only verification only. READY is
+evidence, not permission to release.

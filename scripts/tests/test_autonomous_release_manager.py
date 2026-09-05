@@ -99,6 +99,14 @@ class PlanValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(arm.PlanError, "cannot exceed 6"):
                 arm.load_plan(self.write_plan(Path(temp), document))
 
+    def test_committed_semantic_agents_and_skill_are_complete(self) -> None:
+        arm.validate_cursor_assets(SCRIPT.parents[1])
+
+    def test_missing_semantic_agents_fail_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(arm.PlanError, "Required Cursor asset is missing"):
+                arm.validate_cursor_assets(Path(temp))
+
 
 class ExecutionTests(unittest.TestCase):
     def test_lane_collects_all_steps_and_fails_on_error_and_timeout(self) -> None:

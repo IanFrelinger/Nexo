@@ -3,6 +3,9 @@ name: Autonomous Release Manager
 on:
   pull_request:
     paths:
+      - ".cursor/agents/**"
+      - ".cursor/rules/release-publishing-safety.mdc"
+      - ".cursor/skills/release-manager/**"
       - ".github/workflows/autonomous-release-manager.yml"
       - "ci/autonomous-release-manager.json"
       - "scripts/autonomous-release-manager.py"

@@ -37,6 +37,14 @@ CANONICAL_LANES = {
     "documentation",
     "operations",
 }
+SPECIALIST_AGENTS = (
+    "code-auditor",
+    "ci-auditor",
+    "security-auditor",
+    "packaging-auditor",
+    "documentation-auditor",
+    "operations-auditor",
+)
 SEMVER_RE = re.compile(
     r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
@@ -292,6 +300,66 @@ def load_plan(path: Path) -> AuditPlan:
         )
 
     return AuditPlan(max_parallel=max_parallel, lanes=tuple(lanes))
+
+
+def _frontmatter(path: Path) -> tuple[dict[str, str], str]:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise PlanError(f"Required Cursor asset is missing: {path}") from exc
+    if not text.startswith("---\n") or "\n---\n" not in text[4:]:
+        raise PlanError(f"Cursor asset lacks YAML frontmatter: {path}")
+    raw, body = text[4:].split("\n---\n", 1)
+    metadata: dict[str, str] = {}
+    for line in raw.splitlines():
+        if ":" not in line:
+            raise PlanError(f"Malformed Cursor frontmatter in {path}: {line!r}")
+        key, value = line.split(":", 1)
+        metadata[key.strip()] = value.strip()
+    return metadata, body
+
+
+def validate_cursor_assets(repo_root: Path) -> None:
+    agents_root = repo_root / ".cursor" / "agents"
+    for agent_name in ("release-manager", *SPECIALIST_AGENTS):
+        path = agents_root / f"{agent_name}.md"
+        metadata, _ = _frontmatter(path)
+        if metadata.get("name") != agent_name:
+            raise PlanError(f"{path} name must be {agent_name!r}.")
+        expected_readonly = "false" if agent_name == "release-manager" else "true"
+        if metadata.get("readonly") != expected_readonly:
+            raise PlanError(
+                f"{path} readonly must be {expected_readonly} for its release role."
+            )
+        if agent_name != "release-manager" and metadata.get("is_background") != "true":
+            raise PlanError(f"{path} must set is_background: true.")
+
+    manager_metadata, manager_body = _frontmatter(
+        agents_root / "release-manager.md"
+    )
+    del manager_metadata
+    for specialist in SPECIALIST_AGENTS:
+        if specialist not in manager_body:
+            raise PlanError(
+                f"release-manager.md does not delegate to {specialist}."
+            )
+
+    skill_path = repo_root / ".cursor" / "skills" / "release-manager" / "SKILL.md"
+    skill_metadata, skill_body = _frontmatter(skill_path)
+    if skill_metadata.get("name") != "release-manager":
+        raise PlanError(f"{skill_path} name must be 'release-manager'.")
+    for specialist in SPECIALIST_AGENTS:
+        if specialist not in skill_body:
+            raise PlanError(f"{skill_path} does not require {specialist}.")
+
+    rule_path = (
+        repo_root / ".cursor" / "rules" / "release-publishing-safety.mdc"
+    )
+    rule_metadata, rule_body = _frontmatter(rule_path)
+    if rule_metadata.get("alwaysApply") != "true":
+        raise PlanError(f"{rule_path} must set alwaysApply: true.")
+    if "explicitly authorizes" not in rule_body:
+        raise PlanError(f"{rule_path} must require explicit publishing authorization.")
 
 
 def _render(value: str, context: dict[str, str]) -> str:
@@ -774,6 +842,7 @@ def main(argv: list[str] | None = None) -> int:
         plan_path = (repo_root / args.plan).resolve()
         plan_path.relative_to(repo_root)
         plan = load_plan(plan_path)
+        validate_cursor_assets(repo_root)
     except (PlanError, ValueError) as exc:
         print(f"release-manager: invalid plan: {exc}", file=sys.stderr)
         return 64

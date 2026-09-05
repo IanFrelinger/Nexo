@@ -9,6 +9,10 @@ The product host remains in
 [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager).
 This repository owns the reusable audit engine and the checks it executes:
 
+- `.cursor/agents/release-manager.md` — mutable coordinator persona
+- `.cursor/agents/*-auditor.md` — six read-only semantic specialists
+- `.cursor/skills/release-manager/SKILL.md` — reusable orchestration playbook
+- `.cursor/rules/release-publishing-safety.mdc` — always-on publishing boundary
 - `scripts/autonomous-release-manager.py` — coordinator and evidence writer
 - `ci/autonomous-release-manager.json` — six required audit sub-agents
 - `.github/workflows/autonomous-release-manager.yml` — weekly/manual execution
@@ -17,6 +21,8 @@ This repository owns the reusable audit engine and the checks it executes:
 
 Every lane is mandatory and release-blocking. The coordinator hard-codes the
 canonical set, so editing the plan cannot quietly remove or make one optional.
+Plan validation also requires all committed specialist definitions, the
+release-manager skill, and the always-on publishing-safety rule.
 
 | Sub-agent | Scope |
 |-----------|-------|
