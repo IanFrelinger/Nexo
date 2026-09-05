@@ -28,6 +28,8 @@ public class ConsoleRendererTests : UnitTestBase
             TestRenderProgressComplete();
             /// <summary>Test render progress.</summary>
             TestRenderProgress();
+            /// <summary>Test progress goes to standard error.</summary>
+            TestProgressGoesToStandardError();
             /// <summary>Test render analysis result.</summary>
             TestRenderAnalysisResult();
             /// <summary>Test render analysis result json.</summary>
@@ -144,6 +146,46 @@ public class ConsoleRendererTests : UnitTestBase
         // Should not throw
         renderer.RenderProgress(report);
         
+        return Task.CompletedTask;
+    }
+
+    private Task TestProgressGoesToStandardError()
+    {
+        var renderer = new ConsoleRenderer();
+
+        // Not disposed on purpose: a disposed writer left in Console.Out poisons later tests.
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        try
+        {
+            Console.SetOut(stdout);
+            Console.SetError(stderr);
+
+            renderer.RenderProgressStart("starting");
+            renderer.RenderProgress(new ProgressReport
+            {
+                Percentage = 50,
+                Message = "halfway",
+                CurrentStep = 5,
+                TotalSteps = 10
+            });
+            renderer.RenderProgressComplete("done");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+
+        // Progress is diagnostic. On stdout it brackets the document --format-json promises, and a
+        // caller piping stdout into a parser gets a syntax error instead of a result.
+        AssertEqual(string.Empty, stdout.ToString(), "progress must not reach standard output");
+
+        var diagnostics = stderr.ToString();
+        AssertTrue(diagnostics.Contains("[progress] starting"), "progress start missing from standard error");
+        AssertTrue(diagnostics.Contains("[50%] (5/10) halfway"), "progress report missing from standard error");
+        AssertTrue(diagnostics.Contains("[complete] done"), "progress completion missing from standard error");
+
         return Task.CompletedTask;
     }
 

@@ -34,6 +34,15 @@ public sealed class VerifyCommand : Command
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
+            // The wall is an ANSI rendering, not a document, and `--format-json` is global so it
+            // parses here regardless. Refuse it: a caller that asked for JSON must not receive the
+            // wall under exit 0 and conclude from the exit code that the project verified.
+            if (CommandExecutionSupport.RefuseJsonFormat(ctx.ParseResult, "verify", Console.Error) is { } refused)
+            {
+                ctx.ExitCode = refused;
+                return;
+            }
+
             var path = ctx.ParseResult.GetValueForOption(pathOpt)!;
             ctx.ExitCode = await ExecuteAsync(path);
         });

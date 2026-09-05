@@ -19,6 +19,14 @@ on:
       - "application/src/Ashlar.API/Security/**"
       - "application/src/Ashlar.CLI/Commands/PkgCommand.cs"
       - "application/src/Ashlar.CLI/Commands/PackageImport.cs"
+      # The rest of the surface Tier C actually asserts on. Selecting the workflow is half of
+      # running a lane: a correct `if:` on the step still never fires if no path change starts the
+      # workflow, and the bounded .ashpkg read, the console escaping, and the mesh serve endpoints
+      # all live outside the two files above.
+      - "application/src/Ashlar.CLI/Packaging/**"
+      - "application/src/Ashlar.CLI/Output/**"
+      - "application/src/Ashlar.CLI/Commands/BackgroundAgent/**"
+      - "application/src/Ashlar.Tests.CLI/**"
       - "application/src/Ashlar.CLI/Commands/TrustCommand.cs"
       - "application/src/Ashlar.CLI/Program.TrustCommands.cs"
       - "application/src/Ashlar.CLI/Program.CommandRegistration.cs"
@@ -63,8 +71,13 @@ jobs:
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
+      # Runs on every pull_request, like Tiers A and B above it. It was `github.event_name ==
+      # 'workflow_dispatch' && …`, which is FALSE on a pull_request — this workflow's only automatic
+      # trigger — so the CLI's attacker-reachable surface (the bounded .ashpkg read, the pull
+      # refusal rows, the untrusted-output escaping) had no automatic runner at all. Measured at
+      # ~2.4s, so cost is not a reason to leave it dispatch-only.
       - name: Tier C (trust CLI)
-        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c' || inputs.tier == 'full'
         run: make security-gate-tier-c
         env:
           ASHLAR_ALLOW_MOCK: "1"

@@ -1,5 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using Ashlar.CLI.Output;
+using Ashlar.CLI.Packaging;
 using Ashlar.BackgroundAgents.Forge;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.Manifest;
@@ -164,7 +166,7 @@ public sealed class PkgCommand : Command
         return cmd;
     }
 
-    // Read a .ashpkg with a size guard BEFORE the whole file lands in a string. A mesh store
+    // The ceiling every .ashpkg read is held to, enforced on the BYTES as they arrive. A mesh store
     // is a plain synced directory (MeshStore's transport-naive model), so a .ashpkg there is
     // attacker-influenceable; an unbounded read-to-string of a several-hundred-MB planted file
     // is an OOM before ExtensionPackaging.TryOpen's own char cap ever runs. Refuse fail-closed.
@@ -172,21 +174,13 @@ public sealed class PkgCommand : Command
     // extension. Kept as a local constant so this guard has no cross-package version coupling.
     private const long MaxPackageBytes = 16L * 1024 * 1024;
 
-    private static bool TryReadPackage(FileInfo file, out string json, out string reason)
-    {
-        json = string.Empty;
-        var length = file.Length;
-        if (length > MaxPackageBytes)
-        {
-            reason = $"REFUSED: {file.Name} is {length:N0} bytes; the limit is "
-                   + $"{MaxPackageBytes:N0}. "
-                   + "A package this large is not a certified extension — refusing before reading it.";
-            return false;
-        }
-        json = File.ReadAllText(file.FullName);
-        reason = string.Empty;
-        return true;
-    }
+    // There is no standalone size check any more, and that is the point: a ceiling read off
+    // metadata is not a ceiling. FileInfo.Length reports 0 for a FIFO and for a symlink to a
+    // character device, and for a symlink to a real file it reports the length of the target's PATH
+    // — so the old guard passed and the unbounded read behind it ran anyway. Every read of a
+    // .ashpkg on every verb — import, show, publish, pull, and the daemon's folder pass — now goes
+    // through SafePackageRead.TryReadTextAsync (Packaging/SafePackageRead.cs): one non-blocking open, a
+    // regular-file check on the handle, and the byte cap enforced DURING the read.
 
     private static async Task<int> ImportAsync(FileInfo file, DirectoryInfo directory)
     {
@@ -204,14 +198,17 @@ public sealed class PkgCommand : Command
 
         // Verify + submit is shared with `mesh pull` — how a package arrived must not change how
         // it is admitted. A peek first, so the operator sees the origin's evidence before the verdict.
-        if (!TryReadPackage(file, out var packageJson, out var readReason))
+        var read = await SafePackageRead.TryReadTextAsync(file.FullName, MaxPackageBytes);
+        if (!read.Ok)
         {
-            Console.Error.WriteLine(readReason);
-            return 65;
+            return RefuseRead(read);
         }
+        var packageJson = read.Text!;
         if (!ExtensionPackaging.TryOpen(packageJson, out var peek, out var peekReason))
         {
-            Console.Error.WriteLine(peekReason);
+            // Safe(): this reason QUOTES THE PACKAGE'S OWN formatVersion, a field the sender chose,
+            // compared before the seal or any signature is looked at. See Safe() below.
+            Console.Error.WriteLine(Safe(peekReason));
             return 65;
         }
         Console.WriteLine();
@@ -255,7 +252,11 @@ public sealed class PkgCommand : Command
                 // 65 here, exactly as it is for `pkg pull` (PullAsync maps Refused to 65 too) and for the
                 // early TryOpen peek above. How a package arrived must not change its exit code: a lone
                 // import of an untrusted-signer package must not exit 1 while a pull of the same exits 65.
-                Console.WriteLine($"  {Bad($"× REFUSED — {result.Message}")}");
+                // Safe(): PackageImport hands back a message that is sometimes composed from the
+                // package (its TryOpen reason, quoting the sender's formatVersion) and sometimes
+                // from an exception whose text carries a path the sender named. None of it has been
+                // verified at this point — Refused is precisely the outcome where nothing verified.
+                Console.WriteLine($"  {Bad($"× REFUSED — {Safe(result.Message)}")}");
                 Console.WriteLine($"  {Dim("disk untouched")}");
                 return 65;
             default:
@@ -284,14 +285,19 @@ public sealed class PkgCommand : Command
             Console.Error.WriteLine($"no such package: {file.FullName}");
             return 1;
         }
-        if (!TryReadPackage(file, out var showJson, out var showReadReason))
+        var read = await SafePackageRead.TryReadTextAsync(file.FullName, MaxPackageBytes);
+        if (!read.Ok)
         {
-            Console.Error.WriteLine(showReadReason);
-            return 65;
+            return RefuseRead(read);
         }
+        var showJson = read.Text!;
         if (!ExtensionPackaging.TryOpen(showJson, out var pkg, out var reason))
         {
-            Console.Error.WriteLine(reason);
+            // Safe(): this reason QUOTES THE PACKAGE'S OWN formatVersion, a field the sender chose,
+            // compared before the seal or any signature is looked at. `pkg show` is the verb an
+            // operator reaches for precisely BECAUSE they do not trust the file yet, so it is the
+            // last place a refusal may hand the file's bytes to the terminal. See Safe() below.
+            Console.Error.WriteLine(Safe(reason));
             return 65;
         }
 
@@ -347,13 +353,28 @@ public sealed class PkgCommand : Command
             Console.Error.WriteLine($"no such package: {file.FullName}");
             return 1;
         }
-        var json = await File.ReadAllTextAsync(file.FullName);
+        // Bound the file as it is read, the same door `import` and `show` go through. A .ashpkg
+        // handed to publish has routinely just arrived off a share — that is what a mesh is — so it is
+        // no more trustworthy here than at import, and a scripted republish of a synced folder hands
+        // this verb attacker-influenced bytes. TryOpen's own char cap is no backstop: it measures a
+        // string that exists only once the unbounded read has already succeeded, or exhausted memory
+        // trying, and an OutOfMemoryException is a crash where a refusal belongs.
+        var read = await SafePackageRead.TryReadTextAsync(file.FullName, MaxPackageBytes);
+        if (!read.Ok)
+        {
+            return RefuseRead(read);
+        }
+        var json = read.Text!;
 
         // Never publish what does not verify — the mesh carries certified packages only, so a
         // forged one is refused at the source rather than propagated to every peer.
         if (!ExtensionPackaging.TryOpen(json, out var pkg, out var reason))
         {
-            Console.Error.WriteLine(reason);
+            // Safe(): this reason QUOTES THE PACKAGE'S OWN formatVersion, a field the sender chose,
+            // compared before the seal or any signature is looked at. A .ashpkg handed to publish
+            // has routinely just arrived off a share, so the file here is exactly as unverified as
+            // one at import. See Safe() below.
+            Console.Error.WriteLine(Safe(reason));
             return 65;
         }
 
@@ -412,6 +433,14 @@ public sealed class PkgCommand : Command
             var json = ExtensionPackaging.Pack(record, files, sealer);
             // Same refusal shape as `pkg publish`: a package that does not verify is a 65, not an
             // operational error — share must hold every property export + publish had separately.
+            //
+            // NO Safe() HERE, and that is checked rather than assumed. The other four verbs escape
+            // this reason because it quotes the file's own formatVersion; here the json was produced
+            // one line above by ExtensionPackaging.Pack, which sets
+            // FormatVersion = ExtensionPackage.ExpectedFormatVersion from the constant — so the
+            // format branch is unreachable, and every other reason TryOpen can build on this input
+            // is either a fixed string or composed from the record and files THIS project just
+            // gathered. Nothing on this path came off a share.
             if (!ExtensionPackaging.TryOpen(json, out _, out var reason))
             {
                 Console.Error.WriteLine(reason);
@@ -439,7 +468,7 @@ public sealed class PkgCommand : Command
         // A string, not a DirectoryInfo: an `--from http://…` used to be coerced into a DirectoryInfo,
         // mangling the URL into a nonsense local path and then reporting "no such peer store: <mangled>".
         // Taking the raw token lets PullAsync catch the URL and refuse it legibly.
-        var fromOpt = new Option<string>("--from", "A peer's mesh store DIRECTORY to pull certified packages from.") { IsRequired = true };
+        var fromOpt = new Option<string>("--from", "A peer's mesh store DIRECTORY — a path, or a file:// URL naming one.") { IsRequired = true };
         var pathOpt = PathOption();
         var cmd = new Command("pull", "Pull certified packages from a peer and run each through THIS project's gate.") { fromOpt, pathOpt };
         cmd.SetHandler(async (InvocationContext ctx) =>
@@ -451,22 +480,108 @@ public sealed class PkgCommand : Command
         return cmd;
     }
 
+    // A URI scheme is a letter followed by letters, digits, '+', '-' or '.' (RFC 3986). Anything else
+    // ahead of the first colon — a separator out of \?C:store, a space, a path segment — means the
+    // colon belongs to a path and no scheme was written.
+    private static bool LooksLikeUriScheme(string candidate)
+    {
+        if (candidate.Length == 0 || !char.IsAsciiLetter(candidate[0]))
+        {
+            return false;
+        }
+        foreach (var c in candidate)
+        {
+            if (!char.IsAsciiLetterOrDigit(c) && c != '+' && c != '-' && c != '.')
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Resolves the raw <c>--from</c> token to the local directory it names, or refuses it with the
+    /// operator-facing reason already composed.
+    /// </summary>
+    private static bool TryResolveStorePath(string fromPath, out string storePath, out string reason)
+    {
+        storePath = fromPath;
+        reason = string.Empty;
+
+        // An empty token reached `new DirectoryInfo("")`, which throws: the operator got a stack
+        // trace where a refusal belongs.
+        if (string.IsNullOrWhiteSpace(fromPath))
+        {
+            reason = "pull --from takes a directory and was given an empty one. Point --from at a "
+                   + "local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).";
+            return false;
+        }
+
+        // Whether a scheme was written is decided on the RAW TOKEN rather than by asking Uri, because
+        // Uri's verdict is not the same on every host: on Unix an ordinary rooted path ("/srv/mesh")
+        // parses as an absolute file: URI, so resolving every IsFile token through Uri.LocalPath would
+        // quietly rewrite plain directories — a store named "50%20off" comes back percent-decoded and
+        // one named "v1#2" comes back truncated at the fragment, both then reported as missing. That
+        // is a live store silently lost, strictly worse than the bug it would be fixing. A path stays
+        // a path unless a scheme was written; a single letter before the colon is a DOS drive
+        // (C:store), never a scheme.
+        var colon = fromPath.IndexOf(':');
+        if (colon < 2 || !LooksLikeUriScheme(fromPath[..colon]))
+        {
+            return true;
+        }
+        var scheme = fromPath[..colon];
+
+        // A file: URL names a directory, so it is the one URL shape this verb can honour — and the
+        // shape an operator gets for free from a sync client or a file manager's "copy location".
+        // Falling through left them holding `new DirectoryInfo("file:///srv/mesh")` and being told
+        // their own store did not exist.
+        if (string.Equals(scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+        {
+            if (Uri.TryCreate(fromPath, UriKind.Absolute, out var fileUrl)
+                && fileUrl.IsFile
+                && !string.IsNullOrWhiteSpace(fileUrl.LocalPath))
+            {
+                storePath = fileUrl.LocalPath;
+                return true;
+            }
+            reason = $"pull --from takes a directory, and '{fromPath}' is not a file URL that names one. "
+                   + "Point --from at a local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).";
+            return false;
+        }
+
+        // `pull --from` moves packages off a peer's mesh store, which is a local/synced DIRECTORY —
+        // not an HTTP endpoint. HTTP pull is the daemon's job, driven by ASHLAR_MESH_PEERS.
+        if (string.Equals(scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            reason = $"pull --from takes a directory, not a URL ('{fromPath}'). HTTP pull is the daemon's job — "
+                   + "set ASHLAR_MESH_PEERS and let the background agent fetch. For a one-shot, point --from at a "
+                   + "local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).";
+            return false;
+        }
+
+        // ftp:, ssh:, s3: — nothing stands behind any of them here. Naming the scheme back beats
+        // coercing the token into a nonsense DirectoryInfo and reporting it as a peer store that does
+        // not exist, which reads to the operator as their own store having vanished.
+        reason = $"pull --from takes a directory, not a '{scheme}:' URL ('{fromPath}'). There is no {scheme} "
+               + "transport in this verb; point --from at a local mesh store directory (e.g. the folder "
+               + "`ashlar pkg publish` wrote to).";
+        return false;
+    }
+
     private static async Task<int> PullAsync(string fromPath, DirectoryInfo directory)
     {
-        // `pull --from` moves packages off a peer's mesh store, which is a local/synced DIRECTORY —
-        // not an HTTP endpoint. HTTP pull is the daemon's job, driven by ASHLAR_MESH_PEERS. Refuse a
-        // URL up front rather than coercing it into a mangled path that then "does not exist".
-        if (Uri.TryCreate(fromPath, UriKind.Absolute, out var url)
-            && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
+        // Refuse a URL this verb cannot serve rather than coercing it into a mangled path that then
+        // "does not exist" — and resolve the one URL shape that does name a directory, file://,
+        // instead of mangling that too.
+        if (!TryResolveStorePath(fromPath, out var storePath, out var storeReason))
         {
-            Console.Error.WriteLine(
-                $"pull --from takes a directory, not a URL ('{fromPath}'). HTTP pull is the daemon's job — "
-                + "set ASHLAR_MESH_PEERS and let the background agent fetch. For a one-shot, point --from at a "
-                + "local mesh store directory (e.g. the folder `ashlar pkg publish` wrote to).");
+            Console.Error.WriteLine(storeReason);
             return 1;
         }
 
-        var from = new DirectoryInfo(fromPath);
+        var from = new DirectoryInfo(storePath);
         if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml"))
             || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
         {
@@ -511,51 +626,126 @@ public sealed class PkgCommand : Command
         int admitted = 0, held = 0, refused = 0, skipped = 0, warned = 0;
         foreach (var path in packages)
         {
-            var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(path));
-            var summary = result.Package?.Record.Proposal.Summary ?? Path.GetFileName(path);
-
-            // WHO SEALED THIS. The summary beside it is attacker-chosen text — it is whatever the
-            // sender typed — so a gold checkmark next to a friendly sentence is not evidence of
-            // anything. The fingerprint is the only part of the line the sender cannot choose.
+            // THE WHOLE ROW IS PROTECTED, not just the read. Anything this pass cannot get through
+            // refuses its own ROW; the pass continues. A mesh store is a plain synced directory, so
+            // anyone who can write to the share can drop one file into it — and a sync client leaves
+            // half-arrived files and dangling links there without anyone's help. Ending the pass on
+            // one of them lets a single file deny every legitimate package behind it, which is the
+            // denial this guard exists to prevent, moved up one level.
             //
-            // A node cannot yet DISTINGUISH signers (there is no trust root; `ashlar keys trust`
-            // is Phase 3), so the operator making the call is the control. Asking them to decide
-            // while withholding the identity is the gap this closes.
+            // Only the READ used to be inside the try; the submit sat one statement outside it, so a
+            // throw from SubmitAsync still aborted the whole pass and the exact denial being fixed
+            // stayed open a line further down. It is not hypothetical: a receiving project whose
+            // `.ashlar` cannot be created — a read-only tree, or `.ashlar` already a file — throws
+            // there, and that one receiver denied every package behind the first row. The row
+            // rendering is in here for the same reason: it reads result.Package fields.
             //
-            // Deliberately not printed when the package did not parse: there is no verified
-            // sealer to name, and "(unsigned)" there would read as a claim about a package that
-            // was never opened.
-            var sealedBy = result.Package?.SealSigner is { } signer
-                ? $" · sealed by {Fp(signer)}"
-                : string.Empty;
-
-            switch (result.Outcome)
+            // A refused row still increments the counter, so the pass exits 65 and the summary names
+            // it: a refusal must never quietly become a skip.
+            try
             {
-                case PackageAdmission.Admitted:
-                    admitted++;
-                    Console.WriteLine($"  {Gold("✓ ADMITTED")}  {summary} {Dim($"{sealedBy} · {result.AppliedPaths.Count} file(s)")}");
-                    if (result.Warning is not null)
-                    {
-                        warned++;
-                        Console.WriteLine($"    {Bad("! " + result.Warning)}");
-                    }
-                    break;
-                case PackageAdmission.Held:
-                    held++;
-                    Console.WriteLine($"  {Clay("! HELD")}     {summary} {Dim($"{sealedBy} · review with `ashlar gates`")}");
-                    break;
-                case PackageAdmission.AlreadyImported:
-                    skipped++;
-                    Console.WriteLine($"  {Dim("− already have  " + summary + sealedBy)}");
-                    break;
-                case PackageAdmission.Rejected:
+                var read = await SafePackageRead.TryReadTextAsync(path, MaxPackageBytes);
+                if (!read.Ok)
+                {
                     refused++;
-                    Console.WriteLine($"  {Bad("× REJECTED")} {summary} {Dim($"{sealedBy} · {result.Message}")}");
-                    break;
-                default:
-                    refused++;
-                    Console.WriteLine($"  {Bad("× REFUSED")}  {summary} {Dim($"{sealedBy} · {result.Message}")}");
-                    break;
+                    // No sealer fingerprint on this line: nothing verified was opened, so there is no
+                    // signer to name — the same reason the parse refusals below leave it blank.
+                    //
+                    // Both halves go through Safe() because whoever wrote to the share chose both:
+                    // the filename, and the symlink TARGET quoted inside read.Reason. A bare CR or
+                    // ESC in either one forges a row — a counterfeit "✓ ADMITTED … sealed by <a
+                    // fingerprint the operator trusts>", or an overwrite of the real fingerprint
+                    // line — which defeats the one part of a row the sender cannot choose.
+                    Console.WriteLine($"  {Bad("× REFUSED")}  {Safe(Path.GetFileName(path))} {Dim(" · " + Safe(read.Reason))}");
+                    continue;
+                }
+
+                var result = await PackageImport.SubmitAsync(directory.FullName, read.Text!);
+                var summary = result.Package?.Record.Proposal.Summary ?? Path.GetFileName(path);
+
+                // WHO SEALED THIS. The summary beside it is attacker-chosen text — it is whatever the
+                // sender typed — so a gold checkmark next to a friendly sentence is not evidence of
+                // anything. The fingerprint is the only part of the line the sender cannot choose.
+                //
+                // A node cannot yet DISTINGUISH signers (there is no trust root; `ashlar keys trust`
+                // is Phase 3), so the operator making the call is the control. Asking them to decide
+                // while withholding the identity is the gap this closes.
+                //
+                // Deliberately not printed when the package did not parse: there is no verified
+                // sealer to name, and "(unsigned)" there would read as a claim about a package that
+                // was never opened.
+                var sealedBy = result.Package?.SealSigner is { } signer
+                    ? $" · sealed by {Fp(signer)}"
+                    : string.Empty;
+
+                switch (result.Outcome)
+                {
+                    case PackageAdmission.Admitted:
+                        admitted++;
+                        Console.WriteLine($"  {Gold("✓ ADMITTED")}  {summary} {Dim($"{sealedBy} · {result.AppliedPaths.Count} file(s)")}");
+                        if (result.Warning is not null)
+                        {
+                            warned++;
+                            Console.WriteLine($"    {Bad("! " + result.Warning)}");
+                        }
+                        break;
+                    case PackageAdmission.Held:
+                        held++;
+                        Console.WriteLine($"  {Clay("! HELD")}     {summary} {Dim($"{sealedBy} · review with `ashlar gates`")}");
+                        break;
+                    case PackageAdmission.AlreadyImported:
+                        skipped++;
+                        Console.WriteLine($"  {Dim("− already have  " + summary + sealedBy)}");
+                        break;
+                    case PackageAdmission.Rejected:
+                        refused++;
+                        // BOTH HALVES. `summary` here came out of a package whose seal verified
+                        // (#483's pre-existing class), but result.Message did not have to: a
+                        // rejection reason is composed from the gate record, and the CHANGELOG's
+                        // claim is about every pkg pull REFUSAL row, of which this is one.
+                        Console.WriteLine($"  {Bad("× REJECTED")} {Safe(summary)} {Dim($"{sealedBy} · {Safe(result.Message)}")}");
+                        break;
+                    default:
+                        refused++;
+                        // BOTH HALVES, and the right half is the one an earlier wave left raw.
+                        //
+                        // LEFT: this is the one row whose `summary` can be the FILENAME. A package
+                        // that did not parse leaves result.Package null, so summary falls back to
+                        // Path.GetFileName — chosen by whoever wrote to the share.
+                        //
+                        // RIGHT: `default:` is where PackageAdmission.Refused lands, and a Refused
+                        // result's Message is ExtensionPackaging.TryOpen's reason — which QUOTES THE
+                        // PACKAGE'S OWN formatVersion, a required JSON string the sender chose,
+                        // compared BEFORE the seal and before every signature. Escaping the left
+                        // half and not the right left the forgery fully live on this exact row: a
+                        // CR in that field returns the cursor to column zero and repaints
+                        // "× REFUSED  evil.ashpkg  · REFUSED: unsupported package format '" as a
+                        // green "✓ ADMITTED … sealed by <a fingerprint the operator trusts>". The
+                        // sealer fingerprint is the one part of a row a sender cannot choose, which
+                        // is the whole reason it is printed.
+                        //
+                        // The ADMITTED / HELD / already-have rows above print a summary that came
+                        // out of a package the seal VERIFIED — the pre-existing class #483 tracks —
+                        // and are deliberately left alone.
+                        Console.WriteLine($"  {Bad("× REFUSED")}  {Safe(summary)} {Dim($"{sealedBy} · {Safe(result.Message)}")}");
+                        break;
+                }
+            }
+            // A cancelled pass stays cancelled. Turning the operator's Ctrl-C into a store full of
+            // REFUSED rows would report a verdict on packages nobody ever asked this pass to decide.
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            // Deliberately EVERY other exception, not the IOException/UnauthorizedAccessException
+            // pair this used to catch. That pair is exactly what let an OutOfMemoryException out of
+            // the unbounded read and abort the whole pass. SafePackageRead now returns a refusal
+            // instead of throwing, so for the read this is defence in depth against the next
+            // unanticipated exception type; for the submit it is the guarantee itself.
+            catch (Exception ex)
+            {
+                refused++;
+                Console.WriteLine($"  {Bad("× REFUSED")}  {Safe(Path.GetFileName(path))} {Dim(" · " + Safe(ex.Message))}");
             }
         }
 
@@ -577,8 +767,57 @@ public sealed class PkgCommand : Command
         return refused > 0 ? 65 : 0;
     }
 
+    /// <summary>
+    /// Prints one read refusal to stderr and returns the verification exit code.
+    ///
+    /// <para>The reason is escaped because it QUOTES A SYMLINK TARGET, and a target is chosen by
+    /// whoever created the link — not by the operator who typed the path. `pkg import
+    /// store/x.ashpkg` on a planted link therefore prints attacker-chosen bytes even though every
+    /// character the operator typed was honest. A bare CR in that target returns the cursor to
+    /// column zero and what follows overwrites the refusal, so an unescaped one turns
+    /// "× REFUSED … is a symbolic link" into whatever line the planter wanted the operator to read.
+    /// </para>
+    /// </summary>
+    private static int RefuseRead(PackageReadResult read)
+    {
+        Console.Error.WriteLine(Safe(read.Reason));
+        return 65;
+    }
+
     private static string Fp(string? publicKeyBase64) =>
         publicKeyBase64 is null ? "(unsigned)" : OperatorKey.Fingerprint(Convert.FromBase64String(publicKeyBase64));
+
+    /// <summary>
+    /// Text the SENDER chose, on its way to the operator's terminal — escaped and length-bounded.
+    ///
+    /// <para>THE PART THAT IS EASY TO MISS, and that four review rounds did miss: a package's own
+    /// REFUSAL REASON is sender-chosen text. <c>ExtensionPackaging.TryOpen</c> composes
+    /// <c>REFUSED: unsupported package format '{parsed.FormatVersion}'; expected 'ashpkg/v1'.</c>,
+    /// and <c>formatVersion</c> is a <c>required</c> JSON string whose value is whatever the file
+    /// says it is. That comparison is the FIRST thing TryOpen checks — before the seal, before the
+    /// record signature, before the sealer/admitter binding — so when those bytes reach this line
+    /// they have been verified by nothing at all. They also arrive through a CLEAN parse, which is
+    /// why testing only MALFORMED json missed this: System.Text.Json hex-escapes a control byte
+    /// inside a syntax-error message, but a well-formed document whose formatVersion contains the
+    /// six ASCII characters of a JSON backslash-u-0-0-1-b escape parses fine and yields a real ESC.</para>
+    ///
+    /// <para>What that buys is the whole row. A formatVersion of <c>ashpkg/v1</c> + CR + an SGR
+    /// green + <c>"  ✓ package verifies  … sealed ed25519:…"</c> returns the cursor to column zero
+    /// and repaints <c>× REFUSED … unsupported package format '</c> as a green counterfeit carrying
+    /// a sealer fingerprint — the one part of a row this code's own documentation says a sender
+    /// cannot choose. A trailing SGR 8 (conceal) hides the <c>'; expected 'ashpkg/v1'.</c> tail that
+    /// would otherwise give it away. So escaping here is load-bearing, not cosmetic.</para>
+    ///
+    /// <para>formatVersion also has no length cap of its own — 16 MiB of it fits under the package
+    /// ceiling — so the bound matters as much as the escaping. See
+    /// <see cref="UntrustedText.ForConsole(string?, int)"/>.</para>
+    ///
+    /// <para>The helper lives in <see cref="UntrustedText"/> rather than here because issue #483
+    /// tracks the same class at the pre-existing summary / proposedBy / course-detail sites on the
+    /// SUCCESS paths, where the text came out of a package whose seal verified. Those are still
+    /// deliberately untouched.</para>
+    /// </summary>
+    private static string Safe(string? senderChosen) => UntrustedText.ForConsole(senderChosen);
 
     // Same colour discipline as the other verbs.
     private static readonly bool Color =

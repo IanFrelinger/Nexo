@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Ashlar.CLI.Commands.BackgroundAgent;
+using Ashlar.Tests.CLI.Helpers;
 using Xunit;
 
 namespace Ashlar.Tests.CLI.Tests.Commands;
@@ -117,6 +119,99 @@ public sealed class MeshLanPartyTests : IDisposable
         {
             var index = await client.GetStringAsync($"http://127.0.0.1:{port}/mesh/v1/index");
             index.Should().NotContain("huge-000000", "an oversized package is never offered to the LAN");
+        }
+        finally { await service.StopAsync(CancellationToken.None); client.Dispose(); }
+    }
+
+    // ─────────── #488: the serve path is the sixth reader of a .ashpkg ───────────
+
+    [UnixOnlyFact("ln -s")]
+    public async Task Pkg_neverFollowsASymlink_soAPlantedLinkIsNeitherServedNorAdvertised()
+    {
+        // THE ARBITRARY FILE READ. IsSafePackageName constrains the NAME and the containment check
+        // constrains the RESOLVED PATH — and Path.GetFullPath does not resolve symlinks, so a link
+        // planted inside the published directory satisfies both while pointing anywhere on the host.
+        // The old size gate could not see it either: FileInfo.Length on a symlink is the length of
+        // the TARGET'S PATH STRING, so a link to a 40 MB file measured about twenty bytes, was
+        // advertised in the index at that size, and was then served in full — ten times the
+        // documented ceiling. Both endpoints now open through SafePackageRead, which refuses a
+        // LinkTarget without following it.
+        //
+        // Planting is not exotic: the published dir is where MeshStore.Publish writes and where
+        // ASHLAR_MESH_AUTOSHARE drops admitted packages unattended, and on a real host it is often a
+        // synced folder.
+        var secret = Path.Combine(_dir, "secret.txt");
+        await File.WriteAllTextAsync(secret, "SHOULD-NEVER-CROSS-THE-WIRE");
+        var oversized = Path.Combine(_dir, "oversized-target.bin");
+        await using (var fs = new FileStream(oversized, FileMode.Create, FileAccess.Write))
+        {
+            fs.SetLength(MeshWire.MaxPackageBytes * 2);
+        }
+
+        await File.WriteAllTextAsync(Path.Combine(_published, "a-real-000001.ashpkg"), "{ \"fake\": true }");
+        File.CreateSymbolicLink(Path.Combine(_published, "c-linked-big.ashpkg"), oversized);
+        File.CreateSymbolicLink(Path.Combine(_published, "d-secret.ashpkg"), secret);
+
+        var (service, port, client) = await StartServeAsync();
+        try
+        {
+            var index = await client.GetStringAsync($"http://127.0.0.1:{port}/mesh/v1/index");
+            index.Should().Contain("a-real-000001.ashpkg", "an honest package is still offered");
+            index.Should().NotContain("d-secret", "a symlink is not a package and is never advertised");
+            index.Should().NotContain("c-linked-big",
+                "advertising a link at the length of its target's path string is how 40 MB was offered as 23 bytes");
+
+            var secretResponse = await client.GetAsync($"http://127.0.0.1:{port}/mesh/v1/pkg/d-secret.ashpkg");
+            secretResponse.StatusCode.Should().Be(HttpStatusCode.NotFound,
+                "a link out of the published directory is an arbitrary file read, not a package");
+            (await secretResponse.Content.ReadAsStringAsync()).Should().NotContain("SHOULD-NEVER-CROSS-THE-WIRE",
+                "the target's CONTENT must not reach the peer under any status code");
+
+            var bigResponse = await client.GetAsync($"http://127.0.0.1:{port}/mesh/v1/pkg/c-linked-big.ashpkg");
+            bigResponse.StatusCode.Should().Be(HttpStatusCode.NotFound,
+                "the ceiling must bound the bytes SERVED, not a number read out of a directory entry");
+            (bigResponse.Content.Headers.ContentLength ?? 0).Should().BeLessThan(MeshWire.MaxPackageBytes);
+
+            // The node is still a node: refusing the planted rows must not cost the honest one.
+            (await client.GetStringAsync($"http://127.0.0.1:{port}/mesh/v1/pkg/a-real-000001.ashpkg"))
+                .Should().Contain("fake");
+        }
+        finally { await service.StopAsync(CancellationToken.None); client.Dispose(); }
+    }
+
+    private static void Mkfifo(string path)
+    {
+        using var p = Process.Start(new ProcessStartInfo("mkfifo", path) { UseShellExecute = false })!;
+        p.WaitForExit(20_000);
+        p.ExitCode.Should().Be(0, "the fixture itself must exist before the claim means anything");
+    }
+
+    [UnixOnlyFact("mkfifo")]
+    public async Task APlantedFifo_isNeitherAdvertisedNorAbleToWedgeTheNode()
+    {
+        // A FIFO in the published directory used to be a permanent denial of service, not a slow
+        // one: Kestrel's SendFileAsync blocks inside open(2) waiting for a writer, and a client
+        // disconnect cannot unblock a thread parked in a syscall — so enough concurrent GETs
+        // (MaxConcurrentConnections is 100) stop the node answering hello and index too. Its
+        // FileInfo.Length is 0, so it also sailed under the size bound and was advertised.
+        //
+        // SafePackageRead opens with O_NONBLOCK and refuses anything it cannot seek, which is why
+        // this test can assert a 404 with a five-second client timeout at all.
+        Mkfifo(Path.Combine(_published, "b-hang.ashpkg"));
+        await File.WriteAllTextAsync(Path.Combine(_published, "a-real-000002.ashpkg"), "{ \"fake\": true }");
+
+        var (service, port, client) = await StartServeAsync();
+        try
+        {
+            var index = await client.GetStringAsync($"http://127.0.0.1:{port}/mesh/v1/index");
+            index.Should().NotContain("b-hang", "a fifo is not a package and is never advertised");
+            index.Should().Contain("a-real-000002.ashpkg");
+
+            (await client.GetAsync($"http://127.0.0.1:{port}/mesh/v1/pkg/b-hang.ashpkg")).StatusCode
+                .Should().Be(HttpStatusCode.NotFound);
+
+            // The node still answers after the planted GET — the point of the whole exercise.
+            (await client.GetStringAsync($"http://127.0.0.1:{port}/mesh/v1/hello")).Should().Contain("test-node");
         }
         finally { await service.StopAsync(CancellationToken.None); client.Dispose(); }
     }

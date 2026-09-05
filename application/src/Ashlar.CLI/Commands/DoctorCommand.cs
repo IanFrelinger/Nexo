@@ -22,7 +22,7 @@ public sealed class DoctorCommand : Command
             "--profile",
             () => "demo",
             "Doctor profile: demo | self-extend-functional | self-extend-aesthetic | self-extend-visual.");
-        var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output (the root's global --format-json asks for the same report).");
         var fixOpt = new Option<bool>("--fix", () => false, "Attempt safe remediation for fixable onboarding failures.");
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "With --fix, list remediation actions without running them.");
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve remediation actions when --fix is enabled.");
@@ -43,7 +43,12 @@ public sealed class DoctorCommand : Command
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
             var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            // doctor spells its own switch `--json`, but `--format-json` is the CLI-wide flag and is
+            // global, so `doctor --format-json` parsed and was then dropped on the floor: the caller
+            // got prose on the stdout it was piping into a parser. The JSON payload below already
+            // exists — answer to both spellings rather than invent a second report.
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt)
+                || CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var fix = ctx.ParseResult.GetValueForOption(fixOpt);
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);

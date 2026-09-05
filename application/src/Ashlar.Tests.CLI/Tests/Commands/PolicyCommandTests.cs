@@ -1,3 +1,4 @@
+using System.CommandLine;
 using FluentAssertions;
 using Ashlar.CLI.Commands;
 using Ashlar.Manifest;
@@ -66,6 +67,77 @@ public sealed class PolicyCommandTests : IDisposable
     {
         PolicyLoader.TryLoad(File.ReadAllText(path), out var p, out _).Should().BeTrue();
         return p!.SelfExtend.Mode;
+    }
+
+    // ---- --format-json ------------------------------------------------------------------------
+
+    /// <summary>
+    /// Runs through the REAL root command. <c>--format-json</c> is declared there as a global option,
+    /// and that registration is the only reason the flag reaches `policy show` at all — a bare
+    /// RootCommand would reject the token and the test would prove nothing.
+    /// </summary>
+    private static async Task<(int rc, string stdout, string stderr)> RunCliAsync(params string[] args)
+    {
+        var so = new StringWriter();  // not disposed: a disposed writer left on Console poisons later tests
+        var se = new StringWriter();
+        Console.SetOut(so);
+        Console.SetError(se);
+        try
+        {
+            var rc = await Ashlar.CLI.Program.BuildRootCommand().InvokeAsync(args).ConfigureAwait(false);
+            return (rc, so.ToString(), se.ToString());
+        }
+        finally
+        {
+            // Restore to the known-good writers, never the (possibly foreign) inherited ones.
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    [Fact]
+    public async Task Show_withFormatJson_refuses_insteadOfPrintingProseOnStdout()
+    {
+        // `policy show` has no JSON rendering, but --format-json is a global option so it parses
+        // anyway. A caller piping this into a parser used to get exit 0 and eight lines of prose — a
+        // green light above a broken pipeline. The refusal is what makes that failure visible.
+        WritePolicy("proposing");
+
+        var (rc, stdout, stderr) = await RunCliAsync("policy", "show", "--path", _dir, "--format-json");
+
+        rc.Should().NotBe(0, "a flag that cannot be honoured must not exit 0");
+        stderr.Should().Contain("--format-json");
+        stdout.Should().NotContain("self-extend mode", "prose must not reach a caller that asked for JSON");
+    }
+
+    [Fact]
+    public async Task Show_withoutFormatJson_stillPrintsTheProse()
+    {
+        // The refusal is scoped to the flag — the ordinary human path must be untouched by it. This
+        // one passes against the pre-fix code by design: it is the guard rail against over-refusing,
+        // and it goes red if the refusal is ever pushed down into Show() itself.
+        WritePolicy("proposing");
+
+        var (rc, stdout, _) = await RunCliAsync("policy", "show", "--path", _dir);
+
+        rc.Should().Be(0);
+        stdout.Should().Contain("self-extend mode : proposing");
+    }
+
+    [Fact]
+    public async Task Set_withFormatJson_refuses_andWritesNothing()
+    {
+        // The write half of the same defect: an operator's script reads exit 0 and believes it
+        // parsed a result, while the dial moved underneath it. Refusing before the edit also
+        // guarantees the policy is left exactly as it was.
+        var path = WritePolicy("sealed");
+        var before = await File.ReadAllTextAsync(path);
+
+        var (rc, _, stderr) = await RunCliAsync("policy", "set", "self_extend", "proposing", "--path", _dir, "--format-json");
+
+        rc.Should().NotBe(0);
+        stderr.Should().Contain("--format-json");
+        (await File.ReadAllTextAsync(path)).Should().Be(before, "a refused invocation must not edit the policy");
     }
 
     [Fact]

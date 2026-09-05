@@ -1,3 +1,5 @@
+using System.CommandLine;
+using System.CommandLine.Parsing;
 using Microsoft.Extensions.Logging;
 using Ashlar.CLI.Formatting;
 using Ashlar.Core.Application.Common.Models;
@@ -7,6 +9,50 @@ namespace Ashlar.CLI.Commands;
 /// <summary>Command execution support.</summary>
 internal static class CommandExecutionSupport
 {
+    /// <summary>
+    /// True when the caller asked for machine-readable output with the root's global
+    /// <c>--format-json</c>.
+    ///
+    /// <para>The option is located by ALIAS, never by name alone. System.CommandLine strips the
+    /// leading <c>--</c> from an option's Name, so the <c>o.Name == "--format-json"</c> lookup used in
+    /// DockerCommand, TestPortableCommand and TestMultiEnvCommand matches nothing and reports "no JSON
+    /// asked for" on every invocation — those commands ignore the very flag they believe they are
+    /// reading. Both spellings are matched here so this helper cannot fail the same silent way.</para>
+    /// </summary>
+    internal static bool WantsJson(ParseResult parseResult)
+    {
+        var formatJson = parseResult.RootCommandResult.Command.Options
+            .OfType<Option<bool>>()
+            .FirstOrDefault(o => o.HasAlias("--format-json")
+                              || string.Equals(o.Name, "format-json", StringComparison.Ordinal));
+
+        return formatJson is not null && parseResult.GetValueForOption(formatJson);
+    }
+
+    /// <summary>
+    /// The refusal a command with no JSON rendering returns when <c>--format-json</c> was passed, and
+    /// null when it was not — so a handler can read <c>RefuseJsonFormat(...) ?? RealWork(...)</c>.
+    ///
+    /// <para><c>--format-json</c> is a GLOBAL option on the root, so it parses on every command in the
+    /// tree, including the ones that only ever print prose. Accepting it and printing prose anyway
+    /// hands a caller who is piping into a parser exit 0 over unparseable text: a green light above a
+    /// broken pipeline, which is worse than no output at all. Refusing is the honest answer until the
+    /// command grows a JSON rendering of its own — and it does not prejudge what that rendering
+    /// should be.</para>
+    /// </summary>
+    internal static int? RefuseJsonFormat(ParseResult parseResult, string command, TextWriter stderr)
+    {
+        if (!WantsJson(parseResult))
+        {
+            return null;
+        }
+
+        stderr.WriteLine($"`{command}` has no JSON rendering, so --format-json cannot be honoured here. "
+            + "Refusing rather than printing prose a JSON reader cannot parse.");
+        // Usage, not a failed verification — 65 stays reserved for a course that did not pass.
+        return 1;
+    }
+
     internal static Progress<ProgressReport>? CreateProgressReporter(
         bool verbose,
         bool json,
