@@ -16,7 +16,7 @@ Some suites inherit **`UnitTestBase`** (which extends **`TestBase`**) and implem
 
 ## Production-like tests (`Category=ProdStyle`)
 
-Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror production wiring: **`AddAshlar`**, **`AddRunPodCapabilityRouting`**, adaptation/composition stacks, Forge HTTP surfaces, capability routing, barriers, etc. **`UnitTestBridgeTests`** in Application / Domain / Infrastructure / CLI is tagged so every **`UnitTestBase`** suite participates. **`Ashlar.Commercial.Tests.GameDomain`** and **`Ashlar.Tests.Transport`** use **`[assembly: AssemblyTrait("Category", "ProdStyle")]`** so the full assembly runs under **`Category=ProdStyle`**.
+Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror production wiring: **`AddAshlar`**, **`AddRunPodCapabilityRouting`**, adaptation/composition stacks, Forge HTTP surfaces, capability routing, barriers, etc. **`UnitTestBridgeTests`** in Application / Domain / Infrastructure / CLI is tagged so every **`UnitTestBase`** suite participates. **`Ashlar.Tests.Transport`** uses **`[assembly: AssemblyTrait("Category", "ProdStyle")]`** so the full assembly runs under **`Category=ProdStyle`**.
 
 **NCR virtual routing (`VirtualProductionNcrRoutingHost`):** production **`RunPodHttpClient`** against an in-process **`RunPodLoopbackApiServer`** (REST-compatible shim), **`ProviderFactory`** local execution, **`EnvironmentHardwareProfiler`**, **`FileBasedInstanceDiscovery`** — see **`docs/NcrReleaseSLOs.md`**.
 
@@ -50,5 +50,5 @@ Today `master` branch protection requires only **`cert-gate`** (see [CI gate inv
 - **Coverage floors:** `make kernel-coverage-gate` or `bash scripts/ci/kernel-coverage-gate.sh`
 - **Broader local bar:** `make test` (see `Makefile`; uses blame-hang options)
 - **Production-like integration first (Infrastructure only):** `make test-prod-style` then optionally `make test-framework-prod-first`
-- **Prime-time gate (all test projects in `Ashlar.PrimeTime.slnf`):** `make test-prime-time` — **`Category=ProdStyle`** across Application, Domain, Infrastructure, CLI, Orchestration, BackgroundAgents, GameDomain, Transport; then **`make test-prime-time-full`** for the full slice.
+- **Prime-time gate (all test projects in `Ashlar.PrimeTime.slnf`):** `make test-prime-time` — **`Category=ProdStyle`** across Application, Domain, Infrastructure, CLI, Orchestration, BackgroundAgents, Transport; then **`make test-prime-time-full`** for the full slice.
 - **CI-style verification:** `make ci-verify` or `dotnet run --project application/src/Ashlar.CLI -- ci verify`

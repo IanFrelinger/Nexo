@@ -54,7 +54,7 @@ Product-specific deployables and descriptors stay under **`application/src/`** (
 | `Ashlar.Runtime.sln` | Runtime kernel graph for CI and publishing libraries (and `Ashlar.Runtime.Bundle`). |
 | `application/Ashlar.Application.sln` | Open `application/src/*` only (`Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI`); it no longer pulls the commercial GameDomain projects. |
 | `products/Ashlar.Products.sln` | Extractable product scaffolds (workstation, cluster, cloud, native) plus the kernel projects those scaffolds reference in-monorepo. |
-| `Ashlar.sln` | Full monorepo: kernel, clients, infrastructure tests, `Ashlar.Runtime.Bundle`, ingress projects, `application/` hosts, plus commercial MeshDirector and Fleet/MeshDirector tests. It does **not** include `products/`, samples, spikes, tools, or the removed Game Director / GameDomain vertical. Application code is built via **`dotnet build application/Ashlar.Application.sln`** when you only need the CLI/API hosts. |
+| `Ashlar.sln` | Full monorepo: kernel, clients, infrastructure tests, `Ashlar.Runtime.Bundle`, ingress projects, `application/` hosts, plus commercial `Ashlar.Commercial.Fleet.Api`, `Fleet.Host`, `Fleet.Contracts`, `Fleet.Infrastructure`, `MeshDirector`, and the Fleet/MeshDirector test projects. It does **not** include `products/`, samples, spikes, tools, or the removed Game Director / GameDomain vertical. Application code is built via **`dotnet build application/Ashlar.Application.sln`** when you only need the CLI/API hosts. |
 
 Build application layer:
 

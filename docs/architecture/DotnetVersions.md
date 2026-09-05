@@ -6,7 +6,7 @@ The repository pins the **.NET SDK** to **10.x** (see `global.json` with `rollFo
 
 ## Target frameworks
 
-Hosts and shipped executables (`Ashlar.CLI`, `Ashlar.Mcp.Server.Host`, `Ashlar.Transport.Grpc.Server.Host`, the tools under `tools/`) target **`net10.0`**. `Ashlar.API` ships on `net10.0` too (its Dockerfiles publish `-f net10.0`) but multi-targets `net8.0;net10.0` because it is also consumed as a library by `net8.0` projects.
+Hosts and shipped executables (`Ashlar.CLI`, `Ashlar.API`, `Ashlar.Mcp.Server.Host`, `Ashlar.Transport.Grpc.Server.Host`, the tools under `tools/`) target **`net10.0` only**. `Ashlar.API` Dockerfiles publish `-f net10.0`; any project that references the API must target `net10.0` (in-process tests use the `net10.0` leg of `Ashlar.Tests.Infrastructure`).
 
 Libraries multi-target **`net8.0;net10.0`** so the **`net8.0` consumer story stays alive until .NET 8 leaves support (November 2026)** while the shipped artifacts are `net10.0`. The `netstandard2.0` contract assemblies (`Ashlar.Abstractions`, `Ashlar.Core.Domain`, `Ashlar.Brick.Contracts`, …) target **`netstandard2.0;net8.0;net10.0`**; `Ashlar.Brick.Contracts` keeps `net8.0` because generated bricks consume it.
 
