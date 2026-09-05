@@ -377,6 +377,12 @@ public class InfrastructureGapCoverageTests
 
         var act = async () => await transport.ImportAsync(Path.Combine(root, "missing.nxpkg"));
         await act.Should().ThrowAsync<FileNotFoundException>();
+
+        var nestedDir = Path.Combine(root, "missing-parent");
+        var nestedExport = Path.Combine(nestedDir, "nested.nxpkg");
+        Directory.Exists(nestedDir).Should().BeFalse();
+        await transport.ExportAsync(nestedExport);
+        File.Exists(nestedExport).Should().BeTrue();
     }
 
     [Fact]

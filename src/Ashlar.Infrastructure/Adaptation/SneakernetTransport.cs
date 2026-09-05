@@ -47,6 +47,9 @@ public sealed class SneakernetTransport : ISneakernetTransport
             }).ToList()
         };
         var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true });
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory))
+            Directory.CreateDirectory(directory);
         await File.WriteAllTextAsync(path, json, cancellationToken).ConfigureAwait(false);
         _logger?.LogInformation("Exported {Count} adaptation(s) to {Path}", entries.Count, path);
     }

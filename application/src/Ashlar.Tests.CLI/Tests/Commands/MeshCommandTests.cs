@@ -21,6 +21,7 @@ public sealed class MeshCommandTests : UnitTestBase
             await TestSetTrustTierInvalidValueExitsNonZeroAsync().ConfigureAwait(false);
             await TestSetTrustTierMissingPeerExitsNonZeroAsync().ConfigureAwait(false);
             await TestImportMissingFileExitsNonZeroAsync().ConfigureAwait(false);
+            await TestExportMissingParentCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(MeshCommandTests),
@@ -287,6 +288,34 @@ public sealed class MeshCommandTests : UnitTestBase
         {
             Console.SetOut(ConsoleCapture.Out);
             Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestExportMissingParentCreatesDirectoryWithoutStackTraceAsync()
+    {
+        var dest = Path.Combine(Path.GetTempPath(), $"ashlar-export-{Guid.NewGuid():N}", "out.nxpkg");
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var exitCode = await root.InvokeAsync($"mesh export --to {dest}").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode == 0, "mesh export must create a missing parent directory and exit 0.");
+            AssertTrue(File.Exists(dest), "mesh export must write the package after creating the parent directory.");
+            AssertTrue(!output.Contains("DirectoryNotFoundException", StringComparison.Ordinal)
+                && !output.Contains("   at ", StringComparison.Ordinal),
+                "A missing export parent directory must not print a stack trace.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            var parent = Path.GetDirectoryName(dest);
+            if (!string.IsNullOrEmpty(parent) && Directory.Exists(parent))
+                Directory.Delete(parent, recursive: true);
         }
     }
 }
