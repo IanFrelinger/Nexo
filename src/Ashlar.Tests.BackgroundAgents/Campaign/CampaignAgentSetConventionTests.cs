@@ -59,6 +59,7 @@ public sealed class CampaignAgentSetConventionTests
                     "Name": "Docs",
                     "Role": "docs-auditor",
                     "Commands": ["audit"],
+                    "Schedule": { "Type": "Interval", "Interval": "01:00:00" },
                     "Enabled": true
                   }
                 ]
