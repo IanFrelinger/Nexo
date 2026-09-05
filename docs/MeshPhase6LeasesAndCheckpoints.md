@@ -49,7 +49,7 @@ See **`docs/Configuration.md`**.
 
 ## Tests
 
-- `Ashlar.Tests.Infrastructure` → `Tests/Fleet/MeshTaskPlacementServiceTests.cs`, `MeshTaskExecutionServiceTests.cs`
+- `Ashlar.Commercial.Tests.Fleet` → `MeshTaskExecutionServiceTests.cs` (checkpoint migrate) and `MeshTaskExecutionServiceGapCoverageTests.cs`. `compat-gate-tier-a` runs the migrate slice through the counted wrapper. Placement tests remain in that commercial Fleet suite.
 
 ## Revision history
 

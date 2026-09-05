@@ -8,7 +8,7 @@ Validates **schema/migration contracts**, **CLI durability across processes**, a
 
 | Tier | Focus | Command |
 |------|--------|---------|
-| A | Mesh checkpoint migration, LiteDB registration, composition validation | `make compat-gate-tier-a` |
+| A | Mesh checkpoint migration (`Ashlar.Commercial.Tests.Fleet`), LiteDB registration, composition validation | `make compat-gate-tier-a` |
 | B | Cross-process LiteDB pipeline resume (kernel Tier B) | `make compat-gate-tier-b` |
 | C | Configuration binding + kernel phases + doctor smoke | `make compat-gate-tier-c` |
 

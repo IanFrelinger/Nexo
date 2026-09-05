@@ -7,14 +7,23 @@ cd "$ROOT"
 INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 CLI="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
 
-echo "== Compat Tier C: configuration override tests =="
-dotnet build "$INFRA" -v minimal
-dotnet test "$INFRA" -f net8.0 --no-build \
+echo "== Compat Tier C: configuration override tests (net8.0, counted) =="
+python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 2 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~PipelineServiceCollectionExtensionsTests.AddPipelineCompositionLayer_WithConfiguration" \
   --blame-hang-timeout 60s --blame-hang-dump-type none
 
-echo "== Compat Tier C: hosting profile resolution =="
-dotnet test "$INFRA" -f net8.0 --no-build \
+echo "== Compat Tier C: hosting profile resolution (net8.0, counted) =="
+python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 4 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~KernelPhaseResolutionTests" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 
