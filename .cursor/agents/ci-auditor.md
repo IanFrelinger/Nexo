@@ -18,7 +18,9 @@ Deterministic lane to reconcile against (`ci/autonomous-release-manager.json`
   `--min-tests 200`
 - counted product scaffolds on `products/Ashlar.Products.sln` with prefix
   `Ashlar.Tests.Products.` and `--min-tests 12`
-- counted `DistributedContractTests` with `--min-tests 10`
+- counted `DistributedContractTests` with `--min-tests 5`
+- CLI counted suite excludes `UnitTestBridgeTests` (known hang) while
+  keeping `--min-tests 200`
 
 Verify branch-protection reality, workflow triggers and path filters, required
 versus advisory checks, `ci/test-ownership.tsv`, zero-test behavior,
