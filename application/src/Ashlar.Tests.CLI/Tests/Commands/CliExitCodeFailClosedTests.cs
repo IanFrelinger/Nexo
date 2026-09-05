@@ -41,6 +41,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestWorkflowStressInvalidPreferExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowOptimizeInvalidSearchStrategyExitsNonZeroAsync().ConfigureAwait(false);
             await TestImproveInvalidAutonomyExitsNonZeroAsync().ConfigureAwait(false);
+            await TestMultiEnvInvalidSuiteExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -729,6 +730,32 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "An invalid --autonomy must be refused before running improve as supervised.");
             AssertTrue(!output.Contains("No violations found", StringComparison.Ordinal),
                 "An invalid --autonomy must be refused before analyzing source.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestMultiEnvInvalidSuiteExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(TestMultiEnvCommand.CreateCommand());
+            var exitCode = await root.InvokeAsync("multi-env --suite xyz").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "test multi-env --suite xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --suite", StringComparison.Ordinal),
+                "An invalid --suite must be refused legibly.");
+            AssertTrue(!output.Contains("Testing ubuntu-8.0", StringComparison.Ordinal),
+                "An invalid --suite must be refused before running the framework suite.");
+            AssertTrue(!output.Contains("Building ubuntu-8.0", StringComparison.Ordinal),
+                "An invalid --suite must be refused before starting Docker.");
         }
         finally
         {

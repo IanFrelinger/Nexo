@@ -68,10 +68,32 @@ public class TestMultiEnvCommand
         return cmd;
     }
 
+    internal const string InvalidSuiteMessage =
+        "Invalid --suite. Use framework, caching, persistence, trust, or adaptation.";
+
+    internal static bool TryNormalizeSuite(string? suite, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(suite))
+        {
+            normalized = "framework";
+            return true;
+        }
+
+        normalized = suite.Trim().ToLowerInvariant();
+        return normalized is "framework" or "caching" or "persistence" or "trust" or "adaptation";
+    }
+
     /// <summary>Executes the command handler and returns a process exit code.</summary>
     public static async Task<int> ExecuteAsync(string suite, string? envName, bool all, bool ephemeral, bool noNetwork, bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);
+        if (!TryNormalizeSuite(suite, out suite))
+        {
+            if (json) Console.WriteLine(JsonSerializer.Serialize(new { error = InvalidSuiteMessage }));
+            else console?.WriteError(InvalidSuiteMessage);
+            return 1;
+        }
+
         var root = DiscoverProjectRoot();
         if (string.IsNullOrEmpty(root))
         {
