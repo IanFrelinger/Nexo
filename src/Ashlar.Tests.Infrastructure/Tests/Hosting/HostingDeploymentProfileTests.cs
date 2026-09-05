@@ -30,6 +30,7 @@ public sealed class HostingDeploymentProfileTests
     [InlineData(AshlarDeploymentProfile.Edge)]
     [InlineData(AshlarDeploymentProfile.AirGapped)]
     [InlineData(AshlarDeploymentProfile.System)]
+    [InlineData(AshlarDeploymentProfile.SecureWorkstation)]
     public async Task AllProfiles_BuildWithoutException(AshlarDeploymentProfile profile)
     {
         await Task.CompletedTask;
@@ -132,6 +133,48 @@ public sealed class HostingDeploymentProfileTests
             },
         });
         result.IsValid.Should().BeTrue();
+    }
+
+    [Fact(Timeout = TestTimeouts.E2E)]
+    public async Task SecureWorkstationProfile_IncludesTrustAndAgents_OmitsGrpcTransport()
+    {
+        await Task.CompletedTask;
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddAshlarProfile(AshlarDeploymentProfile.SecureWorkstation);
+        var sp = services.BuildServiceProvider(validateScopes: true);
+
+        sp.GetRequiredService<IBackgroundAgentRegistry>().Should().NotBeNull();
+        sp.GetRequiredService<IPatternStore>().Should().NotBeNull();
+        sp.GetService<Ashlar.Transport.Grpc.IGrpcChannelFactory>().Should().BeNull(
+            "SecureWorkstation must not register runtime transport / gRPC egress");
+        sp.GetRequiredService<IEndpointRegistry>().Should().NotBeOfType<InMemoryEndpointRegistry>();
+    }
+
+    [Theory(Timeout = TestTimeouts.E2E)]
+    [InlineData("secure-workstation")]
+    [InlineData("secureworkstation")]
+    [InlineData("workstation")]
+    [InlineData("secure_workstation")]
+    public async Task DeploymentProfile_SecureWorkstation_FromEnvironmentVariable(string alias)
+    {
+        await Task.CompletedTask;
+        var prev = Environment.GetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE");
+        try
+        {
+            Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", alias);
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddAshlar();
+            var sp = services.BuildServiceProvider();
+
+            sp.GetRequiredService<IBackgroundAgentRegistry>().Should().NotBeNull();
+            sp.GetService<Ashlar.Transport.Grpc.IGrpcChannelFactory>().Should().BeNull();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ASHLAR_DEPLOYMENT_PROFILE", prev);
+        }
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]

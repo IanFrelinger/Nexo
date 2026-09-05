@@ -75,6 +75,18 @@ APPLICATION_GATE_SKIP_TIER_D=1 make application-gate-full   # skip Docker agent-
 
 See **`docs/production-readiness/ApplicationHardeningPlan-v1.md`** and **`docs/production-readiness/ApplicationReadiness-v1.md`**.
 
+### Products gate (extractable scaffolds)
+
+Path-filtered advisory workflow (`.github/workflows/products-gate.yml`). Run the same commands locally when you change `products/**` or `src/Ashlar.Contracts/Distributed/**`:
+
+```bash
+dotnet test products/Ashlar.Products.sln
+dotnet test src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj \
+  --filter FullyQualifiedName~DistributedContractTests
+```
+
+See [`architecture/product-split.md`](architecture/product-split.md) and [`../products/README.md`](../products/README.md). `dependency-boundary` (not this gate) enforces cloud → kernel `ProjectReference` refusal.
+
 ### Composition & mesh gate
 
 Pipeline composition (fan-out/fan-in, agentic stages) and async clustered mesh tasks:

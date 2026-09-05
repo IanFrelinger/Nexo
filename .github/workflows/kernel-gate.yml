@@ -6,6 +6,8 @@ on:
   pull_request:
     paths:
       - "src/Ashlar.Hosting/**"
+      - "src/Ashlar.Abstractions/AshlarDeploymentProfileEnvironment.cs"
+      - "src/Ashlar.Contracts/Distributed/**"
       - "src/Ashlar.Infrastructure/**"
       - "src/Ashlar.Orchestration/**"
       - "src/Ashlar.Runtime/**"

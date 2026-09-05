@@ -45,13 +45,14 @@ say "9.2 the experimental surface is not in the stable PROMISE"
 # D5's whole point: v0.1.0 promises a production-usable core while the autonomy surface stays
 # experimental. PublicAPI.Shipped.txt is what a tag turns into a promise, so an [Experimental] type
 # appearing there would promise exactly what the release says it does not.
-#
-# Only PascalCase identifiers: files that carry [Experimental] also have XML comments like
-# "Declared class name", and `class name` was extracted as a type and then matched constructor
-# parameters (`string name`) in Shipped.txt after the v0.1.2 PublicAPI promotion.
+# Only declaration lines (optional modifiers) and PascalCase names. Prompt strings such as
+# "the class name" / "Declared class name" inside [Experimental] files must not count as a
+# type called `name` (that matched constructor parameters in Shipped.txt after the v0.1.2
+# PublicAPI promotion).
 EXP_TYPES=$(grep -rl "\[Experimental(" --include=*.cs src/ 2>/dev/null \
-            | xargs -r grep -hoE '(class|record|interface|enum|struct) +[A-Za-z0-9_]+' 2>/dev/null \
-            | awk '{print $2}' | grep -E '^[A-Z][A-Za-z0-9_]*$' | sort -u)
+            | xargs -r grep -hE '^[[:space:]]*(public|internal|private|protected)?[[:space:]]*(sealed|abstract|static|partial|readonly|ref)*[[:space:]]*(class|record|interface|enum|struct)[[:space:]]+[A-Z][A-Za-z0-9_]*' 2>/dev/null \
+            | grep -oE '(class|record|interface|enum|struct)[[:space:]]+[A-Z][A-Za-z0-9_]*' \
+            | awk '{print $2}' | sort -u)
 LEAKED=""
 for t in $EXP_TYPES; do
   # Match the type as a whole word in a promised signature, not as a substring of a longer name.

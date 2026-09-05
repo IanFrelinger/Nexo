@@ -8,9 +8,25 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
+### Added
+
+- **Product split scaffolds** under `products/` (workstation, cluster, cloud, native) and framework distributed contracts (`ExecutionEnvelope`, `ResultEvidence`, `ITaskScheduler`, `INativeExecutionHost`).
+- **`AshlarDeploymentProfile.SecureWorkstation`** — local trust, agents, RAG, and observation without runtime transport. `AirGapped` remains the slim offline profile. Under AirGapped, MCP client, A2A, and MCP server are all refused. Under SecureWorkstation, MCP client and A2A refuse enablement; local MCP server remains allowed.
+- **`products-gate`** runs extractable product scaffolds plus `DistributedContractTests`.
+
 ### Changed
 
+- **Docs** — product-split, operator env-var tables, protocol, licensing, and CI inventory distinguish `AirGapped` from `SecureWorkstation`, drop the `Ashlar.Client` product-consumption overclaim, and document `products-gate` / `DistributedContractTests` ownership.
 - **Published pin is 0.1.2.** `ci/published-version` matches nuget.org and GHCR `nexo-cli:0.1.2`. Consumer-template pins follow the pin. The v0.1.2 `release.yml` pack-and-publish job timed out on nuget.org index lag after a successful push; visibility/registration polls now default to 40×15s (and raise a shorter repo-var budget) so the next tag does not fail the same way. nuget.org restore samples pin `System.Text.Encodings.Web` **10.0.11** so they do not NU1605 against the 0.1.2 graph.
+
+### Fixed
+
+- **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
+- **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.
+- **Distributed contracts** factories reject undefined enums, malformed digests, non-positive duration, and succeeded evidence without a hash.
+- **SecureWorkstation composition** cannot be weakened by a later `configure` callback (profile and `TrustEnabled` are re-asserted). MCP client, A2A, and MCP server validators honor the profile `AddAshlar` recorded (`NoteResolved`), not only `ASHLAR_DEPLOYMENT_PROFILE`.
+- **Cluster scheduler** is idempotent on the same envelope id + hash and refuses a conflicting hash (`TryAdd`).
+- **ashlar-cloud** records reject blank ids / non-positive quotas, and the dependency-boundary gate forbids cloud → `src/` or `commercial/` references.
 
 ## [0.1.2] - 2026-09-04
 

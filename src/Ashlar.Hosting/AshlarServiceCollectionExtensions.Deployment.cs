@@ -6,7 +6,8 @@ public static partial class AshlarServiceCollectionExtensions
     /// Resolves the deployment profile from (in priority order):
     /// 1. Explicit <see cref="AshlarHostingOptions.DeploymentProfile"/> set by the caller.
     /// 2. <c>ASHLAR_DEPLOYMENT_PROFILE</c> environment variable (case-insensitive;
-    ///    accepts "full", "server", "edge", "airgapped"/"air-gapped", "system"/"core").
+    ///    accepts "full", "server", "edge", "airgapped"/"air-gapped",
+    ///    "secureworkstation"/"secure-workstation"/"workstation", "system"/"core").
     /// 3. Falls back to <see cref="AshlarDeploymentProfile.Full"/>.
     /// </summary>
     private static AshlarDeploymentProfile ResolveDeploymentProfile(AshlarHostingOptions options)
@@ -29,31 +30,28 @@ public static partial class AshlarServiceCollectionExtensions
 
         throw new InvalidOperationException(
             $"ASHLAR_DEPLOYMENT_PROFILE='{raw}' is not recognized. " +
-            "Valid values: full, server, edge, air-gapped, system.");
+            "Valid values: full, server, edge, air-gapped, air_gapped, secure-workstation, secure_workstation, workstation, system.");
     }
 
     private static bool TryParseDeploymentProfile(string? raw, out AshlarDeploymentProfile profile)
     {
         profile = AshlarDeploymentProfile.Full;
-        if (string.IsNullOrWhiteSpace(raw))
+        if (!AshlarDeploymentProfileEnvironment.TryParseKnown(raw, out var canonical))
         {
             return false;
         }
 
-        var normalized = raw.Trim().ToLowerInvariant();
-        profile = normalized switch
+        profile = canonical switch
         {
             "full" => AshlarDeploymentProfile.Full,
             "server" => AshlarDeploymentProfile.Server,
             "edge" => AshlarDeploymentProfile.Edge,
-            "airgapped" => AshlarDeploymentProfile.AirGapped,
             "air-gapped" => AshlarDeploymentProfile.AirGapped,
             "system" => AshlarDeploymentProfile.System,
-            "core" => AshlarDeploymentProfile.System,
-            _ => profile
+            "secure-workstation" => AshlarDeploymentProfile.SecureWorkstation,
+            _ => AshlarDeploymentProfile.Full
         };
-
-        return normalized is "full" or "server" or "edge" or "airgapped" or "air-gapped" or "system" or "core";
+        return true;
     }
 
     /// <summary>
@@ -66,6 +64,7 @@ public static partial class AshlarServiceCollectionExtensions
     ///   <item><c>Edge</c>     — persistence + pipelines only; no NCR, no agents.</item>
     ///   <item><c>AirGapped</c>— NCR + adaptation + persistence; no network transport.</item>
     ///   <item><c>System</c>   — bare minimum for CLI tooling; nothing optional.</item>
+    ///   <item><c>SecureWorkstation</c> — local trust/agents/RAG/observation; no transport egress.</item>
     /// </list>
     /// </summary>
     private static ModuleSelection GetModuleSelection(AshlarDeploymentProfile profile)
@@ -131,6 +130,18 @@ public static partial class AshlarServiceCollectionExtensions
                 IncludeObservationPipeline: false,
                 IncludeTrustServices: false,
                 IncludeWorkflowIntegrations: false,
+                IncludeTestingAdapters: false),
+            AshlarDeploymentProfile.SecureWorkstation => new ModuleSelection(
+                IncludeNodeCapabilityRuntime: true,
+                IncludeRuntimeTransport: false,
+                IncludePersistence: true,
+                IncludeAdaptation: true,
+                IncludePipelineComposition: true,
+                IncludeBackgroundAgents: true,
+                IncludeBackgroundAgentRag: true,
+                IncludeObservationPipeline: true,
+                IncludeTrustServices: true,
+                IncludeWorkflowIntegrations: true,
                 IncludeTestingAdapters: false),
             _ => throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unknown Ashlar deployment profile.")
         };

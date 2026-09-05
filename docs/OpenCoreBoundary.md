@@ -4,7 +4,10 @@ This page is the source of truth for Ashlar's open-core split. It describes the 
 
 ## Boundary rule
 
-- **Open projects** under `src/` and `application/src/` may not reference projects under `commercial/`.
+- **Open projects** under `src/`, `application/src/`, and `products/` may not reference projects under `commercial/`.
+- **Kernel projects** under `src/` may not reference `products/`. Non-test kernel
+  projects may not reference `application/`. `Ashlar.Tests.Infrastructure` may
+  host `Ashlar.API` in-process.
 - **Commercial projects** under `commercial/` may reference open projects.
 - The open-to-commercial allowlist is intentionally empty; any future exception must carry a justification comment and pass review.
 
@@ -58,7 +61,7 @@ The `apps/` directories are agent-set/host **configuration** surfaces with no `.
 The enforceable boundary is project/path based, not only namespace based:
 
 - project path `commercial/**` or `<AshlarCommercialProject>true</AshlarCommercialProject>` means commercial;
-- project path `src/**` or `application/src/**` means open unless explicitly commercial-marked;
+- project path `src/**`, `application/src/**`, or `products/**` means open unless explicitly commercial-marked;
 - historical namespaces may remain in commercial projects during migrations, but open projects still must not reference commercial projects.
 
 ## Residual open mesh classification
@@ -96,10 +99,10 @@ The residual open mesh files were reviewed as open-tier primitives. They are loc
 
 ## Current verification result
 
-As of 2026-09-01 (post-slim), the dependency-boundary verifier passes with:
+As of 2026-09-04 (product-split scaffolds):
 
 ```text
-dependency-boundary: scanned 85 projects (77 open, 8 commercial, 21 open packable)
+dependency-boundary: scanned 107 projects (99 open, 8 commercial, 21 open packable)
 dependency-boundary: PASS
 ```
 

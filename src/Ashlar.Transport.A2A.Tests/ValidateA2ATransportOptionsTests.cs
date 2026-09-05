@@ -13,6 +13,26 @@ public sealed class ValidateA2ATransportOptionsTests
         Validator.Validate(null, new A2ATransportOptions()).Succeeded.Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("secure-workstation")]
+    [InlineData("workstation")]
+    [InlineData("secure_workstation")]
+    public void Enabled_under_secure_workstation_profile_fails(string profile)
+    {
+        Environment.SetEnvironmentVariable(ValidateA2ATransportOptions.DeploymentProfileVariable, profile);
+        try
+        {
+            var result = Validator.Validate(null, new A2ATransportOptions { Enabled = true });
+
+            result.Failed.Should().BeTrue();
+            result.FailureMessage.Should().Contain("SecureWorkstation");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ValidateA2ATransportOptions.DeploymentProfileVariable, null);
+        }
+    }
+
     [Fact]
     public void Enabled_under_airgapped_profile_fails()
     {

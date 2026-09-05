@@ -109,7 +109,7 @@ dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -
 
 Watch for the pair that defines the gate: `GoodBrick_StrongWitness_Admits_WithZeroEscapeRate` (ADMIT, `escape_rate=0`) and `WeakWitness_AllowsMutantEscapes_RejectsWithTeeth` (REJECT on `mutation`). The ledger row for each, with the CI run that proved it, is in `docs/certification-evidence.md`.
 
-To author something the gate can judge, start from the reference brick: `samples/hello-brick/README.md` (`dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj`), then `docs/AuthoringBricks.md`. Nothing is on nuget.org yet, so the sample uses a `ProjectReference` into `src/`.
+To author something the gate can judge, start from the reference brick: `samples/hello-brick/README.md` (`dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj`), then `docs/AuthoringBricks.md`. The sample uses a `ProjectReference` into `src/` (no feed required). Packages on nuget.org pin `ci/published-version`.
 
 ## 5. What to test, what to report
 

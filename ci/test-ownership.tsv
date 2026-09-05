@@ -52,7 +52,7 @@ src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj	mcp-a2a-gate	-	MCP se
 src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj	make-test	-	in Kernel and Runtime solutions
 src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj	kernel-coverage-gate	-	application layer
 src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj	perf-gate-tier-a	-	background agents
-src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj	UNOWNED	2027-03-31	in Kernel and Ashlar solutions; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
+src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj	products-gate	-	products-gate runs DistributedContractTests only; remaining contract suites still have no dedicated gate
 src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj	kernel-coverage-gate	-	domain, 100% line coverage target
 src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj	cert-gate	-	carries the required check
 src/Ashlar.Tests.Kernel/Ashlar.Tests.Kernel.csproj	kernel-gate	-	kernel
@@ -60,3 +60,4 @@ src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj	perf-gate-tier-
 src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj	kernel-gate-tier-c	-	transport
 src/Ashlar.Transport.A2A.Server.Tests/Ashlar.Transport.A2A.Server.Tests.csproj	mcp-a2a-gate	-	A2A server
 src/Ashlar.Transport.A2A.Tests/Ashlar.Transport.A2A.Tests.csproj	mcp-a2a-gate	-	A2A client
+products/tests/Ashlar.Tests.Products/Ashlar.Tests.Products.csproj	products-gate	-	extractable product scaffolds; products/Ashlar.Products.sln

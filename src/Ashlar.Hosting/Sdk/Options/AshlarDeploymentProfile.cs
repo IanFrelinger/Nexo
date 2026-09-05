@@ -52,5 +52,14 @@ public enum AshlarDeploymentProfile
     /// modules at all. Every module flag is <c>false</c>. Useful for CLI
     /// tooling, unit tests, or hosts that register integrations manually.
     /// </summary>
-    System = 4
+    System = 4,
+
+    /// <summary>
+    /// Air-gapped workstation / IDE daemon. Local trust, RAG, background
+    /// agents, persistence, observation, and certification stay on.
+    /// Runtime transport (gRPC egress / remote execution) and testing
+    /// adapters stay off. Do not substitute <see cref="AirGapped"/> for this
+    /// profile: <see cref="AirGapped"/> also strips trust and agents.
+    /// </summary>
+    SecureWorkstation = 5
 }

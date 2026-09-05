@@ -6,7 +6,8 @@ Checks:
   1. No OPEN .csproj may ProjectReference a COMMERCIAL .csproj.
   2. Every COMMERCIAL .csproj directory contains COMMERCIAL-LICENSE.md.
   3. Every OPEN packable .csproj resolves PackageLicenseExpression=Apache-2.0.
-  4. No core (src/) .csproj may ProjectReference an applications/ .csproj.
+  4. No core (src/) .csproj may ProjectReference an application/, applications/, or products/ .csproj.
+  5. products/ashlar-cloud must not ProjectReference src/ or commercial/.
 
 Optional allowlists (repo-relative paths, # comments allowed):
   scripts/dependency-boundary.open-to-commercial.allowlist.txt
@@ -215,9 +216,35 @@ def main() -> int:
         except FileNotFoundError:
             continue  # already reported by check 1
         for ref_rel in refs:
-            if ref_rel.startswith("applications/"):
+            if ref_rel.startswith("applications/") or ref_rel.startswith("products/"):
                 errors.append(
                     f"core project references application project: {project.rel} -> {ref_rel}"
+                )
+                continue
+
+            # application/ hosts are products. The one existing exception is
+            # infrastructure tests hosting Ashlar.API in-process
+            # (WebApplicationFactory). New kernel libraries must not take this
+            # dependency; new test projects under src/Ashlar.Tests.* may.
+            if ref_rel.startswith("application/") and "/Ashlar.Tests." not in project.rel:
+                errors.append(
+                    f"core project references application project: {project.rel} -> {ref_rel}"
+                )
+
+    # 1c) ashlar-cloud is extractable without the kernel. A ProjectReference
+    #     into src/ would smuggle runtime types into the control plane and
+    #     invert the product-split rule (cloud → cluster protocol, not kernel).
+    for project in projects:
+        if not project.rel.startswith("products/ashlar-cloud/"):
+            continue
+        try:
+            refs = parse_project_references(project, root)
+        except FileNotFoundError:
+            continue
+        for ref_rel in refs:
+            if ref_rel.startswith("src/") or ref_rel.startswith("commercial/"):
+                errors.append(
+                    f"cloud product must not reference kernel or commercial projects: {project.rel} -> {ref_rel}"
                 )
 
     # 2) commercial license stubs
