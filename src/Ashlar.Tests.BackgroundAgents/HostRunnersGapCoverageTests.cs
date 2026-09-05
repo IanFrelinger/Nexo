@@ -128,6 +128,28 @@ public class HostRunnersGapCoverageTests
     }
 
     [Fact]
+    public async Task TestRunRunnerAdapter_fails_closed_when_zero_tests()
+    {
+        var mediator = new Mock<IMediator>();
+        mediator.Setup(m => m.Send(It.IsAny<RunTestsCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TestExecutionResult
+            {
+                TotalTests = 0,
+                PassedTests = 0,
+                FailedTests = 0,
+                TotalDuration = TimeSpan.Zero,
+                Results = Array.Empty<TestResult>(),
+            });
+
+        var adapter = new TestRunRunnerAdapter(mediator.Object, NullLogger<TestRunRunnerAdapter>.Instance);
+        var result = await adapter.RunAsync("DoesNotExist");
+
+        result.Success.Should().BeFalse();
+        result.TotalTests.Should().Be(0);
+        result.Summary.Should().Contain("No tests matched the filter");
+    }
+
+    [Fact]
     public async Task TestRunRunnerAdapter_handles_mediator_exceptions()
     {
         var mediator = new Mock<IMediator>();

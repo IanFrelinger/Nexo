@@ -72,6 +72,31 @@ public sealed class ObservationsPublishingTests
     }
 
     [Fact]
+    public async Task Tester_role_emits_error_severity_when_zero_tests()
+    {
+        var store = new InMemoryObservationStore();
+        var registry = BuildRegistry(
+            testRunRunner: new FakeTestRunner(success: true, total: 0, failed: 0, summary: "No tests run."),
+            observations: store);
+
+        var config = new BackgroundAgentConfig
+        {
+            Id = "tester-empty",
+            Role = "tester",
+            Enabled = true,
+            Parameters = new Dictionary<string, object> { ["Filter"] = "DoesNotExist" }
+        };
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.ExecuteOnceAsync(config.Id);
+
+        var obs = store.All.Should().ContainSingle().Subject;
+        obs.kind.Should().Be(ObservationKind.Test);
+        obs.severity.Should().Be(ObservationSeverity.Error);
+        obs.facts!["total"].Should().Be("0");
+        obs.facts!["failed"].Should().Be("0");
+    }
+
+    [Fact]
     public async Task Optimizer_role_publishes_analysis_observation_with_violation_count()
     {
         var store = new InMemoryObservationStore();

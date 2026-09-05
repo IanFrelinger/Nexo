@@ -498,12 +498,14 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 // Publish observation so the planner sees test failures in its next snapshot.
                 // Failed > 0 is always Error severity even if Success=true, so the planner can
                 // react to a single regression without waiting for a fully red run.
+                // TotalTests < 1 is the same skip-and-pass as `ashlar test local` and must
+                // not land as Info when a host adapter still reports Success=true.
                 _observations?.Append(new RuntimeObservation(
                     ts: DateTimeOffset.UtcNow,
                     source: agentId,
                     kind: ObservationKind.Test,
                     summary: $"{result.Summary} (total: {result.TotalTests}, failed: {result.FailedTests})",
-                    severity: result.FailedTests > 0
+                    severity: result.FailedTests > 0 || result.TotalTests < 1
                         ? ObservationSeverity.Error
                         : (result.Success ? ObservationSeverity.Info : ObservationSeverity.Warn),
                     facts: new Dictionary<string, string>

@@ -28,9 +28,11 @@ public sealed class TestRunRunnerAdapter : ITestRunRunner
         try
         {
             var result = await _mediator.Send(new RunTestsCommand(filter, null), cancellationToken).ConfigureAwait(false);
-            var success = result.FailedTests == 0;
-            var summary = result.TotalTests == 0
-                ? "No tests run."
+            // Same class as `ashlar test local`: FailedTests==0 with TotalTests==0 used
+            // to report Success=true and hide a silent empty filter from tester agents.
+            var success = result.FailedTests == 0 && result.TotalTests >= 1;
+            var summary = result.TotalTests < 1
+                ? "No tests matched the filter"
                 : $"{result.PassedTests}/{result.TotalTests} passed, {result.FailedTests} failed.";
             _logger.LogDebug("Test run (filter: {Filter}): {Summary}", filter ?? "(all)", summary);
             return new TestRunResult(success, result.TotalTests, result.PassedTests, result.FailedTests, summary);
