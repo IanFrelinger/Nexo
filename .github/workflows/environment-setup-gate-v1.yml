@@ -1,6 +1,11 @@
 name: Environment Setup Gate v1
 
 on:
+  pull_request:
+    paths:
+      - "scripts/setup/**"
+      - "application/src/Ashlar.CLI/**"
+      - ".github/workflows/environment-setup-gate-v1.yml"
   workflow_dispatch:
   push:
     branches: [master, main]
@@ -87,7 +92,10 @@ jobs:
             ${{ runner.temp }}/setup-gate-summary-${{ matrix.os }}.txt
           retention-days: 14
 
+  # MCR SDK container pull stays off pull_request. Native 3-OS
+  # check/restore/build is what PRs can honestly prove.
   setup-gate-ephemeral-linux:
+    if: github.event_name != 'pull_request'
     name: Setup gate (ephemeral container) - ${{ matrix.image }}
     runs-on: ubuntu-latest
     strategy:

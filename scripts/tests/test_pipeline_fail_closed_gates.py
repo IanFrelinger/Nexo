@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 59", text)
+        self.assertIn("--min-tests 60", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -442,6 +442,17 @@ class OnboardingQuickstartWorkflowTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("pull_request:", text)
         self.assertIn("scripts/setup/setup.sh check", text)
+        self.assertIn("github.event_name != 'pull_request'", text)
+
+
+class EnvironmentSetupGateWorkflowTests(unittest.TestCase):
+    def test_environment_setup_gate_workflow_runs_native_matrix_on_pull_request(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "environment-setup-gate-v1.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/setup/setup.sh check", text)
+        self.assertIn("./scripts/setup/setup.ps1 -Mode check", text)
         self.assertIn("github.event_name != 'pull_request'", text)
 
 
