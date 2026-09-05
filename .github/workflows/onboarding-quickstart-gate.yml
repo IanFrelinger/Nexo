@@ -1,6 +1,16 @@
 name: onboarding-quickstart-gate
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/onboarding-quickstart-gate.yml'
+      - 'README.md'
+      - 'docs/GettingStarted.md'
+      - 'docs/OnboardingAutomation.md'
+      - 'scripts/setup/**'
+      - 'scripts/install/**'
+      - 'application/src/Ashlar.CLI/**'
+      - 'global.json'
   schedule:
     - cron: "0 7 * * 1"
   push:
@@ -115,7 +125,10 @@ jobs:
             ${{ runner.temp }}/onboarding/onboarding-native-linux-trend.json
           retention-days: 14
 
+  # GHCR :latest pull stays off pull_request. Native check/restore/help/doctor
+  # is the documented Lane 2 path and is what PRs can honestly prove.
   quickstart-linux-ephemeral-container:
+    if: github.event_name != 'pull_request'
     name: quickstart-container-ephemeral-linux
     runs-on: ubuntu-latest
     steps:

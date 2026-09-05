@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 58", text)
+        self.assertIn("--min-tests 59", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -433,6 +433,16 @@ class PackHostingGraphAlignmentWorkflowTests(unittest.TestCase):
         self.assertIn("pull_request:", text)
         self.assertIn("verify-pack-ashlar-hosting-graph-alignment.py", text)
         self.assertIn("src/**/*.csproj", text)
+
+
+class OnboardingQuickstartWorkflowTests(unittest.TestCase):
+    def test_onboarding_quickstart_workflow_runs_native_lane_on_pull_request(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "onboarding-quickstart-gate.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/setup/setup.sh check", text)
+        self.assertIn("github.event_name != 'pull_request'", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):
