@@ -8,6 +8,8 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-05
+
 ### Added
 
 - **Product split scaffolds** under `products/` (workstation, cluster, cloud, native) and framework distributed contracts (`ExecutionEnvelope`, `ResultEvidence`, `ITaskScheduler`, `INativeExecutionHost`).
