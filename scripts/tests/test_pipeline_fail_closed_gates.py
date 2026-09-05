@@ -157,6 +157,7 @@ class ProductionReadinessGateCountedTests(unittest.TestCase):
 
     def test_workflow_invokes_counted_script(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
         self.assertIn("scripts/production-readiness-gate-v1-tests.sh", text)
         self.assertNotIn(
             "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",

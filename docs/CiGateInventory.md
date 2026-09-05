@@ -53,8 +53,8 @@ Counts by trigger class (58 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 21 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 16 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf), 1 label-driven (`release-staging-on-label`) |
-| Push- and/or schedule-driven, plus `workflow_dispatch` | 16 | Post-merge / scheduled signal; never blocks a PR. |
+| Runs on `pull_request` | 22 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 17 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness), 1 label-driven (`release-staging-on-label`) |
+| Push- and/or schedule-driven, plus `workflow_dispatch` | 15 | Post-merge / scheduled signal; never blocks a PR. |
 | `workflow_dispatch` only | 16 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
@@ -86,6 +86,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `products-gate.yml` | products-gate / `product scaffolds` | paths: `products/**`, distributed contracts, deployment-profile sources, `ci/test-ownership.tsv` | push `master`/`main`/`cursor/**`, dispatch — **advisory**; runs `products/Ashlar.Products.sln` plus `DistributedContractTests`. Does **not** run the dependency-boundary script (that is `dependency-boundary.yml`). |
 | `autonomous-release-manager.yml` | Autonomous Release Manager / `Validate release manager` | paths: coordinator, plan, tests, workflow | weekly schedule + dispatch run the full six-lane audit; PRs run only unit tests and immutable-plan validation |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` | dispatch |
+| `production-readiness-gate-v1.yml` | Production Readiness Gate v1 / `scripts/production-readiness-gate-v1-tests.sh` | paths: pipelines sources/tests, CLI, readiness docs — counted Pipelines 68 (net8 + net10) + host-DI 2 | push `master`/`main`/`cursor/**`, dispatch |
 
 ### Push-only (path-filtered) workflows
 
@@ -105,7 +106,6 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate | README, GettingStarted, setup/install scripts, CLI; **weekly schedule** |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |
 | `pack-hosting-graph-alignment.yml` | Pack hosting graph alignment | `master`/`main`; `src/**/*.csproj`, pack scripts, NugetOrgRestoreVerify sample |
-| `production-readiness-gate-v1.yml` | Production Readiness Gate v1 / `scripts/production-readiness-gate-v1-tests.sh` | pipelines sources/tests, CLI, readiness docs — counted Pipelines 68 (net8 + net10) + host-DI 2 |
 | `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule** |
 | `runtime-release-gate.yml` | Runtime Release Gate | `master`/`main`; CLI runtime/release commands, `docs/runtime/benchmarks/**` |
 

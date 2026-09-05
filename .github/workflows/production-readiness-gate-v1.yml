@@ -1,6 +1,22 @@
 name: Production Readiness Gate v1
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/production-readiness-gate-v1.yml"
+      - "docs/ProductionReadinessGate-v1.md"
+      - "docs/ReleaseCandidateChecklist-v1.md"
+      - "src/Ashlar.Core.Application/Pipelines/**"
+      - "src/Ashlar.Infrastructure/Pipelines/**"
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Tests.Infrastructure/Tests/Pipelines/**"
+      - "application/src/Ashlar.Tests.CLI/**"
+      - "scripts/lib/assert-pipeline-fail-closed.py"
+      - "scripts/production-readiness-gate-v1-tests.sh"
+      - "scripts/run-dotnet-test-counted.py"
+      - "scripts/kernel-gate-tier-b.sh"
+      - "scripts/ship-gate-tier-a.sh"
+      - "scripts/dr-gate-tier-a.sh"
   push:
     branches:
       - master

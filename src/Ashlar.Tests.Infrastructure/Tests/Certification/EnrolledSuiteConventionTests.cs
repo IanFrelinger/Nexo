@@ -555,6 +555,7 @@ public sealed class EnrolledSuiteConventionTests
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             ".github/workflows/production-readiness-gate-v1.yml"));
+        text.Should().Contain("pull_request:");
         text.Should().Contain("scripts/production-readiness-gate-v1-tests.sh");
         text.Should().NotContain(
             "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
