@@ -39,7 +39,7 @@
 #
 project	runner	expires	note
 application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj	complete-cli-suite	-	Release proof is the tests-lane counted suite (207 rows, excludes hanging UnitTestBridgeTests). security-gate-tier-c is the 61-test PR subset. Also in Ashlar.PrimeTime.slnf
-commercial/tests/Ashlar.Commercial.Tests.Fleet.Host/Ashlar.Commercial.Tests.Fleet.Host.csproj	UNOWNED	2027-03-31	THE MOTIVATING CASE. Not in any solution. Add to Ashlar.sln and a lane before this date. [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
+commercial/tests/Ashlar.Commercial.Tests.Fleet.Host/Ashlar.Commercial.Tests.Fleet.Host.csproj	composition-mesh-gate-tier-c	-	THE MOTIVATING CASE, now enrolled: Ashlar.sln + counted net10.0 floor (4) in composition-mesh-gate-tier-c. [was UNOWNED until 2027-03-31]
 commercial/tests/Ashlar.Commercial.Tests.Fleet/Ashlar.Commercial.Tests.Fleet.csproj	composition-mesh-gate-tier-c	-	commercial fleet
 commercial/tests/Ashlar.Commercial.Tests.MeshDirector/Ashlar.Commercial.Tests.MeshDirector.csproj	UNOWNED	2027-03-31	in Ashlar.sln only; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
 samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj	full-platform-readiness-gate	-	sample; reached by ashlar validate, not by any solution

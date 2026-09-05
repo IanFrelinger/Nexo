@@ -369,7 +369,7 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 ├── .devcontainer/
 ├── .docker/
 ├── .github/
-├── Ashlar.sln                      # everything open + 5 commercial projects (64 projects; does not include products/)
+├── Ashlar.sln                      # everything open + 8 commercial projects (67 projects; does not include products/)
 ├── Ashlar.Kernel.sln               # kernel libraries + kernel tests (no CLI/API)
 ├── Ashlar.Runtime.sln              # embeddable runtime graph (no application/)
 ├── Ashlar.Demos.sln                # docs/demos/* clients

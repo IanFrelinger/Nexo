@@ -161,6 +161,15 @@ class ShipGateTierCCanonicalVersionTests(unittest.TestCase):
         self.assertIn("not valid semver", run.stdout)
 
 
+class CompositionMeshTierCFleetHostTests(unittest.TestCase):
+    def test_tier_c_runs_counted_fleet_host_suite_on_net10(self) -> None:
+        text = (ROOT / "scripts" / "composition-mesh-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Commercial.Tests.Fleet.Host", text)
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("-f net10.0", text)
+        self.assertIn("--min-tests 4", text)
+
+
 class SecurityTierBCountedNet10Tests(unittest.TestCase):
     def test_security_gate_tier_b_runs_counted_api_suite_on_net10(self) -> None:
         text = (ROOT / "scripts" / "security-gate-tier-b.sh").read_text(encoding="utf-8")
