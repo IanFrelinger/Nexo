@@ -8,6 +8,7 @@ on:
       - ".github/workflows/ops-gate.yml"
       - "scripts/ops-gate-tier-a.sh"
       - "scripts/ops-gate-tier-b.sh"
+      - "scripts/ops-gate-tier-c.sh"
       - "scripts/run-dotnet-test-counted.py"
       - "src/Ashlar.Tests.Infrastructure/Tests/Dogfood/**"
   workflow_dispatch:
@@ -37,7 +38,7 @@ jobs:
           global-json-file: global.json
 
       # Same `!=` form as Ship B so pull_request runs counted dogfood 1–6.
-      # C/E stay dispatch-only (D needs Docker plus proof flags).
+      # E stays dispatch-only (D needs Docker plus proof flags).
       - name: Tier A (dogfood 1–6)
         if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a' || inputs.tier == 'full'
         run: make ops-gate-tier-a
@@ -51,8 +52,9 @@ jobs:
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
+      # Same `!=` form as Tier A so pull_request runs counted closed-loop.
       - name: Tier C (closed-loop)
-        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c' || inputs.tier == 'full'
         run: make ops-gate-tier-c
         env:
           ASHLAR_ALLOW_MOCK: "1"

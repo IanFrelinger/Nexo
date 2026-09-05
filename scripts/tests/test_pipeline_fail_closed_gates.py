@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 75", text)
+        self.assertIn("--min-tests 77", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -964,6 +964,39 @@ class DockerTierFailClosedTests(unittest.TestCase):
         )
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'",
+            text,
+        )
+
+    def test_ops_gate_tier_c_runs_counted_closed_loop(self) -> None:
+        text = (ROOT / "scripts" / "ops-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("OPS_GATE_MIN_CLOSEDLOOP_TESTS", text)
+        self.assertIn("OPS_GATE_MIN_PHASE_F_TESTS", text)
+        self.assertIn("OPS_GATE_RUN_PHASE_F", text)
+        self.assertIn(
+            '--expected-prefix "Ashlar.Tests.Infrastructure.Tests.Dogfood.DogfoodClosedLoopTests."',
+            text,
+        )
+        self.assertIn("DogfoodPhaseFTests", text)
+        self.assertIn("-f net8.0", text)
+        self.assertIn("counted-closed-loop", text)
+        self.assertNotIn("dogfood-closedloop", text)
+        self.assertNotIn("dogfood-phasef", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_ops_gate_workflow_runs_tier_c_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "ops-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/ops-gate-tier-c.sh", text)
+        self.assertIn("ops-gate-tier-c", text)
+        self.assertIn(
+            "github.event_name != 'workflow_dispatch' || inputs.tier == 'c'",
+            text,
+        )
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
             text,
         )
 
