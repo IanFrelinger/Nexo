@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 102", text)
+        self.assertIn("--min-tests 103", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -880,6 +880,23 @@ class DistributionMatrixIAshlarClientCountedTests(unittest.TestCase):
         self.assertNotIn(
             "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
             workflow,
+        )
+
+
+class VerifyStandaloneBrickAuthoringCountedTests(unittest.TestCase):
+    def test_standalone_brick_authoring_runs_counted_generated_suite(self) -> None:
+        text = (ROOT / "scripts" / "verify-standalone-brick-authoring.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn(
+            '--expected-prefix "SampleThingBrick.Tests.SampleThingBrickTests."',
+            text,
+        )
+        self.assertIn("--min-tests 1", text)
+        self.assertNotIn(
+            'dotnet test "${BRICK_OUT}/SampleThingBrick.Tests/SampleThingBrick.Tests.csproj"',
+            text,
         )
 
 

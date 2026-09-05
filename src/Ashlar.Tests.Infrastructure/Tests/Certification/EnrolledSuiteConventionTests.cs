@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 102");
+        text.Should().Contain("--min-tests 103");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -655,6 +655,18 @@ public sealed class EnrolledSuiteConventionTests
         workflow.Should().Contain("scripts/distribution-matrix-iashlar-client.sh");
         workflow.Should().NotContain(
             "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
+    }
+
+    [Fact]
+    public void VerifyStandaloneBrickAuthoring_RunsCountedGeneratedSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/verify-standalone-brick-authoring.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--expected-prefix \"SampleThingBrick.Tests.SampleThingBrickTests.\"");
+        text.Should().Contain("--min-tests 1");
+        text.Should().NotContain(
+            "dotnet test \"${BRICK_OUT}/SampleThingBrick.Tests/SampleThingBrick.Tests.csproj\"");
     }
 
     [Fact]

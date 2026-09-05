@@ -55,7 +55,13 @@ dotnet build "${BRICK_OUT}/SampleThingBrick.Tests/SampleThingBrick.Tests.csproj"
   --no-restore \
   -v minimal
 
-dotnet test "${BRICK_OUT}/SampleThingBrick.Tests/SampleThingBrick.Tests.csproj" \
+# Same class as other distribution-matrix slices: raw `dotnet test` exits 0
+# when the generated project has no tests.
+python3 "${ROOT}/scripts/run-dotnet-test-counted.py" \
+  --project "${BRICK_OUT}/SampleThingBrick.Tests/SampleThingBrick.Tests.csproj" \
+  --expected-prefix "SampleThingBrick.Tests.SampleThingBrickTests." \
+  --min-tests 1 \
+  -- \
   --no-build \
   --blame-hang-timeout 120s \
   --blame-hang-dump-type none
