@@ -18,7 +18,7 @@
 set -euo pipefail
 
 ASHLAR_PORT="${ASHLAR_PORT:-8080}"
-REPO_URL="https://github.com/IanFrelinger/Nexo.git"
+REPO_URL="https://github.com/IanFrelinger/Ashlar.git"
 INSTALL_DIR="${ASHLAR_INSTALL_DIR:-${HOME}/Ashlar}"
 
 info()  { echo "→ $*"; }
