@@ -66,6 +66,12 @@ internal sealed partial class OptimizeHandler(
             return 1;
         }
 
+        if (maxCandidates <= 0)
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidMaxCandidatesMessage), json);
+            return 1;
+        }
+
         var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try

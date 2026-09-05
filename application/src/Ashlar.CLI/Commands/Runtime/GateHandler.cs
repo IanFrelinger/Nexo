@@ -31,6 +31,14 @@ internal sealed class RuntimeGateHandler
             return Task.FromResult(1);
         }
 
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(minTotal))
+        {
+            RuntimeOutputWriter.WriteGateResult(
+                new RuntimeGateResult(false, RuntimeCommandUtilities.InvalidMinTotalMessage),
+                json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {

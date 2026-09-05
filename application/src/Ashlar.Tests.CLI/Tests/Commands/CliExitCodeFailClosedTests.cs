@@ -49,6 +49,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestWorkflowOptimizeInvalidIterationsExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeHistoryInvalidLimitExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowHistoryInvalidLimitExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeGateInvalidMinTotalExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidMaxCandidatesExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -955,6 +957,54 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "A non-positive --limit must be refused legibly.");
             AssertTrue(!output.Contains("Loaded 1 workflow stress history entries", StringComparison.Ordinal),
                 "A --limit of 0 must not be remapped to 1 before reading workflow history.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeGateInvalidMinTotalExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime gate --min-total 0 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime gate --min-total 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --min-total", StringComparison.Ordinal),
+                "A non-positive --min-total must be refused legibly.");
+            AssertTrue(!output.Contains("Gate passed", StringComparison.Ordinal),
+                "A --min-total of 0 must not be remapped to 1 before the gate can pass.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowOptimizeInvalidMaxCandidatesExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow optimize --max-candidates 0 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize --max-candidates 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --max-candidates", StringComparison.Ordinal),
+                "A non-positive --max-candidates must be refused legibly.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "A --max-candidates of 0 must not be remapped to 1 before evaluating candidates.");
+            AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
+                "A --max-candidates of 0 must not start optimize orchestration.");
         }
         finally
         {

@@ -26,6 +26,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestPlanRejectsInvalidMaxIterationsAsync().ConfigureAwait(false);
             await TestPlanRejectsInvalidHistoryWindowAsync().ConfigureAwait(false);
             await TestHistoryRejectsInvalidLimitAsync().ConfigureAwait(false);
+            await TestGateRejectsInvalidMinTotalAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -300,6 +301,25 @@ public sealed class RuntimeCommandTests : UnitTestBase
             "A negative --limit must be refused legibly.");
         AssertTrue(!negOutput.Contains("Loaded 1 history entries", StringComparison.Ordinal),
             "A negative --limit must not be remapped to 1 before reading history.");
+    }
+
+    private async Task TestGateRejectsInvalidMinTotalAsync()
+    {
+        var (zeroExit, zeroOutput) = await InvokeRuntimeAsync("gate --min-total 0 --json").ConfigureAwait(false);
+        AssertEqual(1, zeroExit);
+        AssertTrue(zeroOutput.Contains("Invalid --min-total", StringComparison.Ordinal),
+            "A non-positive --min-total must be refused legibly.");
+        AssertTrue(!zeroOutput.Contains("Gate passed", StringComparison.Ordinal),
+            "A --min-total of 0 must not be remapped to 1 before evaluating the gate.");
+        AssertTrue(!zeroOutput.Contains("\"minTotal\": 1", StringComparison.Ordinal),
+            "A --min-total of 0 must not be rewritten to 1 in the gate result.");
+
+        var (negExit, negOutput) = await InvokeRuntimeAsync("gate --min-total -2 --json").ConfigureAwait(false);
+        AssertEqual(1, negExit);
+        AssertTrue(negOutput.Contains("Invalid --min-total", StringComparison.Ordinal),
+            "A negative --min-total must be refused legibly.");
+        AssertTrue(!negOutput.Contains("Gate passed", StringComparison.Ordinal),
+            "A negative --min-total must not be remapped to 1 before evaluating the gate.");
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()
