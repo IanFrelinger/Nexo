@@ -32,6 +32,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestGateRejectsInvalidMinPassRateAsync().ConfigureAwait(false);
             await TestGateRejectsInvalidMinConsecutivePassesAsync().ConfigureAwait(false);
             await TestReleaseGateRejectsInvalidNcrFailureRateAsync().ConfigureAwait(false);
+            await TestExecuteRejectsInvalidMaxRemediationAttemptsAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -414,6 +415,16 @@ public sealed class RuntimeCommandTests : UnitTestBase
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
         }
+    }
+
+    private async Task TestExecuteRejectsInvalidMaxRemediationAttemptsAsync()
+    {
+        var (exitCode, output) = await InvokeRuntimeAsync("execute --goal hello --max-remediation-attempts -1 --use-history false --json").ConfigureAwait(false);
+        AssertEqual(1, exitCode);
+        AssertTrue(output.Contains("Invalid --max-remediation-attempts", StringComparison.Ordinal),
+            "A negative --max-remediation-attempts must be refused legibly.");
+        AssertTrue(!output.Contains("Plan computed", StringComparison.Ordinal),
+            "A negative --max-remediation-attempts must be refused before executing a plan.");
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()

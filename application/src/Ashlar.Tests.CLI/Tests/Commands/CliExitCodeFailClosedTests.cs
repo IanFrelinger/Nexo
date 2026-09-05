@@ -59,6 +59,9 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestRuntimeReleaseGateInvalidCoreMinPassRateExitsNonZeroAsync().ConfigureAwait(false);
             await TestImproveInvalidObservationDaysExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeReleaseGateInvalidNcrFailureRateExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidWarmupRunsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowStressInvalidWarmupRunsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeExecuteInvalidMaxRemediationAttemptsExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -1204,6 +1207,75 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "A --ncr-failure-rate-slo above 1 must be refused legibly.");
             AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
                 "A --ncr-failure-rate-slo of 2 must be refused before starting the release-core matrix.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowOptimizeInvalidWarmupRunsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow optimize --warmup-runs -1 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize --warmup-runs -1 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --warmup-runs", StringComparison.Ordinal),
+                "A negative --warmup-runs must be refused legibly.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "A --warmup-runs of -1 must not be remapped to 0 before evaluating candidates.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowStressInvalidWarmupRunsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow stress --warmup-runs -1 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow stress --warmup-runs -1 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --warmup-runs", StringComparison.Ordinal),
+                "A negative --warmup-runs must be refused legibly.");
+            AssertTrue(!output.Contains("Workflow stress completed", StringComparison.Ordinal),
+                "A --warmup-runs of -1 must not be remapped to 0 before completing stress.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeExecuteInvalidMaxRemediationAttemptsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime execute --goal hello --max-remediation-attempts -1 --use-history false --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime execute --max-remediation-attempts -1 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --max-remediation-attempts", StringComparison.Ordinal),
+                "A negative --max-remediation-attempts must be refused legibly.");
+            AssertTrue(!output.Contains("self-extend", StringComparison.OrdinalIgnoreCase),
+                "A negative --max-remediation-attempts must be refused before starting execute.");
         }
         finally
         {

@@ -90,6 +90,18 @@ internal sealed partial class OptimizeHandler(
             return 1;
         }
 
+        if (warmupRunsOverride.HasValue && !WorkflowCommandUtilities.TryValidateNonNegativeCount(warmupRunsOverride.Value))
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidWarmupRunsMessage), json);
+            return 1;
+        }
+
+        if (cooldownMsOverride.HasValue && !WorkflowCommandUtilities.TryValidateNonNegativeCount(cooldownMsOverride.Value))
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidCooldownMsMessage), json);
+            return 1;
+        }
+
         var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try

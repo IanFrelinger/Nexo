@@ -1194,8 +1194,15 @@ internal static class WorkflowCommandUtilities
 
     internal const string InvalidEarlyStopMinSuccessRateMessage = "Invalid --early-stop-min-success-rate. Use a number in [0,1].";
 
+    internal const string InvalidWarmupRunsMessage = "Invalid --warmup-runs. Use a non-negative integer.";
+
+    internal const string InvalidCooldownMsMessage = "Invalid --cooldown-ms. Use a non-negative integer.";
+
     internal static bool TryValidateUnitInterval(double value)
         => double.IsFinite(value) && value is >= 0d and <= 1d;
+
+    internal static bool TryValidateNonNegativeCount(int value)
+        => value >= 0;
 
     internal const string InvalidLimitMessage = "Invalid --limit. Use a positive integer.";
 

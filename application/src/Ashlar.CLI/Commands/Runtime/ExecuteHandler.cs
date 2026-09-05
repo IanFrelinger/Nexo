@@ -36,6 +36,14 @@ internal sealed partial class ExecuteHandler(
         bool json,
         CancellationToken ct)
     {
+        if (!RuntimeCommandUtilities.TryValidateNonNegativeCount(maxRemediationAttempts))
+        {
+            RuntimeOutputWriter.WriteResult(
+                new RuntimeExecuteResult(false, RuntimeCommandUtilities.InvalidMaxRemediationAttemptsMessage, FailureStage: "input"),
+                json);
+            return 1;
+        }
+
         var result = await ExecuteCoreAsync(
             goal,
             repoRoot,

@@ -57,6 +57,24 @@ internal sealed class StressHandler(
             preferOverride = normalizedPrefer;
         }
 
+        if (iterationsOverride.HasValue && iterationsOverride.Value <= 0)
+        {
+            WriteResult(new WorkflowStressResult(false, WorkflowCommandUtilities.InvalidIterationsMessage), json);
+            return 1;
+        }
+
+        if (warmupRunsOverride.HasValue && !WorkflowCommandUtilities.TryValidateNonNegativeCount(warmupRunsOverride.Value))
+        {
+            WriteResult(new WorkflowStressResult(false, WorkflowCommandUtilities.InvalidWarmupRunsMessage), json);
+            return 1;
+        }
+
+        if (cooldownMsOverride.HasValue && !WorkflowCommandUtilities.TryValidateNonNegativeCount(cooldownMsOverride.Value))
+        {
+            WriteResult(new WorkflowStressResult(false, WorkflowCommandUtilities.InvalidCooldownMsMessage), json);
+            return 1;
+        }
+
         var resolvedSpecPath = resolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try
@@ -72,12 +90,6 @@ internal sealed class StressHandler(
         if (!WorkflowCommandUtilities.TryValidateWorkflowLabPrefers(spec, out var invalidPrefer))
         {
             WriteResult(new WorkflowStressResult(false, invalidPrefer), json);
-            return 1;
-        }
-
-        if (iterationsOverride.HasValue && iterationsOverride.Value <= 0)
-        {
-            WriteResult(new WorkflowStressResult(false, WorkflowCommandUtilities.InvalidIterationsMessage), json);
             return 1;
         }
 

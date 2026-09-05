@@ -100,6 +100,8 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidNcrOutcomeMsSloMessage = "Invalid --ncr-outcome-ms-slo. Use a positive number.";
 
+    internal const string InvalidMaxRemediationAttemptsMessage = "Invalid --max-remediation-attempts. Use a non-negative integer.";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;
