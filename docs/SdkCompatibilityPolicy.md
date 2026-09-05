@@ -44,7 +44,7 @@ The analyzers' RS0036 (missing nullable annotation in the API file) and RS0037 (
 
 #### Release step: promote Unshipped -> Shipped on tag
 
-`v0.1.0` and `v0.1.2` already promoted reviewed baselines. Seven projects carry `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` pairs. Non-header shipped line counts on this tree: `Ashlar.Brick.Contracts` 464, `Ashlar.Abstractions` 398, `Ashlar.Contracts` 208 (HTTP DTOs), `Ashlar.Client` 30, `Ashlar.Sdk` 8, `Ashlar.Authoring` 4. `Ashlar.Hosting.Bundle` stays header-only by design. `Ashlar.Contracts.Distributed` remains in `PublicAPI.Unshipped.txt` (80 lines) until the next versioned publish.
+`v0.1.0` and `v0.1.2` already promoted reviewed baselines. Seven projects carry `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` pairs. Non-header shipped line counts on this tree: `Ashlar.Brick.Contracts` 464, `Ashlar.Abstractions` 398, `Ashlar.Contracts` 208 (HTTP DTOs), `Ashlar.Client` 30, `Ashlar.Sdk` 8, `Ashlar.Authoring` 4. `Ashlar.Hosting.Bundle` stays header-only by design. Two Unshipped surfaces wait for the next versioned publish: `Ashlar.Contracts.Distributed` (80 lines) and the `Ashlar.Brick.Contracts` authoring ports in `Ashlar.Core.Domain.Bricks.Ports` (147 lines; previously hidden by `#pragma warning disable RS0016`).
 
 When tagging the next version (and every release after it), as part of "Before you tag" in `docs/RELEASE_RUNBOOK.md`:
 
@@ -67,6 +67,8 @@ The `ashlar new brick` code-brick path references `Ashlar.Authoring` and exposes
 - `Ashlar.Core.Domain.Execution.BrickOutput`
 - `Ashlar.Core.Domain.Bricks.ImplementationType`
 - `Ashlar.Core.Domain.Execution.IExecutionContext`
+
+The authoring-port types in `Ashlar.Core.Domain.Bricks.Ports` (`AgentProfile`, `IArtifactDrafter`, `IAcceptanceEvaluator`, and related records) ship from the same assembly. They are declared in `PublicAPI.Unshipped.txt` until the next versioned publish; do not reintroduce `#pragma warning disable RS0016` on those files.
 
 ### Experimental
 
