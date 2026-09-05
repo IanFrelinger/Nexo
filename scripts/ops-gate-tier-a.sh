@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Ops Gate Tier A — dogfood Blocks 1–6 (observe → analyze → adapt → promote → autonomy → self-context).
 #
-# Makefile dogfood-block1 through dogfood-block6 remain developer shortcuts. This
-# gate does not invoke them. A raw project-wide filter can pass while a listed
-# block class is missing, so the counted wrapper is the only path here.
+# Makefile dogfood-block1 through dogfood-block6 are developer shortcuts that
+# now call scripts/run-dogfood-block.sh (same counted wrapper). This gate does
+# not invoke them.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

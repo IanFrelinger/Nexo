@@ -455,58 +455,47 @@ validate-safe:
 
 # Dogfood Block 1: verify observation pipeline watches Ashlar's own dev workflow
 dogfood-block1:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock1Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock1Tests 1
 
 # Dogfood Block 2: verify static analyzer runs against Block 1 (Observation) code
 dogfood-block2:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock2Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock2Tests 1
 
 # Dogfood Block 3: adaptation engine decomposes/recompiles Ashlar brick
 dogfood-block3:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock3Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock3Tests 1
 
 # Dogfood Block 4: promote Ashlar fix via inheritance
 dogfood-block4:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock4Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock4Tests 1
 
 # Dogfood Block 5: autonomy controls on Ashlar dev workflow
 dogfood-block5:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock5Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock5Tests 1
 
 # Dogfood Block 6: SelfContextAssembler answers 24h question
 dogfood-block6:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock6Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock6Tests 1
 
 # Dogfood Block 7: Composition engine composes for Ashlar problem
 dogfood-block7:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock7Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock7Tests 1
 
 # Dogfood Block 8: Parallel test matrix against Ashlar tests
 dogfood-block8:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock8Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock8Tests 1
 
 # Phase D: Composition-driven testing (Block 7–8)
 dogfood-block8-composed:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock8ComposedTests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock8ComposedTests 2
 
 # Dogfood Block 9: Instance mesh discover/advertise
 dogfood-block9:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock9Tests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock9Tests 1
 
 # Phase E: Local IPC mesh - two instances share capability
 dogfood-block9-ipc:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock9LocalIpcTests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodBlock9LocalIpcTests 1
 
 # Dogfood Blocks 1–6 (Phase C validation)
 dogfood-phase-c:
@@ -525,13 +514,11 @@ dogfood-phase-de:
 
 # Dogfood Phase F: closed-loop improve on Ashlar
 dogfood-closedloop:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodClosedLoopTests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodClosedLoopTests 1
 
 # Phase F: Continuous self-improvement loop (changelog, test failure store)
 dogfood-phasef:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodPhaseFTests" --no-build -v minimal
+	bash scripts/run-dogfood-block.sh DogfoodPhaseFTests 2
 
 # All dogfood blocks (1–9) + Phase F closed-loop + Phase F
 dogfood-all:

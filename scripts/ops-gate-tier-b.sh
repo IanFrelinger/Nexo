@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Ops Gate Tier B — dogfood Blocks 7–9 plus local IPC mesh.
 #
-# Makefile per-block dogfood targets remain developer shortcuts. This gate
-# does not invoke them. A raw project-wide filter can pass while a listed
-# block class is missing, so the counted wrapper is the only path here.
+# Makefile per-block dogfood targets are developer shortcuts that now call
+# scripts/run-dogfood-block.sh (same counted wrapper). This gate does not
+# invoke them.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

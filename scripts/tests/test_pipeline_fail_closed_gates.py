@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 107", text)
+        self.assertIn("--min-tests 108", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -974,6 +974,26 @@ class KernelTierECountedTests(unittest.TestCase):
         self.assertIn("Ashlar.Tests.Orchestration.Performance", text)
         self.assertNotIn('dotnet test "$INFRA"', text)
         self.assertNotIn('dotnet test "$ORCH"', text)
+
+
+class MakefileDogfoodCountedTests(unittest.TestCase):
+    def test_makefile_runs_counted_dogfood_blocks(self) -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("scripts/run-dogfood-block.sh", makefile)
+        self.assertIn("DogfoodBlock1Tests", makefile)
+        self.assertIn("DogfoodPhaseFTests", makefile)
+        self.assertNotIn(
+            'dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock1Tests"',
+            makefile,
+        )
+
+        script = (ROOT / "scripts" / "run-dogfood-block.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", script)
+        self.assertIn(
+            '--expected-prefix "Ashlar.Tests.Infrastructure.Tests.Dogfood.${CLASS}."',
+            script,
+        )
+        self.assertNotIn('dotnet test "$INFRA"', script)
 
 
 class TestProdStyleCountedTests(unittest.TestCase):

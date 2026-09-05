@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Ops Gate Tier C — closed-loop self-improvement on this repository.
 #
-# Makefile closed-loop and phase-F targets remain developer shortcuts. This
-# gate does not invoke them. A raw project-wide filter can pass while the
-# listed class is missing, so the counted wrapper is the only path here.
+# Makefile closed-loop and phase-F targets are developer shortcuts that now
+# call scripts/run-dogfood-block.sh (same counted wrapper). This gate does
+# not invoke them.
 # Phase F stays opt-in via OPS_GATE_RUN_PHASE_F=1 and is also counted.
 set -euo pipefail
 

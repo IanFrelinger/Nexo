@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 107");
+        text.Should().Contain("--min-tests 108");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1271,6 +1271,24 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("No tests matched the filter");
         text.Should().Contain("ExitCode.ValidationFailed");
         text.Should().NotContain("var passed = testResult == 0;");
+    }
+
+    [Fact]
+    public void Makefile_RunsCountedDogfoodBlocks()
+    {
+        var makefile = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "Makefile"));
+        makefile.Should().Contain("scripts/run-dogfood-block.sh");
+        makefile.Should().Contain("DogfoodBlock1Tests");
+        makefile.Should().Contain("DogfoodPhaseFTests");
+        makefile.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter \"FullyQualifiedName~DogfoodBlock1Tests\"");
+
+        var script = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/run-dogfood-block.sh"));
+        script.Should().Contain("run-dotnet-test-counted.py");
+        script.Should().Contain("--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Dogfood.${CLASS}.\"");
+        script.Should().NotContain("dotnet test \"$INFRA\"");
     }
 
     [Fact]
