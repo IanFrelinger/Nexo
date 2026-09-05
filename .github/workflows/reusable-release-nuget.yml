@@ -24,10 +24,10 @@ jobs:
       package_version: ${{ steps.resolve.outputs.package_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: |
             10.0.x
@@ -94,7 +94,7 @@ jobs:
         run: bash scripts/verify-stable-sdk-host-sample-packages.sh
 
       - name: Upload NuGet packages + manifest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nuget-packages-${{ env.PACKAGE_VERSION }}
           path: |
@@ -126,10 +126,11 @@ jobs:
         if: vars.NUGET_RELEASE_SBOM == 'true' || vars.NUGET_RELEASE_GRYPE == 'true'
         shell: bash
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b "${RUNNER_TEMP}/anchore"
+          args=("${RUNNER_TEMP}/anchore")
           if [[ "${{ vars.NUGET_RELEASE_GRYPE }}" == "true" ]]; then
-            curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b "${RUNNER_TEMP}/anchore"
+            args+=(--with-grype)
           fi
+          bash scripts/install-anchore-sbom-tools.sh "${args[@]}"
           echo "${RUNNER_TEMP}/anchore" >> "$GITHUB_PATH"
 
       - name: SBOM for nupkgs (Syft)
@@ -156,7 +157,7 @@ jobs:
 
       - name: Upload SBOM artifact
         if: vars.NUGET_RELEASE_SBOM == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nuget-sbom-${{ env.PACKAGE_VERSION }}
           path: |
@@ -166,7 +167,7 @@ jobs:
       - name: NuGet login (Trusted Publishing OIDC)
         id: nuget_login
         if: vars.NUGET_PUBLISH_MODE == 'oidc'
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ secrets.NUGET_USER }}
 

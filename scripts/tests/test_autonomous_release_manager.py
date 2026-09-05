@@ -851,6 +851,100 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
                 docker_log.read_text(encoding="utf-8"),
             )
 
+    def test_versioned_publish_workflows_require_ready(self) -> None:
+        repo = SCRIPT.parents[1]
+        release = (repo / ".github" / "workflows" / "release.yml").read_text(
+            encoding="utf-8"
+        )
+        nuget = (repo / ".github" / "workflows" / "release-nuget.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("needs: [validate, release-ready]", release)
+        self.assertIn("require-release-manager-ready.sh", release)
+        self.assertIn("needs: [release-ready]", nuget)
+        self.assertIn("require-release-manager-ready.sh", nuget)
+
+    def test_require_ready_blocks_unpublished_unreleased_tree(self) -> None:
+        repo = SCRIPT.parents[1]
+        with tempfile.TemporaryDirectory() as temp:
+            run = subprocess.run(
+                [
+                    "bash",
+                    "scripts/require-release-manager-ready.sh",
+                    "",
+                    str(Path(temp) / "report"),
+                ],
+                cwd=repo,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        self.assertNotEqual(0, run.returncode)
+        self.assertIn("Publish is blocked until the autonomous release manager verdict is READY", run.stdout)
+
+    def test_publish_workflows_pin_actions_and_sbom_install(self) -> None:
+        repo = SCRIPT.parents[1]
+        publish_files = (
+            repo / ".github" / "workflows" / "reusable-release-nuget.yml",
+            repo / ".github" / "workflows" / "reusable-container-publish.yml",
+            repo / ".github" / "workflows" / "release.yml",
+            repo / ".github" / "workflows" / "release-nuget.yml",
+        )
+        floating = []
+        unpinned_sbom = []
+        for path in publish_files:
+            text = path.read_text(encoding="utf-8")
+            for line in text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("uses:") and "@v" in stripped and "#" not in stripped:
+                    floating.append(f"{path.name}: {stripped}")
+                if "raw.githubusercontent.com/anchore" in stripped and "install.sh" in stripped:
+                    unpinned_sbom.append(f"{path.name}: {stripped}")
+        self.assertEqual([], floating)
+        self.assertEqual([], unpinned_sbom)
+        installer = (
+            repo / "scripts" / "install-anchore-sbom-tools.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('SYFT_VERSION="1.51.0"', installer)
+        self.assertIn("syft_${SYFT_VERSION}_linux_amd64.tar.gz", installer)
+        self.assertIn(
+            "2a2e837a2c8d59ec9af5472ee22d3b04ee463c4e44476ecf993fd1e5ab6ebc7f",
+            installer,
+        )
+
+    def test_sbom_installer_rejects_checksum_mismatch(self) -> None:
+        repo = SCRIPT.parents[1]
+        with tempfile.TemporaryDirectory() as temp:
+            fake_bin = Path(temp) / "bin"
+            dest = Path(temp) / "tools"
+            fake_bin.mkdir()
+            curl = fake_bin / "curl"
+            curl.write_text(
+                "#!/usr/bin/env bash\n"
+                "out=''\n"
+                "while [ $# -gt 0 ]; do\n"
+                "  if [ \"$1\" = \"-o\" ]; then out=\"$2\"; shift 2; continue; fi\n"
+                "  shift\n"
+                "done\n"
+                "printf 'not-syft' > \"$out\"\n",
+                encoding="utf-8",
+            )
+            curl.chmod(0o755)
+            environment = os.environ.copy()
+            environment["PATH"] = f"{fake_bin}{os.pathsep}{environment['PATH']}"
+            run = subprocess.run(
+                ["bash", "scripts/install-anchore-sbom-tools.sh", str(dest)],
+                cwd=repo,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+            self.assertNotEqual(0, run.returncode)
+            self.assertIn("checksum mismatch", run.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

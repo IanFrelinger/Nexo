@@ -6,7 +6,7 @@ One page that points to everything you need to ship **NuGet + GHCR** from this r
 
 1. **Local preflight** — `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project application/src/Ashlar.CLI -- release preflight X.Y.Z`
 2. **Trigger CI release** (optional instead of tag) — `dotnet run --project application/src/Ashlar.CLI -- release dispatch X.Y.Z --ref master` (needs `gh auth login`)
-3. **Ship** — push **`vX.Y.Z`** on the commit you want (runs **`.github/workflows/release.yml`**)
+3. **Ship** — push **`vX.Y.Z`** on the cut commit (runs **`.github/workflows/release.yml`**). Images/NuGet start only after the autonomous release manager verdict is **READY** for that SHA.
 4. **Track** — open a **Release checklist** issue (GitHub → New issue)
 
 ## Deep links

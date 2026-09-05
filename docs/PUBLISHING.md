@@ -56,8 +56,8 @@ bash scripts/verify-stable-sdk-host-sample-packages.sh
 
 Workflows:
 
-- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
-- **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input). After push to nuget.org, runs the same **Verify NuGet consumer** job when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**.
+- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Images and NuGet **do not start** until the autonomous release manager verdict is **READY** for that SHA (`scripts/require-release-manager-ready.sh`). After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
+- **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input). Same **READY** gate before pack/push. After push to nuget.org, runs the same **Verify NuGet consumer** job when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**.
 
 **Trusted Publishing (OIDC)** on nuget.org matches the workflow that actually runs
 `NuGet/login` — for this repo that is the **reusable** `reusable-release-nuget.yml`, NOT the
@@ -71,9 +71,10 @@ and the manual **Release NuGet packages** dispatch alike, since both call the sa
    - unset, empty, or **`none`** — pack + verify + artifact only; download **`nuget-packages-<version>`** and push manually if desired.
    - **`oidc`** — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) for the workflow files above. Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
    - **`apikey`** — secret **`NUGET_API_KEY`**.
-2. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows.
-3. **After push to nuget.org:** **`release.yml`** runs **Verify NuGet consumer (nuget.org)** when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (restores the sample from nuget.org only, with retries for index lag). See **`docs/NuGetConsumerVerify.md`**.
-4. Write **GitHub Release** notes and verify packages on nuget.org.
+2. **Cut the candidate first** (`VERSION` + dated changelog). A tag or dispatch on an uncut tree is **BLOCKED** — publish jobs never start.
+3. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows. The READY job runs the six-lane matrix; only `verdict=ready` unlocks images/NuGet.
+4. **After push to nuget.org:** **`release.yml`** runs **Verify NuGet consumer (nuget.org)** when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (restores the sample from nuget.org only, with retries for index lag). See **`docs/NuGetConsumerVerify.md`**.
+5. Write **GitHub Release** notes and verify packages on nuget.org.
 
 ### Post-push verification (`reusable-release-nuget.yml`)
 

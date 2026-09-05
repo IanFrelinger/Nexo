@@ -91,10 +91,50 @@ jobs:
           assert_valid_semver "${{ inputs.version }}"
           assert_version_matches_canonical "${{ inputs.version }}"
 
-  images:
-    name: Container images (GHCR)
+  # Versioned publish is fail-closed on the coordinator. Exit 0 is READY only.
+  # Unsafe repository state (VERSION not advanced, undated Unreleased, dirty plan)
+  # blocks in seconds. A cut candidate runs the six-lane matrix before images/nuget.
+  release-ready:
+    name: Release-manager READY
     needs: [validate]
     if: needs.validate.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            10.0.x
+            8.0.x
+
+      - name: Require READY verdict for this SHA
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+        run: bash scripts/require-release-manager-ready.sh "${REQUESTED_VERSION}" .ashlar/release-manager/current
+
+      - name: Upload release-manager evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-manager-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            .ashlar/release-manager/current/
+            .ashlar/release-manager/latest.json
+            .ashlar/release-manager/latest.md
+          if-no-files-found: error
+          retention-days: 30
+
+  images:
+    name: Container images (GHCR)
+    needs: [validate, release-ready]
+    if: needs.validate.result == 'success' && needs.release-ready.result == 'success'
     uses: ./.github/workflows/reusable-container-publish.yml
     secrets: inherit
     with:
@@ -102,8 +142,8 @@ jobs:
 
   nuget:
     name: NuGet packages
-    needs: [validate]
-    if: needs.validate.result == 'success'
+    needs: [validate, release-ready]
+    if: needs.validate.result == 'success' && needs.release-ready.result == 'success'
     uses: ./.github/workflows/reusable-release-nuget.yml
     secrets: inherit
     with:
@@ -162,7 +202,7 @@ jobs:
 
   summarize:
     name: Release summary
-    needs: [validate, images, nuget, verify-published, verify-nuget-consumer]
+    needs: [validate, release-ready, images, nuget, verify-published, verify-nuget-consumer]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -193,6 +233,7 @@ jobs:
             echo "NuGet artifact: **nuget-packages-${VER}** (includes \`nuget-publish-manifest.json\` + per-package \`.sha256.txt\` when built from this workflow)."
             echo ""
             echo "| Validate | ${{ needs.validate.result }} |"
+            echo "| Release-manager READY | ${{ needs.release-ready.result }} |"
             echo "| Cross-verify | ${{ needs.verify-published.result }} |"
             echo ""
             echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -200,7 +241,7 @@ jobs:
 
   github-release:
     name: Draft GitHub Release
-    needs: [validate, images, nuget]
+    needs: [validate, release-ready, images, nuget]
     if: >-
       success() &&
       github.ref_type == 'tag' &&
@@ -275,7 +316,7 @@ jobs:
 
   notify:
     name: Release notification
-    needs: [validate, images, nuget, verify-published]
+    needs: [validate, release-ready, images, nuget, verify-published]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -295,7 +336,7 @@ jobs:
             VER="${GITHUB_REF_NAME#v}"
           fi
           STATUS="failure"
-          if [ "${{ needs.validate.result }}" = "success" ] && [ "${{ needs.images.result }}" = "success" ] && [ "${{ needs.nuget.result }}" = "success" ]; then
+          if [ "${{ needs.validate.result }}" = "success" ] && [ "${{ needs.release-ready.result }}" = "success" ] && [ "${{ needs.images.result }}" = "success" ] && [ "${{ needs.nuget.result }}" = "success" ]; then
             STATUS="success"
           fi
           PAYLOAD="$(jq -nc \
