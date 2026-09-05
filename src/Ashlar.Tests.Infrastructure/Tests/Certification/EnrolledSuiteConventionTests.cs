@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 78");
+        text.Should().Contain("--min-tests 80");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -507,6 +507,30 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'c'");
         text.Should().NotContain(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'");
+    }
+
+    [Fact]
+    public void OpsTierE_RunsOhShitDemoQuick()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ops-gate-tier-e.sh"));
+        text.Should().Contain("bash scripts/oh-shit-demo.sh --quick");
+        text.Should().Contain("ops-gate-tier-e: PASS");
+        text.Should().NotContain("oh-shit-demo.sh --no-build");
+    }
+
+    [Fact]
+    public void OpsGateWorkflow_RunsTierEOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/ops-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("scripts/ops-gate-tier-e.sh");
+        text.Should().Contain("scripts/oh-shit-demo.sh");
+        text.Should().Contain("ops-gate-tier-e");
+        text.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'e'");
+        text.Should().NotContain(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'e'");
     }
 
     [Fact]

@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 78", text)
+        self.assertIn("--min-tests 80", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -997,6 +997,29 @@ class DockerTierFailClosedTests(unittest.TestCase):
         )
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
+            text,
+        )
+
+    def test_ops_gate_tier_e_runs_oh_shit_demo_quick(self) -> None:
+        text = (ROOT / "scripts" / "ops-gate-tier-e.sh").read_text(encoding="utf-8")
+        self.assertIn("bash scripts/oh-shit-demo.sh --quick", text)
+        self.assertIn("ops-gate-tier-e: PASS", text)
+        self.assertNotIn("oh-shit-demo.sh --no-build", text)
+
+    def test_ops_gate_workflow_runs_tier_e_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "ops-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/ops-gate-tier-e.sh", text)
+        self.assertIn("scripts/oh-shit-demo.sh", text)
+        self.assertIn("ops-gate-tier-e", text)
+        self.assertIn(
+            "github.event_name != 'workflow_dispatch' || inputs.tier == 'e'",
+            text,
+        )
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'e'",
             text,
         )
 
