@@ -204,6 +204,15 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void KernelGateWorkflow_RunsTierBOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/kernel-gate.yml"));
+        text.Should().Contain("kernel-gate-tier-b");
+        text.Should().NotContain("github.event_name == 'workflow_dispatch' && inputs.tier == 'b'");
+    }
+
+    [Fact]
     public void TestProdStyle_RunsCountedSuite()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

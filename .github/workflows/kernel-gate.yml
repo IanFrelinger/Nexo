@@ -58,8 +58,12 @@ jobs:
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
+      # Same `!=` form as Tier A (and Application / Security C) so pull_request
+      # actually runs the fail-closed CLI + LiteDB resume + counted pipeline
+      # slice. The previous `== workflow_dispatch && inputs.tier == 'b'` is
+      # FALSE on every automatic trigger.
       - name: Tier B
-        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'b'
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'b'
         run: make kernel-gate-tier-b
         env:
           ASHLAR_ALLOW_MOCK: "1"

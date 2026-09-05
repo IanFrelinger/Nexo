@@ -338,6 +338,16 @@ class KernelTierBCountedTests(unittest.TestCase):
             text,
         )
 
+    def test_kernel_gate_workflow_runs_tier_b_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "kernel-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("kernel-gate-tier-b", text)
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'",
+            text,
+        )
+
 
 class TestProdStyleCountedTests(unittest.TestCase):
     def test_makefile_runs_counted_prod_style_suite(self) -> None:
