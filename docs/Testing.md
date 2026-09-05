@@ -66,7 +66,7 @@ Validates `application/Ashlar.Application.sln` (CLI, API, optional agent-server 
 
 ```bash
 make application-gate-tier-a    # build product sln + CLI smoke (runs kernel-gate unless APPLICATION_GATE_SKIP_KERNEL=1)
-make application-gate-tier-b    # focused CLI tests + doctor --json
+make application-gate-tier-b    # counted CLI suite (200+, exclude UnitTestBridgeTests) + doctor --json
 make application-gate-tier-c    # in-process API WebApplicationFactory tests
 make application-gate-tier-d    # agent-server prod dry run (Docker)
 make application-gate-full      # A–D (skips re-running kernel by default)

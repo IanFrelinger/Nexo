@@ -200,6 +200,17 @@ class IngressUnitGateCountedTests(unittest.TestCase):
         self.assertIn("make ingress-unit-gate", text)
 
 
+class ApplicationTierBCountedCliTests(unittest.TestCase):
+    def test_application_gate_tier_b_runs_counted_cli_suite_on_net10(self) -> None:
+        text = (ROOT / "scripts" / "application-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("Ashlar.Tests.CLI", text)
+        self.assertIn("--min-tests 200", text)
+        self.assertIn("FullyQualifiedName!~UnitTestBridgeTests", text)
+        self.assertIn("-f net10.0", text)
+        self.assertNotIn('dotnet test "$CLI_TESTS"', text)
+
+
 class SecurityTierBCountedNet10Tests(unittest.TestCase):
     def test_security_gate_tier_b_runs_counted_api_suite_on_net10(self) -> None:
         text = (ROOT / "scripts" / "security-gate-tier-b.sh").read_text(encoding="utf-8")

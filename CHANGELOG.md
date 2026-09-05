@@ -48,6 +48,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Dogfood block1 no longer watches the live `src/` tree.** The CLI gate arms `FileSystemWatcher` first and writes into an isolated temp directory, matching the unit test. Ops tier E no longer depends on inotify surviving a busy source tree.
 - **`composition-mesh-gate` runs on pull requests.** The workflow already had a Tier A–C PR step that could never fire. Dispatch still selects a single tier; PRs run A–C once.
 - **Mesh task placement is compare-and-swap.** Concurrent `TryScheduleAsync` calls on a Pending task no longer mint two leases; the loser observes the winner's assignment.
+- **Application Tier B uses the counted CLI suite.** The PR gate now wraps `Ashlar.Tests.CLI` with `run-dotnet-test-counted.py` (`--min-tests 200`, exclude hanging `UnitTestBridgeTests`), so a silent empty match cannot pass.
 - **Docs** — `Ashlar.API` is `net10.0` only (not a `net8.0;net10.0` library). `Ashlar.sln` documentation lists Fleet.Api/Host. Prime-time docs drop the removed GameDomain assembly. The agent-server env example no longer advertises `ollama/ollama:latest`.
 - **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
 - **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.

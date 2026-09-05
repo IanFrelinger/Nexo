@@ -70,6 +70,19 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void ApplicationTierB_RunsCountedCliSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/application-gate-tier-b.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("Ashlar.Tests.CLI");
+        text.Should().Contain("--min-tests 200");
+        text.Should().Contain("FullyQualifiedName!~UnitTestBridgeTests");
+        text.Should().Contain("-f net10.0");
+        text.Should().NotContain("dotnet test \"$CLI_TESTS\"");
+    }
+
+    [Fact]
     public void IngressUnitGate_RunsCountedAwsSnsAndDynamoDbSuites()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

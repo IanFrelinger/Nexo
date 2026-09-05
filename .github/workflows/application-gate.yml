@@ -49,7 +49,7 @@ jobs:
       # trigger — so the lane existed and nothing ever ran it. Fixing a vacuous filter inside
       # scripts/application-gate-tier-b.sh moved the vacuous pass from the filter to this line; the
       # `!=` form is what actually selects the step, and it is the form Tier A already uses.
-      # Measured at ~20s for 199 tests, so cost is not a reason to leave it dispatch-only.
+      # Listed 207 identities; the counted wrapper refuses a silent empty match.
       - name: Tier B
         if: github.event_name != 'workflow_dispatch' || inputs.tier == 'b'
         run: make application-gate-tier-b

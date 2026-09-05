@@ -6,8 +6,7 @@ cd "$ROOT"
 
 CLI_TESTS="application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj"
 
-echo "== Application Tier B: CLI command tests =="
-dotnet build "$CLI_TESTS" -v minimal
+echo "== Application Tier B: CLI command tests (net10.0, counted) =="
 # The whole CLI suite EXCEPT the xUnit bridge. Both halves of that sentence are load-bearing.
 #
 # The filter this replaces named ValidateCommandTests, TrustCommandTests and WorkflowCommandTests.
@@ -19,7 +18,8 @@ dotnet build "$CLI_TESTS" -v minimal
 # 'b'`, and this workflow's only automatic trigger is pull_request, so a correct filter behind a
 # false condition is the same vacuous pass one level up. Both are fixed: the filter below matches
 # the real suites, and application-gate.yml's Tier B `if:` is now the `!=` form Tier A uses, so this
-# lane runs on every pull_request. Measured in the dev container at ~20s for 199 tests.
+# lane runs on every pull_request. Listed 207 identities with prefix Ashlar.Tests.CLI.
+# The counted wrapper refuses a silent empty match; the floor matches the tests-lane complete-cli-suite.
 #
 # UnitTestBridgeTests is the theory that DOES run the `UnitTestBase` suites, and it must stay
 # excluded: `Framework_unit_test_passes(testType: AgentCommandTests)` never completes. Measured in
@@ -32,9 +32,15 @@ dotnet build "$CLI_TESTS" -v minimal
 # PipelineCommand/MeshCommand/OptimizeAgentCluster and how scripts/security-gate-tier-c.sh reaches
 # TrustCommandTests. So the `UnitTestBase` suites are not uncoverable — they are covered one named
 # row at a time until the hanging AgentCommandTests row is fixed and the whole theory can run here.
-ASHLAR_ALLOW_MOCK=1 dotnet test "$CLI_TESTS" -f net10.0 --no-build \
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$CLI_TESTS" \
+  --expected-prefix "Ashlar.Tests.CLI." \
+  --min-tests 200 \
+  -- \
+  -f net10.0 \
   --filter "FullyQualifiedName!~UnitTestBridgeTests" \
-  --blame-hang-timeout 120s --blame-hang-dump-type none
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
 
 echo "== Application Tier B: doctor --json =="
 set +e
