@@ -1244,6 +1244,7 @@ public sealed class EnrolledSuiteConventionTests
         var proposals = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             "application/src/Ashlar.CLI/Commands/BackgroundAgent/ProposalsBackgroundAgentCommand.cs"));
         proposals.Should().Contain("DotnetTestTool.Succeeded");
+        proposals.Should().NotContain("tCode == 0 && !tTimedOut");
     }
 
     [Fact]

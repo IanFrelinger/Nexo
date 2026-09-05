@@ -413,7 +413,7 @@ public class ProposalsBackgroundAgentCommand
             }
 
             var (tCode, tOut, tErr, tTimedOut) = await DotnetTestTool.RunTrxTestsNoBuildAsync(repoRoot, ct).ConfigureAwait(false);
-            var testOk = tCode == 0 && !tTimedOut;
+            var testOk = DotnetTestTool.Succeeded(tCode, tTimedOut, tOut, tErr);
             object testObj = new
             {
                 ok = testOk,
@@ -433,7 +433,12 @@ public class ProposalsBackgroundAgentCommand
                     stdout.WriteLine("Tests succeeded.");
                 else
                 {
-                    stdout.WriteLine(tTimedOut ? "Tests timed out." : $"Tests failed (exit {tCode}).");
+                    stdout.WriteLine(
+                        tTimedOut
+                            ? "Tests timed out."
+                            : tCode == 0
+                                ? "No tests executed."
+                                : $"Tests failed (exit {tCode}).");
                     if (!string.IsNullOrWhiteSpace(tErr)) stderr.WriteLine(tErr);
                 }
             }

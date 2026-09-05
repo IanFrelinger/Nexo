@@ -661,6 +661,7 @@ class DotnetTestToolFailClosedTests(unittest.TestCase):
             / "ProposalsBackgroundAgentCommand.cs"
         ).read_text(encoding="utf-8")
         self.assertIn("DotnetTestTool.Succeeded", proposals)
+        self.assertNotIn("tCode == 0 && !tTimedOut", proposals)
 
 
 class DotNetInstanceSpawnerFailClosedTests(unittest.TestCase):

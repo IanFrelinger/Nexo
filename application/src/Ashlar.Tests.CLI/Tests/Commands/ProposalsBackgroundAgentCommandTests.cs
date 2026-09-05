@@ -120,6 +120,21 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task TestAsync_fails_closed_when_project_has_no_tests()
+    {
+        WriteMinimalConsoleAppAtRepoRoot();
+        var cmd = NewCmd();
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        var rc = await cmd.TestAsync(_repoRoot, formatJson: true, stdout, stderr, default);
+        rc.Should().Be(1);
+        using var json = JsonDocument.Parse(stdout.ToString());
+        json.RootElement.GetProperty("ok").GetBoolean().Should().BeFalse();
+        json.RootElement.GetProperty("test").GetProperty("ok").GetBoolean().Should().BeFalse();
+        json.RootElement.GetProperty("test").GetProperty("exit_code").GetInt32().Should().Be(0);
+    }
+
+    [Fact]
     public async Task TestAsync_builds_then_tests_minimal_xunit_project()
     {
         /// <summary>Write minimal xunit test project at repo root.</summary>
