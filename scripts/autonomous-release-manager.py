@@ -22,6 +22,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -88,6 +89,7 @@ class LaneSpec:
     objective: str
     required: bool
     timeout_seconds: int
+    exclusive_resources: tuple[str, ...]
     steps: tuple[StepSpec, ...]
 
 
@@ -171,6 +173,10 @@ def load_plan(path: Path) -> AuditPlan:
         )
 
     max_parallel = _expect_positive_int(root.get("maxParallel"), "plan.maxParallel")
+    if max_parallel > len(CANONICAL_LANES):
+        raise PlanError(
+            f"plan.maxParallel cannot exceed {len(CANONICAL_LANES)} audit lanes."
+        )
     lanes_raw = root.get("lanes")
     if not isinstance(lanes_raw, list) or not lanes_raw:
         raise PlanError("plan.lanes must be a non-empty array.")
@@ -194,6 +200,17 @@ def load_plan(path: Path) -> AuditPlan:
 
         lane_timeout = _expect_positive_int(
             lane_raw.get("timeoutSeconds"), f"lane {lane_id}.timeoutSeconds"
+        )
+        resources_raw = lane_raw.get("exclusiveResources", [])
+        if not isinstance(resources_raw, list):
+            raise PlanError(f"lane {lane_id}.exclusiveResources must be an array.")
+        exclusive_resources = tuple(
+            sorted(
+                {
+                    _expect_string(resource, f"lane {lane_id} exclusive resource")
+                    for resource in resources_raw
+                }
+            )
         )
         steps: list[StepSpec] = []
         seen_steps: set[str] = set()
@@ -255,6 +272,7 @@ def load_plan(path: Path) -> AuditPlan:
                 ),
                 required=required,
                 timeout_seconds=lane_timeout,
+                exclusive_resources=exclusive_resources,
                 steps=tuple(steps),
             )
         )
@@ -458,6 +476,25 @@ def run_lane(
         log_sha256=digest,
         steps=tuple(step_results),
     )
+
+
+def run_lane_with_resources(
+    lane: LaneSpec,
+    worktree: Path,
+    context: dict[str, str],
+    output_directory: Path,
+    resource_locks: dict[str, threading.Lock],
+) -> LaneResult:
+    acquired: list[threading.Lock] = []
+    try:
+        for resource in lane.exclusive_resources:
+            lock = resource_locks[resource]
+            lock.acquire()
+            acquired.append(lock)
+        return run_lane(lane, worktree, context, output_directory)
+    finally:
+        for lock in reversed(acquired):
+            lock.release()
 
 
 def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[str, str]]:
@@ -766,48 +803,58 @@ def main(argv: list[str] | None = None) -> int:
     try:
         with tempfile.TemporaryDirectory(prefix="ashlar-release-audit-") as temp:
             temp_root = Path(temp)
-            prepare_worktrees(repo_root, plan.lanes, sha, temp_root, worktrees)
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=plan.max_parallel
-            ) as executor:
-                future_by_lane = {
-                    executor.submit(
-                        run_lane,
-                        lane,
-                        worktrees[lane.lane_id],
-                        {
-                            "version": version,
-                            "sha": sha,
-                            "workspace": str(worktrees[lane.lane_id]),
-                        },
-                        output_directory,
-                    ): lane
+            try:
+                prepare_worktrees(repo_root, plan.lanes, sha, temp_root, worktrees)
+                resource_locks = {
+                    resource: threading.Lock()
                     for lane in plan.lanes
+                    for resource in lane.exclusive_resources
                 }
-                for future in concurrent.futures.as_completed(future_by_lane):
-                    lane = future_by_lane[future]
-                    try:
-                        lane_results.append(future.result())
-                    except Exception as exc:  # fail closed; retain other lane evidence
-                        log_path = output_directory / "logs" / f"{lane.lane_id}.log"
-                        log_path.parent.mkdir(parents=True, exist_ok=True)
-                        log_path.write_text(
-                            f"lane coordinator error: {type(exc).__name__}: {exc}\n",
-                            encoding="utf-8",
-                        )
-                        lane_results.append(
-                            LaneResult(
-                                lane_id=lane.lane_id,
-                                title=lane.title,
-                                objective=lane.objective,
-                                required=lane.required,
-                                status="failed",
-                                duration_seconds=0,
-                                log_path=str(log_path.relative_to(output_directory)),
-                                log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest(),
-                                steps=(),
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=plan.max_parallel
+                ) as executor:
+                    future_by_lane = {
+                        executor.submit(
+                            run_lane_with_resources,
+                            lane,
+                            worktrees[lane.lane_id],
+                            {
+                                "version": version,
+                                "sha": sha,
+                                "workspace": str(worktrees[lane.lane_id]),
+                            },
+                            output_directory,
+                            resource_locks,
+                        ): lane
+                        for lane in plan.lanes
+                    }
+                    for future in concurrent.futures.as_completed(future_by_lane):
+                        lane = future_by_lane[future]
+                        try:
+                            lane_results.append(future.result())
+                        except Exception as exc:  # fail closed; retain other lane evidence
+                            log_path = output_directory / "logs" / f"{lane.lane_id}.log"
+                            log_path.parent.mkdir(parents=True, exist_ok=True)
+                            log_path.write_text(
+                                f"lane coordinator error: {type(exc).__name__}: {exc}\n",
+                                encoding="utf-8",
                             )
-                        )
+                            lane_results.append(
+                                LaneResult(
+                                    lane_id=lane.lane_id,
+                                    title=lane.title,
+                                    objective=lane.objective,
+                                    required=lane.required,
+                                    status="failed",
+                                    duration_seconds=0,
+                                    log_path=str(log_path.relative_to(output_directory)),
+                                    log_sha256=hashlib.sha256(log_path.read_bytes()).hexdigest(),
+                                    steps=(),
+                                )
+                            )
+            finally:
+                cleanup_worktrees(repo_root, worktrees)
+                worktrees.clear()
     except Exception as exc:
         findings.append(
             {

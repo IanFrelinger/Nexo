@@ -1,6 +1,12 @@
 name: Autonomous Release Manager
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/autonomous-release-manager.yml"
+      - "ci/autonomous-release-manager.json"
+      - "scripts/autonomous-release-manager.py"
+      - "scripts/tests/**"
   schedule:
     - cron: "0 5 * * 1"
   workflow_dispatch:
@@ -18,8 +24,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate:
+    name: Validate release manager
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Unit-test coordinator
+        run: python3 -m unittest discover -s scripts/tests -p "test_autonomous_release_manager.py" -v
+
+      - name: Validate immutable audit plan
+        run: python3 scripts/autonomous-release-manager.py --validate-only
+
   audit:
     name: Six-lane release audit
+    needs: validate
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
@@ -34,12 +56,6 @@ jobs:
           dotnet-version: |
             10.0.x
             8.0.x
-
-      - name: Unit-test release manager
-        run: python3 -m unittest discover -s scripts/tests -p "test_autonomous_release_manager.py" -v
-
-      - name: Validate immutable audit plan
-        run: python3 scripts/autonomous-release-manager.py --validate-only
 
       - name: Run release audit sub-agents
         id: audit

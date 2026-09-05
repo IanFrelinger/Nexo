@@ -53,8 +53,8 @@ Counts by trigger class (58 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 15 | 3 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`), 11 path-filtered (including `products-gate`), 1 label-driven (`release-staging-on-label`) |
-| Push- and/or schedule-driven, plus `workflow_dispatch` | 21 | Post-merge / scheduled signal; never blocks a PR. Includes the weekly Autonomous Release Manager. |
+| Runs on `pull_request` | 17 | 3 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`), 13 path-filtered (including `products-gate` and Release Manager validation), 1 label-driven (`release-staging-on-label`) |
+| Push- and/or schedule-driven, plus `workflow_dispatch` | 19 | Post-merge / scheduled signal; never blocks a PR. |
 | `workflow_dispatch` only | 17 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
@@ -79,6 +79,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `release-staging-on-label.yml` | Release staging on label / `dispatch-staging-release` | `types: [labeled]` only | — |
 | `uat-gate.yml` | UAT / `uat`, `uat cross-platform` | **every PR** (no paths — deliberate, see file header) | push `master`, dispatch |
 | `products-gate.yml` | products-gate / `product scaffolds` | paths: `products/**`, distributed contracts, deployment-profile sources, `ci/test-ownership.tsv` | push `master`/`main`/`cursor/**`, dispatch — **advisory**; runs `products/Ashlar.Products.sln` plus `DistributedContractTests`. Does **not** run the dependency-boundary script (that is `dependency-boundary.yml`). |
+| `autonomous-release-manager.yml` | Autonomous Release Manager / `Validate release manager` | paths: coordinator, plan, tests, workflow | weekly schedule + dispatch run the full six-lane audit; PRs run only unit tests and immutable-plan validation |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` | dispatch |
 
 ### Push-only (path-filtered) workflows
@@ -117,7 +118,7 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 
 | Workflow file | Trigger |
 | --- | --- |
-| `autonomous-release-manager.yml` | `schedule` Mon 05:00 UTC + dispatch; six isolated, mandatory audit lanes; report uploaded on READY or BLOCKED |
+| `autonomous-release-manager.yml` | path-filtered PR validation + `schedule` Mon 05:00 UTC + dispatch; six isolated, mandatory audit lanes run only on schedule/dispatch; report uploaded on READY or BLOCKED |
 | `mesh-lab-stress-gate.yml` | dispatch only (schedule removed 2026-08-16) |
 | `mesh-lab-tls-gate.yml` | `schedule` Tue 07:00 UTC + dispatch |
 | `release.yml` | push tags `v*.*.*` + dispatch |

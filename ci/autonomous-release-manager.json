@@ -85,6 +85,7 @@
       "objective": "Run trust, authentication, supply-chain, and zero-egress proof. A scan failure, vulnerable dependency, or skipped air-gapped container proof blocks release.",
       "required": true,
       "timeoutSeconds": 7200,
+      "exclusiveResources": ["docker"],
       "steps": [
         {
           "name": "security-gate-full",
@@ -186,6 +187,7 @@
       "objective": "Prove the non-Docker full-stack gate, both production-shaped Compose lanes, and disaster recovery. A missing engine is a blocker for a production release.",
       "required": true,
       "timeoutSeconds": 10800,
+      "exclusiveResources": ["docker"],
       "steps": [
         {
           "name": "full-stack-no-docker",

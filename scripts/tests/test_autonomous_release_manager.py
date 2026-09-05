@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import concurrent.futures
 import importlib.util
 import json
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -89,6 +92,13 @@ class PlanValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(arm.PlanError, "inline shell code"):
                 arm.load_plan(self.write_plan(Path(temp), document))
 
+    def test_parallelism_cannot_exceed_lane_count(self) -> None:
+        document = plan_document()
+        document["maxParallel"] = 7
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(arm.PlanError, "cannot exceed 6"):
+                arm.load_plan(self.write_plan(Path(temp), document))
+
 
 class ExecutionTests(unittest.TestCase):
     def test_lane_collects_all_steps_and_fails_on_error_and_timeout(self) -> None:
@@ -98,6 +108,7 @@ class ExecutionTests(unittest.TestCase):
             objective="Exercise process outcomes.",
             required=True,
             timeout_seconds=10,
+            exclusive_resources=(),
             steps=(
                 arm.StepSpec(
                     "pass",
@@ -170,6 +181,45 @@ class ExecutionTests(unittest.TestCase):
 
             self.assertEqual("blocked", verdict)
             self.assertIn("**BLOCKED**", markdown.read_text(encoding="utf-8"))
+
+    def test_lanes_with_same_host_resource_are_serialized(self) -> None:
+        def lane(lane_id: str) -> object:
+            return arm.LaneSpec(
+                lane_id=lane_id,
+                title=lane_id,
+                objective="Exercise exclusive resource lock.",
+                required=True,
+                timeout_seconds=5,
+                exclusive_resources=("docker",),
+                steps=(
+                    arm.StepSpec(
+                        "sleep",
+                        (sys.executable, "-c", "import time; time.sleep(0.25)"),
+                        2,
+                        {},
+                        ".",
+                    ),
+                ),
+            )
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            context = {"version": "0.2.0", "sha": "a" * 40, "workspace": str(root)}
+            locks = {"docker": threading.Lock()}
+            started = time.monotonic()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                results = list(
+                    executor.map(
+                        lambda spec: arm.run_lane_with_resources(
+                            spec, root, context, root / "output", locks
+                        ),
+                        [lane("security"), lane("operations")],
+                    )
+                )
+            elapsed = time.monotonic() - started
+
+        self.assertTrue(all(result.status == "passed" for result in results))
+        self.assertGreaterEqual(elapsed, 0.45)
 
 
 class RepositoryStateTests(unittest.TestCase):

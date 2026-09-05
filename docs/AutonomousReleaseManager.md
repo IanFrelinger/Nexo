@@ -30,7 +30,10 @@ canonical set, so editing the plan cannot quietly remove or make one optional.
 Lanes run in detached git worktrees at the same SHA, at most two at once. That
 is not just an optimization: pack, restore, and coverage commands mutate build
 outputs, so parallel audits in one checkout can manufacture false failures or
-false passes.
+false passes. Lanes that share a host-global resource can also declare an
+exclusive resource lock; the default security and operations lanes both lock
+`docker`, so Compose/container tests never collide even while unrelated lanes
+continue.
 
 Within a lane, every step runs even after an earlier failure so the report
 collects the full blocker set. A non-zero exit, timeout, missing executable,
