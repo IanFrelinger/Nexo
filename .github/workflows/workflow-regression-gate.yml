@@ -1,9 +1,28 @@
-# DORMANT: manual-only, last dispatched 2026-06-14 (green). No automatic trigger can fire it.
-# Kept as the only end-to-end exercise of `ashlar workflow baseline promote|report|gate`.
-# 2026-08-16, PR ci/workflow-pruning.
+# Path-filtered PR/push plus dispatch. Last green dispatch 2026-06-14; now the
+# automatic lane for `ashlar workflow baseline promote|report|gate`.
 name: Workflow Regression Gate
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/workflow-regression-gate.yml'
+      - 'scripts/workflow-regression-gate.sh'
+      - 'scripts/lib/assert-test-local-floor.py'
+      - 'application/src/Ashlar.CLI/**'
+      - 'application/src/Ashlar.Tests.CLI/**'
+      - 'src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj'
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - '.github/workflows/workflow-regression-gate.yml'
+      - 'scripts/workflow-regression-gate.sh'
+      - 'scripts/lib/assert-test-local-floor.py'
+      - 'application/src/Ashlar.CLI/**'
+      - 'application/src/Ashlar.Tests.CLI/**'
+      - 'src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj'
   workflow_dispatch:
 
 jobs:
@@ -15,72 +34,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup .NET 8
+      - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: |
+            10.0.x
+            8.0.x
 
-      - name: Build CLI tests
+      - name: Run workflow regression gate
         shell: bash
-        run: |
-          set -euo pipefail
-          dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet build application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj
-
-      - name: Run workflow command test suite
-        shell: bash
-        run: |
-          set -euo pipefail
-          dotnet run --project application/src/Ashlar.CLI -- test local --filter WorkflowCommandTests --format-json
-
-      - name: Seed workflow history and baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p .ashlar/runtime .ashlar/workflow
-          cat > .ashlar/runtime/workflow_lab_history.jsonl <<'JSONL'
-          {"runId":"baseline-run","gitSha":"baseline123","specHash":"spec-baseline","providerSnapshot":"offline","scenarioId":"req::comp::profile::iter-1","requestId":"req","compositionId":"comp","modelProfileId":"profile","iteration":1,"startedAtUtc":"2026-01-01T00:00:00Z","elapsedMs":120,"success":true,"agentCount":1,"conflictCount":0,"escalationCount":0,"score":100.0,"summary":"baseline","skipped":false,"warmup":false,"failureCategory":"none","benchmarkSet":"workflow-lab"}
-          {"runId":"candidate-run","gitSha":"candidate123","specHash":"spec-candidate","providerSnapshot":"offline","scenarioId":"req::comp::profile::iter-1","requestId":"req","compositionId":"comp","modelProfileId":"profile","iteration":1,"startedAtUtc":"2026-01-02T00:00:00Z","elapsedMs":130,"success":true,"agentCount":1,"conflictCount":0,"escalationCount":0,"score":99.0,"summary":"candidate","skipped":false,"warmup":false,"failureCategory":"none","benchmarkSet":"workflow-lab"}
-          JSONL
-
-          cat > .ashlar/workflow/workflow_gate.policy.json <<'JSON'
-          {
-            "benchmarkSet": "workflow-lab",
-            "minSuccessRateDelta": -0.10,
-            "maxP95LatencyRegressionMs": 300,
-            "maxAverageLatencyRegressionMs": 200,
-            "minAverageScoreDelta": -10.0,
-            "maxRegressedScenarios": 2
-          }
-          JSON
-
-          dotnet run --project application/src/Ashlar.CLI -- workflow baseline promote \
-            --repo-root . \
-            --benchmark-set workflow-lab \
-            --run-id baseline-run \
-            --policy-file .ashlar/workflow/workflow_gate.policy.json \
-            --json
-
-      - name: Run workflow report compare
-        shell: bash
-        run: |
-          set -euo pipefail
-          dotnet run --project application/src/Ashlar.CLI -- workflow report \
-            --repo-root . \
-            --benchmark-set workflow-lab \
-            --run-id candidate-run \
-            --baseline-run-id baseline-run \
-            --output "${RUNNER_TEMP}/workflow_report.md"
-
-      - name: Run workflow gate with active baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          dotnet run --project application/src/Ashlar.CLI -- workflow gate \
-            --repo-root . \
-            --benchmark-set workflow-lab \
-            --run-id candidate-run \
-            --policy-file .ashlar/workflow/workflow_gate.policy.json
+        run: bash scripts/workflow-regression-gate.sh
 
       - name: Upload workflow gate artifacts
         if: always()
@@ -90,5 +53,4 @@ jobs:
           path: |
             .ashlar/runtime/workflow_lab_history.jsonl
             .ashlar/runtime/workflow_lab_baselines.json
-            ${{ runner.temp }}/workflow_report.md
           retention-days: 14

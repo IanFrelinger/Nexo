@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 89");
+        text.Should().Contain("--min-tests 91");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1069,6 +1069,29 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("scripts/install/bruteforce-matrix.sh");
         text.Should().Contain("scripts/setup/**");
         text.Should().Contain("scripts/install/**");
+    }
+
+    [Fact]
+    public void WorkflowRegressionGate_FailsClosedOnEmptyTestLocal()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/workflow-regression-gate.sh"));
+        text.Should().Contain("assert-test-local-floor.py");
+        text.Should().Contain("WorkflowCommandTests");
+        text.Should().Contain("workflow-regression-gate: FAIL");
+        text.Should().Contain("workflow-regression-gate: PASS");
+        text.Should().Contain("workflow baseline promote");
+    }
+
+    [Fact]
+    public void WorkflowRegressionGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/workflow-regression-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("scripts/workflow-regression-gate.sh");
+        text.Should().Contain("scripts/lib/assert-test-local-floor.py");
+        text.Should().Contain("application/src/Ashlar.CLI/**");
     }
 
     [Fact]

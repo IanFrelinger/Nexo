@@ -53,9 +53,9 @@ Counts by trigger class (59 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 33 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 28 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness/ship-gate, `ingress-unit-gate`, `onboarding-docs-guard`, `pack-hosting-graph-alignment`, `onboarding-quickstart-gate`, `environment-setup-gate-v1`, `optimize-agent-cluster-gate`, `runtime-release-gate`, `installer-bruteforce-gate`, `rc-gate`, `ops-gate`), 1 label-driven (`release-staging-on-label`) |
+| Runs on `pull_request` | 34 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 29 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness/ship-gate, `ingress-unit-gate`, `onboarding-docs-guard`, `pack-hosting-graph-alignment`, `onboarding-quickstart-gate`, `environment-setup-gate-v1`, `optimize-agent-cluster-gate`, `runtime-release-gate`, `installer-bruteforce-gate`, `rc-gate`, `ops-gate`, `workflow-regression-gate`), 1 label-driven (`release-staging-on-label`) |
 | Push- and/or schedule-driven, plus `workflow_dispatch` | 8 | Post-merge / scheduled signal; never blocks a PR. |
-| `workflow_dispatch` only | 13 | Manual lanes (mesh labs, multi-env Docker suites, perf, release plumbing) |
+| `workflow_dispatch` only | 12 | Manual lanes (mesh labs, multi-env Docker suites, perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
 
@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 87 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 91 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … — PR runs counted Tier B CLI (200) and fails closed if `doctor --json` is non-zero | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -98,6 +98,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `installer-bruteforce-gate.yml` | Installer Bruteforce Gate / `bruteforce-matrix` | paths: `scripts/setup/**`, `scripts/install/**`, CLI — host bash syntax/help/fail cases plus CLI restore/build (12 cases; container bootstrap is `--dry-run`) | push `master`/`main`/`cursor/**`, dispatch |
 | `rc-gate.yml` | RC Gate / `rc-gate` | paths: RC docs + `docs/exceptions.yaml` + `scripts/rc-gate*.sh` — PR/push/schedule produce `ci release-bundle` and Security D supply-chain evidence, then fail-close Tier C (missing/High/Critical vuln report) and Tier E; A/B/D stay dispatch-only (D needs authenticated `gh` and refuses the old advisory skip) | monthly schedule, push `master`/`main`, dispatch |
 | `ops-gate.yml` | Ops Gate / `ops-gate` | paths: dogfood tests, A/B/C/E scripts, `scripts/oh-shit-demo.sh`, counted wrapper — PR runs counted A (floor 6), B (floor 4), C closed-loop (floor 1), and quick operator demo; D needs Docker plus proof flags | dispatch |
+| `workflow-regression-gate.yml` | Workflow Regression Gate / `workflow-regression` | paths: CLI + CLI tests + gate script — `ashlar test local --filter WorkflowCommandTests` fail-closes when TotalTests is 0, then baseline promote/report/gate | push `master`/`main`/`cursor/**`, dispatch |
 
 ### Push-only (path-filtered) workflows
 
@@ -115,7 +116,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 
 ### Manual-only workflows (`workflow_dispatch`)
 
-`composition-mesh-gate`, `container-image-publish`, `cross-platform-tests`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (15).
+`composition-mesh-gate`, `container-image-publish`, `cross-platform-tests`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate` (14).
 
 Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not run on PRs; run them with `gh workflow run "<name>" --ref <branch>`.
 
@@ -166,7 +167,7 @@ Every workflow file was classified from `gh run list --workflow <file> --limit 1
 | `runtime-release-promotion.yml` | 11 of last 14 red, last run 2026-05-11; kept because `scripts/rc-gate-tier-d.sh` lists it as an optional RC signal |
 | `test-air-gapped-no-network.yml` | never green (11/11 red since 2026-03-08; last failure is MSB1011 from the `ashlar test multi-env` step); cited by hardening plans, so kept as an unproven claim |
 | `test-trust-multi-env.yml` | dead by the 60-day rule (last dispatch 2026-05-23, mostly green); cited by `KernelHardeningPlan-v1.md` C1 |
-| `workflow-regression-gate.yml` | dead by the 60-day rule (last dispatch 2026-06-14, green); only end-to-end run of `ashlar workflow baseline|report|gate` |
+| `workflow-regression-gate.yml` | path-filtered PR/push as of 2026-09-05; only end-to-end run of `ashlar workflow baseline|report|gate`; `test local` fail-closes when TotalTests is 0 |
 
 **Kept as-is although rarely run** (all have a live path/manual trigger and a Makefile/script/runbook that names them): `compat-gate`, `dr-gate` (path-triggered on their scripts, one green run each), `waterproofing-gate`, `perf-certification`, `installer-bruteforce-gate` (dispatched by `scripts/rc-gate-tier-d.sh`), `nuget-consumer-verify` (post-publish check, `docs/NuGetConsumerVerify.md`), `setup-smoke-suite` (`docs/CiFirstHardwareSecond.md`), `devlog-ghost-release`, `mesh-lab-tls-gate` (weekly, latest run green).
 

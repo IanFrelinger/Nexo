@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 89", text)
+        self.assertIn("--min-tests 91", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -501,6 +501,50 @@ class InstallerBruteforceGateWorkflowTests(unittest.TestCase):
         self.assertIn("scripts/install/bruteforce-matrix.sh", text)
         self.assertIn("scripts/setup/**", text)
         self.assertIn("scripts/install/**", text)
+
+
+class WorkflowRegressionGateFailClosedTests(unittest.TestCase):
+    def test_workflow_regression_gate_fails_closed_on_empty_test_local(self) -> None:
+        text = (ROOT / "scripts" / "workflow-regression-gate.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("assert-test-local-floor.py", text)
+        self.assertIn("WorkflowCommandTests", text)
+        self.assertIn("workflow-regression-gate: FAIL", text)
+        self.assertIn("workflow baseline promote", text)
+
+    def test_workflow_regression_gate_workflow_runs_on_pull_request(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "workflow-regression-gate.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/workflow-regression-gate.sh", text)
+        self.assertIn("scripts/lib/assert-test-local-floor.py", text)
+        self.assertIn("application/src/Ashlar.CLI/**", text)
+
+    def test_assert_test_local_floor_rejects_zero_and_accepts_positive(self) -> None:
+        helper = ROOT / "scripts" / "lib" / "assert-test-local-floor.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            empty = Path(tmp) / "empty.json"
+            empty.write_text('{"TotalTests":0,"PassedTests":0,"FailedTests":0}\n', encoding="utf-8")
+            zero = subprocess.run(
+                [sys.executable, str(helper), str(empty)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, zero.returncode, zero.stderr)
+            self.assertIn("matched 0 tests", zero.stderr)
+            ok = Path(tmp) / "ok.json"
+            ok.write_text('{"TotalTests":1,"PassedTests":1,"FailedTests":0}\n', encoding="utf-8")
+            passed = subprocess.run(
+                [sys.executable, str(helper), str(ok)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(0, passed.returncode, passed.stderr)
+        self.assertIn("TotalTests=1", passed.stdout)
 
 
 class RcGateWorkflowTests(unittest.TestCase):

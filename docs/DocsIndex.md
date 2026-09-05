@@ -71,7 +71,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `.github/workflows/runtime-release-promotion.yml` — runtime release promotion workflow (manual-only / dormant).
 - `.github/workflows/installer-bruteforce-gate.yml` — installer robustness gate.
 - `.github/workflows/perf-certification.yml` — performance certification workflow.
-- `.github/workflows/workflow-regression-gate.yml` — workflow regression gate (manual-only / dormant).
+- `.github/workflows/workflow-regression-gate.yml` — workflow regression gate (path-filtered PR/push; `ashlar test local` fail-closes when TotalTests is 0).
 - `.github/workflows/test-trust-multi-env.yml` — trust tests across multiple Docker environments (manual-only / dormant).
 - `.github/workflows/test-air-gapped-no-network.yml` — air-gapped validation with zero network egress (manual-only / dormant; never green — see the file header).
 - `docs/CiSecrets.md` — every secret / repository variable a workflow reads and what happens on a fork without it.
