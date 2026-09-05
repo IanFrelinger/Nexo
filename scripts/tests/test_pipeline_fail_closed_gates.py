@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 86", text)
+        self.assertIn("--min-tests 87", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1398,6 +1398,68 @@ class SecurityTierEFailClosedTests(unittest.TestCase):
             )
         self.assertNotEqual(0, run.returncode)
         self.assertIn("requires a working Docker daemon", run.stdout)
+
+
+class PerfBaselineFailClosedTests(unittest.TestCase):
+    def _run(self, report_dir: Path, extra_env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env["PERF_GATE_REPORT_DIR"] = str(report_dir)
+        env.pop("PERF_GATE_STRICT_BASELINE", None)
+        env.pop("PERF_GATE_UPDATE_BASELINE", None)
+        if extra_env:
+            env.update(extra_env)
+        return subprocess.run(
+            ["bash", str(ROOT / "scripts" / "perf-gate-baseline.sh")],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+
+    def _write_throughput(self, report_dir: Path, total_ms: int) -> None:
+        report_dir.mkdir(parents=True, exist_ok=True)
+        (report_dir / "pipeline-throughput.json").write_text(
+            json.dumps({"totalMs": total_ms, "avgMsPerRun": total_ms}) + "\n",
+            encoding="utf-8",
+        )
+
+    def test_perf_baseline_script_fails_closed_on_regression(self) -> None:
+        text = (ROOT / "scripts" / "perf-gate-baseline.sh").read_text(encoding="utf-8")
+        self.assertIn("perf regression:", text)
+        self.assertIn("perf-gate-baseline: FAIL", text)
+        self.assertNotIn("PERF_GATE_STRICT_BASELINE", text)
+        self.assertNotIn("perf regression (advisory)", text)
+        plan = (ROOT / "docs" / "production-readiness" / "PerfHardeningPlan-v1.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("PERF_GATE_STRICT_BASELINE", plan)
+
+    def test_perf_baseline_initializes_then_fails_on_regression(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            report_dir = Path(tmp)
+            self._write_throughput(report_dir, 100)
+            init = self._run(report_dir, extra_env={"PERF_GATE_INIT_BASELINE": "1"})
+            self.assertEqual(0, init.returncode)
+            self.assertIn("perf baseline: initialized", init.stdout)
+            self.assertIn("perf-gate-baseline: PASS", init.stdout)
+            self._write_throughput(report_dir, 200)
+            regress = self._run(report_dir)
+        self.assertEqual(1, regress.returncode)
+        self.assertIn("perf regression:", regress.stdout)
+        self.assertIn("perf-gate-baseline: FAIL", regress.stdout)
+        self.assertNotIn("perf-gate-baseline: PASS", regress.stdout)
+
+    def test_perf_baseline_fails_when_missing_and_init_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            report_dir = Path(tmp)
+            self._write_throughput(report_dir, 100)
+            run = self._run(report_dir, extra_env={"PERF_GATE_INIT_BASELINE": "0"})
+        self.assertEqual(1, run.returncode)
+        self.assertIn("perf baseline: missing", run.stdout)
+        self.assertIn("perf-gate-baseline: FAIL", run.stdout)
+        self.assertNotIn("perf-gate-baseline: PASS", run.stdout)
 
 
 if __name__ == "__main__":

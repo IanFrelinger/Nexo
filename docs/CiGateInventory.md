@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 86 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 87 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … — PR runs counted Tier B CLI (200) and fails closed if `doctor --json` is non-zero | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -82,7 +82,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `composition-mesh-gate.yml` | Composition Mesh Gate / `composition-mesh-gate` | **every PR** (no paths) — Tier A–C via `make composition-mesh-gate` | dispatch chooses a single tier |
 | `compat-gate.yml` | compat-gate | paths: Fleet checkpoint tests, pipeline/composition/kernel-phase tests, compat scripts — counted Fleet migrate 1 + LiteDB persist 1 + composition 4; Tier C configuration 2 + kernel-phase 4 | push `master`, dispatch |
 | `dr-gate.yml` | dr-gate | paths: LiteDB user-knowledge store + DR scripts — counted knowledge-store floor 8; Tier C mesh-lab restart or counted host LiteDB (`LiteDbMeshDirectorPersistenceTests` floor 2) | push `master`, dispatch |
-| `perf-gate.yml` | perf-gate | paths: Orchestration/BackgroundAgents tests + perf scripts — PR runs counted Tier A only (3 + 9); B–D + baseline stay push/dispatch | push `master`, dispatch |
+| `perf-gate.yml` | perf-gate | paths: Orchestration/BackgroundAgents tests + perf scripts — PR runs counted Tier A only (3 + 9); B–D + baseline stay push/dispatch; baseline fails closed on regression or a missing file when init is off | push `master`, dispatch |
 | `products-gate.yml` | products-gate / `product scaffolds` | paths: `products/**`, distributed contracts, deployment-profile sources, `ci/test-ownership.tsv` | push `master`/`main`/`cursor/**`, dispatch — **advisory**; runs `products/Ashlar.Products.sln` plus `DistributedContractTests`. Does **not** run the dependency-boundary script (that is `dependency-boundary.yml`). |
 | `autonomous-release-manager.yml` | Autonomous Release Manager / `Validate release manager` | paths: coordinator, plan, tests, workflow | weekly schedule + dispatch run the full six-lane audit; PRs run only unit tests and immutable-plan validation |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` — 3-OS loop plus e2e-loop collapse floor 143 (Linux) / 137 (otherwise) | dispatch |

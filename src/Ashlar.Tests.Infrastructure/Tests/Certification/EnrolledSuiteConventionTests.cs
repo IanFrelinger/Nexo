@@ -150,6 +150,19 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void PerfTierBaseline_FailsClosedOnRegression()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/perf-gate-baseline.sh"));
+        text.Should().Contain("perf regression:");
+        text.Should().Contain("perf-gate-baseline: FAIL");
+        text.Should().Contain("perf-gate-baseline: PASS");
+        text.Should().Contain("PERF_GATE_REPORT_DIR");
+        text.Should().NotContain("PERF_GATE_STRICT_BASELINE");
+        text.Should().NotContain("perf regression (advisory)");
+    }
+
+    [Fact]
     public void CertGate_MainFilterHasCollapseFloor()
     {
         var config = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
@@ -176,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 86");
+        text.Should().Contain("--min-tests 87");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }

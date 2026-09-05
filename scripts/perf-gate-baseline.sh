@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # Record/compare perf metrics under .ashlar/perf/baseline.json
+# A regression vs the committed-or-initialized baseline is a FAIL.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-REPORT_DIR=".ashlar/perf"
-BASELINE="$REPORT_DIR/baseline.json"
-LAST="$REPORT_DIR/last-run.json"
+REPORT_DIR="${PERF_GATE_REPORT_DIR:-.ashlar/perf}"
 mkdir -p "$REPORT_DIR"
+export PERF_GATE_REPORT_DIR="$REPORT_DIR"
 
 python3 - <<'PY'
-import json, os, glob
+import json, os, glob, sys
 from datetime import datetime, timezone
 
-report_dir = ".ashlar/perf"
+report_dir = os.environ.get("PERF_GATE_REPORT_DIR", ".ashlar/perf")
+os.makedirs(report_dir, exist_ok=True)
 metrics = {"timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "metrics": {}}
 
 for name in ("pipeline-throughput.json", "cold-start.json", "soak.json"):
@@ -54,9 +55,11 @@ if not os.path.isfile(baseline_path):
         with open(baseline_path, "w", encoding="utf-8") as fh:
             json.dump(metrics, fh, indent=2)
         print(f"perf baseline: initialized {baseline_path}")
-    else:
-        print("perf baseline: no baseline.json (set PERF_GATE_UPDATE_BASELINE=1)")
-    raise SystemExit(0)
+        print("perf-gate-baseline: PASS")
+        raise SystemExit(0)
+    print(f"error: perf baseline: missing {baseline_path}", file=sys.stderr)
+    print("perf-gate-baseline: FAIL", file=sys.stderr)
+    raise SystemExit(1)
 
 with open(baseline_path, encoding="utf-8") as fh:
     baseline = json.load(fh)
@@ -74,13 +77,11 @@ for key, value in metrics["metrics"].items():
     if delta_pct > regression_pct:
         failures.append(f"{key}: {value} vs baseline {base} (+{delta_pct:.1f}%)")
 
-if failures and os.environ.get("PERF_GATE_STRICT_BASELINE", "0") == "1":
-    for f in failures:
-        print(f"perf regression: {f}")
+if failures:
+    for item in failures:
+        print(f"perf regression: {item}", file=sys.stderr)
+    print("perf-gate-baseline: FAIL", file=sys.stderr)
     raise SystemExit(1)
-
-for f in failures:
-    print(f"::warning::perf regression (advisory): {f}")
 
 if update:
     with open(baseline_path, "w", encoding="utf-8") as fh:
