@@ -26,6 +26,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestSelfContextInvalidLookbackExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             await TestChangelogInvalidSinceExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             await TestObserveInvalidDurationExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
+            await TestTrustAuditInvalidSinceExitsNonZeroWithoutQueryingLogAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -322,6 +323,31 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             Console.SetError(ConsoleCapture.Error);
             if (Directory.Exists(tempRoot))
                 Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    private async Task TestTrustAuditInvalidSinceExitsNonZeroWithoutQueryingLogAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var auditLog = new Ashlar.BackgroundAgents.Trust.DataDecisionAuditLog();
+            var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<TrustCommand>.Instance;
+            var command = new TrustCommand(auditLog, null, null, logger);
+            var exitCode = await command.AuditAsync(10, "xyz", null, null, false, false, false).ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "trust audit --since xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --since", StringComparison.Ordinal),
+                "An invalid --since must be refused legibly.");
+            AssertTrue(!output.Contains("Data Decision Audit", StringComparison.Ordinal),
+                "An invalid --since must be refused before listing audit entries.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 }

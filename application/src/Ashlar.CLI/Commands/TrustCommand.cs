@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Ashlar.Core.Application.Trust.Models;
 using Ashlar.Core.Application.Trust.Ports;
@@ -34,6 +35,24 @@ public class TrustCommand
     {
         try
         {
+            if (!TryParseTimeFilter(since, out var sinceDt))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Invalid --since\"}");
+                else
+                    Console.Error.WriteLine("Invalid --since. Use a duration such as 1h or 30m, or an ISO date.");
+                return Task.FromResult(1);
+            }
+
+            if (!TryParseTimeFilter(until, out var untilDt))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Invalid --until\"}");
+                else
+                    Console.Error.WriteLine("Invalid --until. Use a duration such as 1h or 30m, or an ISO date.");
+                return Task.FromResult(1);
+            }
+
             if (_auditLog == null)
             {
                 if (formatJson)
@@ -42,9 +61,6 @@ public class TrustCommand
                     Console.Error.WriteLine("Trust audit log not registered.");
                 return Task.FromResult(1);
             }
-
-            var sinceDt = ParseSince(since);
-            var untilDt = ParseUntil(until);
 
             if (formatJson)
             {
@@ -371,26 +387,38 @@ public class TrustCommand
         };
     }
 
-    private static DateTimeOffset? ParseSince(string? since)
+    private static bool TryParseTimeFilter(string? text, out DateTimeOffset? value)
     {
-        if (string.IsNullOrWhiteSpace(since))
-            return null;
-        if (TimeSpan.TryParse(since, out var ts))
-            return DateTimeOffset.UtcNow - ts;
-        if (DateTimeOffset.TryParse(since, out var dt))
-            return dt;
-        return null;
-    }
+        value = null;
+        if (string.IsNullOrWhiteSpace(text))
+            return true;
 
-    private static DateTimeOffset? ParseUntil(string? until)
-    {
-        if (string.IsNullOrWhiteSpace(until))
-            return null;
-        if (TimeSpan.TryParse(until, out var ts))
-            return DateTimeOffset.UtcNow - ts;
-        if (DateTimeOffset.TryParse(until, out var dt))
-            return dt;
-        return null;
+        var s = text.Trim();
+        if (s.Length >= 2)
+        {
+            var unit = char.ToLowerInvariant(s[^1]);
+            if (unit is 'h' or 'm' or 's' or 'd' && int.TryParse(s[..^1], out var n) && n >= 0)
+            {
+                var span = unit switch
+                {
+                    'h' => TimeSpan.FromHours(n),
+                    'm' => TimeSpan.FromMinutes(n),
+                    's' => TimeSpan.FromSeconds(n),
+                    'd' => TimeSpan.FromDays(n),
+                    _ => TimeSpan.Zero
+                };
+                value = DateTimeOffset.UtcNow - span;
+                return true;
+            }
+        }
+
+        if (DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dt))
+        {
+            value = dt;
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>Creates a new DescribePolicyPackAsync instance.</summary>
