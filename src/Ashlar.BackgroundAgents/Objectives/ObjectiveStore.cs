@@ -25,6 +25,20 @@ public sealed class ObjectiveStore : IObjectiveStore
     /// <summary>Default path relative to the working directory.</summary>
     public const string DefaultRelativePath = ".ashlar/runtime-studio/objectives";
 
+    /// <summary>Maximum length of an objective id used as a filename.</summary>
+    public const int MaxIdLength = 128;
+
+    /// <summary>Human-readable objective id contract.</summary>
+    public const string IdRequirement =
+        "Use 1-128 ASCII letters, digits, '.', '_' or '-', beginning with a letter or digit; Windows device names are not allowed.";
+
+    private static readonly HashSet<string> WindowsReservedNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    };
+
     /// <summary>
     /// Default cap on how many times the planner can attempt the same objective
     /// before the store auto-blocks it. Sized to allow a handful of transient
@@ -65,6 +79,8 @@ public sealed class ObjectiveStore : IObjectiveStore
             foreach (var file in Directory.EnumerateFiles(dir, "*.md"))
             {
                 var id = System.IO.Path.GetFileNameWithoutExtension(file);
+                if (!IsValidId(id))
+                    throw new InvalidDataException($"Invalid objective filename '{id}.md'. {IdRequirement}");
                 var text = File.ReadAllText(file);
                 result.Add(ObjectiveDocumentParser.Parse(text, id, s));
             }
@@ -224,7 +240,38 @@ public sealed class ObjectiveStore : IObjectiveStore
     private string StatusDir(ObjectiveStatus status) => System.IO.Path.Combine(_root, FolderFor(status));
 
     private string PathFor(string id, ObjectiveStatus status)
-        => System.IO.Path.Combine(StatusDir(status), id + ".md");
+    {
+        if (!IsValidId(id))
+            throw new ArgumentException($"Invalid objective id '{id}'. {IdRequirement}", nameof(id));
+
+        var statusDir = System.IO.Path.GetFullPath(StatusDir(status));
+        var path = System.IO.Path.GetFullPath(System.IO.Path.Combine(statusDir, id + ".md"));
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        var containedPrefix = statusDir.TrimEnd(
+            System.IO.Path.DirectorySeparatorChar,
+            System.IO.Path.AltDirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+        if (!path.StartsWith(containedPrefix, comparison))
+            throw new InvalidOperationException($"Objective path escaped its status directory: '{id}'.");
+        return path;
+    }
+
+    /// <summary>Returns true when an id is safe as a portable objective filename.</summary>
+    public static bool IsValidId(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id) || id.Length > MaxIdLength || !IsAsciiLetterOrDigit(id[0]))
+            return false;
+        if (id[^1] == '.' || id.Any(c => !IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.'))
+            return false;
+        var stem = id.Split('.', 2)[0];
+        return !WindowsReservedNames.Contains(stem);
+    }
+
+    private static bool IsAsciiLetterOrDigit(char value)
+        => value is >= 'a' and <= 'z'
+            or >= 'A' and <= 'Z'
+            or >= '0' and <= '9';
 
     private static string FolderFor(ObjectiveStatus status) => status switch
     {

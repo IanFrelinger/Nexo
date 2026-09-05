@@ -305,7 +305,7 @@ static partial class Program
         }, objShowIdArg, jsonOpt);
         objectivesBgCmd.AddCommand(objShowCmd);
 
-        var objAddIdOpt = new Option<string>("--id", "Stable slug used as the filename") { IsRequired = true };
+        var objAddIdOpt = new Option<string>("--id", "Portable 1-128 character slug used as the filename") { IsRequired = true };
         var objAddTitleOpt = new Option<string>("--title", "One-line human-readable title") { IsRequired = true };
         var objAddPriorityOpt = new Option<int>("--priority", () => 100, "Lower number = higher priority (1 highest)");
         var objAddTagsOpt = new Option<string[]>("--tag", () => Array.Empty<string>(), "Tag (repeatable)") { AllowMultipleArgumentsPerToken = true };

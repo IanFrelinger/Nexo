@@ -36,6 +36,47 @@ public class ObjectiveStoreTests : IDisposable
         Directory.GetFiles(Path.Combine(_tempDir, "pending"), "*.md").Should().HaveCount(1);
     }
 
+    [Theory]
+    [InlineData("../outside")]
+    [InlineData("../../outside")]
+    [InlineData("nested/objective")]
+    [InlineData(@"nested\objective")]
+    [InlineData(".hidden")]
+    [InlineData("name.")]
+    [InlineData("CON")]
+    [InlineData("LPT1.txt")]
+    public void Add_rejects_nonportable_or_traversing_ids(string id)
+    {
+        var act = () => _store.Add(new ObjectiveDocument { Id = id, Title = "unsafe" });
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*Invalid objective id*");
+    }
+
+    [Fact]
+    public void Add_rejects_absolute_id_without_writing_outside_store()
+    {
+        var escaped = Path.Combine(Path.GetTempPath(), "ashlar-objective-escape-" + Guid.NewGuid().ToString("N"));
+        var act = () => _store.Add(new ObjectiveDocument { Id = escaped, Title = "unsafe" });
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*Invalid objective id*");
+        File.Exists(escaped + ".md").Should().BeFalse();
+    }
+
+    [Fact]
+    public void List_fails_closed_on_nonportable_objective_filename()
+    {
+        var pending = Path.Combine(_tempDir, "pending");
+        Directory.CreateDirectory(pending);
+        File.WriteAllText(Path.Combine(pending, "bad name.md"), "tampered");
+
+        var act = () => _store.List(ObjectiveStatus.Pending);
+
+        act.Should().Throw<InvalidDataException>()
+            .WithMessage("*Invalid objective filename*");
+    }
+
     [Fact]
     public void List_orders_by_priority_then_creation()
     {

@@ -56,6 +56,30 @@ public class ObjectivesBackgroundAgentCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Add_rejects_absolute_and_traversing_ids_without_writing_outside_store()
+    {
+        var escaped = Path.Combine(Path.GetTempPath(), "ashlar-objective-cli-escape-" + Guid.NewGuid().ToString("N"));
+        var cmd = NewCmd();
+        foreach (var id in new[] { escaped, "../../escaped", "nested/objective", "CON" })
+        {
+            var (rc, _, stderr) = await CaptureWithStderrAsync(() => cmd.AddAsync(
+                id: id,
+                title: "unsafe",
+                priority: 100,
+                tags: Array.Empty<string>(),
+                body: null,
+                bodyFile: null,
+                formatJson: false,
+                stdout: TestStdout!,
+                stderr: TestStderr!));
+            rc.Should().Be(1);
+            stderr.Should().Contain("Invalid --id");
+        }
+
+        File.Exists(escaped + ".md").Should().BeFalse();
+    }
+
+    [Fact]
     public async Task List_with_invalid_status_returns_2_and_lists_allowed()
     {
         var cmd = NewCmd();

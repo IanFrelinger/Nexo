@@ -198,6 +198,10 @@ public class ObjectivesBackgroundAgentCommand
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("--title is required", nameof(title));
 
+            var normalizedId = id.Trim();
+            if (!ObjectiveStore.IsValidId(normalizedId))
+                throw new ArgumentException($"Invalid --id. {ObjectiveStore.IdRequirement}", nameof(id));
+
             var resolvedBody = body ?? string.Empty;
             if (string.IsNullOrEmpty(resolvedBody) && !string.IsNullOrWhiteSpace(bodyFile))
             {
@@ -209,7 +213,7 @@ public class ObjectivesBackgroundAgentCommand
             var now = DateTimeOffset.UtcNow;
             var doc = new ObjectiveDocument
             {
-                Id = id.Trim(),
+                Id = normalizedId,
                 Title = title.Trim(),
                 Priority = priority,
                 Tags = tags?.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()).ToArray()
