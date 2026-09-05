@@ -37,6 +37,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Packaging-lane consumer isolation** — `verify-external-product-shape.sh` writes a consumer `Directory.Build.props` so a work tree under the repo cannot inherit versionless `System.Text.*` PackageReferences (NU1015).
 - **Security Tier E fail-closed** — `SECURITY_GATE_AIRGAPPED_CONTAINER=1` requires a working Docker daemon instead of warning-and-passing. Post-publish NuGet consumer verify pins Actions to commit SHAs.
 - **Release preflight integrity** — Bash and PowerShell preflights now require the requested version to match root `VERSION`; autonomous audit mode refuses external workflow dispatch.
+- **Ship Tier C uses the canonical `VERSION` file.** Fail-closed preflight rejects dummy prereleases such as `0.0.0-ship-gate-local`, so `ship-gate-tier-c` no longer defaults to one.
 - **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
 - **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.
 - **Distributed contracts** factories reject undefined enums, malformed digests, non-positive duration, and succeeded evidence without a hash.
