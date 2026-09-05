@@ -12,4 +12,8 @@ trap 'rm -rf "$WORK"' EXIT
 curl --fail --silent --show-error --location "$URL" --output "${WORK}/${ARCHIVE}"
 printf '%s  %s\n' "$EXPECTED_SHA256" "${WORK}/${ARCHIVE}" | sha256sum --check -
 tar -xzf "${WORK}/${ARCHIVE}" -C "$WORK" actionlint
-"${WORK}/actionlint" -color
+# Inline-shell style debt is tracked by the shell lanes. Keep this independent
+# gate focused on workflow syntax, expressions, action inputs and untrusted
+# interpolation; otherwise runner-installed shellcheck makes results vary by
+# image and turns pre-existing style notices into unrelated workflow failures.
+"${WORK}/actionlint" -shellcheck= -color
