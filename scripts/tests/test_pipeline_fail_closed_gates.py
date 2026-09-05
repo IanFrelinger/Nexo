@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 68", text)
+        self.assertIn("--min-tests 69", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -680,6 +680,19 @@ class ShipTierBCountedTests(unittest.TestCase):
         self.assertIn("SHIP_GATE_STRICT_DOCTOR", text)
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'",
+            text,
+        )
+
+    def test_ship_gate_workflow_runs_tier_d_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "ship-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/ship-gate-tier-d.sh", text)
+        self.assertIn("ship-gate-tier-d", text)
+        self.assertIn("github.event_name != 'workflow_dispatch'", text)
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'd'",
             text,
         )
 

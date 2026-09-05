@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/ship-gate.yml"
       - "scripts/ship-gate-tier-b.sh"
+      - "scripts/ship-gate-tier-d.sh"
       - "scripts/run-dotnet-test-counted.py"
       - "src/Ashlar.Tests.Infrastructure/Tests/BaseFramework/**"
   workflow_dispatch:
@@ -41,7 +42,7 @@ jobs:
           ASHLAR_ALLOW_MOCK: "1"
 
       # Same `!=` form as Application / Kernel B so pull_request runs the
-      # counted BaseFrameworkSmoke slice. A and C–D stay dispatch-only
+      # counted BaseFrameworkSmoke slice. A and C stay dispatch-only
       # (A is also covered by production-readiness-gate-v1 on PRs).
       - name: Tier B (ProdStyle + smoke + doctor)
         if: github.event_name != 'workflow_dispatch' || inputs.tier == 'b' || inputs.tier == 'full'
@@ -54,8 +55,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
         run: make ship-gate-tier-c
 
+      # Same `!=` form as Tier B so pull_request actually runs the release
+      # bundle. D used to be dispatch-only after the bundle became mandatory.
       - name: Tier D (release bundle)
-        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'd' || inputs.tier == 'full')
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'd' || inputs.tier == 'full'
         run: make ship-gate-tier-d
         env:
           ASHLAR_ALLOW_MOCK: "1"

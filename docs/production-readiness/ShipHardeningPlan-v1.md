@@ -2,7 +2,7 @@
 
 End-to-end **ship readiness** after [Composition & mesh readiness v1](CompositionMeshReadiness-v1.md): production gate CLI flows, CI verify, release preflight, and release bundle.
 
-**Automation:** `make ship-gate-full`
+**Automation:** `make ship-gate-full`. PRs that touch BaseFramework smoke tests or `scripts/ship-gate-tier-b.sh` / `scripts/ship-gate-tier-d.sh` run B and D. A/C stay dispatch-only.
 
 ## Prerequisites
 
