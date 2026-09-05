@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.WebSearch;
+using Ashlar.CLI.Commands.Runtime;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
 
@@ -79,6 +80,15 @@ public class WebSearchCommand
     {
         try
         {
+            if (!RuntimeCommandUtilities.TryValidatePositiveCount(maxResults))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --max-results" }));
+                else
+                    Console.Error.WriteLine(RuntimeCommandUtilities.InvalidMaxResultsMessage);
+                return 1;
+            }
+
             if (_provider == null)
             {
                 if (formatJson)

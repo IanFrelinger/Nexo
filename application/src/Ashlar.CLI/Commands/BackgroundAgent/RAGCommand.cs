@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.RAG;
+using Ashlar.CLI.Commands.Runtime;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
 
@@ -73,6 +74,25 @@ public class RAGCommand
                     Console.Error.WriteLine("Query required");
                 return 1;
             }
+
+            if (!RuntimeCommandUtilities.TryValidatePositiveCount(maxResults))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --max-results" }));
+                else
+                    Console.Error.WriteLine(RuntimeCommandUtilities.InvalidMaxResultsMessage);
+                return 1;
+            }
+
+            if (!RuntimeCommandUtilities.TryValidateUnitInterval(minScore))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --min-score" }));
+                else
+                    Console.Error.WriteLine(RuntimeCommandUtilities.InvalidMinScoreMessage);
+                return 1;
+            }
+
             var results = await _ragService.SearchAsync(query, maxResults, minScore, maxSensitivity, ct).ConfigureAwait(false);
             if (formatJson)
             {

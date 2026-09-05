@@ -108,6 +108,10 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidApprovedTtlHoursMessage = "Invalid --approved-ttl-hours. Use a positive number.";
 
+    internal const string InvalidMaxResultsMessage = "Invalid --max-results. Use a positive integer.";
+
+    internal const string InvalidMinScoreMessage = "Invalid --min-score. Use a number in [0,1].";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;

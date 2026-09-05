@@ -664,8 +664,8 @@ static partial class Program
         var ragSearchCmd = new Command("search", "Search RAG store")
         {
             ragSearchQueryOpt,
-            new Option<int>("--max-results", () => 5, "Max results"),
-            new Option<double>("--min-score", () => 0.0, "Min similarity score"),
+            new Option<int>("--max-results", () => 5, "Max results (must be > 0)"),
+            new Option<double>("--min-score", () => 0.0, "Min similarity score in [0,1]"),
             new Option<string?>("--max-sensitivity", "Max sensitivity level for results")
         };
         ragSearchCmd.SetHandler(
@@ -714,7 +714,7 @@ static partial class Program
         var webSearchTestCmd = new Command("test", "Run a test search")
         {
             new Option<string>("--query", () => "Ashlar framework", "Search query"),
-            new Option<int>("--max-results", () => 5, "Max results")
+            new Option<int>("--max-results", () => 5, "Max results (must be > 0)")
         };
         webSearchTestCmd.SetHandler(
             /// <summary>Async.</summary>

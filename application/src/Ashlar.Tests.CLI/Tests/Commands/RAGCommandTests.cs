@@ -20,6 +20,10 @@ public class RAGCommandTests : UnitTestBase
             await TestStatsFormatJson();
             /// <summary>Test search empty.</summary>
             await TestSearchEmpty();
+            /// <summary>Test invalid result limits.</summary>
+            await TestSearchRejectsInvalidMaxResults();
+            /// <summary>Test invalid similarity thresholds.</summary>
+            await TestSearchRejectsInvalidMinScore();
             return new TestResult
             {
                 Name = nameof(RAGCommandTests),
@@ -89,5 +93,29 @@ public class RAGCommandTests : UnitTestBase
         var exitCode = await command.SearchAsync("test query", 5, 0.0, null, false);
         /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
+    }
+
+    private async Task TestSearchRejectsInvalidMaxResults()
+    {
+        var (rag, indexer) = CreateRAG();
+        var logger = new Mock<ILogger<RAGCommand>>();
+        var command = new RAGCommand(rag, indexer, logger.Object);
+        foreach (var maxResults in new[] { 0, -1 })
+        {
+            var exitCode = await command.SearchAsync("test query", maxResults, 0.0, null, true);
+            AssertEqual(1, exitCode);
+        }
+    }
+
+    private async Task TestSearchRejectsInvalidMinScore()
+    {
+        var (rag, indexer) = CreateRAG();
+        var logger = new Mock<ILogger<RAGCommand>>();
+        var command = new RAGCommand(rag, indexer, logger.Object);
+        foreach (var minScore in new[] { -0.1, 2.0, double.NaN })
+        {
+            var exitCode = await command.SearchAsync("test query", 5, minScore, null, true);
+            AssertEqual(1, exitCode);
+        }
     }
 }
