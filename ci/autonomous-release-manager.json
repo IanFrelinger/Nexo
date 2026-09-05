@@ -161,6 +161,10 @@
             "bash",
             "tests/uat/tier9.sh"
           ],
+          "environment": {
+            "UAT_OUT": "{workspace}/.ashlar/release-manager/uat",
+            "UAT_REPO_DIR": "{workspace}"
+          },
           "timeoutSeconds": 1200
         },
         {
