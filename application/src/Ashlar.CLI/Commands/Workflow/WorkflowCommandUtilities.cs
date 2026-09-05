@@ -1133,17 +1133,26 @@ internal static class WorkflowCommandUtilities
     }
 
 
+    internal const string InvalidSearchStrategyMessage =
+        "Invalid --search-strategy. Use successive-halving, objective-first, or exhaustive.";
+
+    internal static bool TryNormalizeSearchStrategy(string? searchStrategy, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(searchStrategy))
+        {
+            normalized = "successive-halving";
+            return true;
+        }
+
+        normalized = searchStrategy.Trim().ToLowerInvariant();
+        return normalized is "successive-halving" or "objective-first" or "exhaustive";
+    }
+
     internal static string NormalizeSearchStrategy(string? searchStrategy)
     {
-        var value = string.IsNullOrWhiteSpace(searchStrategy)
-            ? "successive-halving"
-            : searchStrategy.Trim().ToLowerInvariant();
-        return value switch
-        {
-            "objective-first" => "objective-first",
-            "exhaustive" => "exhaustive",
-            _ => "successive-halving"
-        };
+        if (!TryNormalizeSearchStrategy(searchStrategy, out var normalized))
+            throw new ArgumentException(InvalidSearchStrategyMessage);
+        return normalized;
     }
 
 

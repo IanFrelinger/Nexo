@@ -76,6 +76,13 @@ public sealed class ImproveCommand : Command
             var intervalMinutes = ctx.ParseResult.GetValueForOption(intervalMinutesOpt);
             var observeMinutes = ctx.ParseResult.GetValueForOption(observeMinutesOpt);
 
+            if (!TryNormalizeAutonomy(autonomy, out autonomy))
+            {
+                Console.Error.WriteLine(InvalidAutonomyMessage);
+                ctx.ExitCode = 1;
+                return;
+            }
+
             // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
             if (continuous)
             {
@@ -107,8 +114,30 @@ public sealed class ImproveCommand : Command
         return Path.Combine(stateDir, "ashlar-patterns.db");
     }
 
+    internal const string InvalidAutonomyMessage = "Invalid --autonomy. Use supervised, semi, or full.";
+
+    internal static bool TryNormalizeAutonomy(string? autonomy, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(autonomy))
+        {
+            normalized = "supervised";
+            return true;
+        }
+
+        normalized = autonomy.Trim().ToLowerInvariant();
+        return normalized is "supervised"
+            or "semi" or "semi-autonomous" or "semiautonomous"
+            or "full" or "fully-autonomous" or "fullyautonomous";
+    }
+
     private static async Task<int> ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false, string? holdoutFilter = null, bool fromObservation = false, int observationDays = 7)
     {
+        if (!TryNormalizeAutonomy(autonomy, out autonomy))
+        {
+            Console.Error.WriteLine(InvalidAutonomyMessage);
+            return 1;
+        }
+
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = TryResolveImproveStorePath(repoRoot, storePathOverride);
         if (storePath == null)
@@ -530,6 +559,12 @@ public sealed class ImproveCommand : Command
         string? storePathOverride, bool self, string? holdoutFilter,
         int observationDays, int intervalMinutes, int observeMinutes)
     {
+        if (!TryNormalizeAutonomy(autonomy, out autonomy))
+        {
+            Console.Error.WriteLine(InvalidAutonomyMessage);
+            return 1;
+        }
+
         var repoRoot = path ?? RepoPathResolver.FindRepoRoot();
         var storePath = TryResolveImproveStorePath(repoRoot, storePathOverride);
         if (storePath == null)

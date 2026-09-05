@@ -52,6 +52,14 @@ internal sealed partial class OptimizeHandler(
             preferOverride = normalizedPrefer;
         }
 
+        if (!WorkflowCommandUtilities.TryNormalizeSearchStrategy(searchStrategy, out var normalizedSearchStrategy))
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidSearchStrategyMessage), json);
+            return 1;
+        }
+
+        searchStrategy = normalizedSearchStrategy;
+
         var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try

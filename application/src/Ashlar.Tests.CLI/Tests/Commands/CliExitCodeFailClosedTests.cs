@@ -39,6 +39,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestSelfExtendInvalidVisualQaFallbackPolicyExitsNonZeroAsync().ConfigureAwait(false);
             await TestChatInvalidPreferModelExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowStressInvalidPreferExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidSearchStrategyExitsNonZeroAsync().ConfigureAwait(false);
+            await TestImproveInvalidAutonomyExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -676,6 +678,57 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "An invalid --prefer must be refused legibly.");
             AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
                 "An invalid --prefer must be refused before starting workflow stress.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowOptimizeInvalidSearchStrategyExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow optimize --search-strategy xyz --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize --search-strategy xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --search-strategy", StringComparison.Ordinal),
+                "An invalid --search-strategy must be refused legibly.");
+            AssertTrue(!output.Contains("\"searchStrategy\": \"successive-halving\"", StringComparison.Ordinal),
+                "An invalid --search-strategy must be refused before remapping to successive-halving.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "An invalid --search-strategy must be refused before evaluating optimize candidates.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestImproveInvalidAutonomyExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ImproveCommand());
+            var exitCode = await root.InvokeAsync("improve --autonomy xyz --dry-run --path /tmp/improve-autonomy-xyz/Empty.cs --yes --skip-regression").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "improve --autonomy xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --autonomy", StringComparison.Ordinal),
+                "An invalid --autonomy must be refused legibly.");
+            AssertTrue(!output.Contains("Autonomy: xyz", StringComparison.Ordinal),
+                "An invalid --autonomy must be refused before running improve as supervised.");
+            AssertTrue(!output.Contains("No violations found", StringComparison.Ordinal),
+                "An invalid --autonomy must be refused before analyzing source.");
         }
         finally
         {
