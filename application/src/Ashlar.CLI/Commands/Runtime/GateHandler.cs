@@ -15,6 +15,14 @@ internal sealed class RuntimeGateHandler
         int minConsecutivePasses,
         bool json)
     {
+        if (!string.IsNullOrWhiteSpace(policy) && !RuntimeCommandUtilities.TryNormalizeQaPolicy(policy, out _))
+        {
+            RuntimeOutputWriter.WriteGateResult(
+                new RuntimeGateResult(false, "Invalid --policy. Use auto, demo, release, prod, or research."),
+                json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {

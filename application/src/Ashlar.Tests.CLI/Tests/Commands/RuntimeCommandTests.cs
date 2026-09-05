@@ -21,6 +21,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestReleaseGateRejectsInvalidModeAsync().ConfigureAwait(false);
             await TestPlanRejectsInvalidQaPolicyAsync().ConfigureAwait(false);
             await TestPlanRejectsInvalidBootstrapProfileAsync().ConfigureAwait(false);
+            await TestGateRejectsInvalidPolicyAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -220,6 +221,40 @@ public sealed class RuntimeCommandTests : UnitTestBase
             "An invalid --bootstrap-profile must be refused legibly.");
         AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
             "An invalid --bootstrap-profile must be refused before computing a plan.");
+    }
+
+    private async Task TestGateRejectsInvalidPolicyAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            AdaptiveRuntimeExecutionHistoryStore.Append(repoRoot, new AdaptiveRuntimeExecutionReport
+            {
+                StartedAtUtc = DateTimeOffset.UtcNow,
+                ElapsedMs = 80,
+                GoalFingerprint = "goal-auto",
+                GoalPreview = "goal-auto",
+                BenchmarkSet = "release-core",
+                RequestedQaPolicy = "auto",
+                ResolvedQaPolicy = "auto",
+                Success = true,
+                FailureStage = "none"
+            });
+
+            var (exitCode, output) = await InvokeRuntimeAsync(
+                $"gate --repo-root \"{repoRoot}\" --policy xyz --benchmark-set release-core --history-window 20 --min-pass-rate 0 --min-total 1 --min-consecutive-passes 0 --json")
+                .ConfigureAwait(false);
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("Invalid --policy", StringComparison.Ordinal),
+                "An invalid --policy must be refused legibly.");
+            AssertTrue(!output.Contains("Gate passed", StringComparison.Ordinal),
+                "An invalid --policy must be refused before evaluating history as auto.");
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
     }
 
     private async Task TestGateJsonIncludesSloEvidenceAsync()

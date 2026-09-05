@@ -31,6 +31,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestWorkflowReportInvalidSinceExitsNonZeroWithoutListingAsync().ConfigureAwait(false);
             await TestChangelogMissingOutputParentCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
             await TestRuntimePlanInvalidQaPolicyExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeGateInvalidPolicyExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -460,6 +461,35 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
         {
             Console.SetOut(ConsoleCapture.Out);
             Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeGateInvalidPolicyExitsNonZeroAsync()
+    {
+        var repoRoot = Path.Combine(Path.GetTempPath(), $"ashlar-gate-policy-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(repoRoot);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new RuntimeCommand());
+            var exitCode = await root.InvokeAsync(
+                $"runtime gate --repo-root {repoRoot} --policy xyz --min-pass-rate 0 --min-total 1 --min-consecutive-passes 0").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime gate --policy xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --policy", StringComparison.Ordinal),
+                "An invalid --policy must be refused legibly.");
+            AssertTrue(!output.Contains("Gate passed", StringComparison.Ordinal),
+                "An invalid --policy must be refused before evaluating history as auto.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
         }
     }
 }

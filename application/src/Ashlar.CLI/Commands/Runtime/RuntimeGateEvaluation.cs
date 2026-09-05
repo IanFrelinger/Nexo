@@ -26,7 +26,11 @@ internal static class RuntimeGateEvaluation
         }
         if (!string.IsNullOrWhiteSpace(policy))
         {
-            var p = RuntimeCommandUtilities.NormalizeQaPolicy(policy);
+            if (!RuntimeCommandUtilities.TryNormalizeQaPolicy(policy, out var p))
+            {
+                return new RuntimeGateResult(false, "Invalid --policy. Use auto, demo, release, prod, or research.");
+            }
+
             items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
         if (!string.IsNullOrWhiteSpace(benchmarkSet))
