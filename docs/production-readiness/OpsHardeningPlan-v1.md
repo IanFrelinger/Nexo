@@ -17,7 +17,7 @@ make ship-gate-full
 | A | Dogfood blocks 1–6 | `make ops-gate-tier-a` |
 | B | Dogfood blocks 7–9 + IPC mesh | `make ops-gate-tier-b` |
 | C | Closed-loop self-improvement | `make ops-gate-tier-c` |
-| D | Mesh deep E2E or chaos-lite | `make ops-gate-tier-d` |
+| D | Mesh deep E2E or chaos-lite | `OPS_GATE_MESH_DEEP=1 make ops-gate-tier-d` (no-flag / `make ops-gate-full` default skips D; the script exits 2 instead of PASS) |
 | E | Oh-shit demo (quick) | `make ops-gate-tier-e` |
 
 ## Flags

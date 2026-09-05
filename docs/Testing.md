@@ -120,7 +120,7 @@ Self-improvement dogfood blocks, optional mesh chaos, oh-shit demo:
 
 ```bash
 make ops-gate-full
-OPS_GATE_MESH_DEEP=1 make ops-gate-tier-d    # mesh checkpoint/migrate E2E
+OPS_GATE_MESH_DEEP=1 make ops-gate-tier-d    # mesh checkpoint/migrate E2E; no-flag D exits 2
 make ashlar-ready-gate                         # full stack
 ASHLAR_READY_SKIP_DOCKER=1 make ashlar-ready-gate   # skip Docker tiers (~faster)
 ```

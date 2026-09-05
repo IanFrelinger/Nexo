@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 50");
+        text.Should().Contain("--min-tests 52");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -319,6 +319,27 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("requires a working Docker daemon");
         text.Should().Contain("exit 2");
         text.Should().NotContain("skipped (Docker not available)");
+    }
+
+    [Fact]
+    public void OpsTierD_RefusesMissingProofFlags()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ops-gate-tier-d.sh"));
+        text.Should().Contain("OPS_GATE_MESH_DEEP=1 or OPS_GATE_CHAOS_LITE=1");
+        text.Should().Contain("refusing to skip mesh resilience");
+        text.Should().Contain("exit 2");
+        text.Should().NotContain("Tier D: skipped");
+    }
+
+    [Fact]
+    public void OpsGateFull_SkipsTierDUnlessProofFlagsSet()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "Makefile"));
+        text.Should().Contain("ops-gate-full: skipping D");
+        text.Should().Contain("OPS_GATE_MESH_DEEP");
+        text.Should().Contain("OPS_GATE_CHAOS_LITE");
     }
 
     [Fact]

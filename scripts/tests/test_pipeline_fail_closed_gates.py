@@ -334,7 +334,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 50", text)
+        self.assertIn("--min-tests 52", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -633,15 +633,28 @@ class SecurityTierBCountedNet10Tests(unittest.TestCase):
 
 
 class DockerTierFailClosedTests(unittest.TestCase):
-    def _run_with_dead_docker(self, script: str) -> subprocess.CompletedProcess[str]:
+    def _run_script(
+        self,
+        script: str,
+        *,
+        docker_exit: int,
+        extra_env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory() as tmp:
             fake_bin = Path(tmp) / "bin"
             fake_bin.mkdir()
             docker = fake_bin / "docker"
-            docker.write_text("#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
+            docker.write_text(
+                f"#!/usr/bin/env bash\nexit {docker_exit}\n",
+                encoding="utf-8",
+            )
             docker.chmod(0o755)
             env = os.environ.copy()
             env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+            env.pop("OPS_GATE_MESH_DEEP", None)
+            env.pop("OPS_GATE_CHAOS_LITE", None)
+            if extra_env:
+                env.update(extra_env)
             return subprocess.run(
                 ["bash", str(ROOT / "scripts" / script)],
                 cwd=ROOT,
@@ -651,6 +664,13 @@ class DockerTierFailClosedTests(unittest.TestCase):
                 stderr=subprocess.STDOUT,
                 check=False,
             )
+
+    def _run_with_dead_docker(
+        self,
+        script: str,
+        extra_env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        return self._run_script(script, docker_exit=1, extra_env=extra_env)
 
     def test_application_tier_d_refuses_missing_docker(self) -> None:
         run = self._run_with_dead_docker("application-gate-tier-d.sh")
@@ -665,10 +685,38 @@ class DockerTierFailClosedTests(unittest.TestCase):
         self.assertNotIn("composition-mesh-gate-tier-d: PASS", run.stdout)
 
     def test_ops_tier_d_refuses_missing_docker(self) -> None:
-        run = self._run_with_dead_docker("ops-gate-tier-d.sh")
+        run = self._run_with_dead_docker(
+            "ops-gate-tier-d.sh",
+            extra_env={"OPS_GATE_MESH_DEEP": "1"},
+        )
         self.assertEqual(2, run.returncode)
         self.assertIn("requires a working Docker daemon", run.stdout)
         self.assertNotIn("ops-gate-tier-d: PASS", run.stdout)
+
+    def test_ops_tier_d_refuses_missing_proof_flags(self) -> None:
+        run = self._run_script("ops-gate-tier-d.sh", docker_exit=0)
+        self.assertEqual(2, run.returncode)
+        self.assertIn("OPS_GATE_MESH_DEEP=1 or OPS_GATE_CHAOS_LITE=1", run.stdout)
+        self.assertNotIn("ops-gate-tier-d: PASS", run.stdout)
+
+    def test_ops_tier_d_refuses_chaos_lite_without_mesh_env(self) -> None:
+        run = self._run_script(
+            "ops-gate-tier-d.sh",
+            docker_exit=0,
+            extra_env={"OPS_GATE_CHAOS_LITE": "1"},
+        )
+        self.assertEqual(2, run.returncode)
+        self.assertIn("chaos-lite requires .env.mesh-lab", run.stdout)
+        self.assertNotIn("ops-gate-tier-d: PASS", run.stdout)
+
+    def test_ops_gate_full_does_not_invoke_d_without_proof_flags(self) -> None:
+        text = (ROOT / "Makefile").read_text(encoding="utf-8")
+        start = text.index("ops-gate-full:")
+        end = text.find("\n# Meta gate:", start)
+        block = text[start:end]
+        self.assertIn("OPS_GATE_MESH_DEEP", block)
+        self.assertIn("OPS_GATE_CHAOS_LITE", block)
+        self.assertIn("skipping D", block)
 
 
 class SecurityTierEFailClosedTests(unittest.TestCase):

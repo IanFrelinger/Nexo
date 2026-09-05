@@ -422,7 +422,13 @@ ops-gate-full:
 	$(MAKE) ops-gate-tier-a
 	$(MAKE) ops-gate-tier-b
 	$(MAKE) ops-gate-tier-c
-	@if [ "$${OPS_GATE_SKIP_TIER_D:-0}" != "1" ]; then $(MAKE) ops-gate-tier-d; fi
+	@if [ "$${OPS_GATE_SKIP_TIER_D:-0}" = "1" ]; then \
+		echo "ops-gate-full: skipping D (OPS_GATE_SKIP_TIER_D=1)"; \
+	elif [ "$${OPS_GATE_MESH_DEEP:-0}" != "1" ] && [ "$${OPS_GATE_CHAOS_LITE:-0}" != "1" ]; then \
+		echo "ops-gate-full: skipping D (set OPS_GATE_MESH_DEEP=1 and/or OPS_GATE_CHAOS_LITE=1)"; \
+	else \
+		$(MAKE) ops-gate-tier-d; \
+	fi
 	$(MAKE) ops-gate-tier-e
 
 # Meta gate: full readiness stack (skip Docker tiers with ASHLAR_READY_SKIP_DOCKER=1).
