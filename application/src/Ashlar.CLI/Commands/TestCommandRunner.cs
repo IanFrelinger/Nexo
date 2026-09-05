@@ -61,16 +61,17 @@ public sealed class TestCommand
                 // Keep behavior compatible with existing CLI tests (writes JSON to stdout).
                 Console.Out.WriteLine(JsonSerializer.Serialize(result));
             }
+            else if (result.TotalTests < 1)
+            {
+                _renderer.RenderError("No tests matched the filter");
+            }
+            else if (result.FailedTests > 0)
+            {
+                _renderer.RenderError($"Tests failed ({result.FailedTests}/{result.TotalTests})");
+            }
             else
             {
-                if (result.FailedTests > 0)
-                {
-                    _renderer.RenderError($"Tests failed ({result.FailedTests}/{result.TotalTests})");
-                }
-                else
-                {
-                    _renderer.RenderSuccess($"Tests passed ({result.PassedTests}/{result.TotalTests})");
-                }
+                _renderer.RenderSuccess($"Tests passed ({result.PassedTests}/{result.TotalTests})");
             }
 
             if (verbose)
@@ -78,6 +79,10 @@ public sealed class TestCommand
                 _renderer.RenderProgressComplete("Test run complete");
             }
 
+            if (result.TotalTests < 1)
+            {
+                return (int)ExitCode.ValidationFailed;
+            }
             return result.FailedTests > 0 ? (int)ExitCode.ValidationFailed : (int)ExitCode.Ok;
         }
         catch (Exception ex)

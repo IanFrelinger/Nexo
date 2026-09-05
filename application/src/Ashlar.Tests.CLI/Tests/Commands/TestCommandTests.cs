@@ -33,6 +33,8 @@ public class TestCommandTests : UnitTestBase
             await TestGeneralException();
             /// <summary>Test json verbose stdout stays parseable.</summary>
             await TestJsonVerboseStdoutStaysParseable();
+            /// <summary>Zero discovered tests must fail closed.</summary>
+            await TestZeroTestsFailsClosed();
 
             return new TestResult
             {
@@ -299,6 +301,33 @@ public class TestCommandTests : UnitTestBase
         var diagnostics = stderr.ToString();
         AssertTrue(diagnostics.Contains("[progress]"), "progress start missing from standard error");
         AssertTrue(diagnostics.Contains("[complete]"), "progress completion missing from standard error");
+    }
+
+    private async Task TestZeroTestsFailsClosed()
+    {
+        var mockMediator = new Mock<IMediator>();
+        var mockRenderer = new Mock<IConsoleRenderer>();
+        var mockLogger = new Mock<ILogger<TestCommand>>();
+
+        var result = new TestExecutionResult
+        {
+            TotalTests = 0,
+            PassedTests = 0,
+            FailedTests = 0,
+            TotalDuration = TimeSpan.Zero,
+            Results = new List<TestResult>(),
+            Categories = new List<string>()
+        };
+
+        mockMediator
+            .Setup(m => m.Send(It.IsAny<RunTestsCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        var command = new TestCommand(mockMediator.Object, mockRenderer.Object, mockLogger.Object);
+        var exitCode = await command.ExecuteAsync("DoesNotExistCommandTests", false, false);
+
+        AssertEqual((int)ExitCode.ValidationFailed, exitCode);
+        mockRenderer.Verify(r => r.RenderError("No tests matched the filter"), Times.Once);
     }
 }
 

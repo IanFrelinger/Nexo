@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 92");
+        text.Should().Contain("--min-tests 93");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1069,6 +1069,16 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("scripts/install/bruteforce-matrix.sh");
         text.Should().Contain("scripts/setup/**");
         text.Should().Contain("scripts/install/**");
+    }
+
+    [Fact]
+    public void TestCommand_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "application/src/Ashlar.CLI/Commands/TestCommandRunner.cs"));
+        text.Should().Contain("TotalTests < 1");
+        text.Should().Contain("No tests matched the filter");
+        text.Should().Contain("ExitCode.ValidationFailed");
     }
 
     [Fact]
