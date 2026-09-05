@@ -211,7 +211,7 @@ public class InfrastructureExecutionGapCoverageTests
             IsBackground = true,
         };
         thread.Start();
-        var completed = await Task.Run(() => done.Wait(TimeSpan.FromSeconds(5))).ConfigureAwait(false);
+        var completed = await Task.Run(() => done.Wait(TimeSpan.FromSeconds(5)));
         completed.Should().BeTrue("catalog I/O must not deadlock on a captured sync context");
         error.Should().BeNull();
         brick.Should().BeOfType<RemoteBrick>();
