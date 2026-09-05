@@ -733,6 +733,26 @@ The following Tests are available:
             discovered,
         )
 
+    def test_theory_argument_containing_the_prefix_stays_one_identity(self) -> None:
+        # A theory row can name a type inside its arguments, so the prefix appears twice on
+        # one line. Splitting there would invent two identities that can never execute and
+        # inflate the floor above what the suite can satisfy.
+        output = (
+            "The following Tests are available:\n"
+            "    Ashlar.Tests.CLI.Framework.UnitTestBridgeTests.Framework_unit_test_passes"
+            "(testType: typeof(Ashlar.Tests.CLI.Tests.Commands.TrustCommandTests))\n"
+        )
+
+        discovered = counted.discovered_tests(output, "Ashlar.Tests.CLI.")
+
+        self.assertEqual(
+            [
+                "Ashlar.Tests.CLI.Framework.UnitTestBridgeTests.Framework_unit_test_passes"
+                "(testType: typeof(Ashlar.Tests.CLI.Tests.Commands.TrustCommandTests))"
+            ],
+            discovered,
+        )
+
     def test_trx_execution_count_is_summed(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "result.trx"

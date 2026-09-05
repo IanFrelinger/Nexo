@@ -13,18 +13,39 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
+def _identity_starts(line: str, expected_prefix: str) -> list[int]:
+    """Offsets where a new identity begins.
+
+    Multi-TFM discovery writes both frameworks to one stream, so two identities can land
+    on a single line; each one has to stay whole, because fusing them invents an identity
+    that can never execute AND drops one from the floor, letting a genuinely missing test
+    pass underneath it. A theory row's arguments can also contain the prefix
+    (``Method(testType: typeof(Ashlar.Tests.CLI.Some.Type))``), so only a match outside
+    the argument list starts an identity -- splitting inside it would invent two.
+    """
+    starts: list[int] = []
+    depth = 0
+    for index, character in enumerate(line):
+        if character in "([":
+            depth += 1
+            continue
+        if character in ")]":
+            depth = max(0, depth - 1)
+            continue
+        if depth or not line.startswith(expected_prefix, index):
+            continue
+        if index == 0 or line[index - 1].isspace():
+            starts.append(index)
+    return starts
+
+
 def discovered_tests(output: str, expected_prefix: str) -> list[str]:
-    # Multi-TFM discovery writes both frameworks to one stream, so two identities can
-    # land on a single line. Splitting at every prefix occurrence keeps each identity
-    # whole: fusing them would invent an identity that can never execute AND drop one
-    # from the floor, letting a genuinely missing test pass underneath it.
-    pattern = re.compile(re.escape(expected_prefix))
     identities: list[str] = []
     for line in output.splitlines():
         stripped = line.strip()
         if not stripped.startswith(expected_prefix):
             continue
-        starts = [match.start() for match in pattern.finditer(stripped)]
+        starts = _identity_starts(stripped, expected_prefix)
         for index, start in enumerate(starts):
             end = starts[index + 1] if index + 1 < len(starts) else len(stripped)
             identity = stripped[start:end].strip()
