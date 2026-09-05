@@ -18,6 +18,7 @@ public sealed class MeshCommandTests : UnitTestBase
             await TestHealthMissingUrlExitsNonZeroAsync().ConfigureAwait(false);
             await TestHealthMalformedUrlIsLegibleNonZeroAsync().ConfigureAwait(false);
             await TestHealthRefusedConnectionExitsNonZeroAsync().ConfigureAwait(false);
+            await TestHealthInvalidTimeoutExitsNonZeroWithoutConnectingAsync().ConfigureAwait(false);
             await TestSetTrustTierInvalidValueExitsNonZeroAsync().ConfigureAwait(false);
             await TestSetTrustTierMissingPeerExitsNonZeroAsync().ConfigureAwait(false);
             await TestImportMissingFileExitsNonZeroAsync().ConfigureAwait(false);
@@ -160,6 +161,43 @@ public sealed class MeshCommandTests : UnitTestBase
                 .InvokeAsync("mesh health --url http://127.0.0.1:59321 --timeout-seconds 5")
                 .ConfigureAwait(false);
             AssertTrue(exitCode != 0, "A refused connection must exit non-zero, not 0.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestHealthInvalidTimeoutExitsNonZeroWithoutConnectingAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var zeroExit = await root
+                .InvokeAsync("mesh health --url http://127.0.0.1:9 --timeout-seconds 0")
+                .ConfigureAwait(false);
+            var zeroOutput = writer.ToString();
+            AssertTrue(zeroExit != 0, "A --timeout-seconds of 0 must exit non-zero.");
+            AssertTrue(zeroOutput.Contains("Invalid --timeout-seconds", StringComparison.Ordinal),
+                "A --timeout-seconds of 0 must be refused legibly.");
+            AssertTrue(!zeroOutput.Contains("Connection refused", StringComparison.OrdinalIgnoreCase),
+                "A --timeout-seconds of 0 must not open a socket.");
+
+            writer.GetStringBuilder().Clear();
+            var highExit = await root
+                .InvokeAsync("mesh health --url http://127.0.0.1:9 --timeout-seconds 200")
+                .ConfigureAwait(false);
+            var highOutput = writer.ToString();
+            AssertTrue(highExit != 0, "A --timeout-seconds of 200 must exit non-zero.");
+            AssertTrue(highOutput.Contains("Invalid --timeout-seconds", StringComparison.Ordinal),
+                "A --timeout-seconds of 200 must be refused legibly.");
+            AssertTrue(!highOutput.Contains("Connection refused", StringComparison.OrdinalIgnoreCase),
+                "A --timeout-seconds of 200 must not be clamped to 120 before connecting.");
         }
         finally
         {

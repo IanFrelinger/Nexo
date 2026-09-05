@@ -66,7 +66,7 @@ public sealed class MeshCommand : Command
         peersCmd.SetHandler(ExecutePeers);
 
         var healthUrlOpt = new Option<string?>("--url", () => null, "Remote host base URL, e.g. https://ashlar.example:8080") { IsRequired = true };
-        var healthTimeoutOpt = new Option<int>("--timeout-seconds", () => 30, "HTTP timeout");
+        var healthTimeoutOpt = new Option<int>("--timeout-seconds", () => 30, "HTTP timeout in seconds (5-120)");
         var healthCmd = new Command("health", "GET /health on a remote Ashlar host (generic probe)");
         healthCmd.Add(healthUrlOpt);
         healthCmd.Add(healthTimeoutOpt);
@@ -358,8 +358,20 @@ public sealed class MeshCommand : Command
         return 0;
     }
 
+    internal const int MinHealthTimeoutSeconds = 5;
+
+    internal const int MaxHealthTimeoutSeconds = 120;
+
+    internal const string InvalidTimeoutSecondsMessage = "Invalid --timeout-seconds. Use an integer from 5 to 120.";
+
     private static async Task<int> ExecuteHealthAsync(string? baseUrl, int timeoutSeconds)
     {
+        if (timeoutSeconds < MinHealthTimeoutSeconds || timeoutSeconds > MaxHealthTimeoutSeconds)
+        {
+            Console.Error.WriteLine(InvalidTimeoutSecondsMessage);
+            return 1;
+        }
+
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             Console.Error.WriteLine("--url is required.");
@@ -378,7 +390,7 @@ public sealed class MeshCommand : Command
             return 1;
         }
 
-        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(Math.Clamp(timeoutSeconds, 5, 120)) };
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(Math.Clamp(timeoutSeconds, MinHealthTimeoutSeconds, MaxHealthTimeoutSeconds)) };
         try
         {
             using var resp = await client.GetAsync(uri).ConfigureAwait(false);

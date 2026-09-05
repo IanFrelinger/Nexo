@@ -62,6 +62,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestWorkflowOptimizeInvalidWarmupRunsExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowStressInvalidWarmupRunsExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeExecuteInvalidMaxRemediationAttemptsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestMeshHealthInvalidTimeoutExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -1276,6 +1277,29 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "A negative --max-remediation-attempts must be refused legibly.");
             AssertTrue(!output.Contains("self-extend", StringComparison.OrdinalIgnoreCase),
                 "A negative --max-remediation-attempts must be refused before starting execute.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestMeshHealthInvalidTimeoutExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("mesh health --url http://127.0.0.1:9 --timeout-seconds 0").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "mesh health --timeout-seconds 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --timeout-seconds", StringComparison.Ordinal),
+                "A --timeout-seconds of 0 must be refused legibly.");
+            AssertTrue(!output.Contains("Connection refused", StringComparison.OrdinalIgnoreCase),
+                "A --timeout-seconds of 0 must be refused before opening a socket.");
         }
         finally
         {
