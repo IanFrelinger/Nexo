@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 111", text)
+        self.assertIn("--min-tests 112", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1031,6 +1031,26 @@ class CiVerifyCountedTests(unittest.TestCase):
         )
         self.assertIn("FullyQualifiedName~BaseFrameworkSmokeTests", text)
         self.assertNotIn('$"test \\"{infraTestsProject}\\"', text)
+
+
+class TestPrimeTimeMinFloorTests(unittest.TestCase):
+    def test_makefile_runs_min_floor_prime_time_prod_style(self) -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-min-floor.py", makefile)
+        self.assertIn("--min-listed 365", makefile)
+        self.assertIn('--expected-prefix "Ashlar.Tests."', makefile)
+        self.assertNotIn(
+            "dotnet test $(PRIME_TIME_SLNF) --no-build \\\n"
+            '\t  --filter "Category=ProdStyle"',
+            makefile,
+        )
+
+        helper = (ROOT / "scripts" / "run-dotnet-test-min-floor.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("min-listed", helper)
+        self.assertIn("run-dotnet-test-counted.py", helper)
+        self.assertNotIn('dotnet test "$INFRA"', helper)
 
 
 class TestProdStyleCountedTests(unittest.TestCase):

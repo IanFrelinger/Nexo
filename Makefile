@@ -85,9 +85,16 @@ test-framework-prod-first: test-prod-style
 	  --blame-hang-timeout 30s --blame-hang-dump-type none
 
 # Prime-time gate: Category=ProdStyle across Ashlar.PrimeTime.slnf (all test assemblies).
+# Same class as other gates: a silent empty match must not pass. Min-floor (not
+# identity-counted) because this slnf may skip opt-in rows.
 test-prime-time:
 	dotnet build $(PRIME_TIME_SLNF) -v minimal
-	dotnet test $(PRIME_TIME_SLNF) --no-build \
+	python3 scripts/run-dotnet-test-min-floor.py \
+	  --project $(PRIME_TIME_SLNF) \
+	  --expected-prefix "Ashlar.Tests." \
+	  --min-listed 365 \
+	  -- \
+	  --no-build \
 	  --filter "Category=ProdStyle" \
 	  --blame-hang-timeout 300s --blame-hang-dump-type none
 
