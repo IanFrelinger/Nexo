@@ -103,6 +103,9 @@ public class ProposalsBackgroundAgentCommand
     {
         try
         {
+            if (WriteInvalidProposalId(id, formatJson, stdout, stderr))
+                return Task.FromResult(1);
+
             var p = _store.Find(id);
             if (p is null)
             {
@@ -185,6 +188,9 @@ public class ProposalsBackgroundAgentCommand
     {
         try
         {
+            if (WriteInvalidProposalId(id, formatJson, stdout, stderr))
+                return 1;
+
             var p = _store.Find(id) ?? throw new InvalidOperationException($"Proposal '{id}' not found.");
             if (p.Status != ChangeProposalStatus.Approved)
                 throw new InvalidOperationException($"Proposal '{id}' is {p.Status}; expected Approved before apply.");
@@ -542,6 +548,9 @@ public class ProposalsBackgroundAgentCommand
     {
         try
         {
+            if (WriteInvalidProposalId(id, formatJson, Console.Out, Console.Error))
+                return Task.FromResult(1);
+
             var saved = verb(id, actor, note);
             if (formatJson)
                 Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = true, action, proposal = Project(saved) }));
@@ -561,6 +570,19 @@ public class ProposalsBackgroundAgentCommand
         if (formatJson) stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
         else stderr.WriteLine(ex.Message);
         return Task.FromResult(1);
+    }
+
+    private static bool WriteInvalidProposalId(string id, bool formatJson, TextWriter stdout, TextWriter stderr)
+    {
+        if (ChangeProposalStore.IsValidId(id))
+            return false;
+
+        var message = $"Invalid proposal id. {ChangeProposalStore.IdRequirement}";
+        if (formatJson)
+            stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = message }));
+        else
+            stderr.WriteLine(message);
+        return true;
     }
 
     private static object Project(ChangeProposal p, bool includeContent = false) => includeContent

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Ashlar.BackgroundAgents.Objectives;
 
 namespace Ashlar.BackgroundAgents.Forge;
 
@@ -23,6 +24,9 @@ namespace Ashlar.BackgroundAgents.Forge;
 /// </summary>
 public sealed class ChangeProposalStore : IChangeProposalStore
 {
+    /// <summary>Human-readable proposal id contract.</summary>
+    public const string IdRequirement = ObjectiveStore.IdRequirement;
+
     private readonly string _root;
     private readonly object _gate = new();
     private static readonly JsonSerializerOptions Json = new()
@@ -35,7 +39,9 @@ public sealed class ChangeProposalStore : IChangeProposalStore
 
     public ChangeProposalStore(string root)
     {
-        _root = root ?? throw new ArgumentNullException(nameof(root));
+        if (string.IsNullOrWhiteSpace(root))
+            throw new ArgumentException("Change proposal store root must be non-empty.", nameof(root));
+        _root = Path.GetFullPath(root);
         EnsureFolders();
     }
 
@@ -71,8 +77,15 @@ public sealed class ChangeProposalStore : IChangeProposalStore
                 if (!Directory.Exists(dir)) continue;
                 foreach (var path in Directory.EnumerateFiles(dir, "*.json"))
                 {
+                    var fileId = Path.GetFileNameWithoutExtension(path);
+                    if (!IsValidId(fileId))
+                        throw new InvalidDataException($"Invalid proposal filename '{fileId}.json'. {IdRequirement}");
                     var doc = TryLoad(path);
-                    if (doc is not null) rows.Add(doc);
+                    if (doc is not null)
+                    {
+                        EnsureStoredIdMatches(fileId, doc);
+                        rows.Add(doc);
+                    }
                 }
             }
             return rows;
@@ -86,7 +99,13 @@ public sealed class ChangeProposalStore : IChangeProposalStore
             foreach (var s in Enum.GetValues<ChangeProposalStatus>())
             {
                 var path = PathFor(id, s);
-                if (File.Exists(path)) return TryLoad(path);
+                if (File.Exists(path))
+                {
+                    var doc = TryLoad(path);
+                    if (doc is not null)
+                        EnsureStoredIdMatches(id, doc);
+                    return doc;
+                }
             }
             return null;
         }
@@ -206,8 +225,35 @@ public sealed class ChangeProposalStore : IChangeProposalStore
         }
     }
 
-    private string PathFor(string id, ChangeProposalStatus status) =>
-        Path.Combine(_root, status.ToString().ToLowerInvariant(), id + ".json");
+    private string PathFor(string id, ChangeProposalStatus status)
+    {
+        if (!IsValidId(id))
+            throw new ArgumentException($"Invalid proposal id '{id}'. {IdRequirement}", nameof(id));
+
+        var statusDir = Path.GetFullPath(Path.Combine(_root, status.ToString().ToLowerInvariant()));
+        var path = Path.GetFullPath(Path.Combine(statusDir, id + ".json"));
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        var containedPrefix = statusDir.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!path.StartsWith(containedPrefix, comparison))
+            throw new InvalidOperationException($"Proposal path escaped its status directory: '{id}'.");
+        return path;
+    }
+
+    /// <summary>Returns true when an id is safe as a portable proposal filename.</summary>
+    public static bool IsValidId(string? id) => ObjectiveStore.IsValidId(id);
+
+    private static void EnsureStoredIdMatches(string fileId, ChangeProposal doc)
+    {
+        if (!string.Equals(fileId, doc.Id, StringComparison.Ordinal) || !IsValidId(doc.Id))
+        {
+            throw new InvalidDataException(
+                $"Proposal file id '{fileId}' does not match its payload id '{doc.Id}'.");
+        }
+    }
 
     private static ChangeProposal? TryLoad(string path)
     {

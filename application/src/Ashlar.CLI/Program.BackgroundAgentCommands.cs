@@ -399,7 +399,7 @@ static partial class Program
         }, propListStatusOpt, propListTargetOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propListCmd);
 
-        var propShowIdArg = new Argument<string>("id", "Proposal id");
+        var propShowIdArg = new Argument<string>("id", "Portable proposal id slug");
         var propShowDiffOpt = new Option<bool>("--show-diff", () => false, "Include the proposed file content in the output");
         var propShowCmd = new Command("show", "Show one proposal's metadata (and optionally its proposed content)")
         {
@@ -412,7 +412,7 @@ static partial class Program
         }, propShowIdArg, propShowDiffOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propShowCmd);
 
-        var propApproveIdArg = new Argument<string>("id", "Proposal id (must currently be Proposed)");
+        var propApproveIdArg = new Argument<string>("id", "Portable proposal id slug (must currently be Proposed)");
         var propApproveByOpt = new Option<string?>("--approver", () => null, "Operator approving the change");
         var propApproveNoteOpt = new Option<string?>("--note", () => null, "Optional approval note");
         var propApproveCmd = new Command("approve", "Approve a Proposed change so it can be applied")
@@ -426,7 +426,7 @@ static partial class Program
         }, propApproveIdArg, propApproveByOpt, propApproveNoteOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propApproveCmd);
 
-        var propRejectIdArg = new Argument<string>("id", "Proposal id (must currently be Proposed)");
+        var propRejectIdArg = new Argument<string>("id", "Portable proposal id slug (must currently be Proposed)");
         var propRejectByOpt = new Option<string?>("--reviewer", () => null, "Operator rejecting the change");
         var propRejectNoteOpt = new Option<string?>("--note", () => null, "Why the change was rejected");
         var propRejectCmd = new Command("reject", "Reject a Proposed change")
@@ -440,7 +440,7 @@ static partial class Program
         }, propRejectIdArg, propRejectByOpt, propRejectNoteOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propRejectCmd);
 
-        var propApplyIdArg = new Argument<string>("id", "Approved proposal id");
+        var propApplyIdArg = new Argument<string>("id", "Approved portable proposal id slug");
         var propApplyRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Repo root the target_path is resolved against");
         var propApplyForceOpt = new Option<bool>("--force", () => false, "Apply even if the file's sha256 has drifted from the proposal's BaseSha256");
         var propApplyVerifyBuildOpt = new Option<bool>("--verify-build", () => false, "After apply, run dotnet build -c Release from --repo-root (exit 4 if build fails; tree is still written)");

@@ -29,6 +29,61 @@ public class ChangeProposalStoreTests : IDisposable
         File.Exists(Path.Combine(_tempDir, "proposed", "p1.json")).Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("../outside")]
+    [InlineData("../../outside")]
+    [InlineData("nested/proposal")]
+    [InlineData(@"nested\proposal")]
+    [InlineData(".hidden")]
+    [InlineData("name.")]
+    [InlineData("CON")]
+    [InlineData("COM1.json")]
+    public void Add_rejects_nonportable_or_traversing_ids(string id)
+    {
+        var act = () => _store.Add(NewProposal(id));
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*Invalid proposal id*");
+    }
+
+    [Fact]
+    public void Add_rejects_absolute_id_without_writing_outside_store()
+    {
+        var escaped = Path.Combine(Path.GetTempPath(), "ashlar-proposal-escape-" + Guid.NewGuid().ToString("N"));
+        var act = () => _store.Add(NewProposal(escaped));
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*Invalid proposal id*");
+        File.Exists(escaped + ".json").Should().BeFalse();
+    }
+
+    [Fact]
+    public void List_fails_closed_on_nonportable_proposal_filename()
+    {
+        var proposed = Path.Combine(_tempDir, "proposed");
+        File.WriteAllText(Path.Combine(proposed, "bad name.json"), "{}");
+
+        var act = () => _store.List(ChangeProposalStatus.Proposed);
+
+        act.Should().Throw<InvalidDataException>()
+            .WithMessage("*Invalid proposal filename*");
+    }
+
+    [Fact]
+    public void Find_fails_closed_when_payload_id_does_not_match_filename()
+    {
+        _store.Add(NewProposal("safe-id"));
+        var path = Path.Combine(_tempDir, "proposed", "safe-id.json");
+        var tampered = File.ReadAllText(path)
+            .Replace("\"Id\": \"safe-id\"", "\"Id\": \"other-id\"", StringComparison.Ordinal);
+        File.WriteAllText(path, tampered);
+
+        var act = () => _store.Find("safe-id");
+
+        act.Should().Throw<InvalidDataException>()
+            .WithMessage("*does not match its payload id*");
+    }
+
     [Fact]
     public void Approve_then_apply_round_trips_through_folders()
     {

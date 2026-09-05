@@ -288,4 +288,29 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
         json.RootElement.GetProperty("count").GetInt32().Should().Be(1);
         json.RootElement.GetProperty("proposals")[0].GetProperty("id").GetString().Should().Be("b");
     }
+
+    [Fact]
+    public async Task Show_and_apply_reject_invalid_ids_before_store_access()
+    {
+        var cmd = NewCmd();
+        foreach (var id in new[] { "/tmp/escaped", "../../escaped", "nested/proposal", "CON" })
+        {
+            var showOut = new StringWriter();
+            var showErr = new StringWriter();
+            var showRc = await cmd.ShowAsync(
+                id, showDiff: false, formatJson: true, stdout: showOut, stderr: showErr);
+            showRc.Should().Be(1);
+            showOut.ToString().Should().Contain("Invalid proposal id");
+            showErr.ToString().Should().NotContain("   at ");
+
+            var applyOut = new StringWriter();
+            var applyErr = new StringWriter();
+            var applyRc = await cmd.ApplyAsync(
+                id, _repoRoot, force: false, formatJson: true,
+                verifyBuild: false, verifyTest: false, stdout: applyOut, stderr: applyErr);
+            applyRc.Should().Be(1);
+            applyOut.ToString().Should().Contain("Invalid proposal id");
+            applyErr.ToString().Should().NotContain("   at ");
+        }
+    }
 }
