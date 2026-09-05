@@ -128,4 +128,24 @@ public sealed class InMemoryMeshTaskRegistry : IMeshTaskRegistry
             _lock.Release();
         }
     }
+
+    /// <inheritdoc />
+    public async Task<bool> UpdateIfStatusAsync(
+        MeshTaskState task,
+        MeshTaskStatus expectedStatus,
+        CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!_tasks.TryGetValue(task.TaskId, out var current) || current.Status != expectedStatus)
+                return false;
+            _tasks[task.TaskId] = task;
+            return true;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
 }

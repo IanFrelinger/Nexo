@@ -237,5 +237,36 @@ public sealed class MeshTaskPlacementServiceTests
         err.Should().Be("placement.peer_not_admitted");
         pending!.PlacementReason.Should().Be("placement.peer_not_admitted");
     }
+
+    [Fact]
+    public async Task Concurrent_schedule_assigns_one_lease()
+    {
+        var nodes = new InMemoryFleetNodeRegistry();
+        var tasks = new InMemoryMeshTaskRegistry();
+        var placement = CreatePlacement(nodes, tasks);
+
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "peer-a", "https://a.example/", new Dictionary<string, string>(), Array.Empty<string>(),
+            false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "peer-b", "https://b.example/", new Dictionary<string, string>(), Array.Empty<string>(),
+            false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+
+        var task = await tasks.CreateAsync(new MeshTaskCreateSpec("race", 1, Array.Empty<string>(), null, 0, null));
+
+        var first = placement.TryScheduleAsync(task.TaskId);
+        var second = placement.TryScheduleAsync(task.TaskId);
+        await Task.WhenAll(first, second);
+
+        first.Result.Ok.Should().BeTrue(first.Result.Error);
+        second.Result.Ok.Should().BeTrue(second.Result.Error);
+        first.Result.Task!.LeaseToken.Should().Be(second.Result.Task!.LeaseToken);
+        first.Result.Task.AssignedPeerId.Should().Be(second.Result.Task.AssignedPeerId);
+
+        var stored = await tasks.GetAsync(task.TaskId);
+        stored!.Status.Should().Be(MeshTaskStatus.Assigned);
+        stored.LeaseToken.Should().Be(first.Result.Task.LeaseToken);
+        stored.AttemptCount.Should().Be(1);
+    }
 }
 

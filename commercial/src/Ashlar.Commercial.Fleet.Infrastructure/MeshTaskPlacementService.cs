@@ -185,7 +185,12 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
             CheckpointHandle = null
         };
 
-        await _tasks.UpdateAsync(assigned, cancellationToken).ConfigureAwait(false);
+        var applied = await _tasks
+            .UpdateIfStatusAsync(assigned, task.Status, cancellationToken)
+            .ConfigureAwait(false);
+        if (!applied)
+            return await ResolveLostPlacementRaceAsync(taskId, scheduleKey, cancellationToken).ConfigureAwait(false);
+
         _logger?.LogInformation(
             "mesh placement task={TaskId} peer={PeerId} attempt={Attempt} retry={Retry} correlationId={CorrelationId}",
             taskId,
@@ -195,6 +200,26 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
             assigned.CorrelationId ?? "");
 
         return (true, assigned, null);
+    }
+
+    private async Task<(bool Ok, MeshTaskState? Task, string? Error)> ResolveLostPlacementRaceAsync(
+        string taskId,
+        string? scheduleKey,
+        CancellationToken cancellationToken)
+    {
+        var latest = await _tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
+        if (latest is null)
+            return (false, null, "task.not_found");
+
+        if (latest.Status is MeshTaskStatus.Assigned or MeshTaskStatus.Running)
+        {
+            if (scheduleKey is null ||
+                string.Equals(latest.LastScheduleIdempotencyKey, scheduleKey, StringComparison.Ordinal))
+                return (true, latest, null);
+            return (false, latest, "schedule.idempotency_conflict");
+        }
+
+        return (false, latest, "schedule.lost_race");
     }
 
     private static string NormalizeBaseUrl(string url)

@@ -19,4 +19,14 @@ public interface IMeshTaskRegistry
     Task<IReadOnlyList<MeshTaskState>> ListAsync(CancellationToken cancellationToken = default);
 
     Task<bool> UpdateAsync(MeshTaskState task, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes <paramref name="task"/> only when the stored row still has
+    /// <paramref name="expectedStatus"/>. Returns false when the task is missing
+    /// or another writer already changed its status.
+    /// </summary>
+    Task<bool> UpdateIfStatusAsync(
+        MeshTaskState task,
+        MeshTaskStatus expectedStatus,
+        CancellationToken cancellationToken = default);
 }

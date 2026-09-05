@@ -153,4 +153,26 @@ public sealed class LiteDbMeshTaskRegistry : IMeshTaskRegistry
             _lock.Release();
         }
     }
+
+    /// <inheritdoc />
+    public async Task<bool> UpdateIfStatusAsync(
+        MeshTaskState task,
+        MeshTaskStatus expectedStatus,
+        CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var db = new LiteDatabase(_connectionString);
+            var col = db.GetCollection<MeshTaskDoc>(LiteDbMeshDirectorConnection.TasksCollection);
+            var current = col.FindById(task.TaskId);
+            if (current is null || current.ToState().Status != expectedStatus)
+                return false;
+            return col.Update(MeshTaskDoc.FromState(task));
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
 }

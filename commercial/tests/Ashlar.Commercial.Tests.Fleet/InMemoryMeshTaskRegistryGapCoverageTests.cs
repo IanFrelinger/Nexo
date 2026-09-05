@@ -89,4 +89,21 @@ public sealed class InMemoryMeshTaskRegistryGapCoverageTests
 
         (await registry.GetAsync(created.TaskId))!.ResultSummary.Should().Be("half-done");
     }
+
+    [Fact]
+    public async Task UpdateIfStatusAsync_refuses_when_status_changed()
+    {
+        var registry = new InMemoryMeshTaskRegistry();
+        var created = await registry.CreateAsync(new MeshTaskCreateSpec("cas", 1, [], null, 0, null));
+
+        var assigned = created with { Status = MeshTaskStatus.Assigned, AssignedPeerId = "peer-a" };
+        (await registry.UpdateIfStatusAsync(assigned, MeshTaskStatus.Pending)).Should().BeTrue();
+        (await registry.UpdateIfStatusAsync(
+            assigned with { AssignedPeerId = "peer-b", LeaseToken = "other" },
+            MeshTaskStatus.Pending)).Should().BeFalse();
+
+        var stored = await registry.GetAsync(created.TaskId);
+        stored!.AssignedPeerId.Should().Be("peer-a");
+        stored.Status.Should().Be(MeshTaskStatus.Assigned);
+    }
 }
