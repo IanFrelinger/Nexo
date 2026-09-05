@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 108", text)
+        self.assertIn("--min-tests 110", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -974,6 +974,25 @@ class KernelTierECountedTests(unittest.TestCase):
         self.assertIn("Ashlar.Tests.Orchestration.Performance", text)
         self.assertNotIn('dotnet test "$INFRA"', text)
         self.assertNotIn('dotnet test "$ORCH"', text)
+
+
+class MeaiPipelineGateCountedTests(unittest.TestCase):
+    def test_makefile_runs_counted_meai_pipeline_suite(self) -> None:
+        text = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Tests.AI.Pipeline.csproj", text)
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn('--expected-prefix "Ashlar.Tests.AI.Pipeline."', text)
+        self.assertIn("--min-tests 43", text)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj -f net8.0 -c Release --nologo",
+            text,
+        )
+
+        workflow = (ROOT / ".github" / "workflows" / "kernel-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("src/Ashlar.AI.Pipeline/**", workflow)
+        self.assertIn("src/Ashlar.Tests.AI.Pipeline/**", workflow)
 
 
 class MakefileDogfoodCountedTests(unittest.TestCase):

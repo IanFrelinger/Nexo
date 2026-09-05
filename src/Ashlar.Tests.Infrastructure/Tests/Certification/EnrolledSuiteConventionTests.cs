@@ -36,6 +36,14 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void OwnershipRegistry_NamesKernelGate_ForAiPipelineTests()
+    {
+        var columns = OwnershipRow("Ashlar.Tests.AI.Pipeline.csproj");
+        columns[1].Should().Be("kernel-gate");
+        columns[2].Should().Be("-");
+    }
+
+    [Fact]
     public void OwnershipRegistry_NamesIngressUnitGate_ForAwsSnsAndDynamoDbTests()
     {
         var sns = OwnershipRow("Ashlar.Ingress.AwsSns.Tests.csproj");
@@ -189,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 108");
+        text.Should().Contain("--min-tests 110");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -728,6 +736,24 @@ public sealed class EnrolledSuiteConventionTests
             ".github/workflows/kernel-gate.yml"));
         text.Should().Contain("kernel-gate-tier-b");
         text.Should().NotContain("github.event_name == 'workflow_dispatch' && inputs.tier == 'b'");
+    }
+
+    [Fact]
+    public void MeaiPipelineGate_RunsCountedSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "Makefile"));
+        text.Should().Contain("Ashlar.Tests.AI.Pipeline.csproj");
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--expected-prefix \"Ashlar.Tests.AI.Pipeline.\"");
+        text.Should().Contain("--min-tests 43");
+        text.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj -f net8.0 -c Release --nologo");
+
+        var workflow = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/kernel-gate.yml"));
+        workflow.Should().Contain("src/Ashlar.AI.Pipeline/**");
+        workflow.Should().Contain("src/Ashlar.Tests.AI.Pipeline/**");
     }
 
     [Fact]

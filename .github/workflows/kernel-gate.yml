@@ -11,6 +11,8 @@ on:
       - "src/Ashlar.Infrastructure/**"
       - "src/Ashlar.Orchestration/**"
       - "src/Ashlar.Runtime/**"
+      - "src/Ashlar.AI.Pipeline/**"
+      - "src/Ashlar.Tests.AI.Pipeline/**"
       - "src/Ashlar.Core.Application/**"
       - "src/Ashlar.Tests.Infrastructure/**"
       - "src/Ashlar.Tests.Transport/**"

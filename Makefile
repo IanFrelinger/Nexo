@@ -190,8 +190,15 @@ dependency-boundary-gate:
 	bash scripts/dependency-boundary-gate.sh
 
 # MEAI governed pipeline + VectorData RAG architecture tests (net8).
+# Same class as other kernel slices: raw `dotnet test` exits 0 when the
+# project has no tests.
 meai-pipeline-gate:
-	dotnet test src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj -f net8.0 -c Release --nologo \
+	python3 scripts/run-dotnet-test-counted.py \
+	  --project src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj \
+	  --expected-prefix "Ashlar.Tests.AI.Pipeline." \
+	  --min-tests 43 \
+	  -- \
+	  -f net8.0 -c Release --nologo \
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
 
 kernel-gate-tier-a:
