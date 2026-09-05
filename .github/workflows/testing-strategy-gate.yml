@@ -23,6 +23,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate GitHub Actions independently
+        run: bash scripts/ci/run-actionlint.sh
+
       - name: Enforce pivot rules on PR diff
         env:
           GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}

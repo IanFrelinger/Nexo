@@ -73,6 +73,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `docs-link-check.yml` | Docs Link Check / `lychee (README + docs)` | paths: `docs/**`, `README.md`, `.lycheeignore` | push, dispatch |
 | `kernel-coverage-gate.yml` | Kernel coverage gate / `kernel-coverage` | paths: kernel src + tests, `scripts/ci/kernel-coverage-gate.sh`, `scripts/ci/pr-testing-strategy-gate.sh` | push |
 | `kernel-gate.yml` | Kernel Gate / `kernel-gate` | paths: `src/Ashlar.Hosting/**`, Infrastructure, Orchestration, Runtime, Core.Application, kernel tests, `docs/production-readiness/**`, `Makefile` | push (narrower paths), dispatch |
+| `mcp-a2a-gate.yml` | MCP + A2A protocol gate | paths: `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, `Ashlar.API` | push `master`/`main`/`cursor/**`, dispatch |
 | `security-gate.yml` | Security Gate / `security-gate` | paths: Trust/Security sources and tests, `scripts/security-gate*.sh`, `Makefile` | dispatch |
 | `shell-lint.yml` | Shell lint / `shell-lint` | paths: `scripts/**` | dispatch |
 | `testing-strategy-gate.yml` | Testing strategy gate / `testing-strategy` | paths: `src/**`, `application/**`, `scripts/**`, `.github/**`, `Makefile`, `docs/architecture/TestingStrategy*.md` | — |
@@ -98,7 +99,6 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `friend-mesh-prefab-gate.yml` | Friend mesh prefab gate | friend-mesh compose, `.docker/Dockerfile.api`, `Ashlar.API` |
 | `full-platform-readiness-gate.yml` | Full Platform Readiness Gate | Dockerfiles, setup/install scripts, spine sources, StableSdkHostSample; **weekly schedule** |
 | `grpc-transport-gate.yml` | gRPC transport gate | `src/Ashlar.Transport.Grpc/**`, `src/Ashlar.Tests.Transport/**` |
-| `mcp-a2a-gate.yml` | MCP + A2A protocol gate | also `application/**` branches; `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, `Ashlar.API` |
 | `onboarding-docs-guard.yml` | Onboarding Docs Guard | README, `docs/**/*.md`, `scripts/*.sh`, `scripts/*.ps1`, `Makefile`, `**/*.csproj` (ProjectTiers guard) |
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate | README, GettingStarted, setup/install scripts, CLI; **weekly schedule** |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |
@@ -110,7 +110,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 
 ### Manual-only workflows (`workflow_dispatch`)
 
-`composition-mesh-gate`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `ship-gate`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (16).
+`composition-mesh-gate`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `ship-gate`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (17).
 
 Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not run on PRs; run them with `gh workflow run "<name>" --ref <branch>`.
 
@@ -119,7 +119,6 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 | Workflow file | Trigger |
 | --- | --- |
 | `autonomous-release-manager.yml` | path-filtered PR validation + `schedule` Mon 05:00 UTC + dispatch; six isolated, mandatory audit lanes run only on schedule/dispatch; report uploaded on READY or BLOCKED |
-| `mesh-lab-stress-gate.yml` | dispatch only (schedule removed 2026-08-16) |
 | `mesh-lab-tls-gate.yml` | `schedule` Tue 07:00 UTC + dispatch |
 | `release.yml` | push tags `v*.*.*` + dispatch |
 | `devlog-ghost-release.yml` | `release: published` + dispatch |

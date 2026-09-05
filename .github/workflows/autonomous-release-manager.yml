@@ -153,3 +153,45 @@ jobs:
             .ashlar/release-manager/latest.md
           if-no-files-found: error
           retention-days: 30
+
+  finalize:
+    name: Finalize interrupted audit
+    needs: [validate, audit]
+    if: >-
+      always() &&
+      github.event_name != 'pull_request' &&
+      needs.audit.result != 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record terminal workflow state
+        shell: bash
+        env:
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          AUDIT_RESULT: ${{ needs.audit.result }}
+        run: |
+          mkdir -p release-manager-terminal
+          cat > release-manager-terminal/report.json <<JSON
+          {
+            "schemaVersion": 1,
+            "headSha": "${GITHUB_SHA}",
+            "verdict": "blocked",
+            "validateJob": "${VALIDATE_RESULT}",
+            "auditJob": "${AUDIT_RESULT}",
+            "reason": "The audit job did not complete successfully; inspect its primary evidence artifact when present."
+          }
+          JSON
+          cat > release-manager-terminal/report.md <<MARKDOWN
+          # Autonomous Release Manager
+
+          **BLOCKED:** validate=\`${VALIDATE_RESULT}\`, audit=\`${AUDIT_RESULT}\`
+          on \`${GITHUB_SHA}\`.
+          MARKDOWN
+
+      - name: Upload terminal failure evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-manager-terminal-${{ github.sha }}
+          path: release-manager-terminal/
+          if-no-files-found: error
+          retention-days: 30
