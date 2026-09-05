@@ -66,6 +66,67 @@ public sealed class LiteDbMeshDirectorPersistenceTests
         }
     }
 
+    [Fact]
+    public async Task Fleet_and_tasks_survive_file_backup_wipe_and_restore()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ashlar-mesh-dr-{Guid.NewGuid():N}.db");
+        var backup = path + ".bak";
+        try
+        {
+            MeshTaskState created;
+            {
+                var nodes = new LiteDbFleetNodeRegistry(path);
+                var tasks = new LiteDbMeshTaskRegistry(path);
+
+                await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+                    "dr-peer",
+                    "https://worker.example/",
+                    new Dictionary<string, string>(),
+                    Array.Empty<string>(),
+                    false,
+                    DateTimeOffset.UtcNow,
+                    DateTimeOffset.UtcNow,
+                    0,
+                    MeshFleetTrustTier.Trusted,
+                    Admitted: true,
+                    RegistrationKeyFingerprint: "DR123"));
+
+                created = await tasks.CreateAsync(
+                    new MeshTaskCreateSpec(
+                        "dr-task",
+                        1,
+                        Array.Empty<string>(),
+                        null,
+                        0,
+                        null,
+                        IdempotencyKey: "idem-dr-1"));
+            }
+
+            File.Exists(path).Should().BeTrue("LiteDB must exist before backup");
+            File.Copy(path, backup, overwrite: true);
+            File.Delete(path);
+            File.Exists(path).Should().BeFalse();
+            File.Copy(backup, path);
+
+            var nodes2 = new LiteDbFleetNodeRegistry(path);
+            var tasks2 = new LiteDbMeshTaskRegistry(path);
+
+            var node = await nodes2.GetAsync("dr-peer");
+            node.Should().NotBeNull();
+            node!.RegistrationKeyFingerprint.Should().Be("DR123");
+
+            var task = await tasks2.GetAsync(created.TaskId);
+            task.Should().NotBeNull();
+            task!.Name.Should().Be("dr-task");
+            task.IdempotencyKey.Should().Be("idem-dr-1");
+        }
+        finally
+        {
+            TryDelete(path);
+            TryDelete(backup);
+        }
+    }
+
     private static void TryDelete(string path)
     {
         try

@@ -299,6 +299,19 @@ class DrGateCountedTests(unittest.TestCase):
         self.assertIn("pull_request:", text)
         self.assertIn("LiteDbUserKnowledgeLogStoreTests", text)
 
+    def test_dr_tier_c_runs_counted_host_litedb_fallback(self) -> None:
+        text = (ROOT / "scripts" / "dr-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("LiteDbMeshDirectorPersistenceTests", text)
+        self.assertIn("--min-tests 2", text)
+        self.assertIn("host-litedb-backup-restore", text)
+        self.assertIn("dr-gate-tier-c: PASS", text)
+        self.assertNotIn("ashlar-dr-placeholder", text)
+        self.assertNotIn("fake.litedb", text)
+        self.assertNotIn("skipped-advisory", text)
+        self.assertNotIn("PASS (advisory)", text)
+        self.assertNotIn('dotnet test "$FLEET_TESTS"', text)
+
 
 class PerfGateCountedTests(unittest.TestCase):
     def test_perf_tier_a_runs_counted_orch_and_background_slices(self) -> None:
@@ -336,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 66", text)
+        self.assertIn("--min-tests 67", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):

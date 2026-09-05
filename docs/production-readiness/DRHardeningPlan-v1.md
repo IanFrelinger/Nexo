@@ -10,14 +10,14 @@ Backup → wipe → restore for **pipeline LiteDB**, **user knowledge log**, and
 |------|--------|---------|
 | A | Pipeline LiteDB backup/restore + resume | `make dr-gate-tier-a` |
 | B | User knowledge LiteDB tests | `make dr-gate-tier-b` |
-| C | Mesh director restart (`.env.mesh-lab`) or advisory skip | `make dr-gate-tier-c` |
+| C | Mesh director restart (`.env.mesh-lab`) or counted host LiteDB backup/restore (`LiteDbMeshDirectorPersistenceTests`, floor 2) | `make dr-gate-tier-c` |
 
 ## Flags
 
 | Variable | Effect |
 |----------|--------|
 | `DR_GATE_SKIP_PRIOR=1` | Skip compat gate (default) |
-| `DR_GATE_SKIP_MESH=1` | Skip mesh persistence even if lab is up |
+| `DR_GATE_SKIP_MESH=1` | Skip the Docker mesh-lab restart path even if the lab is up; the counted host LiteDB slice still runs |
 
 ## Related
 

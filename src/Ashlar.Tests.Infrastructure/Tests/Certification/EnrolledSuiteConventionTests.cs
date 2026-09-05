@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 66");
+        text.Should().Contain("--min-tests 67");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -370,6 +370,22 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("SHIP_GATE_BUNDLE_PROFILE");
         text.Should().Contain("ship-gate-tier-d: PASS");
         text.Should().NotContain("SHIP_GATE_RUN_RUNTIME_GATE");
+    }
+
+    [Fact]
+    public void DrTierC_RunsCountedHostLiteDbFallback()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/dr-gate-tier-c.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("LiteDbMeshDirectorPersistenceTests");
+        text.Should().Contain("--min-tests 2");
+        text.Should().Contain("dr-gate-tier-c: PASS");
+        text.Should().Contain("host-litedb-backup-restore");
+        text.Should().NotContain("ashlar-dr-placeholder");
+        text.Should().NotContain("fake.litedb");
+        text.Should().NotContain("skipped-advisory");
+        text.Should().NotContain("dotnet test \"$FLEET_TESTS\"");
     }
 
     [Fact]
