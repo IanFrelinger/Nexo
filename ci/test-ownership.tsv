@@ -52,7 +52,7 @@ src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj	mcp-a2a-gate	-	MCP se
 src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj	make-test	-	in Kernel and Runtime solutions
 src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj	kernel-coverage-gate	-	application layer
 src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj	perf-gate-tier-a	-	background agents
-src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj	products-gate	-	products-gate runs DistributedContractTests only; remaining contract suites still have no dedicated gate
+src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj	contracts-suite	-	Release proof is the tests-lane counted suite (18 unique). products-gate still runs the DistributedContractTests subset.
 src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj	kernel-coverage-gate	-	domain, 100% line coverage target
 src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj	cert-gate	-	carries the required check
 src/Ashlar.Tests.Kernel/Ashlar.Tests.Kernel.csproj	kernel-gate	-	kernel

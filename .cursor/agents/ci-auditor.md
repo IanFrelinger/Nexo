@@ -18,7 +18,8 @@ Deterministic lane to reconcile against (`ci/autonomous-release-manager.json`
   `--min-tests 200`
 - counted product scaffolds on `products/Ashlar.Products.sln` with prefix
   `Ashlar.Tests.Products.` and `--min-tests 12`
-- counted `DistributedContractTests` with `--min-tests 5`
+- counted `Ashlar.Tests.Contracts` suite with prefix `Ashlar.Tests.Contracts.` and
+  `--min-tests 18` (Distributed plus remaining contract suites)
 - CLI counted suite excludes `UnitTestBridgeTests` (known hang) while
   keeping `--min-tests 200`
 

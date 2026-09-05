@@ -27,6 +27,8 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Versioned publish is fail-closed on READY.** `release.yml` and `release-nuget.yml` require an autonomous release-manager `ready` verdict for the same SHA before images or NuGet jobs start. Reusable publish workflows pin Actions to commit SHAs. Optional SBOM/Grype install uses pinned release tarballs with SHA-256 checks instead of `curl | sh` from `main`.
 - **Documentation lane unique floor is 31.** Dual-TFM listing of `Onboarding` + `PublishedVersionDocsLintTests` is 60 lines, not 50 unique tests. Onboarding quickstarts disclose that unconfigured `pipeline run` fails closed.
 - **Tests-lane CLI proof matches the counted suite.** The plan objective no longer claims hanging `UnitTestBridgeTests` rows run; `ci/test-ownership.tsv` names `complete-cli-suite` as the CLI release runner.
+- **Tests-lane Contracts floor is 18 unique.** Release proof runs the full `Ashlar.Tests.Contracts` suite, not only the 5 Distributed tests.
+- **`CompositeBrickRegistry` catalog I/O leaves the caller sync context** so ASP.NET request threads cannot deadlock on remote catalog awaits.
 - **`Ashlar.Contracts` joins the PublicAPI baseline.** HTTP DTOs that shipped in 0.1.2 are `PublicAPI.Shipped.txt`; `Ashlar.Contracts.Distributed` stays Unshipped until the next versioned publish.
 - **`copy-assemblies` honors the parent configuration** so a Release solution build no longer compiles that helper as Debug.
 - **`Ashlar.sln` Release builds enroll Fleet Contracts and Infrastructure** so commercial Fleet test references cannot resolve Debug assemblies. `LiteDbMeshTaskRegistry.TryGetByIdempotencyKeyAsync` takes the same store lock as the other registry methods.

@@ -37,7 +37,7 @@
     {
       "id": "tests",
       "title": "Test and CI truth",
-      "objective": "Run the required certification suite, the counted CLI suite excluding hanging UnitTestBridgeTests rows, and product tests. Timeouts and zero-test outcomes are blockers, not skips.",
+      "objective": "Run the required certification suite, the counted CLI suite excluding hanging UnitTestBridgeTests rows, product tests, and the full Ashlar.Tests.Contracts suite. Timeouts and zero-test outcomes are blockers, not skips.",
       "required": true,
       "timeoutSeconds": 3900,
       "steps": [
@@ -92,19 +92,17 @@
           "timeoutSeconds": 900
         },
         {
-          "name": "distributed-contracts",
+          "name": "contracts-suite",
           "command": [
             "python3",
             "scripts/run-dotnet-test-counted.py",
             "--project",
             "src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj",
             "--expected-prefix",
-            "Ashlar.Tests.Contracts.DistributedContractTests.",
+            "Ashlar.Tests.Contracts.",
             "--min-tests",
-            "5",
+            "18",
             "--",
-            "--filter",
-            "FullyQualifiedName~DistributedContractTests",
             "--blame-hang-timeout",
             "120s",
             "--blame-hang-dump-type",
