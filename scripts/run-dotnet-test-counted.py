@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import re
 import subprocess
 import sys
 import tempfile
@@ -13,11 +14,23 @@ from pathlib import Path
 
 
 def discovered_tests(output: str, expected_prefix: str) -> list[str]:
-    return [
-        line.strip()
-        for line in output.splitlines()
-        if line.strip().startswith(expected_prefix)
-    ]
+    # Multi-TFM discovery writes both frameworks to one stream, so two identities can
+    # land on a single line. Splitting at every prefix occurrence keeps each identity
+    # whole: fusing them would invent an identity that can never execute AND drop one
+    # from the floor, letting a genuinely missing test pass underneath it.
+    pattern = re.compile(re.escape(expected_prefix))
+    identities: list[str] = []
+    for line in output.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith(expected_prefix):
+            continue
+        starts = [match.start() for match in pattern.finditer(stripped)]
+        for index, start in enumerate(starts):
+            end = starts[index + 1] if index + 1 < len(starts) else len(stripped)
+            identity = stripped[start:end].strip()
+            if identity:
+                identities.append(identity)
+    return identities
 
 
 def executed_evidence(

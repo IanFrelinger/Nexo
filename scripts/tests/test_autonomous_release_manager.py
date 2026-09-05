@@ -711,6 +711,28 @@ The following Tests are available:
         self.assertEqual(3, len(discovered))
         self.assertEqual(1, len(set(discovered)))
 
+    def test_interleaved_multi_tfm_discovery_lines_are_split_not_fused(self) -> None:
+        # Multi-TFM discovery shares one stream, so two identities can land on one line.
+        # Fusing them invents an identity that can never execute and drops one from the
+        # floor, which would let a genuinely missing test pass underneath it.
+        output = (
+            "The following Tests are available:\n"
+            "    Ashlar.Tests.CLI.One\tAshlar.Tests.CLI.One\n"
+            "    Ashlar.Tests.CLI.Two(value: \"a b\")   Ashlar.Tests.CLI.Three\n"
+        )
+
+        discovered = counted.discovered_tests(output, "Ashlar.Tests.CLI.")
+
+        self.assertEqual(
+            [
+                "Ashlar.Tests.CLI.One",
+                "Ashlar.Tests.CLI.One",
+                'Ashlar.Tests.CLI.Two(value: "a b")',
+                "Ashlar.Tests.CLI.Three",
+            ],
+            discovered,
+        )
+
     def test_trx_execution_count_is_summed(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "result.trx"
