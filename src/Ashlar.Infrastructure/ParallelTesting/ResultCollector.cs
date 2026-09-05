@@ -12,7 +12,8 @@ public sealed class ResultCollector : IResultCollector
     public Task<AggregatedTestResult> CollectAsync(IReadOnlyList<TestInstance> instances, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var allPassed = instances.All(i => i.Passed);
+        // Empty matrix used to vacuous-pass: Enumerable.All is true on zero items.
+        var allPassed = instances.Count > 0 && instances.All(i => i.Passed);
         var best = instances.FirstOrDefault(i => i.Passed) ?? instances.FirstOrDefault();
         return Task.FromResult(new AggregatedTestResult
         {

@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Ashlar.Core.Application.ParallelTesting.Models;
 using Ashlar.Core.Application.ParallelTesting.Ports;
 
@@ -62,11 +64,31 @@ public sealed class DotNetInstanceSpawner : IInstanceSpawner
             var stderr = await proc.StandardError.ReadToEndAsync(ct).ConfigureAwait(false);
             await proc.WaitForExitAsync(ct).ConfigureAwait(false);
             var output = stdout + stderr;
-            return (proc.ExitCode == 0, output);
+            // Same class as ashlar test local / planner dotnet.test: `dotnet test --filter`
+            // exits 0 when discovery matches nothing, so Passed used to be true.
+            var executed = HasExecutedTests(output);
+            var success = proc.ExitCode == 0 && executed;
+            if (!success && proc.ExitCode == 0 && !executed)
+                output += Environment.NewLine + "No tests matched the filter";
+            return (success, output);
         }
         catch (Exception ex)
         {
             return (false, ex.Message);
         }
+    }
+
+    internal static bool HasExecutedTests(string? stdout, string? stderr = null)
+    {
+        var output = string.Concat(stdout, "\n", stderr);
+        if (output.Contains("No test is available", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (output.Contains("No test matches", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var passed = Regex.Match(output, @"Passed:\s*(\d+)");
+        if (!passed.Success)
+            return false;
+        return int.Parse(passed.Groups[1].Value, CultureInfo.InvariantCulture) >= 1;
     }
 }

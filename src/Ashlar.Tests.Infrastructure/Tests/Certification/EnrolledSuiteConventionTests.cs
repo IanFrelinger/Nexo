@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 97");
+        text.Should().Contain("--min-tests 99");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1134,6 +1134,30 @@ public sealed class EnrolledSuiteConventionTests
         var proposals = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             "application/src/Ashlar.CLI/Commands/BackgroundAgent/ProposalsBackgroundAgentCommand.cs"));
         proposals.Should().Contain("DotnetTestTool.Succeeded");
+    }
+
+    [Fact]
+    public void DotNetInstanceSpawner_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Infrastructure/ParallelTesting/DotNetInstanceSpawner.cs"));
+        text.Should().Contain("HasExecutedTests");
+        text.Should().Contain("No test is available");
+        text.Should().Contain("No test matches");
+        text.Should().Contain("No tests matched the filter");
+        text.Should().NotContain("return (proc.ExitCode == 0, output)");
+    }
+
+    [Fact]
+    public void ParallelTestAggregators_FailClosedOnEmptyInstances()
+    {
+        var collector = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Infrastructure/ParallelTesting/ResultCollector.cs"));
+        collector.Should().Contain("instances.Count > 0 && instances.All");
+
+        var aggregator = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Infrastructure/Adaptation/InstanceResultAggregator.cs"));
+        aggregator.Should().Contain("results.Count > 0 && results.All");
     }
 
     [Fact]

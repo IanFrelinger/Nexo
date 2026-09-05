@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 97", text)
+        self.assertIn("--min-tests 99", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -585,6 +585,37 @@ class DotnetTestToolFailClosedTests(unittest.TestCase):
             / "ProposalsBackgroundAgentCommand.cs"
         ).read_text(encoding="utf-8")
         self.assertIn("DotnetTestTool.Succeeded", proposals)
+
+
+class DotNetInstanceSpawnerFailClosedTests(unittest.TestCase):
+    def test_instance_spawner_fails_closed_on_zero_tests(self) -> None:
+        text = (
+            ROOT
+            / "src"
+            / "Ashlar.Infrastructure"
+            / "ParallelTesting"
+            / "DotNetInstanceSpawner.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("HasExecutedTests", text)
+        self.assertIn("No test is available", text)
+        self.assertIn("No test matches", text)
+        self.assertIn("No tests matched the filter", text)
+        self.assertNotIn("return (proc.ExitCode == 0, output)", text)
+
+    def test_parallel_aggregators_fail_closed_on_empty_instances(self) -> None:
+        collector = (
+            ROOT / "src" / "Ashlar.Infrastructure" / "ParallelTesting" / "ResultCollector.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("instances.Count > 0 && instances.All", collector)
+
+        aggregator = (
+            ROOT
+            / "src"
+            / "Ashlar.Infrastructure"
+            / "Adaptation"
+            / "InstanceResultAggregator.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("results.Count > 0 && results.All", aggregator)
 
 
 class WorkflowRegressionGateFailClosedTests(unittest.TestCase):

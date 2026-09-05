@@ -265,6 +265,30 @@ public class InfrastructureGapCoverageTests
         var failAgg = await aggregator.AggregateAsync(new[] { failedMany, failedFew });
         failAgg.AllPassed.Should().BeFalse();
         failAgg.BestCandidate!.InstanceId.Should().Be("fail-few");
+
+        var emptyAgg = await aggregator.AggregateAsync(Array.Empty<InstanceResult>());
+        emptyAgg.AllPassed.Should().BeFalse();
+        emptyAgg.BestCandidate.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ResultCollector_fails_closed_when_no_instances()
+    {
+        var collector = new ResultCollector();
+        var empty = await collector.CollectAsync(Array.Empty<TestInstance>());
+        empty.AllPassed.Should().BeFalse();
+        empty.BestCandidate.Should().BeNull();
+
+        var passed = await collector.CollectAsync(new[]
+        {
+            new TestInstance
+            {
+                InstanceId = "ok",
+                ParameterSet = new ParameterSet(),
+                Passed = true,
+            },
+        });
+        passed.AllPassed.Should().BeTrue();
     }
 
     [Fact]

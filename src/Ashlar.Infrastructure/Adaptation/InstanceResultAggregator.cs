@@ -13,7 +13,8 @@ public sealed class InstanceResultAggregator : IInstanceResultAggregator
     public Task<AggregatedResult> AggregateAsync(IReadOnlyList<InstanceResult> results, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var allPassed = results.All(r => r.Passed);
+        // Empty instance lists used to vacuous-pass: Enumerable.All is true on zero items.
+        var allPassed = results.Count > 0 && results.All(r => r.Passed);
         var best = SelectBestCandidate(results);
         return Task.FromResult(new AggregatedResult
         {
