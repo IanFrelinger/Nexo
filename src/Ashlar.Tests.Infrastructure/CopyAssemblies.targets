@@ -13,14 +13,14 @@
       <CopyScriptProj Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/copy-assemblies.csproj</CopyScriptProj>
       <!-- Always net10.0 — see scripts/copy-assemblies.csproj (avoids NETSDK1005 when the parent inner build is another TFM). -->
       <CopyAssemblyToolTfm>net10.0</CopyAssemblyToolTfm>
-      <CopyScriptExe>$(CopyScriptDir)\bin\Debug\$(CopyAssemblyToolTfm)\copy-assemblies.dll</CopyScriptExe>
-      <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/$(CopyAssemblyToolTfm)/copy-assemblies.dll</CopyScriptExe>
+      <CopyScriptExe>$(CopyScriptDir)\bin\$(Configuration)\$(CopyAssemblyToolTfm)\copy-assemblies.dll</CopyScriptExe>
+      <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/$(Configuration)/$(CopyAssemblyToolTfm)/copy-assemblies.dll</CopyScriptExe>
     </PropertyGroup>
     
     <!-- Build the C# assembly copying tool (always net10.0; runs under the pinned SDK 10). -->
     <MSBuild Projects="$(CopyScriptProj)" 
              Targets="Restore;Build" 
-             Properties="Configuration=Debug;TargetFramework=$(CopyAssemblyToolTfm)"
+             Properties="Configuration=$(Configuration);TargetFramework=$(CopyAssemblyToolTfm)"
              Condition="Exists('$(CopyScriptProj)') AND '$(SkipCopyAssemblies)' != 'true'"
              ContinueOnError="false" />
     
@@ -30,7 +30,7 @@
           ContinueOnError="true" />
     
     <!-- Alternative: Use dotnet run if the DLL doesn't exist yet (builds on first run) -->
-    <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -f $(CopyAssemblyToolTfm) -- &quot;$(DepsJsonPath)&quot; &quot;$(NormalizedOutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
+    <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -c $(Configuration) -f $(CopyAssemblyToolTfm) -- &quot;$(DepsJsonPath)&quot; &quot;$(NormalizedOutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
           Condition="!Exists('$(CopyScriptExe)') AND Exists('$(CopyScriptProj)') AND Exists('$(DepsJsonPath)') AND '$(SkipCopyAssemblies)' != 'true'"
           ContinueOnError="true" />
     
