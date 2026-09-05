@@ -31,6 +31,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestReleaseGateRejectsInvalidCoreMinTotalAsync().ConfigureAwait(false);
             await TestGateRejectsInvalidMinPassRateAsync().ConfigureAwait(false);
             await TestGateRejectsInvalidMinConsecutivePassesAsync().ConfigureAwait(false);
+            await TestReleaseGateRejectsInvalidNcrFailureRateAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -393,6 +394,26 @@ public sealed class RuntimeCommandTests : UnitTestBase
             "A negative --min-consecutive-passes must be refused legibly.");
         AssertTrue(!output.Contains("Gate passed", StringComparison.Ordinal),
             "A negative --min-consecutive-passes must not be remapped to 0 before the gate can pass.");
+    }
+
+    private async Task TestReleaseGateRejectsInvalidNcrFailureRateAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            var (exitCode, output) = await InvokeRuntimeAsync(
+                $"release-gate --mode core --ncr-failure-rate-slo 2 --repo-root \"{repoRoot}\" --allow-mock").ConfigureAwait(false);
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("Invalid --ncr-failure-rate-slo", StringComparison.Ordinal),
+                "A --ncr-failure-rate-slo above 1 must be refused legibly.");
+            AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
+                "A --ncr-failure-rate-slo of 2 must be refused before starting the release-core matrix.");
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()

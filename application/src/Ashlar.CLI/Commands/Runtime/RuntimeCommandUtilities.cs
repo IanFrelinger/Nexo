@@ -92,6 +92,14 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidVisualPromotionStreakMessage = "Invalid --visual-promotion-streak. Use a non-negative integer.";
 
+    internal const string InvalidNcrFailureRateSloMessage = "Invalid --ncr-failure-rate-slo. Use a number in [0,1].";
+
+    internal const string InvalidNcrResolutionMsSloMessage = "Invalid --ncr-resolution-ms-slo. Use a positive number.";
+
+    internal const string InvalidNcrLoadMsSloMessage = "Invalid --ncr-load-ms-slo. Use a positive number.";
+
+    internal const string InvalidNcrOutcomeMsSloMessage = "Invalid --ncr-outcome-ms-slo. Use a positive number.";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;
@@ -105,6 +113,9 @@ internal static class RuntimeCommandUtilities
 
     internal static bool TryValidateUnitInterval(double value)
         => double.IsFinite(value) && value is >= 0d and <= 1d;
+
+    internal static bool TryValidatePositiveDuration(double value)
+        => double.IsFinite(value) && value > 0d;
 
 
 }

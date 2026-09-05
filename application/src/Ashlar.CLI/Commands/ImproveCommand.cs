@@ -83,6 +83,27 @@ public sealed class ImproveCommand : Command
                 return;
             }
 
+            if (observationDays <= 0)
+            {
+                Console.Error.WriteLine(InvalidObservationDaysMessage);
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            if (intervalMinutes <= 0)
+            {
+                Console.Error.WriteLine(InvalidIntervalMinutesMessage);
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            if (observeMinutes <= 0)
+            {
+                Console.Error.WriteLine(InvalidObserveMinutesMessage);
+                ctx.ExitCode = 1;
+                return;
+            }
+
             // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
             if (continuous)
             {
@@ -115,6 +136,12 @@ public sealed class ImproveCommand : Command
     }
 
     internal const string InvalidAutonomyMessage = "Invalid --autonomy. Use supervised, semi, or full.";
+
+    internal const string InvalidObservationDaysMessage = "Invalid --observation-days. Use a positive integer.";
+
+    internal const string InvalidIntervalMinutesMessage = "Invalid --interval-minutes. Use a positive integer.";
+
+    internal const string InvalidObserveMinutesMessage = "Invalid --observe-minutes. Use a positive integer.";
 
     internal static bool TryNormalizeAutonomy(string? autonomy, out string normalized)
     {

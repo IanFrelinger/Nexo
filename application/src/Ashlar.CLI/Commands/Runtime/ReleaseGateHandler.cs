@@ -98,6 +98,30 @@ internal sealed class ReleaseGateHandler(RuntimeEvaluateExecutor executeEvaluate
             Console.Error.WriteLine(RuntimeCommandUtilities.InvalidVisualPromotionStreakMessage);
             return 1;
         }
+
+        if (!RuntimeCommandUtilities.TryValidateUnitInterval(ncrFailureRateSlo))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidNcrFailureRateSloMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveDuration(ncrResolutionMsSlo))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidNcrResolutionMsSloMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveDuration(ncrLoadMsSlo))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidNcrLoadMsSloMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveDuration(ncrOutcomeMsSlo))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidNcrOutcomeMsSloMessage);
+            return 1;
+        }
         var finalExitCode = 0;
         RuntimeGateResult? coreGateResult = null;
         RuntimeGateResult? visualGateResult = null;

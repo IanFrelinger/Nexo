@@ -57,6 +57,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestRuntimeGateInvalidMinPassRateExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowOptimizeInvalidEarlyStopMinSuccessRateExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeReleaseGateInvalidCoreMinPassRateExitsNonZeroAsync().ConfigureAwait(false);
+            await TestImproveInvalidObservationDaysExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeReleaseGateInvalidNcrFailureRateExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -1153,6 +1155,55 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "A --core-min-pass-rate below 0 must be refused legibly.");
             AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
                 "A --core-min-pass-rate of -1 must be refused before starting the release-core matrix.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestImproveInvalidObservationDaysExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ImproveCommand());
+            var exitCode = await root.InvokeAsync("improve --from-observation --observation-days -1 --dry-run --yes --skip-regression").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "improve --observation-days -1 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --observation-days", StringComparison.Ordinal),
+                "A non-positive --observation-days must be refused legibly.");
+            AssertTrue(!output.Contains("last -1 day", StringComparison.Ordinal),
+                "A --observation-days of -1 must not run observation lookback.");
+            AssertTrue(!output.Contains("Block 4: Closed-loop improve", StringComparison.Ordinal),
+                "A --observation-days of -1 must be refused before starting improve.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeReleaseGateInvalidNcrFailureRateExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime release-gate --mode core --ncr-failure-rate-slo 2 --allow-mock").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime release-gate --ncr-failure-rate-slo 2 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --ncr-failure-rate-slo", StringComparison.Ordinal),
+                "A --ncr-failure-rate-slo above 1 must be refused legibly.");
+            AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
+                "A --ncr-failure-rate-slo of 2 must be refused before starting the release-core matrix.");
         }
         finally
         {
