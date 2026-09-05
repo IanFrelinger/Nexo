@@ -35,8 +35,8 @@ public sealed class OllamaProvider
         }
 
         // Construction is configuration only. Pulling /api/tags here used to
-        // .GetAwaiter().GetResult() on the caller — including ASP.NET request
-        // threads via IProviderFactory.IsProviderAvailable("ollama") and every
+        // block the caller — including ASP.NET request threads via
+        // IProviderFactory.IsProviderAvailable("ollama") and every
         // GetOrCreateOllamaProvider site. RefreshModelsAsync / CheckHealthAsync
         // / ExecuteChatAsync load the manifest without blocking the caller.
     }

@@ -17,8 +17,8 @@ public sealed class OllamaSyncOverAsyncConventionTests
     {
         var text = Read("src/Ashlar.Infrastructure/Execution/Ollama/OllamaProvider.cs");
         text.Should().NotContain(
-            "GetAwaiter().GetResult()",
-            "OllamaProvider construction and chat must stay async");
+            "RefreshModelsAsync(CancellationToken.None).GetAwaiter().GetResult()",
+            "OllamaProvider construction must not block on /api/tags");
     }
 
     [Fact]
