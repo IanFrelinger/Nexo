@@ -118,14 +118,25 @@ test-prime-time-full: test-prime-time
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/
 # ASHLAR_ALLOW_MOCK=1 matches CI so ProviderFactory / mock-provider tests pass on net10.0.
 test:
-	ASHLAR_ALLOW_MOCK=1 dotnet test Ashlar.sln --blame-hang-timeout 120s --blame-hang-dump-type none
+	ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-min-floor.py \
+	  --project Ashlar.sln \
+	  --expected-prefix "Ashlar.Tests." \
+	  --min-listed 4472 \
+	  -- \
+	  --blame-hang-timeout 120s --blame-hang-dump-type none
 
 # Run tests on all target platforms: local + Docker (ubuntu, alpine, debian).
 # For native macOS/Windows/Linux use: make test-cross-platform (triggers CI).
 test-all-platforms:
 	@echo "=== Local (current OS) ==="
 	dotnet build Ashlar.sln -v minimal
-	dotnet test Ashlar.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none
+	python3 scripts/run-dotnet-test-min-floor.py \
+	  --project Ashlar.sln \
+	  --expected-prefix "Ashlar.Tests." \
+	  --min-listed 4472 \
+	  -- \
+	  --no-build \
+	  --blame-hang-timeout 30s --blame-hang-dump-type none
 	@echo "=== Docker: Ubuntu 8.0 ==="
 	docker build -f .docker/Dockerfile.test-caching --build-arg DOTNET_VERSION=8.0 -t ashlar-test-ubuntu:8.0 .
 	mkdir -p test-results

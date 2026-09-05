@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 113");
+        text.Should().Contain("--min-tests 114");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -768,6 +768,20 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests");
         text.Should().Contain("FullyQualifiedName~BaseFrameworkSmokeTests");
         text.Should().NotContain("$\"test \\\"{infraTestsProject}\\\"");
+    }
+
+    [Fact]
+    public void Makefile_RunsMinFloorOnFullSolution()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "Makefile"));
+        text.Should().Contain("run-dotnet-test-min-floor.py");
+        text.Should().Contain("--min-listed 4472");
+        text.Should().Contain("--project Ashlar.sln");
+        text.Should().NotContain(
+            "ASHLAR_ALLOW_MOCK=1 dotnet test Ashlar.sln --blame-hang-timeout 120s --blame-hang-dump-type none");
+        text.Should().NotContain(
+            "dotnet test Ashlar.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none");
     }
 
     [Fact]

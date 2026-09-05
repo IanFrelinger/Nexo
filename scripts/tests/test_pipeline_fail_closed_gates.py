@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 113", text)
+        self.assertIn("--min-tests 114", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1031,6 +1031,22 @@ class CiVerifyCountedTests(unittest.TestCase):
         )
         self.assertIn("FullyQualifiedName~BaseFrameworkSmokeTests", text)
         self.assertNotIn('$"test \\"{infraTestsProject}\\"', text)
+
+
+class MakefileSlnMinFloorTests(unittest.TestCase):
+    def test_makefile_runs_min_floor_on_full_solution(self) -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-min-floor.py", makefile)
+        self.assertIn("--min-listed 4472", makefile)
+        self.assertIn("--project Ashlar.sln", makefile)
+        self.assertNotIn(
+            "ASHLAR_ALLOW_MOCK=1 dotnet test Ashlar.sln --blame-hang-timeout 120s --blame-hang-dump-type none",
+            makefile,
+        )
+        self.assertNotIn(
+            "dotnet test Ashlar.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none",
+            makefile,
+        )
 
 
 class MakefileSlnfMinFloorTests(unittest.TestCase):
