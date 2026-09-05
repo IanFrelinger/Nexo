@@ -34,9 +34,7 @@ public class TestPortableCommand
             var scope = ctx.ParseResult.GetValueForOption(scopeOpt) ?? "persistence";
             var filter = ctx.ParseResult.GetValueForOption(filterOpt);
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
-            var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var verbose = verboseOpt != null && ctx.ParseResult.GetValueForOption(verboseOpt);
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
 
             var exitCode = await ExecuteAsync(list, scope, json, verbose, filter);
             ctx.ExitCode = exitCode;

@@ -198,7 +198,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 123");
+        text.Should().Contain("--min-tests 124");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1338,6 +1338,22 @@ public sealed class EnrolledSuiteConventionTests
             var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(), rel));
             text.Should().Contain("CommandExecutionSupport.WantsJson");
             text.Should().NotContain("o.Name == \"--format-json\"");
+        }
+    }
+
+    [Fact]
+    public void VerboseLookups_UseWantsVerboseHelper()
+    {
+        foreach (var rel in new[]
+        {
+            "application/src/Ashlar.CLI/Commands/TestPortableCommand.cs",
+            "application/src/Ashlar.CLI/Commands/TestMultiEnvCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DockerCommand.cs",
+        })
+        {
+            var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(), rel));
+            text.Should().Contain("CommandExecutionSupport.WantsVerbose");
+            text.Should().NotContain("o.Name == \"--verbose\"");
         }
     }
 

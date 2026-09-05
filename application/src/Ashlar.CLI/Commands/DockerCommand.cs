@@ -54,9 +54,7 @@ public class DockerCommand : Command
             var context = ctx.ParseResult.GetValueForOption(contextOpt) ?? new DirectoryInfo(Environment.CurrentDirectory);
             var buildArgs = ctx.ParseResult.GetValueForOption(buildArgOpt) ?? Array.Empty<string>();
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
-            var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
             await BuildAsync(dockerfile, tag, context, buildArgs, json, verbose);
         });
 
@@ -113,9 +111,7 @@ public class DockerCommand : Command
             var workdir = ctx.ParseResult.GetValueForOption(workdirOpt);
             var rmImage = ctx.ParseResult.GetValueForOption(rmImageOpt);
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
-            var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
             await RunAsync(image, command, env, volume, workdir, rmImage, json, verbose);
         });
 
@@ -145,9 +141,7 @@ public class DockerCommand : Command
             var containerId = ctx.ParseResult.GetValueForOption(containerIdOpt);
             var all = ctx.ParseResult.GetValueForOption(allOpt);
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
-            var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
             await CleanAsync(imageTag, containerId, all, json, verbose);
         });
 
@@ -165,9 +159,7 @@ public class DockerCommand : Command
         {
             var all = ctx.ParseResult.GetValueForOption(allContainersOpt);
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
-            var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
             await ListContainersAsync(all, json, verbose);
         });
 
@@ -177,9 +169,7 @@ public class DockerCommand : Command
         imagesCmd.SetHandler(async (InvocationContext ctx) =>
         {
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
-            var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
             await ListImagesAsync(json, verbose);
         });
 

@@ -30,6 +30,22 @@ internal static class CommandExecutionSupport
     }
 
     /// <summary>
+    /// True when the caller asked for verbose output with the root's global <c>--verbose</c>.
+    ///
+    /// <para>Same alias lookup as <see cref="WantsJson"/>. A <c>o.Name == "--verbose"</c> test
+    /// matches nothing because System.CommandLine strips the leading <c>--</c>.</para>
+    /// </summary>
+    internal static bool WantsVerbose(ParseResult parseResult)
+    {
+        var verbose = parseResult.RootCommandResult.Command.Options
+            .OfType<Option<bool>>()
+            .FirstOrDefault(o => o.HasAlias("--verbose")
+                              || string.Equals(o.Name, "verbose", StringComparison.Ordinal));
+
+        return verbose is not null && parseResult.GetValueForOption(verbose);
+    }
+
+    /// <summary>
     /// The refusal a command with no JSON rendering returns when <c>--format-json</c> was passed, and
     /// null when it was not — so a handler can read <c>RefuseJsonFormat(...) ?? RealWork(...)</c>.
     ///
