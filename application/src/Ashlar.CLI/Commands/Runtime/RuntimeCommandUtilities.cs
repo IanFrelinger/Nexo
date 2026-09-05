@@ -29,15 +29,31 @@ internal static class RuntimeCommandUtilities
 
     internal static string NormalizeQaPolicy(string? qaPolicy)
     {
-        var normalized = (qaPolicy ?? "auto").Trim().ToLowerInvariant();
-        return normalized switch
+        return TryNormalizeQaPolicy(qaPolicy, out var normalized) ? normalized : "auto";
+    }
+
+    internal static bool TryNormalizeQaPolicy(string? qaPolicy, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(qaPolicy))
         {
-            "demo" => "demo",
-            "release" => "release",
-            "prod" => "prod",
-            "research" => "research",
-            _ => "auto"
-        };
+            normalized = "auto";
+            return true;
+        }
+
+        normalized = qaPolicy.Trim().ToLowerInvariant();
+        return normalized is "auto" or "demo" or "release" or "prod" or "research";
+    }
+
+    internal static bool TryNormalizeBootstrapProfile(string? profile, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(profile))
+        {
+            normalized = "auto";
+            return true;
+        }
+
+        normalized = profile.Trim().ToLowerInvariant();
+        return normalized is "auto" or "self-extend-functional" or "self-extend-aesthetic" or "self-extend-visual";
     }
 
 

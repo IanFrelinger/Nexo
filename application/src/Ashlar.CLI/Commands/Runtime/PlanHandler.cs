@@ -22,6 +22,18 @@ internal sealed class PlanHandler(Func<string, string, string, string, string, s
             return Task.FromResult(1);
         }
 
+        if (!RuntimeCommandUtilities.TryNormalizeQaPolicy(qaPolicy, out _))
+        {
+            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, "Invalid --qa-policy. Use auto, demo, release, prod, or research."), json);
+            return Task.FromResult(1);
+        }
+
+        if (!RuntimeCommandUtilities.TryNormalizeBootstrapProfile(bootstrapProfile, out _))
+        {
+            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, "Invalid --bootstrap-profile. Use auto, self-extend-functional, self-extend-aesthetic, or self-extend-visual."), json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {

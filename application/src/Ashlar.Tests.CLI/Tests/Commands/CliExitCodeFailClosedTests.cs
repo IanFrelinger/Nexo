@@ -30,6 +30,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestBackgroundAgentLogsInvalidSinceExitsNonZeroWithoutListingAsync().ConfigureAwait(false);
             await TestWorkflowReportInvalidSinceExitsNonZeroWithoutListingAsync().ConfigureAwait(false);
             await TestChangelogMissingOutputParentCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
+            await TestRuntimePlanInvalidQaPolicyExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -435,6 +436,30 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             var parent = Path.GetDirectoryName(dest);
             if (!string.IsNullOrEmpty(parent) && Directory.Exists(parent))
                 Directory.Delete(parent, recursive: true);
+        }
+    }
+
+    private async Task TestRuntimePlanInvalidQaPolicyExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new RuntimeCommand());
+            var exitCode = await root.InvokeAsync("runtime plan --goal test --qa-policy xyz --use-history false").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime plan --qa-policy xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --qa-policy", StringComparison.Ordinal),
+                "An invalid --qa-policy must be refused legibly.");
+            AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
+                "An invalid --qa-policy must be refused before computing a plan.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 }

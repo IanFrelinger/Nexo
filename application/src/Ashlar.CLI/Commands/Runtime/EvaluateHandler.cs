@@ -37,10 +37,15 @@ internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
             return 1;
         }
 
-        var policies = ResolvePolicies(policiesCsv);
-        if (policies.Length == 0)
+        if (!RuntimeCommandUtilities.TryNormalizeBootstrapProfile(bootstrapProfile, out _))
         {
-            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, "No valid policies provided for evaluation."), json);
+            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, "Invalid --bootstrap-profile. Use auto, self-extend-functional, self-extend-aesthetic, or self-extend-visual."), json);
+            return 1;
+        }
+
+        if (!TryResolvePolicies(policiesCsv, out var policies, out var policyError))
+        {
+            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, policyError), json);
             return 1;
         }
 
@@ -148,14 +153,33 @@ internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
             .ToArray();
     }
 
-    private static string[] ResolvePolicies(string csv)
+    private static bool TryResolvePolicies(string csv, out string[] policies, out string error)
     {
-        return (csv ?? string.Empty)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(RuntimeCommandUtilities.NormalizeQaPolicy)
-            .Where(p => p is "demo" or "release" or "prod" or "research" or "auto")
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        policies = Array.Empty<string>();
+        error = "No valid policies provided for evaluation.";
+        var tokens = (csv ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length == 0)
+            return false;
+
+        var resolved = new List<string>();
+        foreach (var token in tokens)
+        {
+            if (!RuntimeCommandUtilities.TryNormalizeQaPolicy(token, out var policy))
+            {
+                error = "Invalid --policies. Use auto, demo, release, prod, or research.";
+                return false;
+            }
+
+            if (!resolved.Contains(policy, StringComparer.OrdinalIgnoreCase))
+                resolved.Add(policy);
+        }
+
+        if (resolved.Count == 0)
+            return false;
+
+        policies = resolved.ToArray();
+        error = string.Empty;
+        return true;
     }
 
 }

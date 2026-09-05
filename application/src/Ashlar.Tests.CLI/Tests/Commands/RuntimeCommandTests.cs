@@ -19,6 +19,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestGateRequiresConsecutivePassStreakAsync().ConfigureAwait(false);
             await TestGateJsonIncludesSloEvidenceAsync().ConfigureAwait(false);
             await TestReleaseGateRejectsInvalidModeAsync().ConfigureAwait(false);
+            await TestPlanRejectsInvalidQaPolicyAsync().ConfigureAwait(false);
+            await TestPlanRejectsInvalidBootstrapProfileAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -198,6 +200,26 @@ public sealed class RuntimeCommandTests : UnitTestBase
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
         }
+    }
+
+    private async Task TestPlanRejectsInvalidQaPolicyAsync()
+    {
+        var (exitCode, output) = await InvokeRuntimeAsync("plan --goal test --qa-policy xyz --use-history false --json").ConfigureAwait(false);
+        AssertEqual(1, exitCode);
+        AssertTrue(output.Contains("Invalid --qa-policy", StringComparison.Ordinal),
+            "An invalid --qa-policy must be refused legibly.");
+        AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
+            "An invalid --qa-policy must be refused before computing a plan.");
+    }
+
+    private async Task TestPlanRejectsInvalidBootstrapProfileAsync()
+    {
+        var (exitCode, output) = await InvokeRuntimeAsync("plan --goal test --bootstrap-profile xyz --use-history false --json").ConfigureAwait(false);
+        AssertEqual(1, exitCode);
+        AssertTrue(output.Contains("Invalid --bootstrap-profile", StringComparison.Ordinal),
+            "An invalid --bootstrap-profile must be refused legibly.");
+        AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
+            "An invalid --bootstrap-profile must be refused before computing a plan.");
     }
 
     private async Task TestGateJsonIncludesSloEvidenceAsync()

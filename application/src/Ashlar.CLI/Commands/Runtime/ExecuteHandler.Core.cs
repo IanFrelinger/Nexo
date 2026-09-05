@@ -88,6 +88,12 @@ internal sealed partial class ExecuteHandler
         if (string.IsNullOrWhiteSpace(goal))
             return Finalize(new RuntimeExecuteResult(false, "Goal is required.", FailureStage: "input"));
 
+        if (!RuntimeCommandUtilities.TryNormalizeQaPolicy(qaPolicy, out _))
+            return Finalize(new RuntimeExecuteResult(false, "Invalid --qa-policy. Use auto, demo, release, prod, or research.", FailureStage: "input"));
+
+        if (!RuntimeCommandUtilities.TryNormalizeBootstrapProfile(bootstrapProfile, out _))
+            return Finalize(new RuntimeExecuteResult(false, "Invalid --bootstrap-profile. Use auto, self-extend-functional, self-extend-aesthetic, or self-extend-visual.", FailureStage: "input"));
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
             return Finalize(new RuntimeExecuteResult(false, $"Repo root not found: {fullRepoRoot}", RepoRoot: fullRepoRoot, FailureStage: "input"));

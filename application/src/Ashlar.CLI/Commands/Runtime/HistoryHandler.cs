@@ -28,7 +28,12 @@ internal sealed class RuntimeHistoryHandler
         }
         if (!string.IsNullOrWhiteSpace(policy))
         {
-            var p = RuntimeCommandUtilities.NormalizeQaPolicy(policy);
+            if (!RuntimeCommandUtilities.TryNormalizeQaPolicy(policy, out var p))
+            {
+                RuntimeOutputWriter.WriteHistoryResult(new RuntimeHistoryResult(false, "Invalid --policy. Use auto, demo, release, prod, or research."), json);
+                return Task.FromResult(1);
+            }
+
             items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
         if (!string.IsNullOrWhiteSpace(benchmarkSet))
