@@ -137,6 +137,30 @@ class MirrorScriptContractTests(unittest.TestCase):
         self.assertIn("scripts/lib/assert-pipeline-fail-closed.py", text)
 
 
+class ShipGateTierCCanonicalVersionTests(unittest.TestCase):
+    def test_ship_gate_tier_c_defaults_to_canonical_version_file(self) -> None:
+        text = (ROOT / "scripts" / "ship-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertNotIn(
+            "0.0.0-ship-gate-local",
+            text,
+            "dummy prerelease is not valid semver after fail-closed preflight",
+        )
+        self.assertIn("tr -d '[:space:]' < VERSION", text)
+        self.assertIn("SHIP_GATE_VERSION", text)
+
+    def test_preflight_rejects_dummy_ship_gate_prerelease(self) -> None:
+        run = subprocess.run(
+            ["bash", str(ROOT / "scripts" / "release-preflight-local.sh"), "0.0.0-ship-gate-local"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        self.assertNotEqual(0, run.returncode)
+        self.assertIn("not valid semver", run.stdout)
+
+
 class SecurityTierEFailClosedTests(unittest.TestCase):
     def test_airgapped_container_refuses_missing_docker(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

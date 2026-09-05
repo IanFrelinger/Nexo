@@ -27,7 +27,7 @@ make composition-mesh-gate-full   # or COMPOSITION_MESH_GATE_SKIP_TIER_D=1 for i
 | `SHIP_GATE_SKIP_TIER_B=1` | Skip `ci verify` (heavy ProdStyle) |
 | `SHIP_GATE_SKIP_TIER_C=1` | Skip NuGet preflight |
 | `SHIP_GATE_SKIP_TIER_D=1` | Skip release bundle |
-| `SHIP_GATE_VERSION=x.y.z` | Preflight version (default `0.0.0-ship-gate-local`) |
+| `SHIP_GATE_VERSION=x.y.z` | Preflight version (default: canonical `VERSION` file; must be valid semver) |
 | `SHIP_GATE_RUN_RUNTIME_GATE=1` | Run `ci release-bundle` (includes runtime SLO gate) |
 | `SHIP_GATE_BUNDLE_PROFILE=quick\|default\|full` | Release bundle profile when runtime gate enabled |
 
