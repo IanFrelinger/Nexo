@@ -10,6 +10,10 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 The next release is **`0.1.2`**; `VERSION` already reads it, so a `v0.1.2` tag on a commit carrying these notes passes `release.yml`'s tag-must-match-VERSION guard. Nothing below is on nuget.org yet: `Ashlar.* 0.1.1` is the latest published line, and the certification-gate behaviour it ships is the pre-`0.1.2` behaviour (see `docs/CertificationGate.md`, "What a `0.1.1` consumer actually gets").
 
+### Added
+
+- **Automated dogfood campaign.** `make dogfood-campaign` (and every other `make dogfood-*` target) runs inside the repo's dev/test container via `scripts/run-in-devcontainer.sh` so the .NET SDK is not a host install. A release-manager coordinator dispatches specialist sub-agents (docs-drift, regression, developer-tool); silence is fail-closed. Agent set: `docs/background-agents/examples/dogfood-campaign.json`. Operator page: `docs/DogfoodCampaign.md`. `ci/published-version` pins the nuget.org line so docs cannot sell repo `VERSION` as installable.
+
 ### Changed
 
 - **Certification gate: the compiler's record is the source authority.** `BrickCertificationProjectLoader` no longer globs `*.cs` under the brick directory and reads the `.csproj` as XML. It asks MSBuild what the project compiles across the whole import chain, then after the build reads the compiler's own record of the compilation (the portable PDB's source-document table) and requires the two to agree file for file and byte for byte. A `Directory.Build.props` that injects a `<Compile>` item, a target that rewrites the brick source during the build, `<DebugType>none</DebugType>`, multi-targeting, and source generators are refused by name. Consequence for the tracked samples: `samples/Directory.Build.props` used to inject the `DomainBrick` alias file into both bricks, which this loader refuses; each brick now names `Ashlar.Core.Domain.Bricks.Brick` in its own file and the props file is empty.

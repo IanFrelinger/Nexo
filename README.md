@@ -89,7 +89,7 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 | Area | What it contains | Where to look |
 |------|------------------|---------------|
 | Kernel spine | Abstractions, core/domain/application, contracts, policies, infrastructure, orchestration, background agents, hosting | [`src/`](src/), [`docs/ProjectTiers.md`](docs/ProjectTiers.md) |
-| Observe/adapt/improve | Pattern observation, analysis, adaptation, self-improvement, changelog, dogfood gates | [`docs/GapAnalysis.md`](docs/GapAnalysis.md), [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md) |
+| Observe/adapt/improve | Pattern observation, analysis, adaptation, self-improvement, changelog, dogfood gates, automated campaign | [`docs/GapAnalysis.md`](docs/GapAnalysis.md), [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md), [`docs/DogfoodCampaign.md`](docs/DogfoodCampaign.md) |
 | Federation (peer mesh) | Hub-less, symmetric peer-to-peer sharing of signed `.ashpkg` extensions: a node serves its packages (`GET /mesh/v1/…`), pulls from configured peers / a tailnet / LAN multicast discovery, all re-gated through its own trust root; TLS/mTLS for a private fleet | [`docs/Federation.md`](docs/Federation.md), [`deploy/node.yml`](deploy/node.yml) |
 | Mesh (director/hub) | The older instance mesh: capability advertisement, director/hub flows, trust-tier placement, virtual labs, phase docs | [`docs/MeshPhase0NorthStar.md`](docs/MeshPhase0NorthStar.md), [`docs/MeshVirtualLab.md`](docs/MeshVirtualLab.md) |
 | gRPC transport | Transport contracts, server, standalone host | `src/Ashlar.Transport.Grpc*` |

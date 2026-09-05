@@ -81,6 +81,8 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 ## Demo / Rollout Walkthroughs
 
 - `scripts/oh-shit-demo.sh` — high-signal end-to-end demo script (bootstrap, chat, orchestration, dogfood).
+- `docs/DogfoodCampaign.md` — automated dogfood campaign: release manager + specialist sub-agents (`make dogfood-campaign`, always inside the dev/test container).
+- `docs/DogfoodValidation.md` — North Star dogfood blocks 1–9, closed loop, Phase F, and the campaign gate.
 
 ## Security / Trust
 
