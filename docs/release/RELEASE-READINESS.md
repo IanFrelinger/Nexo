@@ -32,9 +32,9 @@ These are **blockers** for any public release candidate tag. Every item referenc
 
 | Item | Issue | Status | Release impact |
 |------|-------|--------|----------------|
-| **P0 trust signature holes (limitations 7-9)** | [#513](https://github.com/IanFrelinger/Ashlar/issues/513) | ✅ **CLOSED** (PR merged) | Ed25519 downgrade + schema version + composition key — all closed with fail-closed defaults |
-| **Cert-loop honesty in landing/docs** | [#514](https://github.com/IanFrelinger/Ashlar/issues/514), [#505](https://github.com/IanFrelinger/Ashlar/issues/505), [#506](https://github.com/IanFrelinger/Ashlar/issues/506) | ✅ **CLOSED** (all PRs merged) | Marketing landing page + asset references honest; no false product claims |
-| **Cert-loop integration live path** | [#512](https://github.com/IanFrelinger/Ashlar/issues/512) | ✅ **CLOSED** (PR merged) | Certified loop integrated into extender path; canary verification enforced |
+| **P0 trust signature holes (limitations 7-9)** | [#513](https://github.com/IanFrelinger/Ashlar/pull/513) | ⚠️ **OPEN** (draft PR, awaiting merge) | Ed25519 downgrade + schema version + composition key — fixes ready, not yet merged |
+| **Cert-loop honesty in landing/docs** | [#514](https://github.com/IanFrelinger/Ashlar/pull/514), [#505](https://github.com/IanFrelinger/Ashlar/pull/505), [#506](https://github.com/IanFrelinger/Ashlar/pull/506) | ⚠️ **PARTIAL** (#505, #506 merged; #514 draft open) | Marketing landing page honest (#505 merged); defect fixes pending (#514 draft) |
+| **Cert-loop integration live path** | [#512](https://github.com/IanFrelinger/Ashlar/pull/512) | ⚠️ **OPEN** (draft PR, awaiting merge) | Certified loop integration ready, canary verification enforced — not yet merged |
 
 **Residual trust limitations (documented, not blockers for v0.x):**
 - Dev HMAC signer (not PKI) — documented in `docs/certification-evidence.md` limitation 1; operator can supply real key via `ASHLAR_CERT_ED25519_KEY`
@@ -55,9 +55,11 @@ These are **blockers** for any public release candidate tag. Every item referenc
 
 | Item | Issue | Status | Release impact |
 |------|-------|--------|----------------|
-| **CI not SPOF** | [#511](https://github.com/IanFrelinger/Ashlar/issues/511) | ✅ **CLOSED** (PR merged) | Four complementary required checks (`cert-gate`, `build-core`, `shell-lint`, `docs-link-check`); if any one cancelled/flaky, merge still blocked |
+| **CI not SPOF** | [#511](https://github.com/IanFrelinger/Ashlar/pull/511) | ⚠️ **OPEN** (PR ready, awaiting merge) | Four complementary required checks (`cert-gate`, `build-core`, `shell-lint`, `docs-link-check`) ready — workflows exist, branch protection update still needed |
 
-**Action required (CEO/admin):** Update branch protection settings to add `build-core`, `shell-lint`, `lychee (README + docs)` as required checks (see [CEO-only actions](#5-ceo-only-actions-list)).
+**Action required:** 
+1. **First:** Merge PR #511 (workflows are ready, not yet merged to master)
+2. **Then (CEO/admin):** Update branch protection settings to add `build-core`, `shell-lint`, `lychee (README + docs)` as required checks (see [CEO-only actions](#5-ceo-only-actions-list))
 
 **What sales/marketing may claim:**
 - ✅ "Every PR gated by hermetic certification + build integrity + docs verification"
@@ -197,15 +199,16 @@ Map release bars to **commercial funnel stages**: Aware → Eval → Embed → D
 - Provide feedback on autonomous proposal workflow
 
 **Must be true:**
-- ✅ P0 trust holes closed (issue #513)
-- ✅ CI redundancy in place (issue #511)
+- ⚠️ P0 trust holes closed (PR #513 **open draft**, not yet merged)
+- ⚠️ Cert-loop integration complete (PR #512 **open draft**, not yet merged)
+- ⚠️ CI redundancy in place (PR #511 **open**, not yet merged)
 - ✅ Known limitations documented honestly
 - ✅ Design partner agreement includes "experimental" disclosure for Forge features
 - ✅ Support channel established (GitHub Discussions or direct contact)
 
 **Funnel success:** Design partner deploys → sees value → willing to pay
 
-**Current readiness:** ✅ **READY for runtime**; ⚠️ **HOLD for Forge** (pending P3 ledger)
+**Current readiness:** ⚠️ **HOLD for runtime** (P0 PRs must merge first); ⚠️ **HOLD for Forge** (pending P3 ledger)
 
 ### 3.5 Paid (Builder/Team/Enterprise tiers)
 
@@ -236,9 +239,10 @@ Binary decision framework for **v0.x public release** vs **design-partner privat
 
 **Go criteria (ALL must be true):**
 
-- [ ] **P0 trust holes closed:** Issue #513 merged + verified
-- [ ] **CI redundancy live:** Issue #511 merged + branch protection updated (CEO action required)
-- [ ] **Cert-loop honesty complete:** Issues #505, #506, #512, #514 merged + docs audited
+- [ ] **P0 trust holes closed:** PR #513 merged + verified (**currently open draft**)
+- [ ] **CI redundancy live:** PR #511 merged + branch protection updated (**PR open, not merged**)
+- [ ] **Cert-loop integration:** PR #512 merged + verified (**currently open draft**)
+- [ ] **Cert-loop honesty complete:** PRs #505 (✅ merged), #506 (✅ merged), #514 (⚠️ open draft) merged + docs audited
 - [ ] **Known limitations documented:** `certification-evidence.md` + `SELF-EXTEND-AUDIT.md` current
 - [ ] **User-facing docs accurate:** TesterQuickstart + IntegratorGuide tested by external reader
 - [ ] **Security defaults safe:** README + SECURITY.md warn about HTTP-only / no auth default
@@ -250,19 +254,20 @@ Binary decision framework for **v0.x public release** vs **design-partner privat
 
 **No-go criteria (ANY one blocks public release):**
 
-- [ ] Any P0 issue (#511, #512, #513) still open
-- [ ] Branch protection not updated (cert-gate still SPOF)
+- [x] **ACTIVE BLOCKER:** Any P0 PR (#513, #512, #511, #514) still open — **all four currently open**
+- [ ] Branch protection not updated (cert-gate still SPOF) — **blocked by #511 merge**
 - [ ] Landing page contains false Cloud GA or autonomous production claims
 - [ ] TesterQuickstart fails on clean machine
 - [ ] Security defaults allow unauthenticated network exposure without explicit opt-in
 
-**Current recommendation:** ⚠️ **NO-GO for public v0.x** until branch protection updated (CEO action) + external docs validation
+**Current recommendation:** ⚠️ **NO-GO for public v0.x** — P0 PRs must merge first, then branch protection update, then external validation
 
 ### 4.2 Design-partner private release
 
 **Go criteria (LESS restrictive than public):**
 
-- [ ] **P0 trust holes closed:** Issue #513 merged
+- [ ] **P0 trust holes closed:** PR #513 merged (**currently open draft**)
+- [ ] **Cert-loop integration:** PR #512 merged (**currently open draft**)
 - [ ] **CI primary gate working:** `cert-gate` reliable (redundancy nice-to-have, not blocker)
 - [ ] **Known limitations documented:** Limitations 1-9 in `certification-evidence.md`
 - [ ] **Design-partner agreement signed:** Includes "experimental" disclosure for Forge features
@@ -272,11 +277,12 @@ Binary decision framework for **v0.x public release** vs **design-partner privat
 
 **No-go criteria:**
 
-- [ ] Issue #513 still open (trust signature holes)
+- [x] **ACTIVE BLOCKER:** PR #513 still open (trust signature holes) — **currently open draft**
+- [x] **ACTIVE BLOCKER:** PR #512 still open (cert-loop integration) — **currently open draft**
 - [ ] Cert-gate consistently failing on master
 - [ ] No design-partner agreement (no legal protection for experimental features)
 
-**Current recommendation:** ✅ **GO for design-partner private** (runtime ready, Forge hold-mode with disclosure)
+**Current recommendation:** ⚠️ **HOLD design-partner private** — merge P0 PRs (#513, #512) first, then safe to proceed
 
 ---
 
@@ -286,9 +292,12 @@ These actions require **repository administrator** or **organization owner** per
 
 ### 5.1 Branch protection (CI hardening)
 
-**Issue:** [#511](https://github.com/IanFrelinger/Ashlar/issues/511) closed, but branch protection not yet updated.
+**Issue:** [#511](https://github.com/IanFrelinger/Ashlar/pull/511) **open** (workflows ready, awaiting merge), then branch protection must be updated.
 
-**Action required:**
+**Action required (two-step):**
+
+1. **First (any contributor with merge rights):** Merge PR #511 to get CI workflows onto master
+2. **Then (CEO/admin only):**
 
 1. Navigate to **Settings → Branches → Branch protection rule for `master`**
 2. Under "Require status checks to pass before merging", add these required checks:
@@ -304,7 +313,7 @@ These actions require **repository administrator** or **organization owner** per
 
 ### 5.2 GitHub Pages (marketing landing)
 
-**Issue:** Landing page ready at `site/index.html` (issues #505, #514 closed), not yet deployed.
+**Issue:** Landing page at `site/index.html` (PR #505 merged, PR #514 **open draft** with defect fixes), not yet deployed.
 
 **Action required:**
 
@@ -380,28 +389,38 @@ These actions require **repository administrator** or **organization owner** per
 
 ## 6. Release decision summary
 
-### Recommendation: Design-partner private FIRST
+### Recommendation: Hold for P0 PR merges, THEN design-partner private
 
 **Rationale:**
-- Runtime P0 trust holes closed (#513) ✅
-- CI redundancy implemented but branch protection not updated (CEO action) ⚠️
+- Runtime P0 trust holes (#513) — ⚠️ **OPEN** (draft PR, fixes ready but not merged)
+- CI redundancy (#511) — ⚠️ **OPEN** (workflows ready, not merged, branch protection not updated)
+- Cert-loop integration (#512) — ⚠️ **OPEN** (draft PR, not merged)
+- Landing honesty (#514) — ⚠️ **OPEN** (draft PR, partial fixes merged via #505/#506)
 - Known limitations documented honestly ✅
 - Forge needs P3 ledger before public claims ⚠️
-- Marketing landing honest but Pages not deployed (CEO action) ⚠️
 
 **Path forward:**
 
-1. **NOW:** Go design-partner private (runtime ready, Forge hold-mode with disclosure)
-2. **NEXT:** CEO actions (branch protection, Pages, social preview, Discussions)
-3. **THEN:** External validation (docs tested by non-contributor)
-4. **FINALLY:** Public v0.x release (all go criteria met)
+1. **FIRST:** Merge P0 PRs (#513 trust holes, #511 CI redundancy, #512 cert-loop, #514 landing fixes) — **BLOCKS all releases**
+2. **THEN:** Go design-partner private (runtime bars met, Forge hold-mode with disclosure)
+3. **NEXT:** CEO actions (branch protection, Pages, social preview, Discussions)
+4. **THEN:** External validation (docs tested by non-contributor)
+5. **FINALLY:** Public v0.x release (all go criteria met)
 
 ### What to tell prospects TODAY
 
 **If they ask "Is Ashlar production-ready?"**
 
-✅ **Yes for embedded runtime use cases:**
-- "Ashlar runtime (cert-gate + trust log) is design-partner ready"
+⚠️ **Not yet — P0 PRs must merge first:**
+- "P0 trust holes have fixes ready (PR #513 draft), awaiting merge"
+- "CI redundancy workflows ready (PR #511), awaiting merge + branch protection update"
+- "Cert-loop integration ready (PR #512 draft), awaiting merge"
+- "Cannot recommend even design-partner deployment until P0 PRs land"
+
+**After P0 PRs merge:**
+
+✅ **Yes for embedded runtime use cases (design-partner private):**
+- "Ashlar runtime (cert-gate + trust log) ready for design-partner pilots"
 - "NuGet packages published, HTTP API works, CLI tested"
 - "P0 trust holes closed, known limitations documented"
 - "Fail-closed admission: uncertified code rejected"
@@ -483,9 +502,9 @@ These actions require **repository administrator** or **organization owner** per
 ## Document maintenance
 
 **Owner:** CEO / founder  
-**Last updated:** 2026-09-05 (release readiness doc creation)  
-**Next review:** After each P0 issue closure, before public v0.x announcement  
-**Update triggers:** P3 ledger complete, design partner converts to paid, CEO actions completed
+**Last updated:** 2026-09-05 23:34 UTC (accuracy fix: PRs #513, #512, #511, #514 are OPEN/draft, not merged)  
+**Next review:** After P0 PRs merge (#513, #512, #511, #514), before public v0.x announcement  
+**Update triggers:** P0 PRs merge, P3 ledger complete, design partner converts to paid, CEO actions completed
 
 **How to update:**
 1. Close relevant GitHub issue → mark ✅ in section 1 or 2
