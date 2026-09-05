@@ -80,7 +80,12 @@ test-prod-style:
 # Runs test-prod-style then the full LocalDevCore test slice (Domain + Infrastructure + CLI harness).
 # ProdStyle runs once in test-prod-style; the second pass excludes Category=ProdStyle.
 test-framework-prod-first: test-prod-style
-	dotnet test Ashlar.LocalDevCore.slnf --no-build \
+	python3 scripts/run-dotnet-test-min-floor.py \
+	  --project Ashlar.LocalDevCore.slnf \
+	  --expected-prefix "Ashlar.Tests." \
+	  --min-listed 2277 \
+	  -- \
+	  --no-build \
 	  --filter "Category!=ProdStyle" \
 	  --blame-hang-timeout 30s --blame-hang-dump-type none
 
@@ -100,7 +105,12 @@ test-prime-time:
 
 # Full PrimeTime matrix after ProdStyle gate (ProdStyle excluded on this pass).
 test-prime-time-full: test-prime-time
-	dotnet test $(PRIME_TIME_SLNF) --no-build \
+	python3 scripts/run-dotnet-test-min-floor.py \
+	  --project $(PRIME_TIME_SLNF) \
+	  --expected-prefix "Ashlar.Tests." \
+	  --min-listed 3627 \
+	  -- \
+	  --no-build \
 	  --filter "Category!=ProdStyle" \
 	  --blame-hang-timeout 300s --blame-hang-dump-type none
 
