@@ -1,6 +1,6 @@
-# Publishes GHCR :latest on pushes to main (path-filtered) or manual dispatch.
-# This is not a versioned release and is not gated on the autonomous
-# release-manager READY verdict. Versioned tags (v*.*.*) use **release.yml**.
+# Publishes GHCR :latest on explicit workflow_dispatch only.
+# A push to master/main must not publish images. Versioned tags (v*.*.*)
+# use **release.yml**, which is fail-closed on the READY verdict.
 
 name: Container Image Publish
 
@@ -12,33 +12,6 @@ on:
         required: false
         default: false
         type: boolean
-  push:
-    branches:
-      - master
-      - main
-    paths:
-      - ".github/workflows/container-image-publish.yml"
-      - ".github/workflows/reusable-container-publish.yml"
-      - ".docker/**"
-      - ".dockerignore"
-      - "application/src/Ashlar.CLI/**"
-      - "application/src/Ashlar.API/**"
-      - "src/Ashlar.Core.Application/**"
-      - "src/Ashlar.Infrastructure/**"
-      - "src/Ashlar.Hosting/**"
-      - "src/Ashlar.Runtime/**"
-      - "src/Ashlar.Abstractions/**"
-      - "src/Ashlar.Core.Domain/**"
-      - "src/Ashlar.Brick.Contracts/**"
-      - "src/Ashlar.Orchestration/**"
-      - "src/Ashlar.BackgroundAgents/**"
-      - "src/Ashlar.Transport.Grpc/**"
-      - "src/Ashlar.Policies/**"
-      - "src/Ashlar.Tools.Assembly/**"
-      - "src/Ashlar.Tools.Dev/**"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "global.json"
 
 permissions:
   contents: read

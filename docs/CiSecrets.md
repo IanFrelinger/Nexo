@@ -17,7 +17,7 @@ These jobs carry `if: github.repository_owner == 'IanFrelinger'` (added 2026-08-
 
 | Workflow | Guarded job | Effect on a fork |
 | --- | --- | --- |
-| `.github/workflows/container-image-publish.yml` | `publish` (calls `reusable-container-publish.yml`) | a path-filtered push to `master`/`main` no longer tries to publish `nexo-cli` / `nexo-api` to the fork's GHCR |
+| `.github/workflows/container-image-publish.yml` | `publish` (calls `reusable-container-publish.yml`) | dispatch-only; a fork dispatch is skipped so it cannot publish `nexo-cli` / `nexo-api` to the fork's GHCR |
 | `.github/workflows/release.yml` | `validate` (every other job needs it) | a `v*.*.*` tag push produces skipped `images` / `nuget` / `github-release`; `summarize` and `notify` still run and print / no-op |
 | `.github/workflows/release-nuget.yml` | `nuget` (calls `reusable-release-nuget.yml`) | manual dispatch is a no-op |
 | `.github/workflows/release-staging-on-label.yml` | `dispatch-staging-release` | labelling a PR `release:staging` no longer dispatches `release.yml` |

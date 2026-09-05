@@ -73,7 +73,7 @@ LiteDB stores and snapshots (`ashlar-patterns.db`, `ashlar-adaptation.db`, `ashl
 
 **NuGet-only** (e.g. hotfix packages without retagging images): **Actions → Release NuGet packages** (`release-nuget.yml`).
 
-**Images on `master` without a release:** still driven by **Container Image Publish** on path-filtered pushes.
+**Images `:latest` without a versioned tag:** dispatch **Container Image Publish** (`container-image-publish.yml`). A push to `master`/`main` does not publish.
 
 ## Production-shaped dry run on Linux (containers)
 

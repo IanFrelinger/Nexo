@@ -92,7 +92,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `compat-gate.yml` | compat-gate | `master` only; `scripts/compat-gate*.sh`, `scripts/kernel-gate-tier-b.sh` |
 | `compose-gate.yml` | Compose Gate | compose test stacks, `.docker/Dockerfile.test-caching*`, CLI, README |
 | `container-image-gate.yml` | Container Image Gate | `.docker/Dockerfile.cli`, CLI + spine sources |
-| `container-image-publish.yml` | Container Image Publish | `master`/`main`; `.docker/**`, hosts, spine sources — publishes GHCR images |
+| `container-image-publish.yml` | Container Image Publish | **dispatch-only** GHCR `:latest`; versioned tags use `release.yml` + READY |
 | `devcontainer-gate.yml` | Dev Container Gate | `.devcontainer/**`, `Ashlar.LocalDevCore.slnf`, CLI |
 | `dr-gate.yml` | dr-gate | `master` only; `scripts/dr-gate*.sh` |
 | `environment-setup-gate-v1.yml` | Environment Setup Gate v1 | `master`/`main`; `scripts/setup/**`, CLI |
@@ -110,7 +110,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 
 ### Manual-only workflows (`workflow_dispatch`)
 
-`composition-mesh-gate`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `ship-gate`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (17).
+`composition-mesh-gate`, `container-image-publish`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `ship-gate`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (18).
 
 Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not run on PRs; run them with `gh workflow run "<name>" --ref <branch>`.
 
