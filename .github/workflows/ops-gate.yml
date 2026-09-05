@@ -3,6 +3,12 @@
 name: Ops Gate
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/ops-gate.yml"
+      - "scripts/ops-gate-tier-a.sh"
+      - "scripts/run-dotnet-test-counted.py"
+      - "src/Ashlar.Tests.Infrastructure/Tests/Dogfood/**"
   workflow_dispatch:
     inputs:
       tier:
@@ -29,33 +35,35 @@ jobs:
         with:
           global-json-file: global.json
 
+      # Same `!=` form as Ship B so pull_request runs counted dogfood 1–6.
+      # B/C/E stay dispatch-only (D needs Docker plus proof flags).
       - name: Tier A (dogfood 1–6)
-        if: inputs.tier == 'a' || inputs.tier == 'full'
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a' || inputs.tier == 'full'
         run: make ops-gate-tier-a
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier B (dogfood 7–9 + IPC)
-        if: inputs.tier == 'b' || inputs.tier == 'full'
+        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'b' || inputs.tier == 'full')
         run: make ops-gate-tier-b
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier C (closed-loop)
-        if: inputs.tier == 'c' || inputs.tier == 'full'
+        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
         run: make ops-gate-tier-c
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier D (mesh deep)
-        if: inputs.tier == 'd'
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'd'
         run: make ops-gate-tier-d
         env:
           OPS_GATE_MESH_DEEP: "1"
           DOCKER_DEFAULT_PLATFORM: linux/amd64
 
       - name: Tier E (oh-shit demo)
-        if: inputs.tier == 'e' || inputs.tier == 'full'
+        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'e' || inputs.tier == 'full')
         run: make ops-gate-tier-e
         env:
           ASHLAR_ALLOW_MOCK: "1"

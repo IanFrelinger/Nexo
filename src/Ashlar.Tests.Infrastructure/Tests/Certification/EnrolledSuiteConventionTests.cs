@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 71");
+        text.Should().Contain("--min-tests 73");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -396,6 +396,36 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("ops-gate-full: skipping D");
         text.Should().Contain("OPS_GATE_MESH_DEEP");
         text.Should().Contain("OPS_GATE_CHAOS_LITE");
+    }
+
+    [Fact]
+    public void OpsTierA_RunsCountedDogfoodBlocks()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ops-gate-tier-a.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests");
+        text.Should().Contain("OPS_GATE_MIN_DOGFOOD_TESTS");
+        text.Should().Contain("DogfoodBlock1Tests");
+        text.Should().Contain("DogfoodBlock6Tests");
+        text.Should().Contain("-f net8.0");
+        text.Should().Contain("counted-dogfood-1-6");
+        text.Should().NotContain("dogfood-phase-c");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void OpsGateWorkflow_RunsTierAOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/ops-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("Tests/Dogfood/**");
+        text.Should().Contain("scripts/ops-gate-tier-a.sh");
+        text.Should().Contain("ops-gate-tier-a");
+        text.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'a'");
+        text.Should().NotContain(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'a'");
     }
 
     [Fact]

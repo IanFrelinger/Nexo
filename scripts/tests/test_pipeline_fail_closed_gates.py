@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 71", text)
+        self.assertIn("--min-tests 73", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -902,6 +902,34 @@ class DockerTierFailClosedTests(unittest.TestCase):
         self.assertIn("OPS_GATE_MESH_DEEP", block)
         self.assertIn("OPS_GATE_CHAOS_LITE", block)
         self.assertIn("skipping D", block)
+
+    def test_ops_gate_tier_a_runs_counted_dogfood_blocks(self) -> None:
+        text = (ROOT / "scripts" / "ops-gate-tier-a.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("OPS_GATE_MIN_DOGFOOD_TESTS", text)
+        self.assertIn("DogfoodBlock1Tests", text)
+        self.assertIn("DogfoodBlock6Tests", text)
+        self.assertIn("-f net8.0", text)
+        self.assertIn("counted-dogfood-1-6", text)
+        self.assertNotIn("dogfood-phase-c", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_ops_gate_workflow_runs_tier_a_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "ops-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("Tests/Dogfood/**", text)
+        self.assertIn("scripts/ops-gate-tier-a.sh", text)
+        self.assertIn("ops-gate-tier-a", text)
+        self.assertIn(
+            "github.event_name != 'workflow_dispatch' || inputs.tier == 'a'",
+            text,
+        )
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'a'",
+            text,
+        )
 
 
 class RcTierDFailClosedTests(unittest.TestCase):
