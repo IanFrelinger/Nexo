@@ -20,6 +20,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestObserveEmptyWatchPathsExitsNonZeroAsync().ConfigureAwait(false);
             await TestIngestFailuresMissingTrxExitsNonZeroAsync().ConfigureAwait(false);
             await TestAdaptUnknownBrickExitsNonZeroAsync().ConfigureAwait(false);
+            await TestAnalyzeBricksViolationExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -146,6 +147,31 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             root.AddCommand(new AdaptCommand());
             var exitCode = await root.InvokeAsync($"adapt --brick not-a-brick --store-path {tempRoot}").ConfigureAwait(false);
             AssertTrue(exitCode != 0, "adapt with an unknown brick must exit non-zero, not 0.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    private async Task TestAnalyzeBricksViolationExitsNonZeroAsync()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ashlar-bricks-empty-catch-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        var source = Path.Combine(tempRoot, "Bad.cs");
+        await File.WriteAllTextAsync(source, "class Bad { void M() { try { } catch { } } }").ConfigureAwait(false);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new AnalyzeBricksCommand());
+            var exitCode = await root.InvokeAsync($"bricks --path {source}").ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "analyze bricks with a violation must exit non-zero, not 0.");
         }
         finally
         {
