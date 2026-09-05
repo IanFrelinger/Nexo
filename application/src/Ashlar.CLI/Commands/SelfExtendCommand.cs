@@ -898,7 +898,8 @@ public sealed class SelfExtendCommand : Command
 
         // Same class as `ashlar test local`: a silent empty match must not pass,
         // including the leftover allow-mock skip that used to treat TotalTests 0 as success.
-        if (run.ExitCode == 0 && run.StdOut.Contains("\"TotalTests\":0", StringComparison.Ordinal))
+        var totalTests = TryReadTotalTests(run.StdOut);
+        if (run.ExitCode == 0 && totalTests <= 0)
             return (1, run.StdOut, run.StdErr + Environment.NewLine + $"No tests discovered for filter '{testFilter}'.");
 
         return run;

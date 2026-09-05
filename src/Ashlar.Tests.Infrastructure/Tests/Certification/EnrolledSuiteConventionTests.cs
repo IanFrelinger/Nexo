@@ -1300,7 +1300,7 @@ public sealed class EnrolledSuiteConventionTests
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             "application/src/Ashlar.CLI/Commands/SelfExtendCommand.cs"));
         text.Should().Contain("No tests discovered for filter");
-        text.Should().Contain("\"TotalTests\":0");
+        text.Should().Contain("run.ExitCode == 0 && totalTests <= 0");
         text.Should().NotContain("allow-mock: skipping strict discoverability");
         text.Should().NotContain("if (allowMock)\n                return run;");
     }

@@ -595,7 +595,7 @@ class SelfExtendCommandFailClosedTests(unittest.TestCase):
             ROOT / "application" / "src" / "Ashlar.CLI" / "Commands" / "SelfExtendCommand.cs"
         ).read_text(encoding="utf-8")
         self.assertIn("No tests discovered for filter", text)
-        self.assertIn('"TotalTests":0', text)
+        self.assertIn("run.ExitCode == 0 && totalTests <= 0", text)
         self.assertNotIn("allow-mock: skipping strict discoverability", text)
         self.assertNotIn("if (allowMock)\n                return run;", text)
 
