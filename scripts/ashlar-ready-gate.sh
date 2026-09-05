@@ -21,6 +21,10 @@ if [ "${ASHLAR_READY_SKIP_COMPOSITION:-0}" != "1" ]; then
   COMPOSITION_MESH_GATE_SKIP_TIER_D="${ASHLAR_READY_SKIP_DOCKER:-1}" make composition-mesh-gate-full
 fi
 
+if [ "${ASHLAR_READY_SKIP_INGRESS:-0}" != "1" ]; then
+  make ingress-unit-gate
+fi
+
 if [ "${ASHLAR_READY_SKIP_SHIP:-0}" != "1" ]; then
   SHIP_GATE_SKIP_PRIOR=1 make ship-gate-full
 fi

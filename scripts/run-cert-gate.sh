@@ -42,4 +42,19 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   bash scripts/cert-gate-summary.sh "${TRX}"
 fi
 
-exit "${TEST_EXIT}"
+if [[ "${TEST_EXIT}" -ne 0 ]]; then
+  exit "${TEST_EXIT}"
+fi
+
+# Analyzer unit triads used to be sln-only / UNOWNED. They are the fence catalog
+# the required PR check exists to protect; the counted wrapper is fail-closed.
+echo "== cert-gate: analyzer unit suite (net8.0, counted) =="
+python3 scripts/run-dotnet-test-counted.py \
+  --project src/Ashlar.Analyzers.Tests/Ashlar.Analyzers.Tests.csproj \
+  --expected-prefix "Ashlar.Analyzers.Tests." \
+  --min-tests 56 \
+  -- \
+  -c Release \
+  -f net8.0 \
+  --blame-hang-timeout 180s \
+  --blame-hang-dump-type none

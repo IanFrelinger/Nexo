@@ -169,6 +169,36 @@ class CompositionMeshTierCFleetHostTests(unittest.TestCase):
         self.assertIn("-f net10.0", text)
         self.assertIn("--min-tests 4", text)
 
+    def test_tier_c_runs_counted_mesh_director_suite_on_net8(self) -> None:
+        text = (ROOT / "scripts" / "composition-mesh-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Commercial.Tests.MeshDirector", text)
+        self.assertIn("-f net8.0", text)
+        self.assertIn("--expected-prefix \"Ashlar.Commercial.Tests.MeshDirector.\"", text)
+
+
+class CertGateAnalyzerCountedTests(unittest.TestCase):
+    def test_cert_gate_runs_counted_analyzer_suite(self) -> None:
+        text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Analyzers.Tests", text)
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 56", text)
+        self.assertIn("-f net8.0", text)
+
+
+class IngressUnitGateCountedTests(unittest.TestCase):
+    def test_ingress_unit_gate_runs_counted_sns_and_dynamodb_suites(self) -> None:
+        text = (ROOT / "scripts" / "ingress-unit-gate.sh").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Ingress.AwsSns.Tests", text)
+        self.assertIn("Ashlar.Ingress.DynamoDb.Tests", text)
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 11", text)
+        self.assertIn("--min-tests 2", text)
+        self.assertIn("-f net8.0", text)
+
+    def test_ashlar_ready_invokes_ingress_unit_gate(self) -> None:
+        text = (ROOT / "scripts" / "ashlar-ready-gate.sh").read_text(encoding="utf-8")
+        self.assertIn("make ingress-unit-gate", text)
+
 
 class SecurityTierBCountedNet10Tests(unittest.TestCase):
     def test_security_gate_tier_b_runs_counted_api_suite_on_net10(self) -> None:

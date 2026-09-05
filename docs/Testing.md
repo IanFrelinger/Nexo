@@ -94,7 +94,7 @@ Pipeline composition (fan-out/fan-in, agentic stages) and async clustered mesh t
 ```bash
 make composition-mesh-gate-tier-a    # pipeline validator/decomposer/orchestrator/lifecycle
 make composition-mesh-gate-tier-b    # CLI pipeline + mesh command suites
-make composition-mesh-gate-tier-c    # mesh fleet placement/execution (in-process)
+make composition-mesh-gate-tier-c    # mesh fleet + Fleet.Host (net10 counted) + MeshDirector (net8 counted)
 make composition-mesh-gate-tier-d    # Docker mesh lab with workers (schedule→placement)
 make composition-mesh-gate-full
 COMPOSITION_MESH_GATE_SKIP_TIER_D=1 make composition-mesh-gate-full   # in-process only
@@ -179,7 +179,8 @@ No pull-request lane runs `dotnet test Ashlar.sln`. The PR-triggered workflows r
 
 ```bash
 bash scripts/ci/kernel-coverage-gate.sh   # kernel-coverage-gate.yml — Domain 100%, Infrastructure -f net10.0 --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests&Category!=External" (80% floor), Core.Application 67%
-bash scripts/run-cert-gate.sh             # cert-gate.yml — Certification + GenerationSafety + AstMutationEngine, -f net8.0, zero-test guard
+bash scripts/run-cert-gate.sh             # cert-gate.yml — Certification + GenerationSafety + AstMutationEngine, then counted Ashlar.Analyzers.Tests (56), -f net8.0, zero-test guard
+make ingress-unit-gate                    # counted AwsSns (11) + DynamoDb (2) ingress units; also from ashlar-ready-gate
 make kernel-gate                          # kernel-gate.yml — tier A (tier-b..e / kernel-gate-full also dispatchable)
 make application-gate-tier-a              # application-gate.yml — tier-c = in-process Ashlar.API WebApplicationFactory tests
 make testing-strategy-gate                # testing-strategy-gate.yml — PR diff rules (gap freeze, ProdStyle wiring)
