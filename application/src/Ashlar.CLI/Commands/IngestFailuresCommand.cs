@@ -31,11 +31,12 @@ public sealed class IngestFailuresCommand : Command
         {
             var trxPath = ctx.ParseResult.GetValueForOption(trxPathOpt)!;
             var storePathOverride = ctx.ParseResult.GetValueForOption(storePathOpt);
-            await ExecuteAsync(trxPath, storePathOverride);
+            // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
+            ctx.ExitCode = await ExecuteAsync(trxPath, storePathOverride);
         });
     }
 
-    private static async Task ExecuteAsync(string trxPath, string? storePathOverride)
+    private static async Task<int> ExecuteAsync(string trxPath, string? storePathOverride)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
@@ -57,8 +58,7 @@ public sealed class IngestFailuresCommand : Command
         if (trxFiles.Count == 0)
         {
             Console.WriteLine($"No TRX files found at: {trxPath}");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         Console.WriteLine($"Found {trxFiles.Count} TRX file(s).");
@@ -73,7 +73,7 @@ public sealed class IngestFailuresCommand : Command
         }
 
         Console.WriteLine($"Total: {totalIngested} failure(s) ingested into store.");
-        Environment.ExitCode = 0;
+        return 0;
     }
 
     private static List<FileInfo> ResolveTrxFiles(string path)

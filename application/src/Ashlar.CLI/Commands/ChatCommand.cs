@@ -62,7 +62,8 @@ public sealed class ChatCommand : Command
                 yes,
                 demoLocal,
                 ctx.GetCancellationToken()).ConfigureAwait(false);
-            Environment.ExitCode = exitCode;
+            // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
+            ctx.ExitCode = exitCode;
         });
     }
 

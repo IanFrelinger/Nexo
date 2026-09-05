@@ -55,7 +55,8 @@ public class DockerCommand : Command
             var buildArgs = ctx.ParseResult.GetValueForOption(buildArgOpt) ?? Array.Empty<string>();
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
-            await BuildAsync(dockerfile, tag, context, buildArgs, json, verbose);
+            // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
+            ctx.ExitCode = await BuildAsync(dockerfile, tag, context, buildArgs, json, verbose);
         });
 
         // ashlar docker run
@@ -112,7 +113,7 @@ public class DockerCommand : Command
             var rmImage = ctx.ParseResult.GetValueForOption(rmImageOpt);
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
-            await RunAsync(image, command, env, volume, workdir, rmImage, json, verbose);
+            ctx.ExitCode = await RunAsync(image, command, env, volume, workdir, rmImage, json, verbose);
         });
 
         // ashlar docker clean
@@ -142,7 +143,7 @@ public class DockerCommand : Command
             var all = ctx.ParseResult.GetValueForOption(allOpt);
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
-            await CleanAsync(imageTag, containerId, all, json, verbose);
+            ctx.ExitCode = await CleanAsync(imageTag, containerId, all, json, verbose);
         });
 
         // ashlar docker ps
@@ -160,7 +161,7 @@ public class DockerCommand : Command
             var all = ctx.ParseResult.GetValueForOption(allContainersOpt);
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
-            await ListContainersAsync(all, json, verbose);
+            ctx.ExitCode = await ListContainersAsync(all, json, verbose);
         });
 
         // ashlar docker images
@@ -170,7 +171,7 @@ public class DockerCommand : Command
         {
             var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
-            await ListImagesAsync(json, verbose);
+            ctx.ExitCode = await ListImagesAsync(json, verbose);
         });
 
         AddCommand(buildCmd);
@@ -180,7 +181,7 @@ public class DockerCommand : Command
         AddCommand(imagesCmd);
     }
 
-    private static async Task BuildAsync(
+    private static async Task<int> BuildAsync(
         FileInfo dockerfile,
         string tag,
         DirectoryInfo context,
@@ -220,8 +221,7 @@ public class DockerCommand : Command
                 {
                     console.WriteError("Docker is not available. Is Docker running?");
                 }
-                Environment.ExitCode = 1;
-                return;
+                return 1;
             }
 
             // Parse build args
@@ -266,24 +266,22 @@ public class DockerCommand : Command
                         duration = result.Duration.TotalSeconds
                     }));
                 }
-                Environment.ExitCode = 0;
+                return 0;
             }
-            else
+
+            if (json)
             {
-                if (json)
+                Console.WriteLine(JsonSerializer.Serialize(new
                 {
-                    Console.WriteLine(JsonSerializer.Serialize(new
-                    {
-                        success = false,
-                        error = result.ErrorMessage
-                    }));
-                }
-                else if (console != null)
-                {
-                    console.WriteError($"❌ Build failed: {result.ErrorMessage}");
-                }
-                Environment.ExitCode = 1;
+                    success = false,
+                    error = result.ErrorMessage
+                }));
             }
+            else if (console != null)
+            {
+                console.WriteError($"❌ Build failed: {result.ErrorMessage}");
+            }
+            return 1;
         }
         catch (Exception ex)
         {
@@ -295,7 +293,7 @@ public class DockerCommand : Command
             {
                 console.WriteError($"Error: {ex.Message}");
             }
-            Environment.ExitCode = 1;
+            return 1;
         }
         finally
         {
@@ -303,7 +301,7 @@ public class DockerCommand : Command
         }
     }
 
-    private static async Task RunAsync(
+    private static async Task<int> RunAsync(
         string image,
         string[] command,
         string[] env,
@@ -351,8 +349,7 @@ public class DockerCommand : Command
                 {
                     console.WriteError("Docker is not available. Is Docker running?");
                 }
-                Environment.ExitCode = 1;
-                return;
+                return 1;
             }
 
             // Parse environment variables
@@ -423,31 +420,29 @@ public class DockerCommand : Command
                         duration = result.Duration.TotalSeconds
                     }));
                 }
-                Environment.ExitCode = result.ExitCode;
+                return result.ExitCode;
             }
-            else
+
+            if (json)
             {
-                if (json)
+                Console.WriteLine(JsonSerializer.Serialize(new
                 {
-                    Console.WriteLine(JsonSerializer.Serialize(new
-                    {
-                        success = false,
-                        exitCode = result.ExitCode,
-                        stdout = result.StandardOutput,
-                        stderr = result.StandardError,
-                        error = result.StandardError
-                    }));
-                }
-                else if (console != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(result.StandardError))
-                    {
-                        console.WriteError(result.StandardError);
-                    }
-                    console.WriteError($"❌ Container failed (exit code: {result.ExitCode})");
-                }
-                Environment.ExitCode = result.ExitCode != 0 ? result.ExitCode : 1;
+                    success = false,
+                    exitCode = result.ExitCode,
+                    stdout = result.StandardOutput,
+                    stderr = result.StandardError,
+                    error = result.StandardError
+                }));
             }
+            else if (console != null)
+            {
+                if (!string.IsNullOrWhiteSpace(result.StandardError))
+                {
+                    console.WriteError(result.StandardError);
+                }
+                console.WriteError($"❌ Container failed (exit code: {result.ExitCode})");
+            }
+            return result.ExitCode != 0 ? result.ExitCode : 1;
         }
         catch (Exception ex)
         {
@@ -459,7 +454,7 @@ public class DockerCommand : Command
             {
                 console.WriteError($"Error: {ex.Message}");
             }
-            Environment.ExitCode = 1;
+            return 1;
         }
         finally
         {
@@ -467,7 +462,7 @@ public class DockerCommand : Command
         }
     }
 
-    private static async Task CleanAsync(
+    private static async Task<int> CleanAsync(
         string? imageTag,
         string? containerId,
         bool all,
@@ -499,8 +494,7 @@ public class DockerCommand : Command
                 {
                     console.WriteError("Docker is not available. Is Docker running?");
                 }
-                Environment.ExitCode = 1;
-                return;
+                return 1;
             }
 
             var cleaned = new List<string>();
@@ -574,7 +568,7 @@ public class DockerCommand : Command
                 }));
             }
 
-            Environment.ExitCode = 0;
+            return 0;
         }
         catch (Exception ex)
         {
@@ -586,7 +580,7 @@ public class DockerCommand : Command
             {
                 console.WriteError($"Error: {ex.Message}");
             }
-            Environment.ExitCode = 1;
+            return 1;
         }
         finally
         {
@@ -594,7 +588,7 @@ public class DockerCommand : Command
         }
     }
 
-    private static async Task ListContainersAsync(bool all, bool json, bool verbose)
+    private static async Task<int> ListContainersAsync(bool all, bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);
 
@@ -639,7 +633,7 @@ public class DockerCommand : Command
                 dockerClient.Dispose();
             }
 
-            Environment.ExitCode = 0;
+            return 0;
         }
         catch (Exception ex)
         {
@@ -651,11 +645,11 @@ public class DockerCommand : Command
             {
                 console.WriteError($"Error: {ex.Message}");
             }
-            Environment.ExitCode = 1;
+            return 1;
         }
     }
 
-    private static async Task ListImagesAsync(bool json, bool verbose)
+    private static async Task<int> ListImagesAsync(bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);
 
@@ -701,7 +695,7 @@ public class DockerCommand : Command
                 dockerClient.Dispose();
             }
 
-            Environment.ExitCode = 0;
+            return 0;
         }
         catch (Exception ex)
         {
@@ -713,7 +707,7 @@ public class DockerCommand : Command
             {
                 console.WriteError($"Error: {ex.Message}");
             }
-            Environment.ExitCode = 1;
+            return 1;
         }
     }
 
