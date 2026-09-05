@@ -13,13 +13,15 @@ RUN apt-get update && \
 
 WORKDIR /workspace
 
-COPY *.sln *.props global.json Directory.Build.props Directory.Packages.props ./
+COPY *.sln *.props global.json Directory.Build.props Directory.Build.targets Directory.Packages.props ./
 COPY src/ ./src/
 COPY application/ ./application/
 COPY coverage.runsettings ./
 
-# Framework gate runs Infrastructure tests only (net8.0)
-RUN dotnet restore src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj /p:TargetFramework=net8.0
+# Framework gate runs Infrastructure tests only (net8.0). Restore stays unpinned: a global
+# TargetFramework flows into netstandard2.0-only references (the analyzer), so their assets
+# are written for the wrong framework and the --no-build test lane fails to resolve them.
+RUN dotnet restore src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj
 RUN dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj /p:TargetFramework=net8.0 --no-restore
 
 CMD ["bash", "-c", "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build --logger console;verbosity=minimal"]
