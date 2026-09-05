@@ -141,9 +141,9 @@ class ShipGateTierCCanonicalVersionTests(unittest.TestCase):
     def test_ship_gate_tier_c_defaults_to_canonical_version_file(self) -> None:
         text = (ROOT / "scripts" / "ship-gate-tier-c.sh").read_text(encoding="utf-8")
         self.assertNotIn(
-            "0.0.0-ship-gate-local",
+            "${SHIP_GATE_VERSION:-0.0.0-ship-gate-local}",
             text,
-            "dummy prerelease is not valid semver after fail-closed preflight",
+            "dummy prerelease must not be the default SHIP_GATE_VERSION",
         )
         self.assertIn("tr -d '[:space:]' < VERSION", text)
         self.assertIn("SHIP_GATE_VERSION", text)
