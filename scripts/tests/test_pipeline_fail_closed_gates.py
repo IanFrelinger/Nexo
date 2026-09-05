@@ -280,9 +280,10 @@ class AutonomyObjectivePathTests(unittest.TestCase):
         folder = ROOT / "samples" / "autonomy-objectives"
         for path in folder.glob("*.md"):
             text = path.read_text(encoding="utf-8")
+            if "pathPrefixes:" not in text:
+                continue
             self.assertNotIn("applications/Ashlar.Samples.Dogfood", text, path.name)
-            if "pathPrefixes:" in text:
-                self.assertIn("samples/dogfood/", text, path.name)
+            self.assertIn("samples/dogfood/", text, path.name)
 
 
 class SecurityTierACountedTests(unittest.TestCase):

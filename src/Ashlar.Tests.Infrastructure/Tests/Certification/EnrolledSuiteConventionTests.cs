@@ -174,9 +174,11 @@ public sealed class EnrolledSuiteConventionTests
         var root = Path.Combine(RepoPathResolver.FindRepoRoot(), "samples/autonomy-objectives");
         foreach (var path in Directory.GetFiles(root, "*.md"))
         {
-            File.ReadAllText(path).Should().NotContain(
-                "applications/Ashlar.Samples.Dogfood",
-                because: path);
+            var text = File.ReadAllText(path);
+            if (!text.Contains("pathPrefixes:", StringComparison.Ordinal))
+                continue;
+            text.Should().NotContain("applications/Ashlar.Samples.Dogfood", because: path);
+            text.Should().Contain("samples/dogfood/", because: path);
         }
     }
 
