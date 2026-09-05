@@ -132,9 +132,9 @@ See **`docs/production-readiness/OpsHardeningPlan-v1.md`**.
 Trust boundary, API auth, mesh security, supply chain, air-gapped:
 
 ```bash
-make security-gate-tier-a    # trust core + audit + policy packs
+make security-gate-tier-a    # counted trust core (97)
 make security-gate-tier-b    # API security middleware
-make security-gate-tier-c    # trust CLI surfaces
+make security-gate-tier-c    # counted CLI trust surface (61) + trust JSON smoke
 make security-gate-tier-d    # dotnet list package --vulnerable / --deprecated (artifacts in .ashlar/security-gate/)
 make security-gate-tier-e    # air-gapped + safety
 make security-gate-full
