@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200, height=630">
+    <title>Ashlar OG Card Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1200px;
+            height: 630px;
+            background: #F7F2E5; /* cream */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .card {
+            width: 1200px;
+            height: 630px;
+            background: #F7F2E5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .wordmark {
+            font-size: 64px;
+            font-weight: 800;
+            color: #2B2420; /* ink */
+            letter-spacing: -0.02em;
+        }
+        
+        .cert-dot {
+            width: 16px;
+            height: 16px;
+            background: #D1A23C; /* gold */
+            border-radius: 50%;
+            border: 2px solid #2B2420;
+            position: relative;
+            top: -8px;
+        }
+        
+        .subtitle {
+            font-size: 32px;
+            color: #4A5540; /* olive */
+            text-align: center;
+            max-width: 900px;
+            line-height: 1.4;
+            font-weight: 400;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            font-size: 20px;
+            color: #7E8F6E; /* sage */
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo-container">
+            <svg class="logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Simplified node-"o" mark: outer circle, inner dot, gold ring suggestion -->
+                <circle cx="100" cy="100" r="90" fill="none" stroke="#2B2420" stroke-width="3"/>
+                <circle cx="100" cy="100" r="35" fill="#2B2420"/>
+                <circle cx="100" cy="100" r="65" fill="none" stroke="#D1A23C" stroke-width="2" stroke-dasharray="8 4"/>
+            </svg>
+            <h1 class="wordmark">Ashlar</h1>
+            <div class="cert-dot"></div>
+        </div>
+        
+        <p class="subtitle">Local-first .NET runtime for auditable AI workflows you embed</p>
+        
+        <p class="footer">github.com/IanFrelinger/Ashlar</p>
+    </div>
+    
+    <!-- INSTRUCTIONS FOR EXPORT:
+    
+    1. Open this file in Chrome/Firefox
+    2. Set viewport to exactly 1200x630 (use browser DevTools device mode)
+    3. Screenshot the page:
+       - Chrome: Cmd/Ctrl + Shift + P → "Capture screenshot"
+       - Or use: https://www.screenshotmachine.com or similar
+    4. Save as: assets/brand/ashlar-og-flat-1200x630.png
+    
+    Alternative command-line export (if puppeteer/playwright installed):
+    
+    npx playwright screenshot file://$(pwd)/assets/brand/og-card-generator.html assets/brand/ashlar-og-flat-1200x630.png --viewport-size=1200,630
+    
+    -->
+</body>
+</html>

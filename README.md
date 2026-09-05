@@ -11,6 +11,8 @@
 
 > **Ashlar: local-first .NET runtime for auditable AI workflows you embed — every artifact certified, every action on the record.**
 
+**Website:** [Marketing landing page](site/) — open-core product site with commercial pricing and integration guides.
+
 Ashlar is a self-hosted .NET runtime for AI workflows you can audit and embed in your products. Build trustworthy AI applications on infrastructure you control.
 
 **Three things you get, each with a command behind it:**
