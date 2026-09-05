@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 115");
+        text.Should().Contain("--min-tests 116");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -795,6 +795,22 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("Category=MeshLab");
         text.Should().NotContain(
             "ASHLAR_RUN_MESH_LAB=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0");
+    }
+
+    [Fact]
+    public void Makefile_AssertsDockerSmokeTrxFloor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "Makefile"));
+        text.Should().Contain("assert-trx-min-executed.py");
+        text.Should().Contain("--min-executed 9");
+        text.Should().Contain("test-results/ubuntu-8.0-base.trx");
+        text.Should().Contain("test-results/alpine-8.0-base.trx");
+        text.Should().Contain("test-results/debian-8.0-base.trx");
+        var helper = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/assert-trx-min-executed.py"));
+        helper.Should().Contain("executed_in_trx");
+        helper.Should().Contain("--min-executed");
     }
 
     [Fact]

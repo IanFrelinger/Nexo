@@ -136,20 +136,26 @@ test-all-platforms:
 	  --min-listed 4472 \
 	  -- \
 	  --no-build \
-	  --blame-hang-timeout 30s --blame-hang-dump-type none
+	--blame-hang-timeout 30s --blame-hang-dump-type none
+	# Docker smoke writes TRX onto the host mount. Images may lack Python, so
+	# the in-container invocation stays raw; the host TRX floor fail-closes
+	# an empty match (BaseFrameworkSmokeTests unique floor 9).
 	@echo "=== Docker: Ubuntu 8.0 ==="
 	docker build -f .docker/Dockerfile.test-caching --build-arg DOTNET_VERSION=8.0 -t ashlar-test-ubuntu:8.0 .
 	mkdir -p test-results
 	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" ashlar-test-ubuntu:8.0 \
 		bash -c "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=ubuntu-8.0-base.trx' --results-directory /workspace/test-results"
+	python3 scripts/assert-trx-min-executed.py --trx test-results/ubuntu-8.0-base.trx --min-executed 9
 	@echo "=== Docker: Alpine 8.0 ==="
 	docker build -f .docker/Dockerfile.test-caching-alpine --build-arg DOTNET_VERSION=8.0 -t ashlar-test-alpine:8.0 .
 	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" ashlar-test-alpine:8.0 \
 		bash -c "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=alpine-8.0-base.trx' --results-directory /workspace/test-results"
+	python3 scripts/assert-trx-min-executed.py --trx test-results/alpine-8.0-base.trx --min-executed 9
 	@echo "=== Docker: Debian 8.0 ==="
 	docker build -f .docker/Dockerfile.test-caching-debian --build-arg DOTNET_VERSION=8.0 -t ashlar-test-debian:8.0 .
 	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" ashlar-test-debian:8.0 \
 		bash -c "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=debian-8.0-base.trx' --results-directory /workspace/test-results"
+	python3 scripts/assert-trx-min-executed.py --trx test-results/debian-8.0-base.trx --min-executed 9
 	@echo "=== All target platforms (local + ubuntu + alpine + debian) completed ==="
 
 # Ephemeral: run tests in containers with no volume mounts; results discarded when container is removed

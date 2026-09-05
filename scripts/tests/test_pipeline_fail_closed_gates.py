@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 115", text)
+        self.assertIn("--min-tests 116", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1060,6 +1060,60 @@ class MakefileMeshLabCountedTests(unittest.TestCase):
             "ASHLAR_RUN_MESH_LAB=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0",
             makefile,
         )
+
+
+class MakefileDockerSmokeTrxFloorTests(unittest.TestCase):
+    def test_makefile_asserts_docker_smoke_trx_floor(self) -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("assert-trx-min-executed.py", makefile)
+        self.assertIn("--min-executed 9", makefile)
+        self.assertIn("test-results/ubuntu-8.0-base.trx", makefile)
+        self.assertIn("test-results/alpine-8.0-base.trx", makefile)
+        self.assertIn("test-results/debian-8.0-base.trx", makefile)
+        helper = (ROOT / "scripts" / "assert-trx-min-executed.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("executed_in_trx", helper)
+        self.assertIn("--min-executed", helper)
+
+    def test_helper_refuses_empty_and_missing_trx(self) -> None:
+        helper = ROOT / "scripts" / "assert-trx-min-executed.py"
+        missing = subprocess.run(
+            [sys.executable, str(helper), "--trx", "/tmp/does-not-exist-trx.trx", "--min-executed", "9"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(missing.returncode, 1)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            empty = Path(tmp) / "empty.trx"
+            empty.write_text(
+                '<?xml version="1.0"?><TestRun><ResultSummary>'
+                '<Counters total="0" executed="0" /></ResultSummary></TestRun>\n',
+                encoding="utf-8",
+            )
+            empty_run = subprocess.run(
+                [sys.executable, str(helper), "--trx", str(empty), "--min-executed", "9"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(empty_run.returncode, 1)
+
+            ok = Path(tmp) / "ok.trx"
+            ok.write_text(
+                '<?xml version="1.0"?><TestRun><ResultSummary>'
+                '<Counters total="9" executed="9" /></ResultSummary></TestRun>\n',
+                encoding="utf-8",
+            )
+            ok_run = subprocess.run(
+                [sys.executable, str(helper), "--trx", str(ok), "--min-executed", "9"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(ok_run.returncode, 0)
 
 
 class MakefileSlnfMinFloorTests(unittest.TestCase):
