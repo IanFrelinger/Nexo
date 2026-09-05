@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 77");
+        text.Should().Contain("--min-tests 78");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -345,6 +345,21 @@ public sealed class EnrolledSuiteConventionTests
         var workflow = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             ".github/workflows/rc-gate.yml"));
         workflow.Should().Contain("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}");
+    }
+
+    [Fact]
+    public void RcTierD_RefusesAdvisorySkip()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/rc-gate-tier-d.sh"));
+        text.Should().Contain("RC_GATE_GH_ADVISORY_ONLY is refused");
+        text.Should().Contain("red workflows are a blocker");
+        text.Should().Contain("exit 2");
+        text.Should().Contain("rc-gate-tier-d: FAIL");
+        text.Should().NotContain("rc-gate-tier-d: PASS (advisory)");
+        var perf = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/perf-gate.sh"));
+        perf.Should().NotContain("RC_GATE_GH_ADVISORY_ONLY");
     }
 
     [Fact]

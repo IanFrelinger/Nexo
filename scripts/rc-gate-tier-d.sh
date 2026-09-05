@@ -25,6 +25,11 @@ OPTIONAL_WORKFLOWS=(
   "Runtime Release Promotion"
 )
 
+if [ "${RC_GATE_GH_ADVISORY_ONLY:-0}" = "1" ]; then
+  echo "error: RC_GATE_GH_ADVISORY_ONLY is refused; red workflows are a blocker" >&2
+  exit 2
+fi
+
 if ! command -v gh >/dev/null 2>&1; then
   echo "error: rc-gate-tier-d requires the GitHub CLI (gh); refusing to skip workflow verification" >&2
   exit 2
@@ -99,12 +104,6 @@ else
 fi
 
 if [ "$fail" -ne 0 ]; then
-  if [ "${RC_GATE_GH_ADVISORY_ONLY:-0}" = "1" ]; then
-    echo "::warning::One or more GitHub workflows not green — see $GH_REPORT"
-    echo ""
-    echo "rc-gate-tier-d: PASS (advisory)"
-    exit 0
-  fi
   echo "rc-gate-tier-d: FAIL (see $GH_REPORT)" >&2
   exit 1
 fi

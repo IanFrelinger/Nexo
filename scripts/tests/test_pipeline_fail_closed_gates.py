@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 77", text)
+        self.assertIn("--min-tests 78", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1002,7 +1002,11 @@ class DockerTierFailClosedTests(unittest.TestCase):
 
 
 class RcTierDFailClosedTests(unittest.TestCase):
-    def _run_tier_d(self, fake_bin: Path) -> subprocess.CompletedProcess[str]:
+    def _run_tier_d(
+        self,
+        fake_bin: Path,
+        extra_env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         for tool in ("mkdir", "dirname"):
             resolved = shutil.which(tool)
             self.assertIsNotNone(resolved, tool)
@@ -1014,6 +1018,8 @@ class RcTierDFailClosedTests(unittest.TestCase):
         env.pop("RC_GATE_TRIGGER_GH", None)
         env.pop("GH_TOKEN", None)
         env.pop("GH_ENTERPRISE_TOKEN", None)
+        if extra_env:
+            env.update(extra_env)
         bash = shutil.which("bash")
         self.assertIsNotNone(bash)
         return subprocess.run(
@@ -1050,6 +1056,27 @@ class RcTierDFailClosedTests(unittest.TestCase):
             run = self._run_tier_d(fake_bin)
         self.assertEqual(2, run.returncode)
         self.assertIn("requires an authenticated GitHub CLI", run.stdout)
+        self.assertNotIn("rc-gate-tier-d: PASS", run.stdout)
+
+    def test_rc_tier_d_script_refuses_advisory_skip(self) -> None:
+        text = (ROOT / "scripts" / "rc-gate-tier-d.sh").read_text(encoding="utf-8")
+        self.assertIn("RC_GATE_GH_ADVISORY_ONLY is refused", text)
+        self.assertIn("red workflows are a blocker", text)
+        self.assertIn("rc-gate-tier-d: FAIL", text)
+        self.assertNotIn("rc-gate-tier-d: PASS (advisory)", text)
+        perf = (ROOT / "scripts" / "perf-gate.sh").read_text(encoding="utf-8")
+        self.assertNotIn("RC_GATE_GH_ADVISORY_ONLY", perf)
+
+    def test_rc_tier_d_refuses_advisory_only_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_bin = Path(tmp) / "bin"
+            fake_bin.mkdir()
+            run = self._run_tier_d(
+                fake_bin,
+                extra_env={"RC_GATE_GH_ADVISORY_ONLY": "1"},
+            )
+        self.assertEqual(2, run.returncode)
+        self.assertIn("RC_GATE_GH_ADVISORY_ONLY is refused", run.stdout)
         self.assertNotIn("rc-gate-tier-d: PASS", run.stdout)
 
 

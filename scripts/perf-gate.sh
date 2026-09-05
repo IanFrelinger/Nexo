@@ -6,7 +6,7 @@ cd "$ROOT"
 echo "=== Perf gate ==="
 
 if [ "${PERF_GATE_SKIP_PRIOR:-1}" != "1" ]; then
-  RC_GATE_SKIP_PRIOR=1 RC_GATE_GH_ADVISORY_ONLY=1 bash scripts/rc-gate.sh
+  RC_GATE_SKIP_PRIOR=1 bash scripts/rc-gate.sh
 fi
 
 bash scripts/perf-gate-tier-a.sh

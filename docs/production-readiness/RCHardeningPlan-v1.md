@@ -9,6 +9,7 @@ Moves from **security gate green** to **release-ready with evidence** — mirror
 ```bash
 make security-gate-full
 # Tier D requires `gh` and authentication (`gh auth login` or GH_TOKEN).
+# Red workflows fail the gate. The old advisory skip is refused.
 ```
 
 ## Tiers
@@ -30,7 +31,6 @@ make security-gate-full
 | `RC_GATE_BUNDLE_JSON` | Tier C: override path to `release-bundle-report.json` |
 | `RC_GATE_STRICT_SECURITY=1` | Tier C fails on High/Critical CVEs |
 | `RC_GATE_TRIGGER_GH=1` | Tier D: dispatch + watch on workflow miss |
-| `RC_GATE_GH_ADVISORY_ONLY=1` | Tier D: warn instead of fail |
 | `RC_GATE_GH_BRANCH=master` | Branch for `gh run list` |
 | `RC_GATE_RUN_PUBLISH=1` | Tier D: require `container-image-publish` green |
 
