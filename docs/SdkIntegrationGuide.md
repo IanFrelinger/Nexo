@@ -103,7 +103,8 @@ services.AddAshlarProfile(AshlarDeploymentProfile.SecureWorkstation, opts =>
 {
     opts.TrustEnabled = true; // required: the profile registers trust services but does not enable them
 });
-// Or: services.AddAshlarWorkstation(); // re-asserts SecureWorkstation + TrustEnabled after configure
+// In-repo only (products/ashlar-workstation, not on nuget.org):
+// services.AddAshlarWorkstation(); // re-asserts SecureWorkstation + TrustEnabled after configure
 ```
 
 ## CI Validation

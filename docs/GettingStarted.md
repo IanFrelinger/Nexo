@@ -192,7 +192,7 @@ cat > /tmp/ashlar_pipeline_demo.json <<'JSON'
 JSON
 ```
 
-Validate + run:
+Validate + run. Validate succeeds for this template. Unconfigured `pipeline run` **fails closed** (`ok=false`, `state=Failed`, ingest error names `No deterministic pipeline adapter is configured`) until you register a concrete adapter — that is intentional, not a broken install.
 
 ```bash
 dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template /tmp/ashlar_pipeline_demo.json

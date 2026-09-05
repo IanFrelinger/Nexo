@@ -177,7 +177,7 @@ dotnet run --project application/src/Ashlar.CLI -- --help
 dotnet run --project application/src/Ashlar.CLI -- doctor --json
 ```
 
-Run your first pipeline (create a template, validate it, run it):
+Run your first pipeline (create a template, validate it, then run it). Validate succeeds for a well-formed template. An unconfigured `pipeline run` **fails closed** (`ok=false`, `state=Failed`, ingest names the default placeholder) until a concrete deterministic adapter is registered — that is the intended Production Readiness Gate v1 outcome, not a broken install.
 
 ```bash
 tmp_dir="$(mktemp -d)"

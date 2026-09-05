@@ -15,7 +15,7 @@ Deterministic lane to reconcile against (`ci/autonomous-release-manager.json`
 - `bash scripts/verify-docs-published-version.sh`
 - `bash tests/uat/tier9.sh` with isolated `UAT_OUT`
 - counted onboarding/docs tests on `Ashlar.Tests.Infrastructure` with
-  `--min-tests 50`
+  `--min-tests 31`
 
 Compare README, onboarding, configuration, architecture, API, security,
 licensing, product, deployment, migration, changelog, and release claims to

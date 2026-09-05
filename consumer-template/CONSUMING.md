@@ -52,4 +52,4 @@ These pins are the same set exercised by:
 - `scripts/verify-external-product-shape-published.sh` (published staging feed)
 - `scripts/consumer-surface-packages.txt` (machine-readable list)
 
-After publishing to staging: `make verify-staging VERSION=0.1.0` with `NUGET_STAGING_READ_TOKEN` set.
+After publishing to staging: `make verify-staging VERSION=0.1.2` with `NUGET_STAGING_READ_TOKEN` set.

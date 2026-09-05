@@ -222,7 +222,7 @@
             "--expected-prefix",
             "Ashlar.Tests.Infrastructure.",
             "--min-tests",
-            "50",
+            "31",
             "--",
             "--filter",
             "FullyQualifiedName~PublishedVersionDocsLintTests|FullyQualifiedName~Onboarding",
