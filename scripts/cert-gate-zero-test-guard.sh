@@ -19,6 +19,11 @@ if [[ -z "${MIN_EXPECTED}" || "${MIN_EXPECTED}" -lt 1 ]]; then
   exit 1
 fi
 
+if [[ "${MIN_EXPECTED}" -lt "${CERT_GATE_MIN_TESTS}" ]]; then
+  echo "cert-gate discovery collapsed (listed=${MIN_EXPECTED}, collapse-min=${CERT_GATE_MIN_TESTS}) — filter or suite shrank."
+  exit 1
+fi
+
 REPORTED="$(grep -oE 'total="[0-9]+"' "${TRX}" | head -1 | sed 's/total="//;s/"//')"
 REPORTED="${REPORTED:-0}"
 

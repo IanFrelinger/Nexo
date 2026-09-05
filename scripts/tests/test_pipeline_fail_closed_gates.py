@@ -254,6 +254,15 @@ class CompositionMeshTierCFleetHostTests(unittest.TestCase):
         self.assertIn("--expected-prefix \"Ashlar.Commercial.Tests.MeshDirector.\"", text)
 
 
+class CertGateCollapseFloorTests(unittest.TestCase):
+    def test_cert_gate_config_pins_collapse_floor(self) -> None:
+        config = (ROOT / "scripts" / "cert-gate-config.sh").read_text(encoding="utf-8")
+        guard = (ROOT / "scripts" / "cert-gate-zero-test-guard.sh").read_text(encoding="utf-8")
+        self.assertIn("readonly CERT_GATE_MIN_TESTS=400", config)
+        self.assertIn("CERT_GATE_MIN_TESTS", guard)
+        self.assertIn("discovery collapsed", guard)
+
+
 class CertGateAnalyzerCountedTests(unittest.TestCase):
     def test_cert_gate_runs_counted_analyzer_suite(self) -> None:
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")

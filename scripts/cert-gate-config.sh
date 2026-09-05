@@ -5,11 +5,14 @@ set -euo pipefail
 # Must match tests exercised by scripts/run-cert-gate.sh and .github/workflows/cert-gate.yml
 readonly CERT_GATE_FILTER='FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Certification|FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Adaptation.GenerationSafety|FullyQualifiedName~AstMutationEngineTests'
 
-# The expected test count is derived at RUNTIME from `dotnet test --list-tests` (see
-# cert_gate_expected_count below); there is no hardcoded total to keep in sync. A previous
-# per-class enumeration here summed to 99 while the gate actually ran 178 — it had drifted
-# by 79 and read as authoritative, so it was removed rather than re-pinned. Do not re-add a
-# static count: the zero-test guard fails loudly if discovery ever returns nothing.
+# The live expected count is derived at RUNTIME from `dotnet test --list-tests` (see
+# cert_gate_expected_count below). Do not re-pin that live total: a previous per-class
+# enumeration summed to 99 while the gate actually ran 178.
+#
+# CERT_GATE_MIN_TESTS is a collapse floor, not the live total. Listed count was 484 on
+# a505823d. Raise the floor when the suite earns it. Do not lower it to turn a red
+# build green.
+readonly CERT_GATE_MIN_TESTS=400
 #
 # Excluded from cert-gate filter: LocalFixtures.CompositionAcceptanceRateBatchFixtureGeneratorTests (local fixture regen only)
 
