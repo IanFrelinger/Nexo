@@ -56,8 +56,8 @@ public sealed class SneakernetTransport : ISneakernetTransport
     {
         if (!File.Exists(inputPath))
         {
-            _logger?.LogWarning("Export file not found: {Path}", inputPath);
-            return 0;
+            _logger?.LogError("Import file not found: {Path}", inputPath);
+            throw new FileNotFoundException($"Import file not found: {inputPath}", inputPath);
         }
         var json = await File.ReadAllTextAsync(inputPath, cancellationToken).ConfigureAwait(false);
         var dto = JsonSerializer.Deserialize<SneakernetExportDto>(json);

@@ -375,7 +375,8 @@ public class InfrastructureGapCoverageTests
         var imported = await transport.ImportAsync(nxpkg);
         imported.Should().Be(1);
 
-        (await transport.ImportAsync(Path.Combine(root, "missing.nxpkg"))).Should().Be(0);
+        var act = async () => await transport.ImportAsync(Path.Combine(root, "missing.nxpkg"));
+        await act.Should().ThrowAsync<FileNotFoundException>();
     }
 
     [Fact]

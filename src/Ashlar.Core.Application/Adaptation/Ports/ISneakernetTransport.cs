@@ -20,5 +20,6 @@ public interface ISneakernetTransport
     /// <param name="inputPath">Path to the export file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Number of entries adopted.</returns>
+    /// <exception cref="FileNotFoundException">Thrown when <paramref name="inputPath"/> does not exist.</exception>
     Task<int> ImportAsync(string inputPath, CancellationToken cancellationToken = default);
 }
