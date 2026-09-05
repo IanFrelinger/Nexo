@@ -1,6 +1,17 @@
 name: Runtime Release Gate
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/runtime-release-gate.yml'
+      - 'application/src/Ashlar.CLI/Commands/RuntimeCommand.cs'
+      - 'application/src/Ashlar.CLI/Commands/SelfExtendCommand.cs'
+      - 'application/src/Ashlar.CLI/Commands/BootstrapCommand.cs'
+      - 'application/src/Ashlar.CLI/Commands/CiCommand.cs'
+      - 'application/src/Ashlar.CLI/Ashlar.CLI.csproj'
+      - 'application/src/Ashlar.CLI/Runtime/**'
+      - 'application/src/Ashlar.Tests.CLI/**'
+      - 'docs/runtime/benchmarks/**'
   workflow_dispatch:
   push:
     branches: [ master, main ]

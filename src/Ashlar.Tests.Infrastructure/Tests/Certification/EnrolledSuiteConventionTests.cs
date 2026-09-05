@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 61");
+        text.Should().Contain("--min-tests 62");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -701,6 +701,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("optimize_agent_cluster.sh");
         text.Should().Contain("Unified workflow");
         text.Should().Contain("--skip-optimize");
+    }
+
+    [Fact]
+    public void RuntimeReleaseGateWorkflow_RunsCoreAndVisualLanesOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/runtime-release-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("runtime release-gate");
+        text.Should().Contain("--mode ${{ matrix.lane }}");
+        text.Should().Contain("--allow-mock");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)

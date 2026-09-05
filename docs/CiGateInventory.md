@@ -53,8 +53,8 @@ Counts by trigger class (59 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 29 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 24 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness/ship-gate, `ingress-unit-gate`, `onboarding-docs-guard`, `pack-hosting-graph-alignment`, `onboarding-quickstart-gate`, `environment-setup-gate-v1`, `optimize-agent-cluster-gate`), 1 label-driven (`release-staging-on-label`) |
-| Push- and/or schedule-driven, plus `workflow_dispatch` | 10 | Post-merge / scheduled signal; never blocks a PR. |
+| Runs on `pull_request` | 30 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 25 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness/ship-gate, `ingress-unit-gate`, `onboarding-docs-guard`, `pack-hosting-graph-alignment`, `onboarding-quickstart-gate`, `environment-setup-gate-v1`, `optimize-agent-cluster-gate`, `runtime-release-gate`), 1 label-driven (`release-staging-on-label`) |
+| Push- and/or schedule-driven, plus `workflow_dispatch` | 9 | Post-merge / scheduled signal; never blocks a PR. |
 | `workflow_dispatch` only | 15 | Manual lanes (mesh labs, multi-env Docker suites, ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 61 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 62 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -94,6 +94,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate / `quickstart-native-linux` | paths: README, GettingStarted, setup/install, CLI — PR runs native check/restore/help/doctor; container GHCR pull stays schedule/push/dispatch | weekly schedule, push `master`/`main`/`cursor/**`, dispatch |
 | `environment-setup-gate-v1.yml` | Environment Setup Gate v1 / `setup-gate` 3-OS | paths: `scripts/setup/**`, CLI — PR runs native check/restore/build on ubuntu/macOS/Windows; MCR SDK container pull stays push/dispatch | push `master`/`main`, dispatch |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | paths: `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI — PR runs script-interface, bootstrap, scaffold/optimize, daemon, and flag-combo jobs | push `master`/`main`/`cursor/**`, dispatch |
+| `runtime-release-gate.yml` | Runtime Release Gate / `runtime-release-lanes` | paths: CLI runtime/release commands, `docs/runtime/benchmarks/**` — PR runs gating core + visual (`--allow-mock`); chaos stays `continue-on-error` | push `master`/`main`, dispatch |
 
 ### Push-only (path-filtered) workflows
 
@@ -109,8 +110,6 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `full-platform-readiness-gate.yml` | Full Platform Readiness Gate | Dockerfiles, setup/install scripts, spine sources, StableSdkHostSample; **weekly schedule** |
 | `grpc-transport-gate.yml` | gRPC transport gate / `scripts/grpc-transport-gate.sh` | `src/Ashlar.Transport.Grpc/**`, `src/Ashlar.Tests.Transport/**` — PR + push; counted ProdStyle floor 81 |
 | `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule** |
-| `runtime-release-gate.yml` | Runtime Release Gate | `master`/`main`; CLI runtime/release commands, `docs/runtime/benchmarks/**` |
-
 ### Manual-only workflows (`workflow_dispatch`)
 
 `composition-mesh-gate`, `container-image-publish`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (17).

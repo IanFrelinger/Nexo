@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 61", text)
+        self.assertIn("--min-tests 62", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -465,6 +465,17 @@ class OptimizeAgentClusterGateWorkflowTests(unittest.TestCase):
         self.assertIn("optimize_agent_cluster.sh", text)
         self.assertIn("Unified workflow", text)
         self.assertIn("--skip-optimize", text)
+
+
+class RuntimeReleaseGateWorkflowTests(unittest.TestCase):
+    def test_runtime_release_gate_workflow_runs_core_and_visual_on_pull_request(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "runtime-release-gate.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("runtime release-gate", text)
+        self.assertIn("--mode ${{ matrix.lane }}", text)
+        self.assertIn("--allow-mock", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):
