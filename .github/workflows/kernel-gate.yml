@@ -17,6 +17,7 @@ on:
       - "docs/architecture/KernelPhaseMatrix.md"
       - "docs/production-readiness/**"
       - "scripts/kernel-gate*.sh"
+      - "scripts/grpc-transport-gate.sh"
       - "scripts/lib/assert-pipeline-fail-closed.py"
       - "Makefile"
       - ".github/workflows/kernel-gate.yml"
@@ -68,8 +69,10 @@ jobs:
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
+      # Header claims tiers A–C on this workflow. The previous
+      # dispatch-only `if:` never ran C on pull_request.
       - name: Tier C
-        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'c'
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c'
         run: make kernel-gate-tier-c
         env:
           ASHLAR_ALLOW_MOCK: "1"

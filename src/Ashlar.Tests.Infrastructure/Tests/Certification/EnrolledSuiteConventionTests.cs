@@ -204,6 +204,29 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void KernelTierC_RunsCountedWorkflowAndAirGappedSlices()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/kernel-gate-tier-c.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 12");
+        text.Should().Contain("--min-tests 18");
+        text.Should().Contain("WorkflowExecutorIntegrationTests");
+        text.Should().Contain("FullyQualifiedName~AirGapped");
+        text.Should().Contain("-f net10.0");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void KernelGateWorkflow_RunsTierCOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/kernel-gate.yml"));
+        text.Should().Contain("kernel-gate-tier-c");
+        text.Should().NotContain("github.event_name == 'workflow_dispatch' && inputs.tier == 'c'");
+    }
+
+    [Fact]
     public void KernelGateWorkflow_RunsTierBOnPullRequest()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

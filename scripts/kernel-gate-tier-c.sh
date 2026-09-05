@@ -11,19 +11,31 @@ INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 echo "== Tier C: ProdStyle Infrastructure (net8, FluentAssertions-safe filter) =="
 make test-prod-style
 
-echo "== Tier C: workflow executor integration =="
-dotnet build "$INFRA" -v minimal
-ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
+echo "== Tier C: workflow executor integration (net8.0, counted) =="
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 12 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~WorkflowExecutorIntegrationTests" \
-  --blame-hang-timeout 120s --blame-hang-dump-type none
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
 
 echo "== Tier C: gRPC transport ProdStyle (counted) =="
 bash scripts/grpc-transport-gate.sh
 
-echo "== Tier C: air-gapped profile smoke (in-process) =="
-ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
+echo "== Tier C: air-gapped profile smoke (net10.0, counted) =="
+# net8.0 omits AirGappedProfileApiHostProdStyleTests (API host is net10.0 only).
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 18 \
+  -- \
+  -f net10.0 \
   --filter "FullyQualifiedName~AirGapped" \
-  --blame-hang-timeout 120s --blame-hang-dump-type none
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
 
 if [ "${KERNEL_GATE_MESH_E2E:-0}" = "1" ] && [ -f ".env.mesh-lab" ]; then
   echo "== Tier C: mesh virtual lab E2E (compose up + verify + down) =="

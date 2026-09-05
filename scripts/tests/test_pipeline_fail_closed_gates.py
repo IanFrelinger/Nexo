@@ -378,6 +378,28 @@ class KernelTierBCountedTests(unittest.TestCase):
         )
 
 
+class KernelTierCCountedTests(unittest.TestCase):
+    def test_kernel_gate_tier_c_runs_counted_workflow_and_airgapped_slices(self) -> None:
+        text = (ROOT / "scripts" / "kernel-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 12", text)
+        self.assertIn("--min-tests 18", text)
+        self.assertIn("WorkflowExecutorIntegrationTests", text)
+        self.assertIn("FullyQualifiedName~AirGapped", text)
+        self.assertIn("-f net10.0", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_kernel_gate_workflow_runs_tier_c_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "kernel-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("kernel-gate-tier-c", text)
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
+            text,
+        )
+
+
 class TestProdStyleCountedTests(unittest.TestCase):
     def test_makefile_runs_counted_prod_style_suite(self) -> None:
         text = (ROOT / "Makefile").read_text(encoding="utf-8")
