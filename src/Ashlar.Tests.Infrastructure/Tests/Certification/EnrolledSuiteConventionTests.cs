@@ -60,6 +60,16 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void CompositionMeshGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/composition-mesh-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("github.event_name == 'pull_request'");
+        text.Should().NotContain("github.event_name != 'workflow_dispatch'");
+    }
+
+    [Fact]
     public void IngressUnitGate_RunsCountedAwsSnsAndDynamoDbSuites()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

@@ -5,12 +5,13 @@ minute costs, and branch-noise on `cursor/**` and other integration branches. Th
 per-file trigger map lives in [`docs/CiGateInventory.md`](../../docs/CiGateInventory.md);
 the summary of the 58 files is:
 
-- **17 run on `pull_request`** — only `cert-gate`, `layer-boundary`, and `uat-gate` on every PR, the
+- **18 run on `pull_request`** — only `cert-gate`, `layer-boundary`, and `uat-gate` on every PR, the
   rest path-filtered (kernel/application/security/coverage/docs/testing-strategy/shell-lint/
-  Release Manager validation/other path-scoped gates) plus the label-driven `release-staging-on-label`.
+  Release Manager validation/other path-scoped gates) plus unfiltered `composition-mesh-gate`
+  (Tier A–C) and the label-driven `release-staging-on-label`.
 - **18 are push- and/or schedule-driven**, with `workflow_dispatch` as well — post-merge
   signals such as `mcp-a2a-gate`, `grpc-transport-gate`, `onboarding-docs-guard`.
-- **18 are `workflow_dispatch` only**, including `container-image-publish`, `cross-platform-tests` and `prod-dry-run-pr`
+- **16 are `workflow_dispatch` only**, including `container-image-publish`, `cross-platform-tests` and `prod-dry-run-pr`
   despite their names: run them from the Actions tab or with
   `gh workflow run "<Workflow name>" --ref <branch>`.
 - **Tag-driven releases** stay automatic where required (`release.yml` on `v*.*.*` tags,

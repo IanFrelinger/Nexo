@@ -3,6 +3,7 @@
 name: Composition Mesh Gate
 
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       tier:
@@ -29,7 +30,7 @@ jobs:
           global-json-file: global.json
 
       - name: Tier A (pipeline composition)
-        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a' || inputs.tier == 'full'
+        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'a' || inputs.tier == 'full')
         run: make composition-mesh-gate-tier-a
         env:
           ASHLAR_ALLOW_MOCK: "1"

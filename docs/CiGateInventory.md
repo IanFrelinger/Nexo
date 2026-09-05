@@ -53,9 +53,9 @@ Counts by trigger class (58 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 17 | 3 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`), 13 path-filtered (including `products-gate` and Release Manager validation), 1 label-driven (`release-staging-on-label`) |
+| Runs on `pull_request` | 18 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 13 path-filtered (including `products-gate` and Release Manager validation), 1 label-driven (`release-staging-on-label`) |
 | Push- and/or schedule-driven, plus `workflow_dispatch` | 19 | Post-merge / scheduled signal; never blocks a PR. |
-| `workflow_dispatch` only | 17 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
+| `workflow_dispatch` only | 16 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
 
@@ -79,6 +79,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `testing-strategy-gate.yml` | Testing strategy gate / `testing-strategy` | paths: `src/**`, `application/**`, `scripts/**`, `.github/**`, `Makefile`, `docs/architecture/TestingStrategy*.md` | — |
 | `release-staging-on-label.yml` | Release staging on label / `dispatch-staging-release` | `types: [labeled]` only | — |
 | `uat-gate.yml` | UAT / `uat`, `uat cross-platform` | **every PR** (no paths — deliberate, see file header) | push `master`, dispatch |
+| `composition-mesh-gate.yml` | Composition Mesh Gate / `composition-mesh-gate` | **every PR** (no paths) — Tier A–C via `make composition-mesh-gate` | dispatch chooses a single tier |
 | `products-gate.yml` | products-gate / `product scaffolds` | paths: `products/**`, distributed contracts, deployment-profile sources, `ci/test-ownership.tsv` | push `master`/`main`/`cursor/**`, dispatch — **advisory**; runs `products/Ashlar.Products.sln` plus `DistributedContractTests`. Does **not** run the dependency-boundary script (that is `dependency-boundary.yml`). |
 | `autonomous-release-manager.yml` | Autonomous Release Manager / `Validate release manager` | paths: coordinator, plan, tests, workflow | weekly schedule + dispatch run the full six-lane audit; PRs run only unit tests and immutable-plan validation |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` | dispatch |
@@ -163,7 +164,7 @@ Every workflow file was classified from `gh run list --workflow <file> --limit 1
 | `test-trust-multi-env.yml` | dead by the 60-day rule (last dispatch 2026-05-23, mostly green); cited by `KernelHardeningPlan-v1.md` C1 |
 | `workflow-regression-gate.yml` | dead by the 60-day rule (last dispatch 2026-06-14, green); only end-to-end run of `ashlar workflow baseline|report|gate` |
 
-**Kept as-is although rarely run** (all have a live path/manual trigger and a Makefile/script/runbook that names them): `compat-gate`, `dr-gate` (path-triggered on their scripts, one green run each), `composition-mesh-gate`, `waterproofing-gate`, `perf-certification`, `installer-bruteforce-gate` (dispatched by `scripts/rc-gate-tier-d.sh`), `nuget-consumer-verify` (post-publish check, `docs/NuGetConsumerVerify.md`), `setup-smoke-suite` (`docs/CiFirstHardwareSecond.md`), `devlog-ghost-release`, `mesh-lab-tls-gate` (weekly, latest run green).
+**Kept as-is although rarely run** (all have a live path/manual trigger and a Makefile/script/runbook that names them): `compat-gate`, `dr-gate` (path-triggered on their scripts, one green run each), `waterproofing-gate`, `perf-certification`, `installer-bruteforce-gate` (dispatched by `scripts/rc-gate-tier-d.sh`), `nuget-consumer-verify` (post-publish check, `docs/NuGetConsumerVerify.md`), `setup-smoke-suite` (`docs/CiFirstHardwareSecond.md`), `devlog-ghost-release`, `mesh-lab-tls-gate` (weekly, latest run green).
 
 **Not folded:** the CLI image is built by `container-image-gate` (local + multi-arch cache-only), `distribution-matrix-gate` (build + `--help` smoke), `full-platform-readiness-gate` and `reusable-container-publish` (push to GHCR). Each build differs in platform, output and smoke, and three of the four are on the protected list, so a shared reusable job is deferred to its own PR.
 
