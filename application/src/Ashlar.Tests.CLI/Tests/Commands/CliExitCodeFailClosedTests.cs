@@ -35,6 +35,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestRuntimePlanInvalidManifestQaPolicyExitsNonZeroAsync().ConfigureAwait(false);
             await TestBootstrapInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
             await TestDoctorInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
+            await TestSelfExtendInvalidFocusExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -566,6 +567,29 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "An invalid --profile must be refused legibly.");
             AssertTrue(!output.Contains("\"overallOk\"", StringComparison.Ordinal),
                 "An invalid --profile must be refused before running doctor probes.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestSelfExtendInvalidFocusExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("self-extend preflight --focus xyz --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "self-extend preflight --focus xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --focus", StringComparison.Ordinal),
+                "An invalid --focus must be refused legibly.");
+            AssertTrue(!output.Contains("Preflight passed", StringComparison.Ordinal),
+                "An invalid --focus must be refused before running preflight as balanced.");
         }
         finally
         {

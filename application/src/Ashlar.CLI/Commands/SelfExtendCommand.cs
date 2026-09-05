@@ -146,6 +146,12 @@ public sealed class SelfExtendCommand : Command
             return 1;
         }
 
+        if (!string.IsNullOrWhiteSpace(focusOverride) && !TryNormalizeFocus(focusOverride, out _))
+        {
+            WriteResult(false, "Invalid --focus. Use balanced, functional, or aesthetic.", fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null, testFilter: null, testSummary: null, focus: focusOverride.Trim(), maxIterations: 0, iterations: Array.Empty<object>());
+            return 1;
+        }
+
         var previousAllowMock = Environment.GetEnvironmentVariable("ASHLAR_ALLOW_MOCK");
         var previousProvider = Environment.GetEnvironmentVariable("ASHLAR_MODEL_PROVIDER");
         try
@@ -157,6 +163,12 @@ public sealed class SelfExtendCommand : Command
                 Environment.SetEnvironmentVariable("ASHLAR_MODEL_PROVIDER", provider.Trim());
 
             var runtimeSpec = SelfExtendWorkflowRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
+            if (string.IsNullOrWhiteSpace(focusOverride) && !TryNormalizeFocus(runtimeSpec.Workflow.Focus, out _))
+            {
+                WriteResult(false, "Invalid workflow focus. Use balanced, functional, or aesthetic.", fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null, testFilter: null, testSummary: null, focus: runtimeSpec.Workflow.Focus ?? string.Empty, maxIterations: 0, iterations: Array.Empty<object>());
+                return 1;
+            }
+
             var workflow = ResolveWorkflow(runtimeSpec.Workflow, focusOverride, maxIterationsOverride);
             var focus = NormalizeFocus(workflow.Focus);
             var phaseList = ResolvePhases(workflow, runTests);
@@ -348,6 +360,12 @@ public sealed class SelfExtendCommand : Command
             return 1;
         }
 
+        if (!string.IsNullOrWhiteSpace(focusOverride) && !TryNormalizeFocus(focusOverride, out _))
+        {
+            WritePreflightResult(new PreflightResult(false, "Invalid --focus. Use balanced, functional, or aesthetic.", Array.Empty<PreflightCheck>()), json);
+            return 1;
+        }
+
         var previousAllowMock = Environment.GetEnvironmentVariable("ASHLAR_ALLOW_MOCK");
         var previousProvider = Environment.GetEnvironmentVariable("ASHLAR_MODEL_PROVIDER");
         try
@@ -359,6 +377,12 @@ public sealed class SelfExtendCommand : Command
                 Environment.SetEnvironmentVariable("ASHLAR_MODEL_PROVIDER", provider.Trim());
 
             var runtimeSpec = SelfExtendWorkflowRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
+            if (string.IsNullOrWhiteSpace(focusOverride) && !TryNormalizeFocus(runtimeSpec.Workflow.Focus, out _))
+            {
+                WritePreflightResult(new PreflightResult(false, "Invalid workflow focus. Use balanced, functional, or aesthetic.", Array.Empty<PreflightCheck>()), json);
+                return 1;
+            }
+
             var workflow = ResolveWorkflow(runtimeSpec.Workflow, focusOverride, maxIterationsOverride);
             var focus = NormalizeFocus(workflow.Focus);
 
@@ -403,15 +427,23 @@ public sealed class SelfExtendCommand : Command
         };
     }
 
+    internal static bool TryNormalizeFocus(string? focus, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(focus))
+        {
+            normalized = "balanced";
+            return true;
+        }
+
+        normalized = focus.Trim().ToLowerInvariant();
+        return normalized is "balanced" or "functional" or "aesthetic";
+    }
+
     private static string NormalizeFocus(string? focus)
     {
-        var normalized = (focus ?? "balanced").Trim().ToLowerInvariant();
-        return normalized switch
-        {
-            "functional" => "functional",
-            "aesthetic" => "aesthetic",
-            _ => "balanced"
-        };
+        if (!TryNormalizeFocus(focus, out var normalized))
+            throw new ArgumentException("Invalid --focus. Use balanced, functional, or aesthetic.");
+        return normalized;
     }
 
     private static string NormalizeVisualQaFallbackPolicy(string? policy)
