@@ -39,6 +39,22 @@ internal sealed class RuntimeGateHandler
             return Task.FromResult(1);
         }
 
+        if (!RuntimeCommandUtilities.TryValidateUnitInterval(minPassRate))
+        {
+            RuntimeOutputWriter.WriteGateResult(
+                new RuntimeGateResult(false, RuntimeCommandUtilities.InvalidMinPassRateMessage),
+                json);
+            return Task.FromResult(1);
+        }
+
+        if (!RuntimeCommandUtilities.TryValidateNonNegativeCount(minConsecutivePasses))
+        {
+            RuntimeOutputWriter.WriteGateResult(
+                new RuntimeGateResult(false, RuntimeCommandUtilities.InvalidMinConsecutivePassesMessage),
+                json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {

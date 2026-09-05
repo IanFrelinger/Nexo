@@ -80,6 +80,24 @@ internal sealed class ReleaseGateHandler(RuntimeEvaluateExecutor executeEvaluate
             Console.Error.WriteLine(RuntimeCommandUtilities.InvalidVisualHistoryWindowMessage);
             return 1;
         }
+
+        if (!RuntimeCommandUtilities.TryValidateUnitInterval(coreMinPassRate))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidCoreMinPassRateMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidateUnitInterval(visualMinPassRate))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidVisualMinPassRateMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidateNonNegativeCount(visualPromotionStreak))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidVisualPromotionStreakMessage);
+            return 1;
+        }
         var finalExitCode = 0;
         RuntimeGateResult? coreGateResult = null;
         RuntimeGateResult? visualGateResult = null;

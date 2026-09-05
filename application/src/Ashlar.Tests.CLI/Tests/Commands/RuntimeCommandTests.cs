@@ -29,6 +29,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestGateRejectsInvalidMinTotalAsync().ConfigureAwait(false);
             await TestReleaseGateRejectsInvalidLaneRepetitionsAsync().ConfigureAwait(false);
             await TestReleaseGateRejectsInvalidCoreMinTotalAsync().ConfigureAwait(false);
+            await TestGateRejectsInvalidMinPassRateAsync().ConfigureAwait(false);
+            await TestGateRejectsInvalidMinConsecutivePassesAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -362,6 +364,35 @@ public sealed class RuntimeCommandTests : UnitTestBase
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
         }
+    }
+
+    private async Task TestGateRejectsInvalidMinPassRateAsync()
+    {
+        var (negExit, negOutput) = await InvokeRuntimeAsync("gate --min-pass-rate -1 --json").ConfigureAwait(false);
+        AssertEqual(1, negExit);
+        AssertTrue(negOutput.Contains("Invalid --min-pass-rate", StringComparison.Ordinal),
+            "A --min-pass-rate below 0 must be refused legibly.");
+        AssertTrue(!negOutput.Contains("Gate passed", StringComparison.Ordinal),
+            "A negative --min-pass-rate must not be clamped to 0 before the gate can pass.");
+        AssertTrue(!negOutput.Contains("\"minPassRate\": 0", StringComparison.Ordinal),
+            "A negative --min-pass-rate must not be rewritten to 0 in the gate result.");
+
+        var (overExit, overOutput) = await InvokeRuntimeAsync("gate --min-pass-rate 2 --json").ConfigureAwait(false);
+        AssertEqual(1, overExit);
+        AssertTrue(overOutput.Contains("Invalid --min-pass-rate", StringComparison.Ordinal),
+            "A --min-pass-rate above 1 must be refused legibly.");
+        AssertTrue(!overOutput.Contains("\"minPassRate\": 1", StringComparison.Ordinal),
+            "A --min-pass-rate of 2 must not be clamped to 1 before evaluating the gate.");
+    }
+
+    private async Task TestGateRejectsInvalidMinConsecutivePassesAsync()
+    {
+        var (exitCode, output) = await InvokeRuntimeAsync("gate --min-consecutive-passes -3 --min-pass-rate 0 --min-total 1 --json").ConfigureAwait(false);
+        AssertEqual(1, exitCode);
+        AssertTrue(output.Contains("Invalid --min-consecutive-passes", StringComparison.Ordinal),
+            "A negative --min-consecutive-passes must be refused legibly.");
+        AssertTrue(!output.Contains("Gate passed", StringComparison.Ordinal),
+            "A negative --min-consecutive-passes must not be remapped to 0 before the gate can pass.");
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()

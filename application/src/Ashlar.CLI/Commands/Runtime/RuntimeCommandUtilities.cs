@@ -82,6 +82,16 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidVisualHistoryWindowMessage = "Invalid --visual-history-window. Use a positive integer.";
 
+    internal const string InvalidMinPassRateMessage = "Invalid --min-pass-rate. Use a number in [0,1].";
+
+    internal const string InvalidCoreMinPassRateMessage = "Invalid --core-min-pass-rate. Use a number in [0,1].";
+
+    internal const string InvalidVisualMinPassRateMessage = "Invalid --visual-min-pass-rate. Use a number in [0,1].";
+
+    internal const string InvalidMinConsecutivePassesMessage = "Invalid --min-consecutive-passes. Use a non-negative integer.";
+
+    internal const string InvalidVisualPromotionStreakMessage = "Invalid --visual-promotion-streak. Use a non-negative integer.";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;
@@ -89,6 +99,12 @@ internal static class RuntimeCommandUtilities
 
     internal static bool TryValidatePositiveCount(int value)
         => value > 0;
+
+    internal static bool TryValidateNonNegativeCount(int value)
+        => value >= 0;
+
+    internal static bool TryValidateUnitInterval(double value)
+        => double.IsFinite(value) && value is >= 0d and <= 1d;
 
 
 }

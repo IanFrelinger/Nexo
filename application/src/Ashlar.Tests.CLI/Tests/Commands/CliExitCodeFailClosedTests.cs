@@ -54,6 +54,9 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestWorkflowOptimizeInvalidBudgetRunsExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowOptimizeInvalidEarlyStopMinRunsExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeReleaseGateInvalidLaneRepetitionsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeGateInvalidMinPassRateExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidEarlyStopMinSuccessRateExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeReleaseGateInvalidCoreMinPassRateExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -1081,6 +1084,75 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "A non-positive --lane-repetitions must be refused legibly.");
             AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
                 "A --lane-repetitions of 0 must not be remapped to 1 before starting the release-core matrix.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeGateInvalidMinPassRateExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime gate --min-pass-rate -1 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime gate --min-pass-rate -1 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --min-pass-rate", StringComparison.Ordinal),
+                "A --min-pass-rate below 0 must be refused legibly.");
+            AssertTrue(!output.Contains("Gate passed", StringComparison.Ordinal),
+                "A negative --min-pass-rate must not be clamped to 0 before the gate can pass.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowOptimizeInvalidEarlyStopMinSuccessRateExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow optimize --early-stop-min-success-rate -1 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize --early-stop-min-success-rate -1 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --early-stop-min-success-rate", StringComparison.Ordinal),
+                "A --early-stop-min-success-rate below 0 must be refused legibly.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "A --early-stop-min-success-rate of -1 must not be clamped to 0 before evaluating candidates.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeReleaseGateInvalidCoreMinPassRateExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime release-gate --mode core --core-min-pass-rate -1 --allow-mock").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime release-gate --core-min-pass-rate -1 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --core-min-pass-rate", StringComparison.Ordinal),
+                "A --core-min-pass-rate below 0 must be refused legibly.");
+            AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
+                "A --core-min-pass-rate of -1 must be refused before starting the release-core matrix.");
         }
         finally
         {

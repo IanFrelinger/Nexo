@@ -84,6 +84,12 @@ internal sealed partial class OptimizeHandler(
             return 1;
         }
 
+        if (earlyStopMinSuccessRate.HasValue && !WorkflowCommandUtilities.TryValidateUnitInterval(earlyStopMinSuccessRate.Value))
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidEarlyStopMinSuccessRateMessage), json);
+            return 1;
+        }
+
         var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try

@@ -1192,6 +1192,11 @@ internal static class WorkflowCommandUtilities
 
     internal const string InvalidEarlyStopMinRunsMessage = "Invalid --early-stop-min-runs. Use a positive integer.";
 
+    internal const string InvalidEarlyStopMinSuccessRateMessage = "Invalid --early-stop-min-success-rate. Use a number in [0,1].";
+
+    internal static bool TryValidateUnitInterval(double value)
+        => double.IsFinite(value) && value is >= 0d and <= 1d;
+
     internal const string InvalidLimitMessage = "Invalid --limit. Use a positive integer.";
 
     internal static bool TryNormalizeSearchStrategy(string? searchStrategy, out string normalized)
