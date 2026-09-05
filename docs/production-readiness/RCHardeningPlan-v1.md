@@ -2,7 +2,7 @@
 
 Moves from **security gate green** to **release-ready with evidence** — mirrors [Release candidate checklist v1](../ReleaseCandidateChecklist-v1.md).
 
-**Automation:** `make rc-gate-full`
+**Automation:** `make rc-gate-full`. PRs that touch RC docs or `scripts/rc-gate*.sh` produce a `ci release-bundle` then run Tier C. A/B/D stay dispatch-only.
 
 ## Prerequisites
 

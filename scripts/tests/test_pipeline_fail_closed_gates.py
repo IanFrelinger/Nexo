@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 67", text)
+        self.assertIn("--min-tests 68", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -501,6 +501,22 @@ class InstallerBruteforceGateWorkflowTests(unittest.TestCase):
         self.assertIn("scripts/install/bruteforce-matrix.sh", text)
         self.assertIn("scripts/setup/**", text)
         self.assertIn("scripts/install/**", text)
+
+
+class RcGateWorkflowTests(unittest.TestCase):
+    def test_rc_gate_workflow_runs_tier_c_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "rc-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/rc-gate*.sh", text)
+        self.assertIn("ci release-bundle --profile quick", text)
+        self.assertIn("make rc-gate-tier-c", text)
+        self.assertIn("github.event_name != 'workflow_dispatch'", text)
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
+            text,
+        )
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):

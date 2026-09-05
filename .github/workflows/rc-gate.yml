@@ -6,6 +6,11 @@ on:
   schedule:
     # Monthly RC evidence on master (Phase 5 pivot); failures notify via GitHub Actions.
     - cron: "0 6 1 * *"
+  pull_request:
+    paths:
+      - "docs/production-readiness/RCHardeningPlan-v1.md"
+      - "scripts/rc-gate*.sh"
+      - ".github/workflows/rc-gate.yml"
   push:
     branches: [master, main]
     paths:
@@ -55,14 +60,17 @@ jobs:
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
+      # Same `!=` form as Application / Kernel B so pull_request, push, and
+      # schedule actually produce the bundle and fail-close Tier C. A/B/D stay
+      # dispatch-only (D needs an authenticated gh).
       - name: Produce release-bundle evidence
-        if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full'))
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c' || inputs.tier == 'full'
         env:
           ASHLAR_ALLOW_MOCK: "1"
         run: dotnet run --project application/src/Ashlar.CLI -- ci release-bundle --profile quick
 
       - name: Tier C (evidence)
-        if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full'))
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c' || inputs.tier == 'full'
         run: make rc-gate-tier-c
 
       - name: Tier D (GitHub workflows)

@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 67");
+        text.Should().Contain("--min-tests 68");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -777,6 +777,20 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("scripts/install/bruteforce-matrix.sh");
         text.Should().Contain("scripts/setup/**");
         text.Should().Contain("scripts/install/**");
+    }
+
+    [Fact]
+    public void RcGateWorkflow_RunsTierCOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/rc-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("scripts/rc-gate*.sh");
+        text.Should().Contain("ci release-bundle --profile quick");
+        text.Should().Contain("make rc-gate-tier-c");
+        text.Should().Contain("github.event_name != 'workflow_dispatch'");
+        text.Should().NotContain(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)

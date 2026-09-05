@@ -52,7 +52,7 @@ echo "== cert-gate: enrolled suite conventions (net8.0, counted) =="
 python3 scripts/run-dotnet-test-counted.py \
   --project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
   --expected-prefix "Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests." \
-  --min-tests 67 \
+  --min-tests 68 \
   -- \
   -f net8.0 \
   --filter "FullyQualifiedName~EnrolledSuiteConventionTests" \
