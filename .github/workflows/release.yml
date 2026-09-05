@@ -82,6 +82,15 @@ jobs:
           fi
           echo "OK: version input matches tag."
 
+      - name: Branch dispatch version must match root VERSION
+        if: github.event_name == 'workflow_dispatch' && github.ref_type != 'tag'
+        shell: bash
+        run: |
+          # shellcheck source=scripts/lib/release-staging-guards.sh
+          source scripts/lib/release-staging-guards.sh
+          assert_valid_semver "${{ inputs.version }}"
+          assert_version_matches_canonical "${{ inputs.version }}"
+
   images:
     name: Container images (GHCR)
     needs: [validate]

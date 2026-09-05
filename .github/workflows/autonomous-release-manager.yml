@@ -9,6 +9,8 @@ on:
       - ".github/workflows/autonomous-release-manager.yml"
       - "ci/autonomous-release-manager.json"
       - "scripts/autonomous-release-manager.py"
+      - "scripts/run-dotnet-test-counted.py"
+      - "scripts/verify-no-vulnerable-packages.py"
       - "scripts/tests/**"
   schedule:
     - cron: "0 5 * * 1"
@@ -24,7 +26,7 @@ permissions:
 
 concurrency:
   group: autonomous-release-manager-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   validate:
@@ -41,12 +43,40 @@ jobs:
       - name: Validate immutable audit plan
         run: python3 scripts/autonomous-release-manager.py --validate-only
 
+      - name: Write validation failure evidence
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p .ashlar/release-manager/validation
+          cat > .ashlar/release-manager/validation/report.json <<JSON
+          {
+            "schemaVersion": 1,
+            "headSha": "${GITHUB_SHA}",
+            "verdict": "blocked",
+            "reason": "Release-manager unit tests or plan validation failed before audit."
+          }
+          JSON
+          cat > .ashlar/release-manager/validation/report.md <<MARKDOWN
+          # Autonomous Release Manager
+
+          **BLOCKED:** coordinator tests or plan validation failed on \`${GITHUB_SHA}\`.
+          MARKDOWN
+
+      - name: Upload validation failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-manager-validation-${{ github.sha }}
+          path: .ashlar/release-manager/validation/
+          if-no-files-found: error
+          retention-days: 30
+
   audit:
     name: Six-lane release audit
     needs: validate
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 330
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,6 +108,27 @@ jobs:
           rc=$?
           echo "exit_code=${rc}" >> "$GITHUB_OUTPUT"
           exit "$rc"
+
+      - name: Ensure failure evidence exists
+        if: always()
+        shell: bash
+        run: |
+          if [[ ! -f .ashlar/release-manager/current/report.json ]]; then
+            mkdir -p .ashlar/release-manager/current
+            cat > .ashlar/release-manager/current/report.json <<JSON
+          {
+            "schemaVersion": 1,
+            "headSha": "${GITHUB_SHA}",
+            "verdict": "blocked",
+            "reason": "Coordinator terminated without a complete report."
+          }
+          JSON
+            cat > .ashlar/release-manager/current/report.md <<MARKDOWN
+          # Autonomous Release Manager
+
+          **BLOCKED:** coordinator terminated without a complete report on \`${GITHUB_SHA}\`.
+          MARKDOWN
+          fi
 
       - name: Publish release verdict to job summary
         if: always()

@@ -7,6 +7,17 @@ $ErrorActionPreference = "Stop"
 $Version = $Version.TrimStart("v", "V")
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
+if ($Version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$') {
+    throw "Invalid SemVer: $Version"
+}
+$canonical = (Get-Content (Join-Path $Root "VERSION") -Raw).Trim()
+if ($Version -ne $canonical) {
+    throw "Version $Version does not match root VERSION ($canonical). Update VERSION before release preflight."
+}
+if ($env:ASHLAR_RELEASE_AUDIT -eq "1" -and $env:ASHLAR_RELEASE_PREFLIGHT_TRIGGER_GATE -eq "1") {
+    throw "Release audit mode never dispatches external workflows."
+}
+
 Write-Host "== 1/2 Pack graph vs MSBuild (Ashlar.Hosting) =="
 $py = @("python3", "python") | ForEach-Object { Get-Command $_ -ErrorAction SilentlyContinue } | Select-Object -First 1
 if (-not $py) { throw "Python required on PATH (python3 or python)" }

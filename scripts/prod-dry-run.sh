@@ -49,6 +49,23 @@ HOST="${ASHLAR_PROD_DRY_RUN_HOST:-127.0.0.1}"
 BASE_URL="http://${HOST}:${PORT}"
 
 DC=(docker compose -f "$COMPOSE_FILE")
+STACK_STARTED=0
+
+cleanup_stack() {
+  rc=$?
+  trap - EXIT INT TERM
+  if [[ "$STACK_STARTED" -eq 1 && -z "${KEEP_UP:-}" ]]; then
+    echo "Cleaning up interrupted/failed dry-run stack..." >&2
+    if ! "${DC[@]}" down --remove-orphans; then
+      echo "FAIL: dry-run stack cleanup failed." >&2
+      rc=1
+    fi
+  fi
+  exit "$rc"
+}
+trap cleanup_stack EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "prod-dry-run requires Docker (docker compose). Install Docker Engine and the Compose plugin, then retry." >&2
@@ -69,6 +86,7 @@ echo "Starting stack..."
 # Keep stderr: a HEALTHCHECK that never goes healthy used to be swallowed here and burn ~90 s
 # in the fallback loop with no hint why.
 set +e
+STACK_STARTED=1
 "${DC[@]}" up -d --wait
 WAIT_RC=$?
 set -e
@@ -134,9 +152,11 @@ echo "Prod-shaped dry run OK (${COMPOSE_FILE})."
 
 if [[ -z "${KEEP_UP:-}" ]]; then
   echo "Stopping stack..."
-  "${DC[@]}" down
+  "${DC[@]}" down --remove-orphans
+  STACK_STARTED=0
   echo "Done. Use --keep-up to leave containers running for manual checks."
 else
+  STACK_STARTED=0
   echo "Stack left running (--keep-up). Tear down with:"
   echo "  docker compose -f ${COMPOSE_FILE} down"
 fi

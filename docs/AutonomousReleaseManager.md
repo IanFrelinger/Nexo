@@ -7,6 +7,10 @@ Those remain explicit operator actions.
 
 The product host remains in
 [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager).
+It is currently a nuget.org/lifecycle reference and does **not** consume this
+report yet; wiring its next package update to `latest.json` is a separate
+product-repository change. The repo-local manager here is the release authority
+for Ashlar itself.
 This repository owns the reusable audit engine and the checks it executes:
 
 - `.cursor/agents/release-manager.md` — mutable coordinator persona
@@ -78,10 +82,11 @@ Reports are written under:
     operations.log
 ```
 
-`latest.json` and `latest.md` are copies of the most recent result. Every lane
-record includes the command, timeout, exit code, duration, log path, and log
-SHA-256. `report.json` is the interface an external Release Manager host,
-dashboard, or CI policy should consume.
+`latest.json` and `latest.md` are atomic pointers to the most recent complete
+report directory; evidence paths remain relative to the report that owns them.
+Every lane record includes the command, timeout, exit code, duration, log path,
+and log SHA-256. `report.json` is the future interface an external Release
+Manager host, dashboard, or CI policy should consume.
 
 The scheduled workflow publishes the report and lane logs as an Actions
 artifact even when the verdict is blocked. A missing report is itself rendered
@@ -108,10 +113,14 @@ remain blockers under the existing RC policy.
 
 ## Safety policy
 
-The plan accepts argument arrays, not shell strings. Inline shell code and
-known publishing commands (`git push`, `git tag`, `gh release`, NuGet/Docker
-publish commands, and equivalents) are rejected during plan validation.
-Repository scripts are allowed because they are reviewable and versioned.
+The Linux release plan accepts argument arrays, not shell strings. Inline shell
+code and publishing commands (`git push`, `git tag`, `gh release`,
+NuGet/Docker publish commands, and equivalents) are rejected during plan
+validation. The exact tracked plan is SHA-256-bound to the coordinator, loaded
+from the audited commit, and runs with inherited Ashlar controls and credential
+environment variables removed. Repository scripts are allowed because they are
+reviewable and versioned; this policy complements OS/credential isolation and
+is not presented as a sandbox for arbitrary scripts.
 
 The manager deliberately reports **BLOCKED** when `VERSION` still equals
 `ci/published-version` while `[Unreleased]` contains work. Preparing a release

@@ -8,6 +8,16 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VER="${1:?usage: release-preflight-local.sh <semver>   example: bash scripts/release-preflight-local.sh 1.2.3}"
 VER="${VER#v}"
 
+# shellcheck source=scripts/lib/release-staging-guards.sh
+source "${ROOT}/scripts/lib/release-staging-guards.sh"
+assert_valid_semver "${VER}"
+assert_version_matches_canonical "${VER}"
+
+if [[ "${ASHLAR_RELEASE_AUDIT:-0}" == "1" && "${ASHLAR_RELEASE_PREFLIGHT_TRIGGER_GATE:-0}" == "1" ]]; then
+  echo "ABORT: release audit mode never dispatches external workflows." >&2
+  exit 64
+fi
+
 echo "== 1/2 Pack graph vs MSBuild (Ashlar.Hosting) =="
 python3 "${ROOT}/scripts/verify-pack-ashlar-hosting-graph-alignment.py"
 

@@ -17,18 +17,22 @@ import hashlib
 import json
 import os
 import re
-import shutil
 import signal
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
 
 SCHEMA_VERSION = 1
+CANONICAL_PLAN_RELATIVE_PATH = "ci/autonomous-release-manager.json"
+TRUSTED_PLAN_SHA256 = "e7bee5fcb0b93c36d96ae99d119c934fc1b135efd08530102c85b947ac33c4e2"
+MAX_AUDIT_EXECUTION_SECONDS = 18_000
+PROCESS_TERMINATION_GRACE_SECONDS = 0.5
 CANONICAL_LANES = {
     "code",
     "tests",
@@ -75,6 +79,24 @@ SHELL_EXECUTABLES = {
     "zsh",
 }
 SHELL_CODE_FLAGS = {"-c", "/c", "-command", "-encodedcommand"}
+SENSITIVE_ENV_MARKERS = (
+    "API_KEY",
+    "PASSWORD",
+    "PRIVATE_KEY",
+    "SECRET",
+    "TOKEN",
+)
+SENSITIVE_ENV_NAMES = {
+    "DOCKER_CONFIG",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    "SSH_AUTH_SOCK",
+}
+SENSITIVE_ENV_PREFIXES = (
+    "ASHLAR_",
+    "AWS_",
+    "AZURE_",
+    "GOOGLE_",
+)
 
 
 class PlanError(ValueError):
@@ -270,6 +292,14 @@ def load_plan(path: Path) -> AuditPlan:
                     working_directory=working_directory,
                 )
             )
+        if any(step.timeout_seconds is None for step in steps):
+            raise PlanError(f"lane {lane_id} must set a timeout on every step.")
+        step_budget = sum(step.timeout_seconds or 0 for step in steps)
+        if step_budget > lane_timeout:
+            raise PlanError(
+                f"lane {lane_id} step budgets total {step_budget}s, "
+                f"exceeding lane timeout {lane_timeout}s."
+            )
 
         lanes.append(
             LaneSpec(
@@ -299,7 +329,31 @@ def load_plan(path: Path) -> AuditPlan:
             f"non-required={non_required}."
         )
 
-    return AuditPlan(max_parallel=max_parallel, lanes=tuple(lanes))
+    plan = AuditPlan(max_parallel=max_parallel, lanes=tuple(lanes))
+    declared_runtime = declared_schedule_seconds(plan)
+    if declared_runtime > MAX_AUDIT_EXECUTION_SECONDS:
+        raise PlanError(
+            f"Declared audit schedule is {declared_runtime}s; "
+            f"maximum is {MAX_AUDIT_EXECUTION_SECONDS}s."
+        )
+    return plan
+
+
+def declared_schedule_seconds(plan: AuditPlan) -> int:
+    worker_available = [0] * plan.max_parallel
+    resource_available: dict[str, int] = {}
+    for lane in plan.lanes:
+        worker_index = min(
+            range(len(worker_available)), key=lambda index: worker_available[index]
+        )
+        start = worker_available[worker_index]
+        for resource in lane.exclusive_resources:
+            start = max(start, resource_available.get(resource, 0))
+        completed = start + lane.timeout_seconds
+        worker_available[worker_index] = completed
+        for resource in lane.exclusive_resources:
+            resource_available[resource] = completed
+    return max(worker_available, default=0)
 
 
 def _frontmatter(path: Path) -> tuple[dict[str, str], str]:
@@ -362,6 +416,33 @@ def validate_cursor_assets(repo_root: Path) -> None:
         raise PlanError(f"{rule_path} must require explicit publishing authorization.")
 
 
+def validate_plan_binding(repo_root: Path, plan_path: Path) -> str:
+    relative = str(plan_path.relative_to(repo_root)).replace(os.sep, "/")
+    if relative != CANONICAL_PLAN_RELATIVE_PATH:
+        raise PlanError(
+            f"Only the canonical tracked plan is executable: {CANONICAL_PLAN_RELATIVE_PATH}."
+        )
+    show = subprocess.run(
+        ["git", "show", f"HEAD:{relative}"],
+        cwd=repo_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if show.returncode != 0:
+        raise PlanError(f"Canonical plan is not tracked at HEAD: {relative}.")
+    current = plan_path.read_bytes()
+    if current != show.stdout:
+        raise PlanError("Canonical plan differs from the audited HEAD.")
+    digest = hashlib.sha256(current).hexdigest()
+    if digest != TRUSTED_PLAN_SHA256:
+        raise PlanError(
+            "Canonical plan digest does not match the code-owned release policy: "
+            f"{digest}."
+        )
+    return digest
+
+
 def _render(value: str, context: dict[str, str]) -> str:
     rendered = value
     for key, replacement in context.items():
@@ -372,8 +453,6 @@ def _render(value: str, context: dict[str, str]) -> str:
 
 
 def _terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
-    if process.poll() is not None:
-        return
     if os.name == "nt":
         subprocess.run(
             ["taskkill", "/PID", str(process.pid), "/T", "/F"],
@@ -383,14 +462,52 @@ def _terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
         )
         return
 
+    process_group = process.pid
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-        process.wait(timeout=5)
-    except (ProcessLookupError, subprocess.TimeoutExpired):
+        os.killpg(process_group, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+
+    deadline = time.monotonic() + PROCESS_TERMINATION_GRACE_SECONDS
+    while time.monotonic() < deadline:
         try:
-            os.killpg(process.pid, signal.SIGKILL)
+            os.killpg(process_group, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.05)
+    else:
+        try:
+            os.killpg(process_group, signal.SIGKILL)
         except ProcessLookupError:
             pass
+
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
+def _sanitized_environment() -> dict[str, str]:
+    environment: dict[str, str] = {}
+    for name, value in os.environ.items():
+        upper = name.upper()
+        if name in SENSITIVE_ENV_NAMES:
+            continue
+        if any(upper.startswith(prefix) for prefix in SENSITIVE_ENV_PREFIXES):
+            continue
+        if any(marker in upper for marker in SENSITIVE_ENV_MARKERS):
+            continue
+        environment[name] = value
+    environment.update(
+        {
+            "CI": "true",
+            "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+            "DOTNET_NOLOGO": "true",
+            "ASHLAR_RELEASE_AUDIT": "1",
+        }
+    )
+    return environment
 
 
 def run_step(
@@ -415,11 +532,10 @@ def run_step(
             error="Working directory escaped the isolated worktree.",
         )
 
-    environment = os.environ.copy()
+    environment = _sanitized_environment()
     environment.update(
         {_render(key, context): _render(value, context) for key, value in step.environment.items()}
     )
-    environment["ASHLAR_RELEASE_AUDIT"] = "1"
 
     log_handle.write(
         (
@@ -565,9 +681,37 @@ def run_lane_with_resources(
             lock.release()
 
 
+def _semver_precedence(version: str) -> tuple[Any, ...]:
+    core_and_pre = version.split("+", 1)[0]
+    core, separator, prerelease = core_and_pre.partition("-")
+    major, minor, patch = (int(part) for part in core.split("."))
+    if not separator:
+        return major, minor, patch, 1, ()
+    identifiers: list[tuple[int, Any]] = []
+    for part in prerelease.split("."):
+        identifiers.append((0, int(part)) if part.isdigit() else (1, part))
+    return major, minor, patch, 0, tuple(identifiers)
+
+
 def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
-    canonical = (repo_root / "VERSION").read_text(encoding="utf-8").strip()
+    version_path = repo_root / "VERSION"
+    published_path = repo_root / "ci" / "published-version"
+    changelog_path = repo_root / "CHANGELOG.md"
+    required_paths = (version_path, published_path, changelog_path)
+    missing_paths = [str(path.relative_to(repo_root)) for path in required_paths if not path.is_file()]
+    if missing_paths:
+        findings.append(
+            {
+                "id": "release-state-files-missing",
+                "severity": "blocker",
+                "message": f"Required release state files are missing: {missing_paths}.",
+            }
+        )
+        return findings
+
+    canonical = version_path.read_text(encoding="utf-8").strip()
+    published = published_path.read_text(encoding="utf-8").strip()
     if version != canonical:
         findings.append(
             {
@@ -576,37 +720,63 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
                 "message": f"Requested version {version} does not match VERSION ({canonical}).",
             }
         )
-    if not SEMVER_RE.fullmatch(canonical):
+    if not SEMVER_RE.fullmatch(version) or not SEMVER_RE.fullmatch(canonical):
         findings.append(
             {
                 "id": "invalid-version",
                 "severity": "blocker",
-                "message": f"VERSION is not SemVer: {canonical!r}.",
+                "message": f"Requested/canonical version is not SemVer: {version!r}/{canonical!r}.",
+            }
+        )
+    if not SEMVER_RE.fullmatch(published):
+        findings.append(
+            {
+                "id": "invalid-published-version",
+                "severity": "blocker",
+                "message": f"ci/published-version is not SemVer: {published!r}.",
             }
         )
 
-    published_path = repo_root / "ci" / "published-version"
-    if published_path.exists():
-        published = published_path.read_text(encoding="utf-8").strip()
-        changelog = (repo_root / "CHANGELOG.md").read_text(encoding="utf-8")
-        unreleased = changelog.partition("## [Unreleased]")[2].partition("\n## [")[0]
-        meaningful = any(
-            line.startswith("- ") for line in unreleased.splitlines()
+    changelog = changelog_path.read_text(encoding="utf-8")
+    if changelog.count("## [Unreleased]") != 1:
+        findings.append(
+            {
+                "id": "invalid-unreleased-changelog",
+                "severity": "blocker",
+                "message": "CHANGELOG.md must contain exactly one ## [Unreleased] section.",
+            }
         )
-        if canonical == published and meaningful:
+        unreleased = ""
+    else:
+        after_heading = changelog.split("## [Unreleased]", 1)[1]
+        if "\n## [" not in after_heading:
+            findings.append(
+                {
+                    "id": "invalid-unreleased-changelog",
+                    "severity": "blocker",
+                    "message": "CHANGELOG [Unreleased] has no following release section.",
+                }
+            )
+            unreleased = ""
+        else:
+            unreleased = after_heading.partition("\n## [")[0]
+
+    meaningful = any(line.startswith("- ") for line in unreleased.splitlines())
+    if meaningful and SEMVER_RE.fullmatch(canonical) and SEMVER_RE.fullmatch(published):
+        if _semver_precedence(canonical) <= _semver_precedence(published):
             findings.append(
                 {
                     "id": "candidate-version-not-advanced",
                     "severity": "blocker",
                     "message": (
-                        f"VERSION still equals published pin {published} while "
-                        "CHANGELOG [Unreleased] contains release content."
+                        f"VERSION {canonical} must be greater than published pin {published} "
+                        "while CHANGELOG [Unreleased] contains release content."
                     ),
                 }
             )
 
     status = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
+        ["git", "status", "--porcelain", "--untracked-files=all"],
         cwd=repo_root,
         text=True,
         stdout=subprocess.PIPE,
@@ -618,21 +788,17 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
             {
                 "id": "dirty-release-sha",
                 "severity": "blocker",
-                "message": "Release audit must run from a clean tracked worktree.",
+                "message": "Release audit must run from a completely clean worktree.",
             }
         )
 
-    if subprocess.run(
+    if canonical != published and subprocess.run(
         ["git", "rev-parse", "--verify", "--quiet", f"refs/tags/v{canonical}"],
         cwd=repo_root,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         check=False,
-    ).returncode == 0 and canonical != (
-        published_path.read_text(encoding="utf-8").strip()
-        if published_path.exists()
-        else ""
-    ):
+    ).returncode == 0:
         findings.append(
             {
                 "id": "candidate-tag-already-exists",
@@ -681,22 +847,27 @@ def prepare_worktrees(
     return worktrees
 
 
-def cleanup_worktrees(repo_root: Path, worktrees: dict[str, Path]) -> None:
-    for path in worktrees.values():
-        subprocess.run(
+def remove_worktree(repo_root: Path, path: Path) -> str | None:
+    result = subprocess.run(
             ["git", "worktree", "remove", "--force", str(path)],
             cwd=repo_root,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             check=False,
         )
-    subprocess.run(
-        ["git", "worktree", "prune"],
-        cwd=repo_root,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
+    if result.returncode != 0:
+        return result.stderr.strip() or f"git worktree remove exited {result.returncode}"
+    return None
+
+
+def cleanup_worktrees(repo_root: Path, worktrees: dict[str, Path]) -> list[str]:
+    errors: list[str] = []
+    for path in worktrees.values():
+        error = remove_worktree(repo_root, path)
+        if error:
+            errors.append(f"{path}: {error}")
+    return errors
 
 
 def _result_to_dict(result: LaneResult) -> dict[str, Any]:
@@ -724,6 +895,17 @@ def _result_to_dict(result: LaneResult) -> dict[str, Any]:
     }
 
 
+def _markdown_inline(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("`", "\\`").replace("\r", " ").replace("\n", " ")
+
+
+def _atomic_write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    temporary.write_text(content, encoding="utf-8")
+    os.replace(temporary, path)
+
+
 def write_reports(
     output_directory: Path,
     run_id: str,
@@ -731,9 +913,24 @@ def write_reports(
     completed_at: str,
     sha: str,
     version: str,
+    plan_sha256: str,
+    coordinator_sha256: str,
     findings: list[dict[str, str]],
     lane_results: list[LaneResult],
 ) -> tuple[Path, Path, str]:
+    result_ids = {result.lane_id for result in lane_results}
+    if result_ids != CANONICAL_LANES:
+        findings = [
+            *findings,
+            {
+                "id": "incomplete-lane-results",
+                "severity": "blocker",
+                "message": (
+                    f"Expected results for {sorted(CANONICAL_LANES)}; "
+                    f"received {sorted(result_ids)}."
+                ),
+            },
+        ]
     blocked_findings = [
         finding for finding in findings if finding["severity"] == "blocker"
     ]
@@ -747,6 +944,8 @@ def write_reports(
         "completedAt": completed_at,
         "headSha": sha,
         "version": version,
+        "planSha256": plan_sha256,
+        "coordinatorSha256": coordinator_sha256,
         "verdict": verdict,
         "summary": {
             "totalLanes": len(lane_results),
@@ -758,15 +957,17 @@ def write_reports(
         "lanes": [_result_to_dict(result) for result in lane_results],
     }
     json_path = output_directory / "report.json"
-    json_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _atomic_write(json_path, json.dumps(report, indent=2, sort_keys=True) + "\n")
 
     lines = [
         "# Autonomous release-manager report",
         "",
         f"- Verdict: **{verdict.upper()}**",
-        f"- Version: `{version}`",
-        f"- Commit: `{sha}`",
-        f"- Run: `{run_id}`",
+        f"- Version: `{_markdown_inline(version)}`",
+        f"- Commit: `{_markdown_inline(sha)}`",
+        f"- Plan: `sha256:{plan_sha256}`",
+        f"- Coordinator: `sha256:{coordinator_sha256}`",
+        f"- Run: `{_markdown_inline(run_id)}`",
         "",
         "## Repository findings",
         "",
@@ -806,7 +1007,7 @@ def write_reports(
     else:
         lines.append("- None.")
     markdown_path = output_directory / "report.md"
-    markdown_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _atomic_write(markdown_path, "\n".join(lines) + "\n")
     return json_path, markdown_path, verdict
 
 
@@ -816,8 +1017,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--plan",
-        default="ci/autonomous-release-manager.json",
-        help="Repository-relative audit plan.",
+        default=CANONICAL_PLAN_RELATIVE_PATH,
+        help=f"Canonical tracked audit plan ({CANONICAL_PLAN_RELATIVE_PATH}).",
     )
     parser.add_argument(
         "--version",
@@ -839,26 +1040,33 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     repo_root = Path(__file__).resolve().parent.parent
     try:
+        sha = _git(repo_root, "rev-parse", "HEAD")
         plan_path = (repo_root / args.plan).resolve()
         plan_path.relative_to(repo_root)
+        plan_sha256 = validate_plan_binding(repo_root, plan_path)
         plan = load_plan(plan_path)
         validate_cursor_assets(repo_root)
-    except (PlanError, ValueError) as exc:
+    except (PlanError, RuntimeError, ValueError) as exc:
         print(f"release-manager: invalid plan: {exc}", file=sys.stderr)
         return 64
 
     if args.validate_only:
         print(
-            "release-manager: plan valid; canonical required lanes="
+            f"release-manager: plan valid (sha256:{plan_sha256}); canonical required lanes="
             + ",".join(sorted(CANONICAL_LANES))
         )
         return 0
 
-    canonical_version = (repo_root / "VERSION").read_text(encoding="utf-8").strip()
-    version = (args.version or canonical_version).removeprefix("v")
-    sha = _git(repo_root, "rev-parse", "HEAD")
+    version_path = repo_root / "VERSION"
+    canonical_version = (
+        version_path.read_text(encoding="utf-8").strip()
+        if version_path.is_file()
+        else ""
+    )
+    requested_version = args.version or canonical_version
+    version = requested_version[1:] if requested_version[:1] in {"v", "V"} else requested_version
     started = dt.datetime.now(dt.timezone.utc)
-    run_id = f"{started.strftime('%Y%m%dT%H%M%SZ')}-{sha[:12]}"
+    run_id = f"{started.strftime('%Y%m%dT%H%M%SZ')}-{sha[:12]}-{uuid.uuid4().hex[:8]}"
     output_directory = (
         (repo_root / args.output).resolve()
         if args.output
@@ -866,10 +1074,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     output_directory.mkdir(parents=True, exist_ok=True)
     findings = repository_findings(repo_root, version, sha)
+    coordinator_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    pre_execution_blockers = {
+        "dirty-release-sha",
+        "invalid-published-version",
+        "invalid-unreleased-changelog",
+        "invalid-version",
+        "release-state-files-missing",
+        "version-mismatch",
+    }
+    may_execute = not any(
+        finding["severity"] == "blocker" and finding["id"] in pre_execution_blockers
+        for finding in findings
+    )
 
     lane_results: list[LaneResult] = []
     worktrees: dict[str, Path] = {}
     try:
+        if not may_execute:
+            raise PlanError("Repository state is unsafe; audit commands were not started.")
         with tempfile.TemporaryDirectory(prefix="ashlar-release-audit-") as temp:
             temp_root = Path(temp)
             try:
@@ -890,6 +1113,8 @@ def main(argv: list[str] | None = None) -> int:
                             {
                                 "version": version,
                                 "sha": sha,
+                                "run_id": run_id,
+                                "run_slug": f"ashlar-audit-{run_id[-8:]}",
                                 "workspace": str(worktrees[lane.lane_id]),
                             },
                             output_directory,
@@ -921,9 +1146,34 @@ def main(argv: list[str] | None = None) -> int:
                                     steps=(),
                                 )
                             )
+                        worktree = worktrees.pop(lane.lane_id)
+                        cleanup_error = remove_worktree(repo_root, worktree)
+                        if cleanup_error:
+                            findings.append(
+                                {
+                                    "id": f"worktree-cleanup-{lane.lane_id}",
+                                    "severity": "blocker",
+                                    "message": cleanup_error,
+                                }
+                            )
             finally:
-                cleanup_worktrees(repo_root, worktrees)
+                for cleanup_error in cleanup_worktrees(repo_root, worktrees):
+                    findings.append(
+                        {
+                            "id": "worktree-cleanup",
+                            "severity": "blocker",
+                            "message": cleanup_error,
+                        }
+                    )
                 worktrees.clear()
+    except PlanError as exc:
+        findings.append(
+            {
+                "id": "commands-not-started",
+                "severity": "info",
+                "message": str(exc),
+            }
+        )
     except Exception as exc:
         findings.append(
             {
@@ -933,7 +1183,14 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
     finally:
-        cleanup_worktrees(repo_root, worktrees)
+        for cleanup_error in cleanup_worktrees(repo_root, worktrees):
+            findings.append(
+                {
+                    "id": "worktree-cleanup",
+                    "severity": "blocker",
+                    "message": cleanup_error,
+                }
+            )
 
     order = {lane.lane_id: index for index, lane in enumerate(plan.lanes)}
     lane_results.sort(key=lambda result: order[result.lane_id])
@@ -945,14 +1202,42 @@ def main(argv: list[str] | None = None) -> int:
         completed_at=completed.isoformat(),
         sha=sha,
         version=version,
+        plan_sha256=plan_sha256,
+        coordinator_sha256=coordinator_sha256,
         findings=findings,
         lane_results=lane_results,
     )
 
     latest_root = repo_root / ".ashlar" / "release-manager"
     latest_root.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(json_path, latest_root / "latest.json")
-    shutil.copy2(markdown_path, latest_root / "latest.md")
+    try:
+        json_reference = str(json_path.relative_to(latest_root))
+        markdown_reference = str(markdown_path.relative_to(latest_root))
+    except ValueError:
+        json_reference = str(json_path)
+        markdown_reference = str(markdown_path)
+    latest = {
+        "schemaVersion": SCHEMA_VERSION,
+        "runId": run_id,
+        "headSha": sha,
+        "version": version,
+        "verdict": verdict,
+        "reportPath": json_reference,
+        "markdownPath": markdown_reference,
+    }
+    _atomic_write(
+        latest_root / "latest.json",
+        json.dumps(latest, indent=2, sort_keys=True) + "\n",
+    )
+    _atomic_write(
+        latest_root / "latest.md",
+        (
+            "# Latest autonomous release-manager run\n\n"
+            f"- Verdict: **{verdict.upper()}**\n"
+            f"- Commit: `{_markdown_inline(sha)}`\n"
+            f"- Report: `{_markdown_inline(markdown_reference)}`\n"
+        ),
+    )
 
     print(f"release-manager: verdict={verdict}")
     print(f"release-manager: report={markdown_path}")

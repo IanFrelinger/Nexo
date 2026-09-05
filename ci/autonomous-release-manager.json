@@ -7,7 +7,7 @@
       "title": "Code and build integrity",
       "objective": "Audit the complete project graph, compiler diagnostics, and dependency boundaries. Treat any omitted or failed project as a release blocker.",
       "required": true,
-      "timeoutSeconds": 3600,
+      "timeoutSeconds": 2400,
       "steps": [
         {
           "name": "release-build",
@@ -19,7 +19,7 @@
             "Release",
             "--nologo"
           ],
-          "timeoutSeconds": 2700
+          "timeoutSeconds": 1800
         },
         {
           "name": "dependency-boundary",
@@ -30,7 +30,7 @@
           "environment": {
             "DEPENDENCY_BOUNDARY_STRICT": "1"
           },
-          "timeoutSeconds": 600
+          "timeoutSeconds": 300
         }
       ]
     },
@@ -39,7 +39,7 @@
       "title": "Test and CI truth",
       "objective": "Run the required certification suite, every CLI test (including bridge rows), and product tests. Timeouts and zero-test outcomes are blockers, not skips.",
       "required": true,
-      "timeoutSeconds": 5400,
+      "timeoutSeconds": 3900,
       "steps": [
         {
           "name": "cert-gate",
@@ -47,35 +47,63 @@
             "bash",
             "scripts/run-cert-gate.sh"
           ],
-          "timeoutSeconds": 1800
+          "timeoutSeconds": 1200
         },
         {
           "name": "complete-cli-suite",
           "command": [
-            "dotnet",
-            "test",
+            "python3",
+            "scripts/run-dotnet-test-counted.py",
+            "--project",
             "application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj",
+            "--expected-prefix",
+            "Ashlar.Tests.CLI.",
+            "--",
             "--blame-hang-timeout",
             "300s",
             "--blame-hang-dump-type",
             "none",
             "--nologo"
           ],
-          "timeoutSeconds": 1200
+          "timeoutSeconds": 900
         },
         {
           "name": "product-scaffolds",
           "command": [
-            "dotnet",
-            "test",
+            "python3",
+            "scripts/run-dotnet-test-counted.py",
+            "--project",
             "products/Ashlar.Products.sln",
+            "--expected-prefix",
+            "Ashlar.Tests.Products.",
+            "--",
             "--blame-hang-timeout",
             "120s",
             "--blame-hang-dump-type",
             "none",
             "--nologo"
           ],
-          "timeoutSeconds": 1200
+          "timeoutSeconds": 900
+        },
+        {
+          "name": "distributed-contracts",
+          "command": [
+            "python3",
+            "scripts/run-dotnet-test-counted.py",
+            "--project",
+            "src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj",
+            "--expected-prefix",
+            "Ashlar.Tests.Contracts.DistributedContractTests.",
+            "--",
+            "--filter",
+            "FullyQualifiedName~DistributedContractTests",
+            "--blame-hang-timeout",
+            "120s",
+            "--blame-hang-dump-type",
+            "none",
+            "--nologo"
+          ],
+          "timeoutSeconds": 600
         }
       ]
     },
@@ -84,9 +112,17 @@
       "title": "Security and trust",
       "objective": "Run trust, authentication, supply-chain, and zero-egress proof. A scan failure, vulnerable dependency, or skipped air-gapped container proof blocks release.",
       "required": true,
-      "timeoutSeconds": 7200,
+      "timeoutSeconds": 4500,
       "exclusiveResources": ["docker"],
       "steps": [
+        {
+          "name": "docker-required",
+          "command": [
+            "docker",
+            "info"
+          ],
+          "timeoutSeconds": 60
+        },
         {
           "name": "security-gate-full",
           "command": [
@@ -98,19 +134,16 @@
             "SECURITY_GATE_SKIP_PRIOR": "1",
             "SECURITY_GATE_STRICT_SUPPLY_CHAIN": "1"
           },
-          "timeoutSeconds": 6000
+          "timeoutSeconds": 3600
         },
         {
           "name": "full-solution-vulnerability-scan",
           "command": [
-            "dotnet",
-            "list",
-            "Ashlar.sln",
-            "package",
-            "--vulnerable",
-            "--include-transitive"
+            "python3",
+            "scripts/verify-no-vulnerable-packages.py",
+            "Ashlar.sln"
           ],
-          "timeoutSeconds": 900
+          "timeoutSeconds": 600
         }
       ]
     },
@@ -119,7 +152,7 @@
       "title": "Packaging and external consumption",
       "objective": "Pack the exact candidate version, restore it in an isolated consumer, and verify the external brick-host-client shape without publishing anything.",
       "required": true,
-      "timeoutSeconds": 5400,
+      "timeoutSeconds": 3900,
       "steps": [
         {
           "name": "release-preflight",
@@ -128,7 +161,7 @@
             "scripts/release-preflight-local.sh",
             "{version}"
           ],
-          "timeoutSeconds": 3600
+          "timeoutSeconds": 2400
         },
         {
           "name": "external-product-shape",
@@ -136,7 +169,11 @@
             "bash",
             "scripts/verify-external-product-shape.sh"
           ],
-          "timeoutSeconds": 1800
+          "environment": {
+            "ASHLAR_EXTERNAL_PRODUCT_VERIFY_VERSION": "{version}",
+            "ASHLAR_EXTERNAL_PRODUCT_VERIFY_WORK": "{workspace}/.ashlar/release-manager/external-product"
+          },
+          "timeoutSeconds": 1200
         }
       ]
     },
@@ -145,7 +182,7 @@
       "title": "Documentation and product claims",
       "objective": "Fail claims that drift from published versions, public API promises, repository layout, or UAT. Documentation is part of the release artifact.",
       "required": true,
-      "timeoutSeconds": 2700,
+      "timeoutSeconds": 2400,
       "steps": [
         {
           "name": "published-version-claims",
@@ -165,14 +202,18 @@
             "UAT_OUT": "{workspace}/.ashlar/release-manager/uat",
             "UAT_REPO_DIR": "{workspace}"
           },
-          "timeoutSeconds": 1200
+          "timeoutSeconds": 600
         },
         {
           "name": "onboarding-doc-conventions",
           "command": [
-            "dotnet",
-            "test",
+            "python3",
+            "scripts/run-dotnet-test-counted.py",
+            "--project",
             "src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            "--expected-prefix",
+            "Ashlar.Tests.Infrastructure.",
+            "--",
             "--filter",
             "FullyQualifiedName~PublishedVersionDocsLintTests|FullyQualifiedName~Onboarding",
             "--blame-hang-timeout",
@@ -190,7 +231,7 @@
       "title": "Operations and deployment",
       "objective": "Prove the non-Docker full-stack gate, both production-shaped Compose lanes, and disaster recovery. A missing engine is a blocker for a production release.",
       "required": true,
-      "timeoutSeconds": 10800,
+      "timeoutSeconds": 7800,
       "exclusiveResources": ["docker"],
       "steps": [
         {
@@ -202,7 +243,7 @@
           "environment": {
             "ASHLAR_READY_SKIP_DOCKER": "1"
           },
-          "timeoutSeconds": 5400
+          "timeoutSeconds": 3000
         },
         {
           "name": "portal-production-dry-run",
@@ -211,7 +252,10 @@
             "scripts/prod-dry-run.sh",
             "--portal"
           ],
-          "timeoutSeconds": 2400
+          "environment": {
+            "COMPOSE_PROJECT_NAME": "{run_slug}-portal"
+          },
+          "timeoutSeconds": 1200
         },
         {
           "name": "agent-server-production-dry-run",
@@ -220,7 +264,10 @@
             "scripts/prod-dry-run.sh",
             "--agent-server"
           ],
-          "timeoutSeconds": 2400
+          "environment": {
+            "COMPOSE_PROJECT_NAME": "{run_slug}-agent"
+          },
+          "timeoutSeconds": 1200
         },
         {
           "name": "disaster-recovery",
@@ -228,7 +275,7 @@
             "make",
             "dr-gate-full"
           ],
-          "timeoutSeconds": 3600
+          "timeoutSeconds": 1800
         }
       ]
     }

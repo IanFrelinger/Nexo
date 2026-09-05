@@ -22,6 +22,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ### Fixed
 
+- **Release preflight integrity** — Bash and PowerShell preflights now require the requested version to match root `VERSION`; autonomous audit mode refuses external workflow dispatch.
 - **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
 - **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.
 - **Distributed contracts** factories reject undefined enums, malformed digests, non-positive duration, and succeeded evidence without a hash.

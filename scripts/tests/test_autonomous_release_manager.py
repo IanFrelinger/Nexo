@@ -13,11 +13,26 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "autonomous-release-manager.py"
-SPEC = importlib.util.spec_from_file_location("autonomous_release_manager", SCRIPT)
-assert SPEC is not None and SPEC.loader is not None
-arm = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = arm
-SPEC.loader.exec_module(arm)
+
+
+def load_script(name: str, path: Path) -> object:
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+arm = load_script("autonomous_release_manager", SCRIPT)
+counted = load_script(
+    "run_dotnet_test_counted",
+    SCRIPT.parent / "run-dotnet-test-counted.py",
+)
+vulnerabilities = load_script(
+    "verify_no_vulnerable_packages",
+    SCRIPT.parent / "verify-no-vulnerable-packages.py",
+)
 
 
 def plan_document() -> dict:
@@ -99,6 +114,13 @@ class PlanValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(arm.PlanError, "cannot exceed 6"):
                 arm.load_plan(self.write_plan(Path(temp), document))
 
+    def test_step_budgets_must_fit_lane_timeout(self) -> None:
+        document = plan_document()
+        document["lanes"][0]["timeoutSeconds"] = 5
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(arm.PlanError, "exceeding lane timeout"):
+                arm.load_plan(self.write_plan(Path(temp), document))
+
     def test_committed_semantic_agents_and_skill_are_complete(self) -> None:
         arm.validate_cursor_assets(SCRIPT.parents[1])
 
@@ -177,6 +199,8 @@ class ExecutionTests(unittest.TestCase):
                 completed_at="2026-09-05T00:00:01+00:00",
                 sha="a" * 40,
                 version="0.2.0",
+                plan_sha256="1" * 64,
+                coordinator_sha256="2" * 64,
                 findings=[
                     {
                         "id": "blocker",
@@ -229,6 +253,55 @@ class ExecutionTests(unittest.TestCase):
         self.assertTrue(all(result.status == "passed" for result in results))
         self.assertGreaterEqual(elapsed, 0.45)
 
+    def test_timeout_kills_descendants_before_log_hash_is_final(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sentinel = root / "descendant-survived"
+            child_code = (
+                "import pathlib,signal,time;"
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN);"
+                "time.sleep(2);"
+                f"pathlib.Path({str(sentinel)!r}).write_text('survived')"
+            )
+            parent_code = (
+                "import subprocess,sys,time;"
+                f"subprocess.Popen([{sys.executable!r}, '-c', {child_code!r}]);"
+                "time.sleep(10)"
+            )
+            lane = arm.LaneSpec(
+                lane_id="tests",
+                title="Timeout",
+                objective="Prove child containment.",
+                required=True,
+                timeout_seconds=4,
+                exclusive_resources=(),
+                steps=(
+                    arm.StepSpec(
+                        "timeout",
+                        (sys.executable, "-c", parent_code),
+                        1,
+                        {},
+                        ".",
+                    ),
+                ),
+            )
+            result = arm.run_lane(
+                lane,
+                root,
+                {"version": "0.2.0", "sha": "a" * 40, "workspace": str(root)},
+                root / "output",
+            )
+            digest_at_return = result.log_sha256
+            time.sleep(2.2)
+            digest_later = arm.hashlib.sha256(
+                (root / "output" / result.log_path).read_bytes()
+            ).hexdigest()
+
+            self.assertEqual("failed", result.status)
+            self.assertEqual("timeout", result.steps[0].status)
+            self.assertFalse(sentinel.exists())
+            self.assertEqual(digest_at_return, digest_later)
+
 
 class RepositoryStateTests(unittest.TestCase):
     def test_unreleased_content_requires_version_advance(self) -> None:
@@ -270,6 +343,53 @@ class RepositoryStateTests(unittest.TestCase):
             "candidate-version-not-advanced",
             {finding["id"] for finding in findings},
         )
+
+
+class EvidenceParserTests(unittest.TestCase):
+    def test_discovery_count_requires_expected_test_prefix(self) -> None:
+        output = """
+The following Tests are available:
+    Ashlar.Tests.CLI.One
+    Ashlar.Tests.CLI.Two(value: 1)
+    Other.Tests.Three
+"""
+        self.assertEqual(2, counted.discovered_count(output, "Ashlar.Tests.CLI."))
+
+    def test_trx_execution_count_is_summed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "result.trx"
+            path.write_text(
+                """<?xml version="1.0"?>
+<TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <ResultSummary outcome="Completed">
+    <Counters total="3" executed="2" passed="2" failed="0" />
+  </ResultSummary>
+</TestRun>
+""",
+                encoding="utf-8",
+            )
+            self.assertEqual(2, counted.executed_count(Path(temp)))
+
+    def test_vulnerability_records_find_nested_packages(self) -> None:
+        report = {
+            "projects": [
+                {
+                    "frameworks": [
+                        {
+                            "topLevelPackages": [
+                                {"id": "safe", "vulnerabilities": []},
+                                {
+                                    "id": "unsafe",
+                                    "vulnerabilities": [{"severity": "High"}],
+                                },
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        records = vulnerabilities.vulnerability_records(report)
+        self.assertEqual(["unsafe"], [record["id"] for record in records])
 
 
 if __name__ == "__main__":
