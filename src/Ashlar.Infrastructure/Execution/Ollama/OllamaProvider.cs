@@ -34,15 +34,11 @@ public sealed class OllamaProvider
             _httpClient.BaseAddress = new Uri(resolvedBaseUrl.TrimEnd('/') + "/", UriKind.Absolute);
         }
 
-        var initializationResult = RefreshModelsAsync(CancellationToken.None).GetAwaiter().GetResult();
-        if (!initializationResult.IsSuccess)
-        {
-            _logger?.LogWarning(
-                "Failed to initialize Ollama model manifest from {BaseUrl}: {Code} {Message}",
-                _httpClient.BaseAddress,
-                initializationResult.Error?.Code,
-                initializationResult.Error?.Message);
-        }
+        // Construction is configuration only. Pulling /api/tags here used to
+        // .GetAwaiter().GetResult() on the caller — including ASP.NET request
+        // threads via IProviderFactory.IsProviderAvailable("ollama") and every
+        // GetOrCreateOllamaProvider site. RefreshModelsAsync / CheckHealthAsync
+        // / ExecuteChatAsync load the manifest without blocking the caller.
     }
 
     /// <summary>Whether the Ollama endpoint is reachable and has a loaded model manifest.</summary>
@@ -222,6 +218,17 @@ public sealed class OllamaProvider
         IReadOnlyList<byte[]>? imageBytesList,
         CancellationToken cancellationToken = default)
     {
+        if (!IsAvailable)
+        {
+            var refresh = await RefreshModelsAsync(cancellationToken).ConfigureAwait(false);
+            if (!refresh.IsSuccess)
+            {
+                return Result<string>.Failure(refresh.Error ?? new Error(
+                    "OLLAMA_UNAVAILABLE",
+                    "Ollama provider is unavailable. Run health check or refresh the model manifest."));
+            }
+        }
+
         var validationResult = ValidateModel(requestedModel);
         if (!validationResult.IsSuccess || validationResult.Value is null)
         {

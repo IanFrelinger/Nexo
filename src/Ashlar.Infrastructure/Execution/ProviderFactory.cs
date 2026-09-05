@@ -107,11 +107,10 @@ public class ProviderFactory : IProviderFactory
         //
         // The warm-up itself is deliberate and worth keeping: pulling the manifest on
         // first contact costs seconds, and doing it ahead of time avoids that latency
-        // on the first user request. What was wrong was doing it synchronously here.
-        // Both GetOllamaBaseUrlAsync and OllamaProvider's constructor block on network
-        // I/O, so CONSTRUCTING this type — and therefore every resolution of
-        // IProviderFactory, including during host startup — waited on a machine that
-        // may not be listening.
+        // on the first user request. Construction of this factory, construction of
+        // OllamaProvider, and IsProviderAvailable("ollama") must not wait on a
+        // machine that may not be listening. RefreshModelsAsync is the only network
+        // step, and it runs here on a thread-pool task.
         //
         // Fire-and-forget is safe precisely because the warm-up is an optimisation and
         // nothing depends on it: the provider is created on demand at each real use
@@ -121,7 +120,8 @@ public class ProviderFactory : IProviderFactory
             try
             {
                 var baseUrl = await GetOllamaBaseUrlAsync(CancellationToken.None).ConfigureAwait(false);
-                _ = GetOrCreateOllamaProvider(baseUrl);
+                var provider = GetOrCreateOllamaProvider(baseUrl);
+                await provider.RefreshModelsAsync(CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -750,17 +750,13 @@ public class ProviderFactory : IProviderFactory
 
     private bool IsOllamaProviderAvailable()
     {
-        try
+        // Read the last refresh only. A live /api/tags probe here used to
+        // .GetAwaiter().GetResult() on ASP.NET request threads (IDE health,
+        // provider listing). Construction and CheckHealthAsync load the
+        // manifest asynchronously; this method must stay non-blocking.
+        lock (_ollamaProviderLock)
         {
-            var baseUrl = GetOllamaBaseUrlAsync(CancellationToken.None).GetAwaiter().GetResult();
-            var provider = GetOrCreateOllamaProvider(baseUrl);
-            var health = provider.CheckHealthAsync(CancellationToken.None).GetAwaiter().GetResult();
-            return health.IsSuccess && health.Value == true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Unable to run Ollama health check.");
-            return false;
+            return _ollamaProvider?.IsAvailable == true;
         }
     }
 

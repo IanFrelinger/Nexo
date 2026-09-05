@@ -11,7 +11,21 @@ namespace Ashlar.Tests.Infrastructure.Tests.Execution;
 public sealed class OllamaProviderTests
 {
     [Fact]
-    public void Constructor_LoadsManifest_FromTagsEndpoint()
+    public void Constructor_DoesNotContactTheTagsEndpoint()
+    {
+        var handler = new StubHttpMessageHandler(_ =>
+            throw new InvalidOperationException("constructor must not perform HTTP"));
+
+        using var httpClient = new HttpClient(handler);
+        var sut = new OllamaProvider(httpClient, "http://localhost:11434");
+
+        sut.IsAvailable.Should().BeFalse();
+        sut.Manifest.Should().BeEmpty();
+        handler.Requests.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RefreshModelsAsync_LoadsManifest_FromTagsEndpoint()
     {
         var handler = new StubHttpMessageHandler(_ => JsonResponse("""
         {
@@ -25,6 +39,9 @@ public sealed class OllamaProviderTests
         using var httpClient = new HttpClient(handler);
         var sut = new OllamaProvider(httpClient, "http://localhost:11434");
 
+        var refresh = await sut.RefreshModelsAsync();
+
+        refresh.IsSuccess.Should().BeTrue();
         sut.IsAvailable.Should().BeTrue();
         sut.Manifest.Select(model => model.Name).Should().Contain(new[] { "llama3.2:3b", "llava:7b" });
         sut.Manifest.Single(model => model.Name == "llama3.2:3b").Size.Should().Be(1234);
@@ -45,6 +62,7 @@ public sealed class OllamaProviderTests
         using var httpClient = new HttpClient(handler);
         var sut = new OllamaProvider(httpClient, "http://localhost:11434");
 
+        (await sut.RefreshModelsAsync()).IsSuccess.Should().BeTrue();
         var refreshResult = await sut.RefreshModelsAsync();
 
         refreshResult.IsSuccess.Should().BeTrue();
@@ -53,7 +71,7 @@ public sealed class OllamaProviderTests
     }
 
     [Fact]
-    public void ValidateModel_ResolvesBareFamilyName_ToLatestTag()
+    public async Task ValidateModel_ResolvesBareFamilyName_ToLatestTag()
     {
         var handler = new StubHttpMessageHandler(_ => JsonResponse("""
         {
@@ -64,6 +82,7 @@ public sealed class OllamaProviderTests
         """));
         using var httpClient = new HttpClient(handler);
         var sut = new OllamaProvider(httpClient, "http://localhost:11434");
+        (await sut.RefreshModelsAsync()).IsSuccess.Should().BeTrue();
 
         var validation = sut.ValidateModel("llama3.1");
 
@@ -73,7 +92,7 @@ public sealed class OllamaProviderTests
     }
 
     [Fact]
-    public void ValidateModel_WhenMissing_ReturnsStructuredResultError()
+    public async Task ValidateModel_WhenMissing_ReturnsStructuredResultError()
     {
         var handler = new StubHttpMessageHandler(_ => JsonResponse("""
         {
@@ -84,6 +103,7 @@ public sealed class OllamaProviderTests
         """));
         using var httpClient = new HttpClient(handler);
         var sut = new OllamaProvider(httpClient, "http://localhost:11434");
+        (await sut.RefreshModelsAsync()).IsSuccess.Should().BeTrue();
 
         var validation = sut.ValidateModel("mistral:latest");
 
@@ -103,9 +123,6 @@ public sealed class OllamaProviderTests
             requestCount++;
             if (requestCount == 1)
             {
-                /// <summary>Json response.</summary>
-                /// <param name=""llama3.2:3b"">"llama3.2:3b".</param>
-                /// <param name="}"""">}""".</param>
                 return JsonResponse("""{ "models": [ { "name": "llama3.2:3b", "size": 1234 } ] }""");
             }
 
@@ -116,6 +133,8 @@ public sealed class OllamaProviderTests
 
         using var httpClient = new HttpClient(handler);
         var sut = new OllamaProvider(httpClient, "http://localhost:11434");
+        (await sut.RefreshModelsAsync()).IsSuccess.Should().BeTrue();
+        sut.IsAvailable.Should().BeTrue();
 
         var health = await sut.CheckHealthAsync();
 

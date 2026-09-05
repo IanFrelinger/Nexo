@@ -45,7 +45,7 @@ public class InfrastructureOllamaGapCoverageTests
     }
 
     [Fact]
-    public void OllamaProvider_validate_model_handles_empty_and_prefix_resolution()
+    public async Task OllamaProvider_validate_model_handles_empty_and_prefix_resolution()
     {
         using var client = new HttpClient(new StubHttpMessageHandler(_ => Json("""
         {
@@ -57,6 +57,7 @@ public class InfrastructureOllamaGapCoverageTests
         """))) { BaseAddress = new Uri("http://localhost:11434/") };
 
         var sut = new OllamaProvider(client);
+        (await sut.RefreshModelsAsync()).IsSuccess.Should().BeTrue();
 
         sut.ValidateModel("").Error!.Code.Should().Be("OLLAMA_MODEL_REQUIRED");
         sut.ValidateModel("llama3.2").Value!.Name.Should().Be("llama3.2:3b");
@@ -130,15 +131,17 @@ public class InfrastructureOllamaGapCoverageTests
     }
 
     [Fact]
-    public void OllamaProvider_constructor_tolerates_failed_initial_refresh()
+    public void OllamaProvider_constructor_does_not_contact_the_endpoint()
     {
-        using var client = new HttpClient(new StubHttpMessageHandler(_ => throw new HttpRequestException("offline")))
+        using var client = new HttpClient(new StubHttpMessageHandler(_ =>
+            throw new InvalidOperationException("constructor must not perform HTTP")))
         {
             BaseAddress = new Uri("http://localhost:11434/"),
         };
 
         var sut = new OllamaProvider(client, logger: null);
         sut.IsAvailable.Should().BeFalse();
+        sut.Manifest.Should().BeEmpty();
     }
 
     /// <summary>Json.</summary>
