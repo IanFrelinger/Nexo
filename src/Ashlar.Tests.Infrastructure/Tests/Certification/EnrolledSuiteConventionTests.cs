@@ -373,9 +373,10 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/kernel-gate-tier-c.sh"));
         text.Should().Contain("run-dotnet-test-counted.py");
         text.Should().Contain("--min-tests 12");
-        text.Should().Contain("--min-tests 18");
+        text.Should().Contain("--min-tests 17");
         text.Should().Contain("WorkflowExecutorIntegrationTests");
         text.Should().Contain("FullyQualifiedName~AirGapped");
+        text.Should().Contain("FullyQualifiedName!~EnrolledSuiteConventionTests");
         text.Should().Contain("-f net10.0");
         text.Should().NotContain("dotnet test \"$INFRA\"");
     }
@@ -470,7 +471,8 @@ public sealed class EnrolledSuiteConventionTests
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             "scripts/security-gate-tier-e.sh"));
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 53");
+        text.Should().Contain("--min-tests 52");
+        text.Should().Contain("FullyQualifiedName!~EnrolledSuiteConventionTests");
         text.Should().Contain("-f net10.0");
         text.Should().NotContain("-f net8.0");
         text.Should().NotContain("dotnet test \"$INFRA\"");

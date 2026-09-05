@@ -27,13 +27,15 @@ bash scripts/grpc-transport-gate.sh
 
 echo "== Tier C: air-gapped profile smoke (net10.0, counted) =="
 # net8.0 omits AirGappedProfileApiHostProdStyleTests (API host is net10.0 only).
+# EnrolledSuiteConventionTests method names contain AirGapped and used to
+# inflate this slice (19 listed / floor 18). Product identities are 17.
 ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
   --project "$INFRA" \
   --expected-prefix "Ashlar.Tests.Infrastructure." \
-  --min-tests 18 \
+  --min-tests 17 \
   -- \
   -f net10.0 \
-  --filter "FullyQualifiedName~AirGapped" \
+  --filter "FullyQualifiedName~AirGapped&FullyQualifiedName!~EnrolledSuiteConventionTests" \
   --blame-hang-timeout 120s \
   --blame-hang-dump-type none
 

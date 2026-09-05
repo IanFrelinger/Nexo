@@ -74,7 +74,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `kernel-coverage-gate.yml` | Kernel coverage gate / `kernel-coverage` | paths: kernel src + tests, `scripts/ci/kernel-coverage-gate.sh`, `scripts/ci/pr-testing-strategy-gate.sh` | push |
 | `kernel-gate.yml` | Kernel Gate / `kernel-gate` | paths: `src/Ashlar.Hosting/**`, Infrastructure, Orchestration, Runtime, Core.Application, kernel tests, `docs/production-readiness/**`, `Makefile` | PR: Tiers A–C; D–E / full dispatch-only; push (narrower paths) |
 | `mcp-a2a-gate.yml` | MCP + A2A protocol gate / `scripts/mcp-a2a-gate.sh` | paths: `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, `Ashlar.API`, `scripts/mcp-a2a-gate.sh` | push `master`/`main`/`cursor/**`, dispatch — counted floors 40 / 33 / 39 / 19 / 7 |
-| `security-gate.yml` | Security Gate / `security-gate` | paths: Trust/Security sources and tests, `scripts/security-gate*.sh`, `Makefile` | PR: Tiers A–C plus E host suite (53); D and E container dispatch-only (release-manager `security` lane runs full A–E with Docker) |
+| `security-gate.yml` | Security Gate / `security-gate` | paths: Trust/Security sources and tests, `scripts/security-gate*.sh`, `Makefile` | PR: Tiers A–C plus E host suite (52); D and E container dispatch-only (release-manager `security` lane runs full A–E with Docker) |
 | `shell-lint.yml` | Shell lint / `shell-lint` | paths: `scripts/**` | dispatch |
 | `testing-strategy-gate.yml` | Testing strategy gate / `testing-strategy` | paths: `src/**`, `application/**`, `scripts/**`, `.github/**`, `Makefile`, `docs/architecture/TestingStrategy*.md` | — |
 | `release-staging-on-label.yml` | Release staging on label / `dispatch-staging-release` | `types: [labeled]` only | — |

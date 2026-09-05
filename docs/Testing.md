@@ -46,7 +46,7 @@ Run before building product features on top of the kernel. Builds `Ashlar.Runtim
 ```bash
 make kernel-gate              # Tier A: runtime build + counted hosting matrix (40) + pipeline lifecycle (14)
 make kernel-gate-tier-b       # Tier B: CLI validate + fail-closed unconfigured run + LiteDB durable resume
-make kernel-gate-tier-c       # Tier C: counted ProdStyle (123) + workflow (12) + gRPC (81) + AirGapped net10 (18)
+make kernel-gate-tier-c       # Tier C: counted ProdStyle (123) + workflow (12) + gRPC (81) + AirGapped net10 (17)
 make kernel-gate-tier-d       # Tier D: pack graph alignment + NuGet consumer sample
 make kernel-gate-full         # Tier A + B + C + D
 make bootstrap-mesh-lab-env   # create .env.mesh-lab from example (gitignored)
@@ -184,7 +184,7 @@ make ingress-unit-gate                    # counted AwsSns (11) + DynamoDb (2) i
 make mcp-a2a-gate                         # counted MCP/A2A adapters (40+33+39+19) + net10 ProdStyle ingress (7)
 make production-readiness-gate-v1-tests   # counted Pipelines 68 (net8 + net10) + host-DI smoke 2
 make grpc-transport-gate                  # counted Transport ProdStyle (81, net8); also from kernel-gate-tier-c
-make kernel-gate                          # kernel-gate.yml — PR runs A–C (B fail-closed CLI; C counted workflow 12 + AirGapped net10 18 + grpc 81 + ProdStyle 123)
+make kernel-gate                          # kernel-gate.yml — PR runs A–C (B fail-closed CLI; C counted workflow 12 + AirGapped net10 17 + grpc 81 + ProdStyle 123)
 make application-gate-tier-a              # application-gate.yml — tier-c = in-process Ashlar.API WebApplicationFactory tests
 make testing-strategy-gate                # testing-strategy-gate.yml — PR diff rules (gap freeze, ProdStyle wiring)
 make ci-verify                            # `ashlar ci verify` — build + C#-driven checks used by ship-gate
