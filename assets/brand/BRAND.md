@@ -11,10 +11,16 @@ Type: Baloo 2 ExtraBold (wordmark) · Caveat SemiBold (annotations). Both embedd
 | `ashlar-logo-chaos.svg` | README hero — **wired**, centred `<img>` at the top of `README.md` |
 | `ashlar-icon-nuget-128.png` | NuGet package icon — **wired** repo-wide in `Directory.Build.props` (see below) |
 | `ashlar-icon-github-512.png` | GitHub org/repo avatar — Settings → upload |
-| `ashlar-social-card-1280x640.png` | Repo → Settings → General → Social preview (100 KB, under the 1 MB limit) |
-| `ashlar-terminal-preview.svg` | docs/marketing use — mock CLI session |
+| `ashlar-og-flat-1200x630.png` | **Primary OG card** — flat, typographic social card (1200×630); **wired** in `site/index.html` `<meta property="og:image">`; also suitable for GitHub Settings → Social preview |
+| `ashlar-social-card-1280x640.png` | Alternative social preview (1280×640) — older design, still valid |
+| `ashlar-terminal-preview.svg` | docs/marketing use — mock CLI session; **used** in landing page bento grid |
+| `og-card-generator.html` | Source template for generating `ashlar-og-flat-1200x630.png` via screenshot (regenerate with `generate-og-card.sh`) |
+| `generate-og-card.sh` | Script to export OG card from HTML template (uses Playwright/Puppeteer or manual instructions) |
+| `marketing/experiments/` | *Archive* — AI-generated collage imagery (not used on landing page); see subdirectory README |
 | `*.svg` sources | keep in `assets/brand/` as the editable masters |
 | `AshlarConsole.cs` | reference implementation, kept HERE not in the CLI: `application/**` changes need the application integration-branch flow. Wiring it into `Ashlar.CLI` is an open follow-up; see `docs/ashlar-terminal-style.md` |
+
+**Design:** The landing page (`site/index.html`) and OG card use a clean, modern developer-tool aesthetic (Linear/Vercel/Notion-adjacent): flat, typographic, official brand assets only. AI-generated collage imagery (seals, tape, doodles, sparkles) is archived in `marketing/experiments/` and not used on the primary marketing site.
 
 ## NuGet icon wiring — already done
 

@@ -13,7 +13,7 @@ The **default** path here is **containers + CLI**: develop inside the **Dev Cont
 **Portal in Docker only** (no IDE):
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
+git clone https://github.com/IanFrelinger/Ashlar.git && cd Ashlar
 docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart .
 docker run --rm -p 127.0.0.1:8080:8080 ashlar:quickstart
 # Open http://localhost:8080 — mock provider; no API keys needed.
@@ -73,15 +73,15 @@ The published **`nexo-cli`** image is **runtime-only** (no `git`/`curl` in the c
 Clone the repo, then run setup and build (same graph CI uses):
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git
-cd Nexo
+git clone https://github.com/IanFrelinger/Ashlar.git
+cd Ashlar
 bash scripts/setup/setup.sh all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 ```
 
 ```powershell
-git clone https://github.com/IanFrelinger/Nexo.git
-Set-Location Nexo
+git clone https://github.com/IanFrelinger/Ashlar.git
+Set-Location Ashlar
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 ```

@@ -18,5 +18,5 @@ public static class AutonomyExperimental
     public const string DiagnosticId = "ASHLAREXP001";
 
     /// <summary>Help link attached to the diagnostic (the policy section that explains it).</summary>
-    public const string UrlFormat = "https://github.com/IanFrelinger/Nexo/blob/master/docs/SdkCompatibilityPolicy.md#ashlarexp001";
+    public const string UrlFormat = "https://github.com/IanFrelinger/Ashlar/blob/master/docs/SdkCompatibilityPolicy.md#ashlarexp001";
 }
