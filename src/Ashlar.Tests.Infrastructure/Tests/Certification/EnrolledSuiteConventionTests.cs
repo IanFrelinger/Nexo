@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 119");
+        text.Should().Contain("--min-tests 120");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -844,6 +844,19 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/assert-trx-min-executed.sh"));
         helper.Should().Contain("assert-trx-min-executed.py");
         helper.Should().Contain("python3");
+    }
+
+    [Fact]
+    public void TestInContainer_AssertsHostTrxFloor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/test-in-container.ps1"));
+        text.Should().Contain("assert-trx-min-executed.py");
+        text.Should().Contain("--min-executed 1");
+        text.Should().Contain("in-container.trx");
+        text.Should().Contain("--results-directory /test-results");
+        text.Should().NotContain(
+            "dotnet test '$Project' --framework '$Framework' --filter '$Filter' --nologo -v minimal\"");
     }
 
     [Fact]

@@ -55,10 +55,22 @@ $image = & (Join-Path $PSScriptRoot "ensure-devtest-image.ps1")
 
 Write-Host "== container test: $sha ($Framework) filter='$Filter' =="
 
+# Images may lack Python. Write TRX onto a host mount and refuse a silent empty match.
+$resultsDir = Join-Path $repoRoot "test-results"
+New-Item -ItemType Directory -Force -Path $resultsDir | Out-Null
+$trxName = "in-container.trx"
+
 docker run --rm --user root `
     -v "${repoRoot}:/src-mirror:ro" `
+    -v "${resultsDir}:/test-results" `
     -v ashlar-nuget-packages:/root/.nuget/packages `
     $image `
-    bash -lc "set -e; git config --global safe.directory '*'; git clone -q /src-mirror /repo; cd /repo; git checkout -q $sha; dotnet test '$Project' --framework '$Framework' --filter '$Filter' --nologo -v minimal"
+    bash -lc "set -e; git config --global safe.directory '*'; git clone -q /src-mirror /repo; cd /repo; git checkout -q $sha; dotnet test '$Project' --framework '$Framework' --filter '$Filter' --nologo -v minimal --logger 'trx;LogFileName=$trxName' --results-directory /test-results"
+$dockerExit = $LASTEXITCODE
 
-exit $LASTEXITCODE
+$python = Get-Command python3 -ErrorAction SilentlyContinue
+if (-not $python) { $python = Get-Command python -ErrorAction SilentlyContinue }
+if (-not $python) { throw "assert-trx-min-executed: python3/python not found" }
+& $python.Source (Join-Path $PSScriptRoot "assert-trx-min-executed.py") --trx (Join-Path $resultsDir $trxName) --min-executed 1
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+exit $dockerExit

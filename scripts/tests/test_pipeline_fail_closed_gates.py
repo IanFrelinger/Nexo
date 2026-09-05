@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 119", text)
+        self.assertIn("--min-tests 120", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1159,6 +1159,19 @@ class CrossPlatformTestsTrxFloorTests(unittest.TestCase):
         )
         self.assertIn("assert-trx-min-executed.py", helper)
         self.assertIn("python3", helper)
+
+
+class TestInContainerTrxFloorTests(unittest.TestCase):
+    def test_test_in_container_asserts_host_trx_floor(self) -> None:
+        text = (ROOT / "scripts" / "test-in-container.ps1").read_text(encoding="utf-8")
+        self.assertIn("assert-trx-min-executed.py", text)
+        self.assertIn("--min-executed 1", text)
+        self.assertIn("in-container.trx", text)
+        self.assertIn("--results-directory /test-results", text)
+        self.assertNotIn(
+            "dotnet test '$Project' --framework '$Framework' --filter '$Filter' --nologo -v minimal\"",
+            text,
+        )
 
 
 class MakefileSlnfMinFloorTests(unittest.TestCase):
