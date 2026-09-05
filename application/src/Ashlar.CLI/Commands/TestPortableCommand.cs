@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Ashlar.CLI.Output;
+using Ashlar.Tools.Dev;
 
 namespace Ashlar.CLI.Commands;
 
@@ -18,32 +19,41 @@ public class TestPortableCommand
     {
         var listOpt = new Option<bool>("--list", "List targets that will run or be skipped on this host");
         var scopeOpt = new Option<string>("--scope", () => "persistence", "Scope: smoke (native only), persistence (multi-env), trust (multi-env), or all");
+        var filterOpt = new Option<string?>("--filter", "Smoke-scope test filter. Default: FullyQualifiedName~BaseFrameworkSmokeTests");
 
         var cmd = new Command("portable", "Run portable cross-platform tests (replaces portable-test.sh)")
         {
             listOpt,
-            scopeOpt
+            scopeOpt,
+            filterOpt
         };
 
         cmd.SetHandler(async (InvocationContext ctx) =>
         {
             var list = ctx.ParseResult.GetValueForOption(listOpt);
             var scope = ctx.ParseResult.GetValueForOption(scopeOpt) ?? "persistence";
+            var filter = ctx.ParseResult.GetValueForOption(filterOpt);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
             var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
             var json = jsonOpt != null && ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = verboseOpt != null && ctx.ParseResult.GetValueForOption(verboseOpt);
 
-            var exitCode = await ExecuteAsync(list, scope, json, verbose);
+            var exitCode = await ExecuteAsync(list, scope, json, verbose, filter);
             ctx.ExitCode = exitCode;
         });
 
         return cmd;
     }
 
+    internal const string DefaultSmokeFilter = "FullyQualifiedName~BaseFrameworkSmokeTests";
+
     /// <summary>Executes the command handler and returns a process exit code.</summary>
-    public static async Task<int> ExecuteAsync(bool list, string scope, bool json, bool verbose)
+    public static Task<int> ExecuteAsync(bool list, string scope, bool json, bool verbose)
+        => ExecuteAsync(list, scope, json, verbose, filter: null);
+
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
+    public static async Task<int> ExecuteAsync(bool list, string scope, bool json, bool verbose, string? filter)
     {
         var console = json ? null : new CliConsole(verbose);
         var host = GetHostOs();
@@ -62,7 +72,7 @@ public class TestPortableCommand
 
         if (scope.Equals("smoke", StringComparison.OrdinalIgnoreCase))
         {
-            return await RunSmokeAsync(console, json, verbose);
+            return await RunSmokeAsync(console, json, verbose, filter);
         }
 
         if (scope.Equals("persistence", StringComparison.OrdinalIgnoreCase))
@@ -81,7 +91,7 @@ public class TestPortableCommand
             if (persistenceExit != 0) return persistenceExit;
             var trustExit = await TestMultiEnvCommand.ExecuteAsync("trust", null, true, ephemeral: false, noNetwork: false, json, verbose);
             if (trustExit != 0) return trustExit;
-            return await RunSmokeAsync(console, json, verbose);
+            return await RunSmokeAsync(console, json, verbose, filter);
         }
 
         if (!json && console != null)
@@ -129,7 +139,7 @@ public class TestPortableCommand
         }
     }
 
-    private static async Task<int> RunSmokeAsync(CliConsole? console, bool json, bool verbose)
+    private static async Task<int> RunSmokeAsync(CliConsole? console, bool json, bool verbose, string? filter)
     {
         var root = DiscoverProjectRoot();
         if (string.IsNullOrEmpty(root))
@@ -147,12 +157,13 @@ public class TestPortableCommand
             return 1;
         }
 
-        if (!json && console != null) console.WriteLine("Running smoke tests (BaseFrameworkSmokeTests)...");
+        var smokeFilter = string.IsNullOrWhiteSpace(filter) ? DefaultSmokeFilter : filter.Trim();
+        if (!json && console != null) console.WriteLine($"Running smoke tests ({smokeFilter})...");
 
         var psi = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = $"test \"{project}\" --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --logger \"console;verbosity=minimal\"",
+            Arguments = $"test \"{project}\" --filter \"{smokeFilter}\" --logger \"console;verbosity=minimal\"",
             WorkingDirectory = root,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -170,9 +181,20 @@ public class TestPortableCommand
         if (!json && verbose && !string.IsNullOrEmpty(stdout)) console?.WriteLine(stdout);
         if (process.ExitCode != 0 && !string.IsNullOrEmpty(stderr)) console?.WriteError(stderr);
 
+        // Same class as ashlar test local: `dotnet test --filter` exits 0 when
+        // discovery matches nothing.
+        var executed = DotnetTestTool.HasExecutedTests(stdout, stderr);
+        var ok = process.ExitCode == 0 && executed;
+        var exitCode = ok
+            ? (int)ExitCode.Ok
+            : process.ExitCode == 0
+                ? (int)ExitCode.ValidationFailed
+                : process.ExitCode;
+        if (!ok && process.ExitCode == 0)
+            console?.WriteError("No tests matched the filter");
         if (json)
-            Console.WriteLine(JsonSerializer.Serialize(new { exitCode = process.ExitCode, passed = process.ExitCode == 0 }));
-        return process.ExitCode;
+            Console.WriteLine(JsonSerializer.Serialize(new { exitCode, passed = ok }));
+        return exitCode;
     }
 
     private static async Task<int> RunPersistenceMultiEnvAsync(CliConsole? console, bool json, bool verbose)

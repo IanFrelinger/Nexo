@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 99", text)
+        self.assertIn("--min-tests 100", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -501,6 +501,17 @@ class InstallerBruteforceGateWorkflowTests(unittest.TestCase):
         self.assertIn("scripts/install/bruteforce-matrix.sh", text)
         self.assertIn("scripts/setup/**", text)
         self.assertIn("scripts/install/**", text)
+
+
+class TestPortableCommandFailClosedTests(unittest.TestCase):
+    def test_test_portable_command_fails_closed_on_zero_tests(self) -> None:
+        text = (
+            ROOT / "application" / "src" / "Ashlar.CLI" / "Commands" / "TestPortableCommand.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("DotnetTestTool.HasExecutedTests", text)
+        self.assertIn("No tests matched the filter", text)
+        self.assertIn("ExitCode.ValidationFailed", text)
+        self.assertNotIn("passed = process.ExitCode == 0", text)
 
 
 class TestCommandFailClosedTests(unittest.TestCase):
