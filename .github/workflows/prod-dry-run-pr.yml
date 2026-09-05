@@ -1,7 +1,7 @@
 name: Prod dry run (Compose)
 
-# Runs the same production-shaped Compose checks as `scripts/prod-dry-run.sh` on every PR.
-# See docs/prod-dry-run.md.
+# Manual Compose dry-run (same commands as `scripts/prod-dry-run.sh`).
+# Dispatch-only — does not run on pull_request. See docs/prod-dry-run.md and docs/CiGateInventory.md.
 
 on:
   workflow_dispatch:

@@ -1,6 +1,6 @@
 # Operations & dogfood readiness v1
 
-**Status: OPS GATE GREEN** (Tiers A–C, E default profile, 2026-05-19)
+**Status: OPS GATE GREEN** (Tiers A–C, E default profile, 2026-05-19 — historical local record). Portal and agent-server `prod-dry-run` are not proven on later SHAs unless `prod-dry-run-pr.yml` is dispatched; that workflow is manual, not PR-gated.
 
 Track after [Ship readiness v1](ShipReadiness-v1.md). **Plan:** [Ops hardening plan v1](OpsHardeningPlan-v1.md)
 
