@@ -275,7 +275,7 @@ public abstract class MultiPlatformTestBase : TestBase
     }
 
     internal static bool RunPassed(bool processSuccess, string? output)
-        => processSuccess && DotnetTestTool.HasExecutedTests(output);
+        => processSuccess && DotnetTestTool.HasExecutedTests(output, stderr: null);
 
     protected (int passed, int failed, int total) ParseTestResults(string output)
         => ParseDotNetCounts(output);
