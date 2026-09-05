@@ -80,10 +80,23 @@ public sealed class LiteDbMeshTaskRegistry : IMeshTaskRegistry
             return Task.FromResult<MeshTaskState?>(null);
 
         var key = idempotencyKey.Trim();
-        using var db = new LiteDatabase(_connectionString);
-        var col = db.GetCollection<MeshTaskDoc>(LiteDbMeshDirectorConnection.TasksCollection);
-        var doc = col.FindOne(x => x.IdempotencyKey == key);
-        return Task.FromResult(doc?.ToState());
+        return GetByIdempotencyKeyLockedAsync(key, cancellationToken);
+    }
+
+    private async Task<MeshTaskState?> GetByIdempotencyKeyLockedAsync(string key, CancellationToken cancellationToken)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var db = new LiteDatabase(_connectionString);
+            var col = db.GetCollection<MeshTaskDoc>(LiteDbMeshDirectorConnection.TasksCollection);
+            var doc = col.FindOne(x => x.IdempotencyKey == key);
+            return doc?.ToState();
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     /// <summary>Gets async.</summary>

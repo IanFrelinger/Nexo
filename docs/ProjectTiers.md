@@ -163,7 +163,7 @@ The root holds several entry points; a bare `dotnet build` fails with MSB1011, s
 | `application/Ashlar.Application.sln` | Application-gate style builds of the open hosts | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` (open only) |
 | `products/Ashlar.Products.sln` | Extractable product scaffolds | Workstation, cluster, cloud, native, their tests, plus kernel projects pulled in for in-monorepo builds (22 projects) |
 | `Ashlar.Demos.sln` | The three demo clients | `docs/demos/*` |
-| `Ashlar.sln` | Everything the CI matrix builds on Linux | `src/` (except `Ashlar.Hosting.Bundle` and the `copy-assemblies` helper) plus `application/`. It also includes the commercial `Ashlar.Commercial.MeshDirector` project and the Fleet/MeshDirector test projects; samples, spikes, tools, and the Fleet src/host projects are built from their own paths |
+| `Ashlar.sln` | Everything the CI matrix builds on Linux | `src/` (except `Ashlar.Hosting.Bundle` and the `copy-assemblies` helper) plus `application/`. It also includes commercial `Ashlar.Commercial.MeshDirector`, `Ashlar.Commercial.Fleet.Contracts`, `Ashlar.Commercial.Fleet.Infrastructure`, and the Fleet/MeshDirector test projects so a solution Release build cannot pull Debug Fleet assemblies. Samples, spikes, tools, and the Fleet host/API projects are built from their own paths. |
 
 ## Minimal clone-to-run core
 
