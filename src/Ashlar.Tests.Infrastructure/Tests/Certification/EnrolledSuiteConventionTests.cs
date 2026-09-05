@@ -198,7 +198,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 124");
+        text.Should().Contain("--min-tests 125");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -870,6 +870,21 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("ubuntu-baseframework.trx");
         text.Should().Contain("workflow_dispatch:");
         text.Should().NotContain("pull_request:");
+    }
+
+    [Fact]
+    public void PerfCertificationWorkflow_AssertsHostTrxFloor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/perf-certification.yml"));
+        text.Should().Contain("assert-trx-min-executed.py");
+        text.Should().Contain("--min-executed 1");
+        text.Should().Contain("perf-certification.trx");
+        text.Should().Contain("ResultSummary");
+        text.Should().Contain("Counters");
+        text.Should().Contain("workflow_dispatch:");
+        text.Should().NotContain("pull_request:");
+        text.Should().NotContain("|| echo 0");
     }
 
     [Fact]

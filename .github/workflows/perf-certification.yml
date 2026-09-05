@@ -39,13 +39,18 @@ jobs:
             --results-directory perf-results \
             --filter "FullyQualifiedName~Ashlar.Tests.Orchestration.Performance|FullyQualifiedName~Benchmark" \
             --verbosity minimal
+          # Host TRX floor: refuse a silent empty filter. Dispatch-only; do not
+          # add pull_request. Images are not involved; python3 is on the runner.
+          python3 scripts/assert-trx-min-executed.py \
+            --trx perf-results/perf-certification.trx \
+            --min-executed 1
 
       - name: Extract perf metrics and check thresholds
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          TRX_FILE=$(find perf-results -name '*.trx' -print -quit 2>/dev/null || true)
+          TRX_FILE="perf-results/perf-certification.trx"
           REPORT_FILE="perf-results/perf-certification-report.json"
 
           TOTAL=0
@@ -53,10 +58,18 @@ jobs:
           FAILED=0
           DURATION_MS=0
 
-          if [[ -n "$TRX_FILE" && -f "$TRX_FILE" ]]; then
-            TOTAL=$(grep -c '<UnitTestResult' "$TRX_FILE" 2>/dev/null || echo 0)
-            PASSED=$(grep -c 'outcome="Passed"' "$TRX_FILE" 2>/dev/null || echo 0)
-            FAILED=$(grep -c 'outcome="Failed"' "$TRX_FILE" 2>/dev/null || echo 0)
+          if [[ -f "$TRX_FILE" ]]; then
+            read -r TOTAL PASSED FAILED < <(python3 -c '
+import xml.etree.ElementTree as ET
+from pathlib import Path
+root = ET.parse(Path("perf-results/perf-certification.trx")).getroot()
+c = root.find(".//{*}ResultSummary/{*}Counters")
+if c is None:
+    c = root.find(".//{*}Counters")
+if c is None:
+    raise SystemExit("perf-certification: TRX has no ResultSummary Counters")
+print(int(c.attrib.get("total", 0)), int(c.attrib.get("passed", 0)), int(c.attrib.get("failed", 0)))
+')
           fi
 
           PASS_RATE=0

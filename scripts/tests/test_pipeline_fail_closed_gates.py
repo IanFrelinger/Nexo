@@ -350,7 +350,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 124", text)
+        self.assertIn("--min-tests 125", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1207,6 +1207,21 @@ class ComposeGateTrxFloorTests(unittest.TestCase):
         self.assertIn("ubuntu-baseframework.trx", text)
         self.assertIn("workflow_dispatch:", text)
         self.assertNotIn("pull_request:", text)
+
+
+class PerfCertificationTrxFloorTests(unittest.TestCase):
+    def test_perf_certification_asserts_host_trx_floor(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "perf-certification.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("assert-trx-min-executed.py", text)
+        self.assertIn("--min-executed 1", text)
+        self.assertIn("perf-certification.trx", text)
+        self.assertIn("ResultSummary", text)
+        self.assertIn("Counters", text)
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("pull_request:", text)
+        self.assertNotIn("|| echo 0", text)
 
 
 class WorkflowTriggerInventoryTests(unittest.TestCase):
