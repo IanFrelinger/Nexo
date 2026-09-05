@@ -418,6 +418,7 @@ class ApplicationTierCCountedApiTests(unittest.TestCase):
     def test_application_gate_workflow_runs_tier_c_on_pull_request(self) -> None:
         text = (ROOT / ".github" / "workflows" / "application-gate.yml").read_text(encoding="utf-8")
         self.assertIn("Tests/API/**", text)
+        self.assertIn("APPLICATION_GATE_STRICT_DOCTOR", text)
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
             text,
@@ -432,6 +433,7 @@ class ApplicationTierBCountedCliTests(unittest.TestCase):
         self.assertIn("--min-tests 200", text)
         self.assertIn("FullyQualifiedName!~UnitTestBridgeTests", text)
         self.assertIn("-f net10.0", text)
+        self.assertIn("APPLICATION_GATE_STRICT_DOCTOR", text)
         self.assertNotIn('dotnet test "$CLI_TESTS"', text)
 
 
@@ -548,6 +550,8 @@ class ShipTierBCountedTests(unittest.TestCase):
         text = (ROOT / "scripts" / "ship-gate-tier-b.sh").read_text(encoding="utf-8")
         self.assertIn("run-dotnet-test-counted.py", text)
         self.assertIn("--min-tests 9", text)
+        self.assertIn("SHIP_GATE_STRICT_DOCTOR", text)
+        self.assertIn("doctor --json exited", text)
         self.assertNotIn('dotnet test "$INFRA"', text)
 
     def test_ship_gate_tier_b_invokes_counted_prod_style_target(self) -> None:
@@ -560,6 +564,7 @@ class ShipTierBCountedTests(unittest.TestCase):
         )
         self.assertIn("pull_request:", text)
         self.assertIn("ship-gate-tier-b", text)
+        self.assertIn("SHIP_GATE_STRICT_DOCTOR", text)
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'",
             text,

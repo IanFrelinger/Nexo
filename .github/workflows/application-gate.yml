@@ -56,6 +56,7 @@ jobs:
         run: make application-gate-tier-b
         env:
           ASHLAR_ALLOW_MOCK: "1"
+          APPLICATION_GATE_STRICT_DOCTOR: "1"
 
       # Same `!=` form as Tier A/B so pull_request actually runs the in-process
       # API suite. The script is counted on net10.0 (net8 matched zero).

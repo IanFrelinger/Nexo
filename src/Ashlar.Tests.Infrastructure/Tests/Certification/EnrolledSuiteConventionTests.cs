@@ -265,6 +265,7 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("--min-tests 200");
         text.Should().Contain("FullyQualifiedName!~UnitTestBridgeTests");
         text.Should().Contain("-f net10.0");
+        text.Should().Contain("APPLICATION_GATE_STRICT_DOCTOR");
         text.Should().NotContain("dotnet test \"$CLI_TESTS\"");
     }
 
@@ -288,6 +289,7 @@ public sealed class EnrolledSuiteConventionTests
             ".github/workflows/application-gate.yml"));
         text.Should().Contain("Tests/API/**");
         text.Should().Contain("application-gate-tier-c");
+        text.Should().Contain("APPLICATION_GATE_STRICT_DOCTOR");
         text.Should().NotContain("github.event_name == 'workflow_dispatch' && inputs.tier == 'c'");
     }
 
@@ -462,6 +464,8 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("run-dotnet-test-counted.py");
         text.Should().Contain("--min-tests 9");
         text.Should().Contain("BaseFrameworkSmokeTests");
+        text.Should().Contain("SHIP_GATE_STRICT_DOCTOR");
+        text.Should().Contain("doctor --json exited");
         text.Should().NotContain("dotnet test \"$INFRA\"");
     }
 
@@ -472,6 +476,7 @@ public sealed class EnrolledSuiteConventionTests
             ".github/workflows/ship-gate.yml"));
         text.Should().Contain("pull_request:");
         text.Should().Contain("ship-gate-tier-b");
+        text.Should().Contain("SHIP_GATE_STRICT_DOCTOR");
         text.Should().NotContain(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'");
     }

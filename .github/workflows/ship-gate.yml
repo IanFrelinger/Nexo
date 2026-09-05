@@ -48,6 +48,7 @@ jobs:
         run: make ship-gate-tier-b
         env:
           ASHLAR_ALLOW_MOCK: "1"
+          SHIP_GATE_STRICT_DOCTOR: "1"
 
       - name: Tier C (release preflight)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
