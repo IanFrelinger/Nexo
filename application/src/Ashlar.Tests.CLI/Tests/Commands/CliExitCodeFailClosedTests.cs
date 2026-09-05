@@ -467,6 +467,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
 
     private async Task TestRuntimePlanInvalidManifestQaPolicyExitsNonZeroAsync()
     {
+        var manifestPath = Path.Combine(Path.GetTempPath(), $"ashlar-runtime-manifest-{Guid.NewGuid():N}.json");
+        File.WriteAllText(manifestPath, """{"qaPolicyProfile":"xyz"}""");
         var writer = new StringWriter();
         Console.SetOut(writer);
         Console.SetError(writer);
@@ -475,7 +477,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             var root = new RootCommand();
             root.AddCommand(new RuntimeCommand());
             var exitCode = await root.InvokeAsync(
-                """runtime plan --goal test --use-history false --runtime-manifest-json {"qaPolicyProfile":"xyz"}""")
+                $"runtime plan --goal test --use-history false --runtime-manifest {manifestPath}")
                 .ConfigureAwait(false);
             var output = writer.ToString();
             AssertTrue(exitCode != 0, "runtime plan with qaPolicyProfile xyz must exit non-zero, not 0.");
@@ -488,6 +490,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
         {
             Console.SetOut(ConsoleCapture.Out);
             Console.SetError(ConsoleCapture.Error);
+            if (File.Exists(manifestPath))
+                File.Delete(manifestPath);
         }
     }
 

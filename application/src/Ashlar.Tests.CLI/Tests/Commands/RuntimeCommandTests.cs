@@ -226,14 +226,24 @@ public sealed class RuntimeCommandTests : UnitTestBase
 
     private async Task TestPlanRejectsInvalidManifestQaPolicyAsync()
     {
-        var (exitCode, output) = await InvokeRuntimeAsync(
-            """plan --goal test --use-history false --runtime-manifest-json {"qaPolicyProfile":"xyz"} --json""")
-            .ConfigureAwait(false);
-        AssertEqual(1, exitCode);
-        AssertTrue(output.Contains("Invalid qaPolicyProfile", StringComparison.Ordinal),
-            "An invalid runtime-manifest qaPolicyProfile must be refused legibly.");
-        AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
-            "An invalid qaPolicyProfile must be refused before computing a plan as demo.");
+        var manifestPath = Path.Combine(Path.GetTempPath(), $"ashlar-runtime-manifest-{Guid.NewGuid():N}.json");
+        File.WriteAllText(manifestPath, """{"qaPolicyProfile":"xyz"}""");
+        try
+        {
+            var (exitCode, output) = await InvokeRuntimeAsync(
+                $"plan --goal test --use-history false --runtime-manifest \"{manifestPath}\" --json")
+                .ConfigureAwait(false);
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("Invalid qaPolicyProfile", StringComparison.Ordinal),
+                "An invalid runtime-manifest qaPolicyProfile must be refused legibly.");
+            AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
+                "An invalid qaPolicyProfile must be refused before computing a plan as demo.");
+        }
+        finally
+        {
+            if (File.Exists(manifestPath))
+                File.Delete(manifestPath);
+        }
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()
