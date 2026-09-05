@@ -851,6 +851,34 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
                 docker_log.read_text(encoding="utf-8"),
             )
 
+    def test_dependency_boundary_skips_generated_ashlar_trees(self) -> None:
+        import importlib.util
+
+        repo = SCRIPT.parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "verify_open_commercial_dependency_boundary",
+            repo / "scripts" / "verify-open-commercial-dependency-boundary.py",
+        )
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        discovered = {
+            module.rel_posix(path, repo) for path in module.discover_csprojs(repo)
+        }
+        self.assertFalse(
+            any(rel.startswith(".ashlar/") for rel in discovered),
+            discovered,
+        )
+
+    def test_container_image_publish_is_dispatch_only(self) -> None:
+        repo = SCRIPT.parents[1]
+        text = (
+            repo / ".github" / "workflows" / "container-image-publish.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("\n  push:", text)
+
     def test_versioned_publish_workflows_require_ready(self) -> None:
         repo = SCRIPT.parents[1]
         release = (repo / ".github" / "workflows" / "release.yml").read_text(

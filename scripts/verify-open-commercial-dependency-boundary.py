@@ -120,13 +120,16 @@ def validate_allowlist_justifications(root: Path) -> list[str]:
     return errors
 
 
+SKIP_DIR_PARTS = {".ashlar", "bin", "obj", "node_modules"}
+
+
 def discover_csprojs(root: Path) -> list[Path]:
     out: list[Path] = []
     for path in sorted(root.rglob("*.csproj")):
         rel = rel_posix(path, root)
         if rel in EXCLUDED_CSPROJ:
             continue
-        if "/bin/" in rel or "/obj/" in rel:
+        if any(part in SKIP_DIR_PARTS for part in Path(rel).parts):
             continue
         out.append(path)
     return out
