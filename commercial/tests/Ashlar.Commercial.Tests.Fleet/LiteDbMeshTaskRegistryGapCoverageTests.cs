@@ -167,6 +167,31 @@ public sealed class LiteDbMeshTaskRegistryGapCoverageTests
     }
 
     [Fact]
+    public async Task UpdateIfStatusAsync_refuses_when_status_changed()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var registry = new LiteDbMeshTaskRegistry(path);
+            var created = await registry.CreateAsync(new MeshTaskCreateSpec("cas", 1, [], null, 0, null));
+
+            var assigned = created with { Status = MeshTaskStatus.Assigned, AssignedPeerId = "peer-a" };
+            (await registry.UpdateIfStatusAsync(assigned, MeshTaskStatus.Pending)).Should().BeTrue();
+            (await registry.UpdateIfStatusAsync(
+                assigned with { AssignedPeerId = "peer-b", LeaseToken = "other" },
+                MeshTaskStatus.Pending)).Should().BeFalse();
+
+            var stored = await registry.GetAsync(created.TaskId);
+            stored!.AssignedPeerId.Should().Be("peer-a");
+            stored.Status.Should().Be(MeshTaskStatus.Assigned);
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
     public void Accepts_filename_connection_string()
     {
         var path = CreateTempDbPath();
