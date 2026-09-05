@@ -200,7 +200,14 @@ public class ObjectivesBackgroundAgentCommand
 
             var normalizedId = id.Trim();
             if (!ObjectiveStore.IsValidId(normalizedId))
-                throw new ArgumentException($"Invalid --id. {ObjectiveStore.IdRequirement}", nameof(id));
+            {
+                var message = $"Invalid --id. {ObjectiveStore.IdRequirement}";
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = message }));
+                else
+                    stderr.WriteLine(message);
+                return Task.FromResult(1);
+            }
 
             var resolvedBody = body ?? string.Empty;
             if (string.IsNullOrEmpty(resolvedBody) && !string.IsNullOrWhiteSpace(bodyFile))
