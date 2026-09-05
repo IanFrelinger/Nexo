@@ -35,7 +35,7 @@ Which workflow do I run?
 |------|-----------|--------|
 | **Ship everything** (GHCR + NuGet) | Push **`vX.Y.Z`** → **`release.yml`** | Preferred. Post-push NuGet checks + optional GHCR re-pull smoke. |
 | **NuGet only** | **Actions → Release NuGet packages** → **`release-nuget.yml`** | Register **`release-nuget.yml`** for OIDC if you use it. |
-| **Images from `main` only** | **`container-image-publish.yml`** | Rolling `sha-*` / `latest`; no NuGet. |
+| **Images from `master`/`main` pushes** | **`container-image-publish.yml`** | Rolling `sha-*` / `latest`; no NuGet. |
 
 Trusted Publishing: register **`release.yml`** and **`release-nuget.yml`** as needed — see `docs/PUBLISHING.md`.
 

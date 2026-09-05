@@ -77,7 +77,7 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 ## What Ashlar is not
 
 - **Not a hosted SaaS or chatbot.** You run it (CLI, API, container, or embedded in your app); nothing is sent to a Ashlar-operated service.
-- **Not cloud-dependent.** Cloud providers are opt-in execution targets, not requirements. Air-gapped and local-only deployments are first-class.
+- **Not cloud-dependent.** Cloud providers are opt-in execution targets, not requirements. Offline and self-hosted deployments are first-class; use `secure-workstation` for the full local trust/agent stack — `air-gapped` is a slimmer offline profile without trust, agents, RAG, or observation.
 - **Not a drop-in IDE plugin by itself.** Ashlar is a runtime and orchestration layer. The extractable workstation product (`products/ashlar-workstation`, `SecureWorkstation` profile) plus `extensions/ashlar-vscode/` is the IDE path — not `ASHLAR_DEPLOYMENT_PROFILE=air-gapped`. See [`docs/architecture/product-split.md`](docs/architecture/product-split.md).
 - **Local-first by default.** Production network exposure requires auth + TLS; the shipped defaults are HTTP-only with no auth for local use (see the [Quick Start note](#quick-start-5-minutes)).
 
@@ -122,7 +122,7 @@ Where to read and what to run:
 
 - **Control before capability.** Nothing is trusted because a model said so: proposals pass a gate, execution can be confined to attested containers, and admission is held until an operator flips it. Trust tiers, policy packs, and pause/resume sit on the execution path, not beside it.
 - **Proof, not claims.** The audit trail is queryable (`/api/trust/dashboard`, `/api/copilot/tasks`), the certificate is checkable (`cert-gate`), and the evidence ledger cites the run that proved each row.
-- **Data sovereignty.** Cloud providers are opt-in execution targets, not dependencies. Air-gapped and self-hosted deployments are first-class; the API fails closed on network exposure without auth.
+- **Data sovereignty.** Cloud providers are opt-in execution targets, not dependencies. Offline and self-hosted deployments are first-class; use `secure-workstation` for the full local trust/agent stack. The API fails closed on network exposure without auth.
 - **Composable distribution.** Use the kernel via NuGet, run the CLI/API directly, deploy containers/compose, or federate trusted peers through mesh.
 
 ### Observe / adapt / improve
@@ -369,7 +369,7 @@ Nexo/                             # the repo/clone directory (github.com/IanFrel
 ├── .devcontainer/
 ├── .docker/
 ├── .github/
-├── Ashlar.sln                      # everything open + 3 commercial projects (63 projects; does not include products/)
+├── Ashlar.sln                      # everything open + 3 commercial projects (62 projects; does not include products/)
 ├── Ashlar.Kernel.sln               # kernel libraries + kernel tests (no CLI/API)
 ├── Ashlar.Runtime.sln              # embeddable runtime graph (no application/)
 ├── Ashlar.Demos.sln                # docs/demos/* clients

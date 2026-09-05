@@ -22,7 +22,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ### Fixed
 
-- **Release manager fail-closed** — any repository blocker skips lane execution; plan step environments cannot override coordinator-owned variables; descendant containment covers worktree cwd and process group, not only the step token; vulnerability evidence requires a nuget.org advisory source; counted-test floors use unique identities.
+- **Release manager fail-closed** — any repository blocker skips lane execution; plan step environments cannot override coordinator-owned variables; descendant containment covers worktree cwd and process group, not only the step token; vulnerability evidence requires a nuget.org advisory source; counted-test floors use unique identities. The tests-lane contract floor is 5 unique `DistributedContractTests` (dual-TFM listing is not a second suite). The CLI counted step excludes the hanging `UnitTestBridgeTests` row. `products-gate` uses the same counted wrapper. `application-gate-tier-d` calls `--agent-server`.
 - **Release preflight integrity** — Bash and PowerShell preflights now require the requested version to match root `VERSION`; autonomous audit mode refuses external workflow dispatch.
 - **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
 - **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.

@@ -8,7 +8,7 @@ export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"
 
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
   echo "== Application Tier D: agent-server prod-shaped dry run =="
-  bash scripts/prod-dry-run.sh --agent-serve
+  bash scripts/prod-dry-run.sh --agent-server
 else
   echo "== Application Tier D: agent-server dry run skipped (no Docker) =="
 fi

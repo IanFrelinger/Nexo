@@ -29,8 +29,11 @@ canonical set, so editing the plan cannot quietly remove or make one optional.
 Plan validation also requires all committed specialist definitions, the
 release-manager skill, and the always-on publishing-safety rule.
 
-| Sub-agent | Scope |
-|-----------|-------|
+Cursor specialists: `code-auditor`, `ci-auditor` (tests lane), `security-auditor`,
+`packaging-auditor`, `documentation-auditor`, `operations-auditor`.
+
+| Lane | Scope |
+|------|-------|
 | `code` | Full Release build and open/commercial dependency boundaries |
 | `tests` | Certification, complete CLI, and product suites |
 | `security` | Trust/auth gates, supply chain, vulnerability scan, zero-egress container proof |

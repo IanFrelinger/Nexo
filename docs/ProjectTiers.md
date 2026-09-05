@@ -156,12 +156,12 @@ The root holds several entry points; a bare `dotnet build` fails with MSB1011, s
 
 | File | Open it when | Contains |
 |------|--------------|----------|
-| `Ashlar.Kernel.sln` | Kernel/library development without the hosts | Tier 0 spine, `Ashlar.Runtime`, gRPC transport, brick/policy packs, kernel test projects (25 projects; **no** `Ashlar.CLI` / `Ashlar.API`) |
+| `Ashlar.Kernel.sln` | Kernel/library development without the hosts | Tier 0 spine, `Ashlar.Runtime`, gRPC transport, brick/policy packs, kernel test projects (24 projects; **no** `Ashlar.CLI` / `Ashlar.API`) |
 | `Ashlar.Core.slnf` | First compile of spine + hosts | The 12 original spine libraries + the two hosts (14 projects; `Ashlar.Certification.Contracts`, `Ashlar.AI.Pipeline`, `Ashlar.Analyzers` restore transitively) |
 | `Ashlar.LocalDevCore.slnf` | The CLI dev loop with core tests (`make restore-core` / `make build-core` / `make test-framework-prod-first`) | `Ashlar.CLI`, `Ashlar.Tests.Domain`, `Ashlar.Tests.Infrastructure` |
-| `Ashlar.Runtime.sln` | Publishing the embeddable kernel graph (no `application/`) | Runtime libraries + `Ashlar.Tests.AI.Pipeline` (19 projects) |
+| `Ashlar.Runtime.sln` | Publishing the embeddable kernel graph (no `application/`) | Runtime libraries + `Ashlar.Tests.AI.Pipeline` (18 projects) |
 | `application/Ashlar.Application.sln` | Application-gate style builds of the open hosts | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` (open only) |
-| `products/Ashlar.Products.sln` | Extractable product scaffolds | Workstation, cluster, cloud, native, their tests, plus kernel projects pulled in for in-monorepo builds (23 projects) |
+| `products/Ashlar.Products.sln` | Extractable product scaffolds | Workstation, cluster, cloud, native, their tests, plus kernel projects pulled in for in-monorepo builds (22 projects) |
 | `Ashlar.Demos.sln` | The three demo clients | `docs/demos/*` |
 | `Ashlar.sln` | Everything the CI matrix builds on Linux | `src/` (except `Ashlar.Hosting.Bundle` and the `copy-assemblies` helper) plus `application/`. It also includes the commercial `Ashlar.Commercial.MeshDirector` project and the Fleet/MeshDirector test projects; samples, spikes, tools, and the Fleet src/host projects are built from their own paths |
 

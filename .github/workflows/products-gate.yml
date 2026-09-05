@@ -13,6 +13,7 @@ on:
       - "src/Ashlar.Tests.Contracts/DistributedContractTests.cs"
       - "scripts/verify-open-commercial-dependency-boundary.py"
       - "ci/test-ownership.tsv"
+      - "scripts/run-dotnet-test-counted.py"
   push:
     branches:
       - master
@@ -28,6 +29,7 @@ on:
       - "src/Ashlar.Tests.Contracts/DistributedContractTests.cs"
       - "scripts/verify-open-commercial-dependency-boundary.py"
       - "ci/test-ownership.tsv"
+      - "scripts/run-dotnet-test-counted.py"
   workflow_dispatch:
 
 jobs:
@@ -45,12 +47,24 @@ jobs:
       - name: Product scaffold tests
         run: |
           set -euo pipefail
-          dotnet test products/Ashlar.Products.sln \
-            --blame-hang-timeout 120s
+          python3 scripts/run-dotnet-test-counted.py \
+            --project products/Ashlar.Products.sln \
+            --expected-prefix Ashlar.Tests.Products. \
+            --min-tests 12 \
+            -- \
+            --blame-hang-timeout 120s \
+            --blame-hang-dump-type none \
+            --nologo
 
       - name: Distributed contract tests
         run: |
           set -euo pipefail
-          dotnet test src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj \
+          python3 scripts/run-dotnet-test-counted.py \
+            --project src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj \
+            --expected-prefix Ashlar.Tests.Contracts.DistributedContractTests. \
+            --min-tests 5 \
+            -- \
             --filter FullyQualifiedName~DistributedContractTests \
-            --blame-hang-timeout 120s
+            --blame-hang-timeout 120s \
+            --blame-hang-dump-type none \
+            --nologo
