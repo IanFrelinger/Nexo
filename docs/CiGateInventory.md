@@ -53,8 +53,8 @@ Counts by trigger class (58 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 18 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 13 path-filtered (including `products-gate` and Release Manager validation), 1 label-driven (`release-staging-on-label`) |
-| Push- and/or schedule-driven, plus `workflow_dispatch` | 19 | Post-merge / scheduled signal; never blocks a PR. |
+| Runs on `pull_request` | 21 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 16 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf), 1 label-driven (`release-staging-on-label`) |
+| Push- and/or schedule-driven, plus `workflow_dispatch` | 16 | Post-merge / scheduled signal; never blocks a PR. |
 | `workflow_dispatch` only | 16 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
@@ -80,6 +80,9 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `release-staging-on-label.yml` | Release staging on label / `dispatch-staging-release` | `types: [labeled]` only | — |
 | `uat-gate.yml` | UAT / `uat`, `uat cross-platform` | **every PR** (no paths — deliberate, see file header) | push `master`, dispatch |
 | `composition-mesh-gate.yml` | Composition Mesh Gate / `composition-mesh-gate` | **every PR** (no paths) — Tier A–C via `make composition-mesh-gate` | dispatch chooses a single tier |
+| `compat-gate.yml` | compat-gate | paths: Fleet checkpoint tests, pipeline/composition/kernel-phase tests, compat scripts — counted Fleet migrate 1 + LiteDB persist 1 + composition 4; Tier C configuration 2 + kernel-phase 4 | push `master`, dispatch |
+| `dr-gate.yml` | dr-gate | paths: LiteDB user-knowledge store + DR scripts — counted knowledge-store floor 8 | push `master`, dispatch |
+| `perf-gate.yml` | perf-gate | paths: Orchestration/BackgroundAgents tests + perf scripts — PR runs counted Tier A only (3 + 9); B–D + baseline stay push/dispatch | push `master`, dispatch |
 | `products-gate.yml` | products-gate / `product scaffolds` | paths: `products/**`, distributed contracts, deployment-profile sources, `ci/test-ownership.tsv` | push `master`/`main`/`cursor/**`, dispatch — **advisory**; runs `products/Ashlar.Products.sln` plus `DistributedContractTests`. Does **not** run the dependency-boundary script (that is `dependency-boundary.yml`). |
 | `autonomous-release-manager.yml` | Autonomous Release Manager / `Validate release manager` | paths: coordinator, plan, tests, workflow | weekly schedule + dispatch run the full six-lane audit; PRs run only unit tests and immutable-plan validation |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` | dispatch |
@@ -90,12 +93,10 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 
 | Workflow file | Name | Notes |
 | --- | --- | --- |
-| `compat-gate.yml` | compat-gate | `master` only; `scripts/compat-gate*.sh`, `scripts/kernel-gate-tier-b.sh` |
 | `compose-gate.yml` | Compose Gate | compose test stacks, `.docker/Dockerfile.test-caching*`, CLI, README |
 | `container-image-gate.yml` | Container Image Gate | `.docker/Dockerfile.cli`, CLI + spine sources |
 | `container-image-publish.yml` | Container Image Publish | **dispatch-only** GHCR `:latest`; versioned tags use `release.yml` + READY |
 | `devcontainer-gate.yml` | Dev Container Gate | `.devcontainer/**`, `Ashlar.LocalDevCore.slnf`, CLI |
-| `dr-gate.yml` | dr-gate | `master` only; `scripts/dr-gate*.sh` |
 | `environment-setup-gate-v1.yml` | Environment Setup Gate v1 | `master`/`main`; `scripts/setup/**`, CLI |
 | `friend-mesh-prefab-gate.yml` | Friend mesh prefab gate | friend-mesh compose, `.docker/Dockerfile.api`, `Ashlar.API` |
 | `full-platform-readiness-gate.yml` | Full Platform Readiness Gate | Dockerfiles, setup/install scripts, spine sources, StableSdkHostSample; **weekly schedule** |
@@ -104,7 +105,6 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate | README, GettingStarted, setup/install scripts, CLI; **weekly schedule** |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |
 | `pack-hosting-graph-alignment.yml` | Pack hosting graph alignment | `master`/`main`; `src/**/*.csproj`, pack scripts, NugetOrgRestoreVerify sample |
-| `perf-gate.yml` | perf-gate | `master` only; `scripts/perf-gate*.sh`, Orchestration/BackgroundAgents tests |
 | `production-readiness-gate-v1.yml` | Production Readiness Gate v1 / `scripts/production-readiness-gate-v1-tests.sh` | pipelines sources/tests, CLI, readiness docs — counted Pipelines 68 (net8 + net10) + host-DI 2 |
 | `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule** |
 | `runtime-release-gate.yml` | Runtime Release Gate | `master`/`main`; CLI runtime/release commands, `docs/runtime/benchmarks/**` |

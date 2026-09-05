@@ -70,6 +70,86 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void CompatTierA_RunsCountedFleetCheckpointAndCompositionSlices()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/compat-gate-tier-a.sh"));
+        text.Should().Contain("Ashlar.Commercial.Tests.Fleet.csproj");
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 1");
+        text.Should().Contain("--min-tests 4");
+        text.Should().Contain("MeshTaskExecutionServiceTests.MigrateForCheckpointAsync");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+        text.Should().NotContain("dotnet test \"$FLEET_TESTS\"");
+    }
+
+    [Fact]
+    public void CompatTierC_RunsCountedConfigurationAndKernelPhaseSlices()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/compat-gate-tier-c.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 2");
+        text.Should().Contain("--min-tests 4");
+        text.Should().Contain("KernelPhaseResolutionTests");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void CompatGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/compat-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("Ashlar.Commercial.Tests.Fleet");
+        text.Should().Contain("scripts/compat-gate.sh");
+    }
+
+    [Fact]
+    public void DrTierB_RunsCountedKnowledgeStoreSlice()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/dr-gate-tier-b.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 8");
+        text.Should().Contain("LiteDbUserKnowledgeLogStoreTests");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void DrGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/dr-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("LiteDbUserKnowledgeLogStoreTests");
+    }
+
+    [Fact]
+    public void PerfTierA_RunsCountedOrchAndBackgroundSlices()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/perf-gate-tier-a.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 3");
+        text.Should().Contain("--min-tests 9");
+        text.Should().Contain("Ashlar.Tests.Orchestration.Performance");
+        text.Should().Contain("Ashlar.Tests.BackgroundAgents.Performance");
+        text.Should().NotContain("dotnet test \"$ORCH\"");
+        text.Should().NotContain("dotnet test \"$BG\"");
+    }
+
+    [Fact]
+    public void PerfGateWorkflow_RunsTierAOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/perf-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("perf-gate-tier-a.sh");
+        text.Should().Contain("github.event_name != 'pull_request'");
+    }
+
+    [Fact]
     public void CertGate_MainFilterHasCollapseFloor()
     {
         var config = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

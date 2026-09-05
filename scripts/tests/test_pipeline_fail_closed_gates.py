@@ -254,6 +254,70 @@ class CompositionMeshTierCFleetHostTests(unittest.TestCase):
         self.assertIn("--expected-prefix \"Ashlar.Commercial.Tests.MeshDirector.\"", text)
 
 
+class CompatGateCountedTests(unittest.TestCase):
+    def test_compat_tier_a_runs_fleet_checkpoint_on_commercial_suite(self) -> None:
+        text = (ROOT / "scripts" / "compat-gate-tier-a.sh").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Commercial.Tests.Fleet.csproj", text)
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 1", text)
+        self.assertIn("--min-tests 4", text)
+        self.assertIn("MeshTaskExecutionServiceTests.MigrateForCheckpointAsync", text)
+        self.assertIn("CompositionRegistryValidationTests", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+        self.assertNotIn('dotnet test "$FLEET_TESTS"', text)
+
+    def test_compat_tier_c_runs_counted_configuration_and_kernel_phase(self) -> None:
+        text = (ROOT / "scripts" / "compat-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 2", text)
+        self.assertIn("--min-tests 4", text)
+        self.assertIn("AddPipelineCompositionLayer_WithConfiguration", text)
+        self.assertIn("KernelPhaseResolutionTests", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_compat_gate_workflow_runs_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "compat-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("Ashlar.Commercial.Tests.Fleet", text)
+        self.assertIn("scripts/compat-gate.sh", text)
+
+
+class DrGateCountedTests(unittest.TestCase):
+    def test_dr_tier_b_runs_counted_knowledge_store_slice(self) -> None:
+        text = (ROOT / "scripts" / "dr-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 8", text)
+        self.assertIn("LiteDbUserKnowledgeLogStoreTests", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_dr_gate_workflow_runs_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "dr-gate.yml").read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("LiteDbUserKnowledgeLogStoreTests", text)
+
+
+class PerfGateCountedTests(unittest.TestCase):
+    def test_perf_tier_a_runs_counted_orch_and_background_slices(self) -> None:
+        text = (ROOT / "scripts" / "perf-gate-tier-a.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 3", text)
+        self.assertIn("--min-tests 9", text)
+        self.assertIn("Ashlar.Tests.Orchestration.Performance", text)
+        self.assertIn("Ashlar.Tests.BackgroundAgents.Performance", text)
+        self.assertNotIn('dotnet test "$ORCH"', text)
+        self.assertNotIn('dotnet test "$BG"', text)
+
+    def test_perf_gate_workflow_runs_tier_a_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "perf-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("perf-gate-tier-a.sh", text)
+        self.assertIn("github.event_name != 'pull_request'", text)
+
+
 class CertGateCollapseFloorTests(unittest.TestCase):
     def test_cert_gate_config_pins_collapse_floor(self) -> None:
         config = (ROOT / "scripts" / "cert-gate-config.sh").read_text(encoding="utf-8")
