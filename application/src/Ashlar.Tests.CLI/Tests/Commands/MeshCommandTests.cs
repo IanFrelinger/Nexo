@@ -18,6 +18,8 @@ public sealed class MeshCommandTests : UnitTestBase
             await TestHealthMissingUrlExitsNonZeroAsync().ConfigureAwait(false);
             await TestHealthMalformedUrlIsLegibleNonZeroAsync().ConfigureAwait(false);
             await TestHealthRefusedConnectionExitsNonZeroAsync().ConfigureAwait(false);
+            await TestSetTrustTierInvalidValueExitsNonZeroAsync().ConfigureAwait(false);
+            await TestSetTrustTierMissingPeerExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(MeshCommandTests),
@@ -205,6 +207,53 @@ public sealed class MeshCommandTests : UnitTestBase
             AssertTrue(first.GetProperty("capabilities").GetArrayLength() == 2, "Capabilities should be preserved.");
             AssertEqual("trusted", (first.GetProperty("trustTier").GetString() ?? string.Empty).ToLowerInvariant());
             AssertEqual("us-east-1", first.GetProperty("metadata").GetProperty("region").GetString() ?? string.Empty);
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            Environment.SetEnvironmentVariable("ASHLAR_MESH_INSTANCES_PATH", previousPath);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    private async Task TestSetTrustTierInvalidValueExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var exitCode = await root.InvokeAsync("mesh --set-trust-tier bad-value").ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "An invalid --set-trust-tier value must exit non-zero, not 0.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestSetTrustTierMissingPeerExitsNonZeroAsync()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ashlar-mesh-tests-{Guid.NewGuid():N}");
+        var instancesPath = Path.Combine(tempRoot, "instances.json");
+        Directory.CreateDirectory(tempRoot);
+        await File.WriteAllTextAsync(instancesPath, "[]").ConfigureAwait(false);
+        var previousPath = Environment.GetEnvironmentVariable("ASHLAR_MESH_INSTANCES_PATH");
+        Environment.SetEnvironmentVariable("ASHLAR_MESH_INSTANCES_PATH", instancesPath);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var exitCode = await root.InvokeAsync("mesh --set-trust-tier missing-peer:trusted").ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "A missing peer on --set-trust-tier must exit non-zero, not 0.");
         }
         finally
         {

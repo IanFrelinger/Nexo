@@ -255,6 +255,7 @@ class CompositionMeshTierCFleetHostTests(unittest.TestCase):
         self.assertIn("Ashlar.Commercial.Tests.MeshDirector", text)
         self.assertIn("-f net8.0", text)
         self.assertIn("--expected-prefix \"Ashlar.Commercial.Tests.MeshDirector.\"", text)
+        self.assertIn("--min-tests 6", text)
 
 
 class CompatGateCountedTests(unittest.TestCase):

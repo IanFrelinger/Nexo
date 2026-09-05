@@ -75,7 +75,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/composition-mesh-gate-tier-c.sh"));
         text.Should().Contain("Ashlar.Commercial.Tests.MeshDirector");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 4");
+        text.Should().Contain("--min-tests 6");
     }
 
     [Fact]

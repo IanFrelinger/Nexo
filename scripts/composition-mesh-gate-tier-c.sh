@@ -42,7 +42,7 @@ echo "== Mesh Tier C: commercial MeshDirector CLI URI (net8.0, counted) =="
 ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
   --project "$MESH_DIRECTOR_TESTS" \
   --expected-prefix "Ashlar.Commercial.Tests.MeshDirector." \
-  --min-tests 4 \
+  --min-tests 6 \
   -- \
   -c Release \
   -f net8.0 \

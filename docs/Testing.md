@@ -94,7 +94,7 @@ Pipeline composition (fan-out/fan-in, agentic stages) and async clustered mesh t
 ```bash
 make composition-mesh-gate-tier-a    # counted pipeline composition suite (64)
 make composition-mesh-gate-tier-b    # counted CLI pipeline/mesh/optimize bridge rows (3)
-make composition-mesh-gate-tier-c    # counted fleet (176) + Fleet.Host (net10, 4) + MeshDirector (net8, 4)
+make composition-mesh-gate-tier-c    # counted fleet (176) + Fleet.Host (net10, 4) + MeshDirector (net8, 6)
 make composition-mesh-gate-tier-d    # Docker mesh lab with workers (schedule→placement)
 make composition-mesh-gate-full
 COMPOSITION_MESH_GATE_SKIP_TIER_D=1 make composition-mesh-gate-full   # in-process only

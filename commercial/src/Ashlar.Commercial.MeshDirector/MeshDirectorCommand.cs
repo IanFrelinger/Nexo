@@ -98,7 +98,7 @@ public sealed class MeshDirectorCommand : Command
         registerCmd.Add(peerRegKeyOpt);
         registerCmd.SetHandler(async (InvocationContext ctx) =>
         {
-            await InvokeRegisterAsync(
+            ctx.ExitCode = await InvokeRegisterAsync(
                 ctx.ParseResult.GetValueForOption(baseUrlOpt),
                 ctx.ParseResult.GetValueForOption(apiKeyOpt),
                 ctx.ParseResult.GetValueForOption(meshTokenOpt),
@@ -211,7 +211,7 @@ public sealed class MeshDirectorCommand : Command
             msg.Headers.TryAddWithoutValidation(DefaultMeshTokenHeader, meshToken);
     }
 
-    private static async Task InvokeGetAsync(
+    private static async Task<int> InvokeGetAsync(
         string? baseUrlOpt,
         string? apiKeyOpt,
         string? meshTokenOpt,
@@ -223,8 +223,7 @@ public sealed class MeshDirectorCommand : Command
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             Console.Error.WriteLine($"Set --base-url or environment variable {DirectorBaseUrlEnv}.");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         try
@@ -234,16 +233,16 @@ public sealed class MeshDirectorCommand : Command
             using var req = new HttpRequestMessage(HttpMethod.Get, uri);
             ApplyHeaders(req, ResolveApiKey(apiKeyOpt), ResolveMeshToken(meshTokenOpt), HttpMethod.Get);
             using var resp = await client.SendAsync(req).ConfigureAwait(false);
-            await WriteResponseAsync(resp, json).ConfigureAwait(false);
+            return await WriteResponseAsync(resp, json).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine(ex.Message);
-            Environment.ExitCode = 1;
+            return 1;
         }
     }
 
-    private static Task InvokePostAsync(
+    private static Task<int> InvokePostAsync(
         string? baseUrlOpt,
         string? apiKeyOpt,
         string? meshTokenOpt,
@@ -254,7 +253,7 @@ public sealed class MeshDirectorCommand : Command
         string? bodyJson) =>
         SendWithBodyAsync(HttpMethod.Post, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutSeconds, json, path, bodyFile, bodyJson);
 
-    private static Task InvokePatchAsync(
+    private static Task<int> InvokePatchAsync(
         string? baseUrlOpt,
         string? apiKeyOpt,
         string? meshTokenOpt,
@@ -265,7 +264,7 @@ public sealed class MeshDirectorCommand : Command
         string? bodyJson) =>
         SendWithBodyAsync(HttpMethod.Patch, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutSeconds, json, path, bodyFile, bodyJson);
 
-    private static Task InvokeRegisterAsync(
+    private static Task<int> InvokeRegisterAsync(
         string? baseUrlOpt,
         string? apiKeyOpt,
         string? meshTokenOpt,
@@ -299,7 +298,7 @@ public sealed class MeshDirectorCommand : Command
             bodyJson: payload);
     }
 
-    private static Task InvokeAdmitAsync(
+    private static Task<int> InvokeAdmitAsync(
         string? baseUrlOpt,
         string? apiKeyOpt,
         string? meshTokenOpt,
@@ -308,7 +307,7 @@ public sealed class MeshDirectorCommand : Command
         string peerId) =>
         SendEmptyPostAsync(baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutSeconds, json, BuildFleetNodePath(peerId, "admit"));
 
-    private static Task InvokeRevokeAsync(
+    private static Task<int> InvokeRevokeAsync(
         string? baseUrlOpt,
         string? apiKeyOpt,
         string? meshTokenOpt,
@@ -317,7 +316,7 @@ public sealed class MeshDirectorCommand : Command
         string peerId) =>
         SendEmptyPostAsync(baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutSeconds, json, BuildFleetNodePath(peerId, "revoke"));
 
-    private static async Task SendEmptyPostAsync(
+    private static async Task<int> SendEmptyPostAsync(
         string? baseUrlOpt,
         string? apiKeyOpt,
         string? meshTokenOpt,
@@ -329,8 +328,7 @@ public sealed class MeshDirectorCommand : Command
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             Console.Error.WriteLine($"Set --base-url or environment variable {DirectorBaseUrlEnv}.");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         try
@@ -340,16 +338,16 @@ public sealed class MeshDirectorCommand : Command
             using var req = new HttpRequestMessage(HttpMethod.Post, uri);
             ApplyHeaders(req, ResolveApiKey(apiKeyOpt), ResolveMeshToken(meshTokenOpt), HttpMethod.Post);
             using var resp = await client.SendAsync(req).ConfigureAwait(false);
-            await WriteResponseAsync(resp, printJson).ConfigureAwait(false);
+            return await WriteResponseAsync(resp, printJson).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine(ex.Message);
-            Environment.ExitCode = 1;
+            return 1;
         }
     }
 
-    private static async Task SendWithBodyAsync(
+    private static async Task<int> SendWithBodyAsync(
         HttpMethod method,
         string? baseUrlOpt,
         string? apiKeyOpt,
@@ -364,8 +362,7 @@ public sealed class MeshDirectorCommand : Command
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             Console.Error.WriteLine($"Set --base-url or environment variable {DirectorBaseUrlEnv}.");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         string payload;
@@ -374,8 +371,7 @@ public sealed class MeshDirectorCommand : Command
             if (!File.Exists(bodyFile))
             {
                 Console.Error.WriteLine($"Body file not found: {bodyFile}");
-                Environment.ExitCode = 1;
-                return;
+                return 1;
             }
 
             payload = await File.ReadAllTextAsync(bodyFile).ConfigureAwait(false);
@@ -385,8 +381,7 @@ public sealed class MeshDirectorCommand : Command
         else
         {
             Console.Error.WriteLine("Provide --body or --body-file for POST/PATCH.");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         try
@@ -399,12 +394,12 @@ public sealed class MeshDirectorCommand : Command
             };
             ApplyHeaders(req, ResolveApiKey(apiKeyOpt), ResolveMeshToken(meshTokenOpt), method);
             using var resp = await client.SendAsync(req).ConfigureAwait(false);
-            await WriteResponseAsync(resp, printJson).ConfigureAwait(false);
+            return await WriteResponseAsync(resp, printJson).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine(ex.Message);
-            Environment.ExitCode = 1;
+            return 1;
         }
     }
 
@@ -414,16 +409,13 @@ public sealed class MeshDirectorCommand : Command
         return new HttpClient { Timeout = TimeSpan.FromSeconds(s) };
     }
 
-    private static async Task WriteResponseAsync(HttpResponseMessage resp, bool preferFormattedJson)
+    private static async Task<int> WriteResponseAsync(HttpResponseMessage resp, bool preferFormattedJson)
     {
         var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
         Console.WriteLine($"{(int)resp.StatusCode} {resp.ReasonPhrase}");
 
         if (string.IsNullOrEmpty(body))
-        {
-            Environment.ExitCode = resp.IsSuccessStatusCode ? 0 : 1;
-            return;
-        }
+            return resp.IsSuccessStatusCode ? 0 : 1;
 
         if (preferFormattedJson &&
             resp.Content.Headers.ContentType?.MediaType?.Contains("json", StringComparison.OrdinalIgnoreCase) == true)
@@ -441,6 +433,6 @@ public sealed class MeshDirectorCommand : Command
         else
             Console.WriteLine(body);
 
-        Environment.ExitCode = resp.IsSuccessStatusCode ? 0 : 1;
+        return resp.IsSuccessStatusCode ? 0 : 1;
     }
 }
