@@ -11,10 +11,15 @@ Type: Baloo 2 ExtraBold (wordmark) · Caveat SemiBold (annotations). Both embedd
 | `ashlar-logo-chaos.svg` | README hero — **wired**, centred `<img>` at the top of `README.md` |
 | `ashlar-icon-nuget-128.png` | NuGet package icon — **wired** repo-wide in `Directory.Build.props` (see below) |
 | `ashlar-icon-github-512.png` | GitHub org/repo avatar — Settings → upload |
-| `ashlar-social-card-1280x640.png` | Repo → Settings → General → Social preview (100 KB, under the 1 MB limit) |
-| `ashlar-terminal-preview.svg` | docs/marketing use — mock CLI session |
+| `ashlar-social-card-1280x640.png` | Repo → Settings → General → Social preview (100 KB, under the 1 MB limit) — also used as OG image for landing page |
+| `ashlar-terminal-preview.svg` | docs/marketing use — mock CLI session; **used** in landing page bento grid |
+| `marketing/ashlar-og-commercial-1280x720.png` | *Experimental, not used* — AI-generated collage style, kept for reference only |
+| `marketing/ashlar-landing-hero-1600x900.png` | *Experimental, not used* — AI-generated hero reference, kept for reference only |
+| `marketing/ashlar-linkedin-launch-1080.png` | *Experimental, not used* — AI-generated LinkedIn asset, kept for reference only |
 | `*.svg` sources | keep in `assets/brand/` as the editable masters |
 | `AshlarConsole.cs` | reference implementation, kept HERE not in the CLI: `application/**` changes need the application integration-branch flow. Wiring it into `Ashlar.CLI` is an open follow-up; see `docs/ashlar-terminal-style.md` |
+
+**Note:** The landing page (`site/index.html`) uses only official brand SVGs and follows a clean, modern developer-tool aesthetic (Linear/Vercel/Notion-adjacent). AI-generated collage imagery (seals, tape, doodles, sparkles) is not used on the primary marketing site.
 
 ## NuGet icon wiring — already done
 

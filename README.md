@@ -11,6 +11,8 @@
 
 > **Ashlar: auditable AI workflows on infrastructure you control — every artifact certified, every action on the record.**
 
+**Website:** [Marketing landing page](site/) — open-core product site with commercial pricing and integration guides.
+
 Ashlar is a self-hosted .NET runtime for AI workflows you can audit. Three things you get, each with a command behind it:
 
 1. **Auditable workflows.** Submit a task and you get the output **and** the record of what ran: the task is stored under an id, and the trust log carries an entry whose `sourceId` is that id (`POST /api/copilot/task` → `GET /api/trust/dashboard`).

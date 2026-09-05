@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ashlar - Build auditable AI products on infrastructure you control</title>
+    <meta name="description" content="The .NET runtime you build AI products on. Audit trails, certification gate, local-first. Open core, commercial ready.">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://github.com/IanFrelinger/Ashlar">
+    <meta property="og:title" content="Ashlar - Build auditable AI products on infrastructure you control">
+    <meta property="og:description" content="The .NET runtime you build AI products on. Audit trails, certification gate, local-first.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/IanFrelinger/Ashlar/master/assets/brand/ashlar-social-card-1280x640.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://github.com/IanFrelinger/Ashlar">
+    <meta property="twitter:title" content="Ashlar - Build auditable AI products on infrastructure you control">
+    <meta property="twitter:description" content="The .NET runtime you build AI products on. Audit trails, certification gate, local-first.">
+    <meta property="twitter:image" content="https://raw.githubusercontent.com/IanFrelinger/Ashlar/master/assets/brand/ashlar-social-card-1280x640.png">
+    
+    <link rel="icon" type="image/svg+xml" href="../assets/brand/ashlar-logo-chaos.svg">
+    
+    <style>
+        :root {
+            --ink: #2B2420;
+            --cream: #F7F2E5;
+            --oat: #EFE8D8;
+            --sage: #7E8F6E;
+            --gold: #D1A23C;
+            --clay: #C96F4A;
+            --olive: #4A5540;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--ink);
+            background: var(--cream);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        /* Header */
+        header {
+            background: var(--cream);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--oat);
+        }
+        
+        header .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--ink);
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+        
+        .logo img {
+            height: 36px;
+            width: auto;
+        }
+        
+        nav {
+            display: flex;
+            gap: 2.5rem;
+            align-items: center;
+        }
+        
+        nav a {
+            color: var(--ink);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.15s;
+            font-size: 0.95rem;
+        }
+        
+        nav a:hover {
+            color: var(--olive);
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: var(--cream);
+            padding: 8rem 0 6rem;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            color: var(--ink);
+            letter-spacing: -0.03em;
+        }
+        
+        .hero .subtitle {
+            font-size: 1.5rem;
+            color: var(--olive);
+            margin-bottom: 3rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 400;
+        }
+        
+        .hero-badges {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: var(--oat);
+            border: 1px solid var(--ink);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+        }
+        
+        .btn-primary {
+            background: var(--ink);
+            color: var(--cream);
+            border-color: var(--ink);
+        }
+        
+        .btn-primary:hover {
+            background: var(--olive);
+            border-color: var(--olive);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--ink);
+            border-color: var(--ink);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--oat);
+        }
+        
+        /* Bento Grid Section */
+        .bento {
+            padding: 6rem 0;
+        }
+        
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 4rem;
+        }
+        
+        .bento-item {
+            background: var(--oat);
+            border: 1px solid var(--ink);
+            border-radius: 12px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.15s;
+        }
+        
+        .bento-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .bento-item.large {
+            grid-column: span 2;
+        }
+        
+        .bento-item.tall {
+            grid-row: span 2;
+        }
+        
+        .bento-item h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--ink);
+        }
+        
+        .bento-item p {
+            color: var(--olive);
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+        
+        .bento-item.certified {
+            border-color: var(--gold);
+            border-width: 2px;
+        }
+        
+        .cert-badge {
+            display: inline-block;
+            background: var(--gold);
+            color: var(--ink);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .code-preview {
+            background: var(--ink);
+            color: var(--cream);
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin-top: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .code-preview .comment {
+            color: var(--sage);
+        }
+        
+        .code-preview .keyword {
+            color: var(--gold);
+        }
+        
+        .terminal-preview {
+            background: var(--ink);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .terminal-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Pricing Section */
+        .pricing {
+            padding: 6rem 0;
+            background: var(--oat);
+        }
+        
+        .pricing h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .pricing .lead {
+            font-size: 1.25rem;
+            text-align: center;
+            color: var(--olive);
+            max-width: 700px;
+            margin: 0 auto 4rem;
+        }
+        
+        .pricing-table {
+            background: var(--cream);
+            border: 1px solid var(--ink);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .pricing-row {
+            display: grid;
+            grid-template-columns: 200px repeat(5, 1fr);
+            border-bottom: 1px solid var(--oat);
+        }
+        
+        .pricing-row:last-child {
+            border-bottom: none;
+        }
+        
+        .pricing-row.header {
+            background: var(--ink);
+            color: var(--cream);
+            font-weight: 700;
+        }
+        
+        .pricing-cell {
+            padding: 1.25rem 1rem;
+            border-right: 1px solid var(--oat);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+        
+        .pricing-cell:first-child {
+            justify-content: flex-start;
+            font-weight: 600;
+        }
+        
+        .pricing-cell:last-child {
+            border-right: none;
+        }
+        
+        .pricing-row.header .pricing-cell {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .tier-name {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        
+        .tier-price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--cream);
+        }
+        
+        .tier-price.gold {
+            color: var(--gold);
+        }
+        
+        .check {
+            color: var(--sage);
+            font-weight: 800;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            padding: 6rem 0;
+            text-align: center;
+        }
+        
+        .cta-section h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .cta-section p {
+            font-size: 1.25rem;
+            color: var(--olive);
+            margin-bottom: 2rem;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--ink);
+            color: var(--cream);
+            padding: 4rem 0 2rem;
+        }
+        
+        footer .container {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 3rem;
+        }
+        
+        footer h4 {
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--cream);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        footer ul {
+            list-style: none;
+        }
+        
+        footer li {
+            margin-bottom: 0.75rem;
+        }
+        
+        footer a {
+            color: var(--oat);
+            text-decoration: none;
+            transition: color 0.15s;
+            font-size: 0.95rem;
+        }
+        
+        footer a:hover {
+            color: var(--cream);
+        }
+        
+        .footer-brand {
+            color: var(--oat);
+            line-height: 1.7;
+        }
+        
+        .footer-bottom {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--olive);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--oat);
+            font-size: 0.875rem;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .bento-item.large,
+            .bento-item.tall {
+                grid-column: span 1;
+                grid-row: span 1;
+            }
+            
+            .pricing-table {
+                overflow-x: auto;
+            }
+            
+            .pricing-row {
+                min-width: 800px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.75rem;
+            }
+            
+            .hero .subtitle {
+                font-size: 1.25rem;
+            }
+            
+            .pricing h2,
+            .cta-section h2 {
+                font-size: 2rem;
+            }
+            
+            nav {
+                display: none;
+            }
+            
+            footer .container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .footer-bottom {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .container {
+                padding: 0 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="#" class="logo">
+                <img src="../assets/brand/ashlar-logo-chaos.svg" alt="Ashlar">
+                <span>Ashlar</span>
+            </a>
+            <nav>
+                <a href="https://github.com/IanFrelinger/Ashlar">GitHub</a>
+                <a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/TesterQuickstart.md">Docs</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#contact">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h1>The .NET runtime you build<br>AI products on</h1>
+                <p class="subtitle">Audit trails. Certification gate. Local-first — or Ashlar Cloud on your terms.</p>
+                
+                <div class="hero-badges">
+                    <span class="badge">Open core</span>
+                    <span class="badge">Local-first</span>
+                    <span class="badge">.NET 10</span>
+                    <span class="badge">Apache 2.0</span>
+                </div>
+                
+                <div class="cta-buttons">
+                    <a href="https://github.com/IanFrelinger/Ashlar" class="btn btn-primary">
+                        <span>Start free on GitHub</span>
+                    </a>
+                    <a href="#contact" class="btn btn-secondary">
+                        <span>Talk commercial</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bento Grid Section -->
+        <section class="bento">
+            <div class="container">
+                <div class="bento-grid">
+                    <!-- Auditable Workflows -->
+                    <div class="bento-item large">
+                        <h3>Auditable workflows</h3>
+                        <p>Submit a task and you get the output <strong>and</strong> the record of what ran. Every task is stored under an id, and the trust log carries an entry whose <code>sourceId</code> is that id.</p>
+                        <div class="code-preview">
+<span class="comment"># Submit an audited task</span>
+POST /api/copilot/task
+
+<span class="comment"># Get the full audit trail</span>
+GET /api/trust/dashboard
+
+<span class="comment"># Response includes:</span>
+{
+  <span class="keyword">"taskId"</span>: <span class="keyword">"task-a7f9..."</span>,
+  <span class="keyword">"output"</span>: { ... },
+  <span class="keyword">"auditTrail"</span>: {
+    <span class="keyword">"sourceId"</span>: <span class="keyword">"task-a7f9..."</span>,
+    <span class="keyword">"timestamp"</span>: <span class="keyword">"2026-09-05T20:14:00Z"</span>,
+    <span class="keyword">"evidence"</span>: { ... }
+  }
+}
+                        </div>
+                    </div>
+
+                    <!-- Certified Artifacts -->
+                    <div class="bento-item certified">
+                        <span class="cert-badge">Certified</span>
+                        <h3>Certification gate</h3>
+                        <p>Code that Ashlar—or a model—proposes only becomes trusted after the certification gate: analyzer fence → witness → mutation testing → determinism.</p>
+                        <p style="margin-top: 1rem; font-size: 0.95rem; color: var(--olive);">The gate is the one required CI check on <code>master</code> (<code>cert-gate</code>), and every ADMIT/REJECT it has proven is a row in <code>docs/certification-evidence.md</code>.</p>
+                    </div>
+
+                    <!-- Your Infrastructure -->
+                    <div class="bento-item">
+                        <h3>Your infrastructure</h3>
+                        <p>Runs as a CLI, an HTTP API, containers, or embedded in your own host.</p>
+                        <div class="code-preview">
+<span class="comment"># Run locally</span>
+ashlar doctor
+
+<span class="comment"># Or embed in your app</span>
+dotnet add package Ashlar.Client
+
+<span class="comment"># Configure for local-first</span>
+services.AddAshlar(options => {
+    options.LocalFirst = <span class="keyword">true</span>;
+});
+                        </div>
+                    </div>
+
+                    <!-- Build on Ashlar -->
+                    <div class="bento-item large">
+                        <h3>Build on Ashlar</h3>
+                        <p>Embed as a NuGet dependency. Integrate via HTTP. Run the CLI. Deploy with Docker. Your choice.</p>
+                        <div class="code-preview">
+<span class="comment">// Add to your .NET application</span>
+<span class="keyword">builder</span>.Services.AddAshlar(options => {
+    options.LocalFirst = <span class="keyword">true</span>;
+    options.AuditTrail = AuditLevel.<span class="keyword">Full</span>;
+    options.CertificationRequired = <span class="keyword">true</span>;
+});
+
+<span class="comment">// Execute auditable AI workflows</span>
+<span class="keyword">var</span> result = <span class="keyword">await</span> ashlar.ExecuteTaskAsync(
+    <span class="keyword">"Analyze this dataset"</span>,
+    auditContext: currentUser
+);
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/IntegratorGuide.md" class="btn btn-secondary">Read integrator guide →</a>
+                        </div>
+                    </div>
+
+                    <!-- Terminal Preview -->
+                    <div class="bento-item tall">
+                        <h3>Local-first operation</h3>
+                        <p>Local model routing (Ollama) is the default route. Cloud providers are opt-in targets. Air-gapped and local-only deployments are first-class.</p>
+                        <div class="terminal-preview">
+                            <img src="../assets/brand/ashlar-terminal-preview.svg" alt="Ashlar terminal session">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section class="pricing" id="pricing">
+            <div class="container">
+                <h2>Open core. Commercial ready.</h2>
+                <p class="lead">Community free forever. Cloud for speed. Builder/Team/Enterprise for scale and sovereignty.</p>
+                
+                <div class="pricing-table">
+                    <!-- Header Row -->
+                    <div class="pricing-row header">
+                        <div class="pricing-cell"></div>
+                        <div class="pricing-cell">
+                            <div class="tier-name">Community</div>
+                            <div class="tier-price">Free</div>
+                        </div>
+                        <div class="pricing-cell">
+                            <div class="tier-name">Cloud</div>
+                            <div class="tier-price tier-price gold">Coming soon</div>
+                        </div>
+                        <div class="pricing-cell">
+                            <div class="tier-name">Builder</div>
+                            <div class="tier-price">~$8k/yr</div>
+                        </div>
+                        <div class="pricing-cell">
+                            <div class="tier-name">Team</div>
+                            <div class="tier-price">~$25k/yr</div>
+                        </div>
+                        <div class="pricing-cell">
+                            <div class="tier-name">Enterprise</div>
+                            <div class="tier-price">From $75k</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Rows -->
+                    <div class="pricing-row">
+                        <div class="pricing-cell">Runtime & orchestration</div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                    </div>
+                    
+                    <div class="pricing-row">
+                        <div class="pricing-cell">Certification gate</div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                    </div>
+                    
+                    <div class="pricing-row">
+                        <div class="pricing-cell">Audit trails</div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                    </div>
+                    
+                    <div class="pricing-row">
+                        <div class="pricing-cell">Deployment</div>
+                        <div class="pricing-cell">Self-host</div>
+                        <div class="pricing-cell">Hosted PAYG</div>
+                        <div class="pricing-cell">Your VPC</div>
+                        <div class="pricing-cell">Your VPC</div>
+                        <div class="pricing-cell">Dedicated / On-prem</div>
+                    </div>
+                    
+                    <div class="pricing-row">
+                        <div class="pricing-cell">SSO & audit export</div>
+                        <div class="pricing-cell">—</div>
+                        <div class="pricing-cell">—</div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                    </div>
+                    
+                    <div class="pricing-row">
+                        <div class="pricing-cell">Support</div>
+                        <div class="pricing-cell">Community</div>
+                        <div class="pricing-cell">Email</div>
+                        <div class="pricing-cell">Priority</div>
+                        <div class="pricing-cell">Shared Slack</div>
+                        <div class="pricing-cell">Named CSM</div>
+                    </div>
+                    
+                    <div class="pricing-row">
+                        <div class="pricing-cell">SLA</div>
+                        <div class="pricing-cell">—</div>
+                        <div class="pricing-cell">—</div>
+                        <div class="pricing-cell">—</div>
+                        <div class="pricing-cell">—</div>
+                        <div class="pricing-cell"><span class="check">✓</span></div>
+                    </div>
+                    
+                    <div class="pricing-row">
+                        <div class="pricing-cell"></div>
+                        <div class="pricing-cell">
+                            <a href="https://github.com/IanFrelinger/Ashlar" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.6rem 1.2rem;">Clone</a>
+                        </div>
+                        <div class="pricing-cell">
+                            <a href="#contact" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.6rem 1.2rem;">Waitlist</a>
+                        </div>
+                        <div class="pricing-cell">
+                            <a href="#contact" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.6rem 1.2rem;">Contact</a>
+                        </div>
+                        <div class="pricing-cell">
+                            <a href="#contact" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.6rem 1.2rem;">Contact</a>
+                        </div>
+                        <div class="pricing-cell">
+                            <a href="#contact" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.6rem 1.2rem;">Contact</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <p style="text-align: center; margin-top: 2rem; color: var(--olive); font-size: 0.95rem;">
+                    Commercial prices are indicative starting points. Production contracts based on seats, environments, and support requirements.
+                </p>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section" id="contact">
+            <div class="container">
+                <h2>Ready to build?</h2>
+                <p>Start with the open-source runtime today.<br>Talk to us when you need more.</p>
+                <div class="cta-buttons">
+                    <a href="https://github.com/IanFrelinger/Ashlar" class="btn btn-primary">Start on GitHub</a>
+                    <a href="mailto:hello@ashlar.dev" class="btn btn-secondary">Email hello@ashlar.dev</a>
+                </div>
+                <p style="margin-top: 2rem; color: var(--olive); font-size: 0.95rem;">
+                    <a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/TesterQuickstart.md" style="color: var(--olive); text-decoration: underline;">Try the quickstart</a> — clone, build, run the API, submit one task, read its audit trail. About 15 minutes, no Docker, no API keys.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div>
+                <h4>Ashlar</h4>
+                <p class="footer-brand">Build auditable AI products on infrastructure you control.</p>
+                <p class="footer-brand" style="margin-top: 1rem;">Open core, Apache 2.0. Strong by design, verifiable by default.</p>
+            </div>
+            
+            <div>
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar">GitHub Repository</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/TesterQuickstart.md">Tester Quickstart</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/IntegratorGuide.md">Integrator Guide</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/Architecture.md">Architecture</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/CONTRIBUTING.md">Contributing</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/discussions">Discussions</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/issues">Issues</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/SECURITY.md">Security</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/LICENSE">Apache 2.0 License</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/LICENSING.md">Licensing Guide</a></li>
+                    <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/OpenCoreBoundary.md">Open Core Boundary</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <span>&copy; 2026 Ashlar</span>
+            <span>Apache 2.0 License</span>
+        </div>
+    </footer>
+</body>
+</html>
