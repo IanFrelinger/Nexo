@@ -900,6 +900,48 @@ class VerifyStandaloneBrickAuthoringCountedTests(unittest.TestCase):
         )
 
 
+class AssertDotnetTestExecutedFailClosedTests(unittest.TestCase):
+    helper = ROOT / "scripts" / "lib" / "assert-dotnet-test-executed.sh"
+
+    def _run(self, body: str) -> subprocess.CompletedProcess[str]:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+            handle.write(body)
+            path = handle.name
+        try:
+            return subprocess.run(
+                ["bash", str(self.helper), path],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        finally:
+            os.unlink(path)
+
+    def test_refuses_empty_match_log(self) -> None:
+        result = self._run(
+            "No test matches the given testcase filter `FullyQualifiedName~DoesNotExist`\n"
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("empty match", result.stderr)
+
+    def test_refuses_passed_zero(self) -> None:
+        result = self._run("Passed!  - Failed:     0, Passed:     0, Skipped:     0, Total:     0\n")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Passed=0", result.stderr)
+
+    def test_accepts_executed_pass(self) -> None:
+        result = self._run("Passed!  - Failed:     0, Passed:     5, Skipped:     0, Total:     5\n")
+        self.assertEqual(result.returncode, 0)
+
+    def test_uat_scripts_invoke_the_helper(self) -> None:
+        tier4 = (ROOT / "tests" / "uat" / "tier4.sh").read_text(encoding="utf-8")
+        tier02 = (ROOT / "tests" / "uat" / "tier0-2.sh").read_text(encoding="utf-8")
+        self.assertIn("assert-dotnet-test-executed.sh", tier4)
+        self.assertIn("HelloBrick.Tests", tier4)
+        self.assertIn("assert-dotnet-test-executed.sh", tier02)
+        self.assertIn("CertificationGateTeethTests", tier02)
+
+
 class KernelTierECountedTests(unittest.TestCase):
     def test_kernel_gate_tier_e_runs_counted_otel_and_performance_slices(self) -> None:
         text = (ROOT / "scripts" / "kernel-gate-tier-e.sh").read_text(encoding="utf-8")
