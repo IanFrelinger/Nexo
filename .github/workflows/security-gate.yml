@@ -1,5 +1,10 @@
 # Security & trust gate.
 # See docs/production-readiness/SecurityHardeningPlan-v1.md
+#
+# PR coverage is Tiers A–C only (trust core, API, CLI). Tiers D (supply chain)
+# and E (air-gapped container) stay dispatch-only here. A green PR security-gate
+# is not equivalent to the autonomous release-manager `security` lane, which
+# runs `make security-gate-full` including D/E.
 name: Security Gate
 
 on:

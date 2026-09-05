@@ -34,6 +34,27 @@ if [[ "${USE_PUBLISHED_FEED}" -eq 0 ]]; then
   mkdir -p "${FEED}"
 fi
 
+# The release-manager packaging lane sets WORK under the repo
+# (`.ashlar/release-manager/external-product`). MSBuild walks up from that
+# tree and would otherwise import the monorepo Directory.Build.props, which
+# injects versionless System.Text.* PackageReferences (NU1015 when CPM is off).
+cat > "${CONSUMER_ROOT}/Directory.Build.props" <<'EOF'
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Text.Encodings.Web" Version="10.0.11" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+  </ItemGroup>
+</Project>
+EOF
+cat > "${CONSUMER_ROOT}/Directory.Build.targets" <<'EOF'
+<Project>
+  <!-- Isolate the consumer tree from repo-root Directory.Build.targets. -->
+</Project>
+EOF
+
 pack() {
   local project="$1"
   echo "==> dotnet pack ${project}"

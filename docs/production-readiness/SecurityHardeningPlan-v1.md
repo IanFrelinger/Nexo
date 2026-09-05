@@ -28,7 +28,7 @@ make ship-gate-full
 | `SECURITY_GATE_SKIP_TIER_D=1` | Skip supply-chain scan |
 | `SECURITY_GATE_SKIP_TIER_E=1` | Skip air-gapped tier |
 | `SECURITY_GATE_STRICT_SUPPLY_CHAIN=1` | Tier D fails on any vulnerable transitive |
-| `SECURITY_GATE_AIRGAPPED_CONTAINER=1` | Tier E adds `--network none` container test |
+| `SECURITY_GATE_AIRGAPPED_CONTAINER=1` | Tier E requires a working Docker daemon and runs the `--network none` container suite; missing Docker is a failure, not a skip |
 
 ## What each tier proves
 

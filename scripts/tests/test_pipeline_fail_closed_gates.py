@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -134,6 +135,30 @@ class MirrorScriptContractTests(unittest.TestCase):
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("assert-pipeline-fail-closed.py", text)
         self.assertIn("scripts/lib/assert-pipeline-fail-closed.py", text)
+
+
+class SecurityTierEFailClosedTests(unittest.TestCase):
+    def test_airgapped_container_refuses_missing_docker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_bin = Path(tmp) / "bin"
+            fake_bin.mkdir()
+            docker = fake_bin / "docker"
+            docker.write_text("#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
+            docker.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+            env["SECURITY_GATE_AIRGAPPED_CONTAINER"] = "1"
+            run = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "security-gate-tier-e.sh")],
+                cwd=ROOT,
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        self.assertNotEqual(0, run.returncode)
+        self.assertIn("requires a working Docker daemon", run.stdout)
 
 
 if __name__ == "__main__":

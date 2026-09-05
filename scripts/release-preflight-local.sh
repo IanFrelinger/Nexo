@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # One command before you cut a release: graph alignment + NuGet consumer sample (isolated cache).
+# This is not the packaging-lane external-product-shape check. Preflight can be green
+# while `scripts/verify-external-product-shape.sh` still fails (that script is step 2
+# of the autonomous release-manager packaging lane).
 # Usage: bash scripts/release-preflight-local.sh 1.2.3
 # Optional: ASHLAR_RELEASE_PREFLIGHT_TRIGGER_GATE=1  →  gh workflow run "Runtime Release Gate" --ref <branch>
 #           ASHLAR_RELEASE_PREFLIGHT_REF=master     (default: current branch from git)

@@ -139,8 +139,10 @@ make security-gate-tier-d    # dotnet list package --vulnerable / --deprecated (
 make security-gate-tier-e    # air-gapped + safety
 make security-gate-full
 SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 make security-gate-tier-d
-SECURITY_GATE_AIRGAPPED_CONTAINER=1 make security-gate-tier-e
+SECURITY_GATE_AIRGAPPED_CONTAINER=1 make security-gate-tier-e  # fails if Docker is missing
 ```
+
+PR workflow `security-gate.yml` runs Tiers A–C only. Tiers D and E are dispatch-only there; the autonomous release-manager `security` lane runs `make security-gate-full`.
 
 See **`docs/production-readiness/SecurityHardeningPlan-v1.md`**.
 

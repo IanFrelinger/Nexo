@@ -1,5 +1,6 @@
-# Publishes GHCR images on pushes to main (path-filtered) or manual dispatch.
-# Release tags (v*.*.*) use **release.yml** so images + NuGet run once.
+# Publishes GHCR :latest on pushes to main (path-filtered) or manual dispatch.
+# This is not a versioned release and is not gated on the autonomous
+# release-manager READY verdict. Versioned tags (v*.*.*) use **release.yml**.
 
 name: Container Image Publish
 

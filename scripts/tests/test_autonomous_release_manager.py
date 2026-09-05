@@ -888,6 +888,7 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
         publish_files = (
             repo / ".github" / "workflows" / "reusable-release-nuget.yml",
             repo / ".github" / "workflows" / "reusable-container-publish.yml",
+            repo / ".github" / "workflows" / "reusable-verify-nuget-consumer.yml",
             repo / ".github" / "workflows" / "release.yml",
             repo / ".github" / "workflows" / "release-nuget.yml",
         )
