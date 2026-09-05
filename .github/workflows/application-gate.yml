@@ -7,6 +7,7 @@ on:
     paths:
       - "application/**"
       - "src/Ashlar.Tests.Infrastructure/Tests/VirtualProduction/**"
+      - "src/Ashlar.Tests.Infrastructure/Tests/API/**"
       - "docs/production-readiness/Application*.md"
       - "scripts/application-gate*.sh"
       - "scripts/prod-dry-run.sh"
@@ -56,8 +57,10 @@ jobs:
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
+      # Same `!=` form as Tier A/B so pull_request actually runs the in-process
+      # API suite. The script is counted on net10.0 (net8 matched zero).
       - name: Tier C
-        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'c'
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c'
         run: make application-gate-tier-c
         env:
           ASHLAR_ALLOW_MOCK: "1"

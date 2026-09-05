@@ -222,6 +222,24 @@ class IngressUnitGateCountedTests(unittest.TestCase):
         self.assertIn("make ingress-unit-gate", text)
 
 
+class ApplicationTierCCountedApiTests(unittest.TestCase):
+    def test_application_gate_tier_c_runs_counted_api_suite_on_net10(self) -> None:
+        text = (ROOT / "scripts" / "application-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 4", text)
+        self.assertIn("-f net10.0", text)
+        self.assertNotIn("-f net8.0", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_application_gate_workflow_runs_tier_c_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "application-gate.yml").read_text(encoding="utf-8")
+        self.assertIn("Tests/API/**", text)
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
+            text,
+        )
+
+
 class ApplicationTierBCountedCliTests(unittest.TestCase):
     def test_application_gate_tier_b_runs_counted_cli_suite_on_net10(self) -> None:
         text = (ROOT / "scripts" / "application-gate-tier-b.sh").read_text(encoding="utf-8")
@@ -245,6 +263,34 @@ class KernelTierACountedTests(unittest.TestCase):
             "FullyQualifiedName~KernelPhaseResolutionTests|FullyQualifiedName~HostingDeploymentProfileTests|FullyQualifiedName~HostingE2ESmokeTests",
             makefile,
         )
+
+
+class KernelTierBCountedTests(unittest.TestCase):
+    def test_kernel_gate_tier_b_runs_counted_pipeline_lifecycle_slice(self) -> None:
+        text = (ROOT / "scripts" / "kernel-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 14", text)
+        self.assertNotIn(
+            'dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0',
+            text,
+        )
+
+
+class ShipTierBCountedTests(unittest.TestCase):
+    def test_ship_gate_tier_b_runs_counted_framework_smoke(self) -> None:
+        text = (ROOT / "scripts" / "ship-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 9", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+
+class SecurityTierECountedTests(unittest.TestCase):
+    def test_security_gate_tier_e_runs_counted_airgapped_suite_on_net10(self) -> None:
+        text = (ROOT / "scripts" / "security-gate-tier-e.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 52", text)
+        self.assertIn("-f net10.0", text)
+        self.assertNotIn("-f net8.0", text)
 
 
 class ShipTierACountedTests(unittest.TestCase):

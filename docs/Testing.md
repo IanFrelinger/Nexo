@@ -67,7 +67,7 @@ Validates `application/Ashlar.Application.sln` (CLI, API, optional agent-server 
 ```bash
 make application-gate-tier-a    # build product sln + CLI smoke (runs kernel-gate unless APPLICATION_GATE_SKIP_KERNEL=1)
 make application-gate-tier-b    # counted CLI suite (200+, exclude UnitTestBridgeTests) + doctor --json
-make application-gate-tier-c    # in-process API WebApplicationFactory tests
+make application-gate-tier-c    # counted in-process API / virtual-prod suite (4, net10)
 make application-gate-tier-d    # agent-server prod dry run (Docker)
 make application-gate-full      # A–D (skips re-running kernel by default)
 APPLICATION_GATE_SKIP_TIER_D=1 make application-gate-full   # skip Docker agent-server
@@ -136,7 +136,7 @@ make security-gate-tier-a    # counted trust core (97)
 make security-gate-tier-b    # API security middleware
 make security-gate-tier-c    # counted CLI trust surface (61) + trust JSON smoke
 make security-gate-tier-d    # dotnet list package --vulnerable / --deprecated (artifacts in .ashlar/security-gate/)
-make security-gate-tier-e    # air-gapped + safety
+make security-gate-tier-e    # counted air-gapped + safety (52, net10)
 make security-gate-full
 SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 make security-gate-tier-d
 SECURITY_GATE_AIRGAPPED_CONTAINER=1 make security-gate-tier-e  # fails if Docker is missing

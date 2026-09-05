@@ -15,10 +15,16 @@ dotnet build "$INFRA" -v minimal
 echo "== Ship Tier B: ProdStyle (FluentAssertions-safe filter) =="
 make test-prod-style
 
-echo "== Ship Tier B: framework smoke =="
-ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
+echo "== Ship Tier B: framework smoke (net8.0, counted) =="
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 9 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
-  --blame-hang-timeout 60s --blame-hang-dump-type none
+  --blame-hang-timeout 60s \
+  --blame-hang-dump-type none
 
 echo "== Ship Tier B: doctor --json =="
 set +e

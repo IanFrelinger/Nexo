@@ -14,11 +14,18 @@ if [ "${SECURITY_GATE_AIRGAPPED_CONTAINER:-0}" = "1" ]; then
   fi
 fi
 
-echo "== Security Tier E: air-gapped + safety in-process tests =="
-dotnet build "$INFRA" -f net8.0 -v minimal
-ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
+echo "== Security Tier E: air-gapped + safety (net10.0, counted) =="
+# net8.0 omits AirGappedProfileApiHostProdStyleTests (API host is net10.0 only)
+# and still exited 0 on a stale empty filter. Listed 52 identities on net10.0.
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 52 \
+  -- \
+  -f net10.0 \
   --filter "FullyQualifiedName~AirGapped|FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Safety" \
-  --blame-hang-timeout 120s --blame-hang-dump-type none
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
 
 if [ "${SECURITY_GATE_AIRGAPPED_CONTAINER:-0}" = "1" ]; then
   echo "== Security Tier E: --network none container suite =="

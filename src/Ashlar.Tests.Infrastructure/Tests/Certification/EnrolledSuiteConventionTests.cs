@@ -145,6 +145,29 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void ApplicationTierC_RunsCountedApiSuiteOnNet10()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/application-gate-tier-c.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 4");
+        text.Should().Contain("-f net10.0");
+        text.Should().Contain("ApiDevelopmentHostDiTests");
+        text.Should().NotContain("-f net8.0");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void ApplicationGateWorkflow_RunsTierCOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/application-gate.yml"));
+        text.Should().Contain("Tests/API/**");
+        text.Should().Contain("application-gate-tier-c");
+        text.Should().NotContain("github.event_name == 'workflow_dispatch' && inputs.tier == 'c'");
+    }
+
+    [Fact]
     public void KernelTierA_RunsCountedHostingAndPipelineSlices()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
@@ -154,6 +177,40 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("--min-tests 14");
         text.Should().Contain("KernelPhaseResolutionTests");
         text.Should().Contain("PipelineLifecycleE2ETests");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void KernelTierB_RunsCountedPipelineLifecycleSlice()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/kernel-gate-tier-b.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 14");
+        text.Should().Contain("PipelineLifecycleE2ETests");
+        text.Should().NotContain("dotnet test src/Ashlar.Tests.Infrastructure");
+    }
+
+    [Fact]
+    public void ShipTierB_RunsCountedFrameworkSmoke()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ship-gate-tier-b.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 9");
+        text.Should().Contain("BaseFrameworkSmokeTests");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void SecurityTierE_RunsCountedAirgappedSuiteOnNet10()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/security-gate-tier-e.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 52");
+        text.Should().Contain("-f net10.0");
+        text.Should().NotContain("-f net8.0");
         text.Should().NotContain("dotnet test \"$INFRA\"");
     }
 

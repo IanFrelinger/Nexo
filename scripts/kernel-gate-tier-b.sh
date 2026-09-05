@@ -34,11 +34,16 @@ dotnet build src/Ashlar.Core.Application/Ashlar.Core.Application.csproj -f netst
 dotnet build src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj -v minimal
 dotnet build "$CLI_PROJECT" -v minimal
 
-echo "== Tier B: pipeline lifecycle tests (net8) =="
-ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 \
+echo "== Tier B: pipeline lifecycle tests (net8.0, counted) =="
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 14 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~PipelineTemplateValidatorTests|FullyQualifiedName~PipelineLifecycleE2ETests" \
-  --blame-hang-timeout 120s --blame-hang-dump-type none \
-  --logger "console;verbosity=minimal"
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
 
 cat > "$TEMPLATE_PATH" <<'JSON'
 {
