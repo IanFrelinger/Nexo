@@ -25,7 +25,12 @@ public sealed class DogfoodCommand : Command
         block1Cmd.AddOption(jsonOpt);
         block1Cmd.SetHandler(async (InvocationContext ctx) =>
         {
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            // Local `--format-json` on the verb, plus the root global of the same
+            // spelling. `GetValueForOption(jsonOpt)` only sees the local Option;
+            // `--format-json dogfood block1` therefore used to print prose on a
+            // JSON pipe. Same OR as doctor.
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt)
+                || CommandExecutionSupport.WantsJson(ctx.ParseResult);
             Environment.Exit(await DogfoodBlock1Command.ExecuteAsync(json));
         });
         AddCommand(block1Cmd);
@@ -47,8 +52,10 @@ public sealed class DogfoodCommand : Command
         allCmd.AddOption(verboseOpt);
         allCmd.SetHandler(async (InvocationContext ctx) =>
         {
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt)
+                || CommandExecutionSupport.WantsJson(ctx.ParseResult);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt)
+                || CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
             Environment.Exit(await DogfoodAllCommand.ExecuteAsync(json, verbose));
         });
         AddCommand(allCmd);

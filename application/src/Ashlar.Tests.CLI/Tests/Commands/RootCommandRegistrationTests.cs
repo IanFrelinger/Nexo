@@ -129,6 +129,8 @@ public sealed class RootCommandRegistrationTests
         CommandExecutionSupport.WantsJson(root.Parse("test portable --format-json")).Should().BeTrue();
         CommandExecutionSupport.WantsJson(root.Parse("test multi-env --format-json")).Should().BeTrue();
         CommandExecutionSupport.WantsJson(root.Parse("docker ps --format-json")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("--format-json dogfood block2")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("dogfood block2")).Should().BeFalse();
 
         var verbose = root.Options.Single(o => o.HasAlias("--verbose"));
         verbose.Name.Should().Be("verbose", "the prefix is stripped — never match on Name alone");
@@ -136,6 +138,8 @@ public sealed class RootCommandRegistrationTests
         CommandExecutionSupport.WantsVerbose(root.Parse("test portable")).Should().BeFalse();
         CommandExecutionSupport.WantsVerbose(root.Parse("test multi-env --verbose")).Should().BeTrue();
         CommandExecutionSupport.WantsVerbose(root.Parse("docker ps --verbose")).Should().BeTrue();
+        CommandExecutionSupport.WantsVerbose(root.Parse("--verbose dogfood block2")).Should().BeTrue();
+        CommandExecutionSupport.WantsVerbose(root.Parse("dogfood block2")).Should().BeFalse();
     }
 
     [Fact(Timeout = 15000)]

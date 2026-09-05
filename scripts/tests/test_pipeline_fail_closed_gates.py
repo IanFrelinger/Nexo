@@ -564,6 +564,8 @@ class FormatJsonWantsJsonTests(unittest.TestCase):
             "application/src/Ashlar.CLI/Commands/TestPortableCommand.cs",
             "application/src/Ashlar.CLI/Commands/TestMultiEnvCommand.cs",
             "application/src/Ashlar.CLI/Commands/DockerCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DogfoodCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DogfoodTestCommand.cs",
         ):
             text = (ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("CommandExecutionSupport.WantsJson", text)
@@ -574,6 +576,8 @@ class FormatJsonWantsJsonTests(unittest.TestCase):
             "application/src/Ashlar.CLI/Commands/TestPortableCommand.cs",
             "application/src/Ashlar.CLI/Commands/TestMultiEnvCommand.cs",
             "application/src/Ashlar.CLI/Commands/DockerCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DogfoodCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DogfoodTestCommand.cs",
         ):
             text = (ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("CommandExecutionSupport.WantsVerbose", text)

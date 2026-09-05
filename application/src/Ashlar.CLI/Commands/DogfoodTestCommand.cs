@@ -29,8 +29,13 @@ internal static class DogfoodTestCommand
         cmd.AddOption(filterOpt);
         cmd.SetHandler(async (InvocationContext ctx) =>
         {
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+            // Local `--format-json` / `--verbose` on the block, plus the root
+            // globals. A leading `--format-json dogfood block2` used to print
+            // prose on a JSON pipe because only the local Option was read.
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt)
+                || CommandExecutionSupport.WantsJson(ctx.ParseResult);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt)
+                || CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
             var filterOverride = ctx.ParseResult.GetValueForOption(filterOpt);
             var effectiveFilter = string.IsNullOrWhiteSpace(filterOverride) ? filter : filterOverride.Trim();
             Environment.Exit(await ExecuteAsync(name, effectiveFilter, json, verbose));
