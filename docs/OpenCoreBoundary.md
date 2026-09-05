@@ -99,10 +99,10 @@ The residual open mesh files were reviewed as open-tier primitives. They are loc
 
 ## Current verification result
 
-As of 2026-09-04 (product-split scaffolds):
+As of 2026-09-05 (product-split scaffolds + enrolled Fleet/Host projects):
 
 ```text
-dependency-boundary: scanned 107 projects (99 open, 8 commercial, 21 open packable)
+dependency-boundary: scanned 108 projects (100 open, 8 commercial, 21 open packable)
 dependency-boundary: PASS
 ```
 

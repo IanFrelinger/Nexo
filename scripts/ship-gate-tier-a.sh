@@ -32,11 +32,17 @@ dotnet build src/Ashlar.Core.Application/Ashlar.Core.Application.csproj -f netst
 dotnet build src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj -v minimal
 dotnet build "$CLI" -v minimal
 
-echo "== Ship Tier A: host DI smoke =="
-dotnet build "$INFRA_TESTS" -f net8.0 -v minimal
-ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA_TESTS" -f net8.0 --no-build \
+echo "== Ship Tier A: host DI smoke (net8.0, counted) =="
+# Two named DI facts. A rename that matches zero still exited 0 before the counted wrapper.
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA_TESTS" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 2 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~HostingE2ESmokeTests.AddAshlar_RegistersObservationPipeline_ByDefault|FullyQualifiedName~PipelineServiceCollectionExtensionsTests.AddAshlar_RegistersPipelineCompositionLayerByDefault" \
-  --blame-hang-timeout 120s --blame-hang-dump-type none
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
 
 TMP="$(mktemp -d)"
 export TMP

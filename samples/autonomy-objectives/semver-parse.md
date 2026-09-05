@@ -9,7 +9,7 @@ tags:
   - parsing
 touch:
   pathPrefixes:
-    - applications/Ashlar.Samples.Dogfood/Versions/
+    - samples/dogfood/Versions/
   namespaces:
     - Ashlar.Samples.Dogfood.Versions
   capabilities:

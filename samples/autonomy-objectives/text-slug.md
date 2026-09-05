@@ -10,7 +10,7 @@ tags:
   - under-specified-on-purpose
 touch:
   pathPrefixes:
-    - applications/Ashlar.Samples.Dogfood/Text/
+    - samples/dogfood/Text/
   namespaces:
     - Ashlar.Samples.Dogfood.Text
   capabilities:

@@ -107,6 +107,9 @@ a witness the proposer cannot see. Every objective states what a proposer must p
 (namespace, class, `Id`, interface) with a skeleton; `proposer-preamble.md` is the brick API as
 operator house rules, passed to the proposer through `OllamaProposalOptions.SystemPreamble`.
 
+`touch.pathPrefixes` write into [`samples/dogfood/`](../dogfood/) (`Text/`, `Colours/`,
+`Versions/`, `Locks/`). The old `applications/Ashlar.Samples.Dogfood/...` tree is gone.
+
 `door-lock-transition.proposal.json` is a real `codellama:7b` proposal — its FIRST attempt in
 campaign 4 — that built in the attested session, passed the analyzer fence, all eight witness
 cases, mutation (`escape_rate=0`) and determinism, and was held (`CertifiedButHeld`).

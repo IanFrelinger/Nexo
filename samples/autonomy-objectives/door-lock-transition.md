@@ -9,7 +9,7 @@ tags:
   - state-machine
 touch:
   pathPrefixes:
-    - applications/Ashlar.Samples.Dogfood/Locks/
+    - samples/dogfood/Locks/
   namespaces:
     - Ashlar.Samples.Dogfood.Locks
   capabilities:

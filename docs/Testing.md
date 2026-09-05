@@ -44,7 +44,7 @@ Ashlar uses multiple mechanisms to prevent tests from hanging indefinitely and k
 Run before building product features on top of the kernel. Builds `Ashlar.Runtime.sln`, runs hosting phase/profile resolution tests, and pipeline tests.
 
 ```bash
-make kernel-gate              # Tier A: runtime build + hosting matrix + pipeline lifecycle
+make kernel-gate              # Tier A: runtime build + counted hosting matrix (40) + pipeline lifecycle (14)
 make kernel-gate-tier-b       # Tier B: CLI validate + fail-closed unconfigured run + LiteDB durable resume
 make kernel-gate-tier-c       # Tier C: ProdStyle + workflow + gRPC transport + air-gapped profile
 make kernel-gate-tier-d       # Tier D: pack graph alignment + NuGet consumer sample

@@ -145,6 +145,42 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void KernelTierA_RunsCountedHostingAndPipelineSlices()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/kernel-gate-tier-a.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 40");
+        text.Should().Contain("--min-tests 14");
+        text.Should().Contain("KernelPhaseResolutionTests");
+        text.Should().Contain("PipelineLifecycleE2ETests");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void ShipTierA_RunsCountedHostDiSmoke()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ship-gate-tier-a.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 2");
+        text.Should().Contain("AddAshlar_RegistersObservationPipeline_ByDefault");
+        text.Should().NotContain("dotnet test \"$INFRA_TESTS\"");
+    }
+
+    [Fact]
+    public void AutonomyObjectives_DoNotCiteRemovedApplicationsTree()
+    {
+        var root = Path.Combine(RepoPathResolver.FindRepoRoot(), "samples/autonomy-objectives");
+        foreach (var path in Directory.GetFiles(root, "*.md"))
+        {
+            File.ReadAllText(path).Should().NotContain(
+                "applications/Ashlar.Samples.Dogfood",
+                because: path);
+        }
+    }
+
+    [Fact]
     public void IngressUnitGate_RunsCountedAwsSnsAndDynamoDbSuites()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

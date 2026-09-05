@@ -233,6 +233,58 @@ class ApplicationTierBCountedCliTests(unittest.TestCase):
         self.assertNotIn('dotnet test "$CLI_TESTS"', text)
 
 
+class KernelTierACountedTests(unittest.TestCase):
+    def test_kernel_gate_tier_a_runs_counted_hosting_and_pipeline_slices(self) -> None:
+        text = (ROOT / "scripts" / "kernel-gate-tier-a.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 40", text)
+        self.assertIn("--min-tests 14", text)
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("kernel-gate-tier-a.sh", makefile)
+        self.assertNotIn(
+            "FullyQualifiedName~KernelPhaseResolutionTests|FullyQualifiedName~HostingDeploymentProfileTests|FullyQualifiedName~HostingE2ESmokeTests",
+            makefile,
+        )
+
+
+class ShipTierACountedTests(unittest.TestCase):
+    def test_ship_gate_tier_a_runs_counted_host_di_smoke(self) -> None:
+        text = (ROOT / "scripts" / "ship-gate-tier-a.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 2", text)
+        self.assertNotIn('dotnet test "$INFRA_TESTS"', text)
+
+
+class OpenCoreBoundaryCensusTests(unittest.TestCase):
+    def test_open_core_boundary_doc_matches_live_scan(self) -> None:
+        run = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "verify-open-commercial-dependency-boundary.py")],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        self.assertEqual(0, run.returncode, run.stdout)
+        scan = next(
+            (line.strip() for line in run.stdout.splitlines() if line.startswith("dependency-boundary: scanned ")),
+            "",
+        )
+        self.assertTrue(scan, run.stdout)
+        doc = (ROOT / "docs" / "OpenCoreBoundary.md").read_text(encoding="utf-8")
+        self.assertIn(scan, doc)
+
+
+class AutonomyObjectivePathTests(unittest.TestCase):
+    def test_objectives_do_not_cite_removed_applications_tree(self) -> None:
+        folder = ROOT / "samples" / "autonomy-objectives"
+        for path in folder.glob("*.md"):
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn("applications/Ashlar.Samples.Dogfood", text, path.name)
+            if "pathPrefixes:" in text:
+                self.assertIn("samples/dogfood/", text, path.name)
+
+
 class SecurityTierACountedTests(unittest.TestCase):
     def test_security_gate_tier_a_runs_counted_trust_suite(self) -> None:
         text = (ROOT / "scripts" / "security-gate-tier-a.sh").read_text(encoding="utf-8")
