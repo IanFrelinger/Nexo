@@ -852,17 +852,11 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
             )
 
     def test_dependency_boundary_skips_generated_ashlar_trees(self) -> None:
-        import importlib.util
-
         repo = SCRIPT.parents[1]
-        spec = importlib.util.spec_from_file_location(
+        module = load_script(
             "verify_open_commercial_dependency_boundary",
             repo / "scripts" / "verify-open-commercial-dependency-boundary.py",
         )
-        self.assertIsNotNone(spec)
-        self.assertIsNotNone(spec.loader)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
         discovered = {
             module.rel_posix(path, repo) for path in module.discover_csprojs(repo)
         }
