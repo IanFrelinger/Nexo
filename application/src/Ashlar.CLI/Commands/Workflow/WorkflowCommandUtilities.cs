@@ -1188,6 +1188,10 @@ internal static class WorkflowCommandUtilities
 
     internal const string InvalidMaxCandidatesMessage = "Invalid --max-candidates. Use a positive integer.";
 
+    internal const string InvalidBudgetRunsMessage = "Invalid --budget-runs. Use a positive integer.";
+
+    internal const string InvalidEarlyStopMinRunsMessage = "Invalid --early-stop-min-runs. Use a positive integer.";
+
     internal const string InvalidLimitMessage = "Invalid --limit. Use a positive integer.";
 
     internal static bool TryNormalizeSearchStrategy(string? searchStrategy, out string normalized)

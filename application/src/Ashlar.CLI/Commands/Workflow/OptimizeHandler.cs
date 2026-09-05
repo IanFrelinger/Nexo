@@ -72,6 +72,18 @@ internal sealed partial class OptimizeHandler(
             return 1;
         }
 
+        if (budgetRuns.HasValue && budgetRuns.Value <= 0)
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidBudgetRunsMessage), json);
+            return 1;
+        }
+
+        if (earlyStopMinRuns.HasValue && earlyStopMinRuns.Value <= 0)
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidEarlyStopMinRunsMessage), json);
+            return 1;
+        }
+
         var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try

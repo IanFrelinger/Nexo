@@ -72,6 +72,16 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidMinTotalMessage = "Invalid --min-total. Use a positive integer.";
 
+    internal const string InvalidCoreMinTotalMessage = "Invalid --core-min-total. Use a positive integer.";
+
+    internal const string InvalidVisualMinTotalMessage = "Invalid --visual-min-total. Use a positive integer.";
+
+    internal const string InvalidLaneRepetitionsMessage = "Invalid --lane-repetitions. Use a positive integer.";
+
+    internal const string InvalidCoreHistoryWindowMessage = "Invalid --core-history-window. Use a positive integer.";
+
+    internal const string InvalidVisualHistoryWindowMessage = "Invalid --visual-history-window. Use a positive integer.";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;

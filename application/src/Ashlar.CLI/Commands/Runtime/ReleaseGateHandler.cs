@@ -50,7 +50,36 @@ internal sealed class ReleaseGateHandler(RuntimeEvaluateExecutor executeEvaluate
             Console.Error.WriteLine($"runtime release-gate: invalid --visual-required-mode '{visualRequiredMode}', expected auto | true | false.");
             return 1;
         }
-        laneRepetitions = Math.Max(1, laneRepetitions);
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(laneRepetitions))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidLaneRepetitionsMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(coreMinTotal))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidCoreMinTotalMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(visualMinTotal))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidVisualMinTotalMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(coreHistoryWindow))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidCoreHistoryWindowMessage);
+            return 1;
+        }
+
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(visualHistoryWindow))
+        {
+            Console.Error.WriteLine(RuntimeCommandUtilities.InvalidVisualHistoryWindowMessage);
+            return 1;
+        }
         var finalExitCode = 0;
         RuntimeGateResult? coreGateResult = null;
         RuntimeGateResult? visualGateResult = null;

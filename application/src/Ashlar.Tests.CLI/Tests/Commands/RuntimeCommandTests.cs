@@ -27,6 +27,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestPlanRejectsInvalidHistoryWindowAsync().ConfigureAwait(false);
             await TestHistoryRejectsInvalidLimitAsync().ConfigureAwait(false);
             await TestGateRejectsInvalidMinTotalAsync().ConfigureAwait(false);
+            await TestReleaseGateRejectsInvalidLaneRepetitionsAsync().ConfigureAwait(false);
+            await TestReleaseGateRejectsInvalidCoreMinTotalAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -320,6 +322,46 @@ public sealed class RuntimeCommandTests : UnitTestBase
             "A negative --min-total must be refused legibly.");
         AssertTrue(!negOutput.Contains("Gate passed", StringComparison.Ordinal),
             "A negative --min-total must not be remapped to 1 before evaluating the gate.");
+    }
+
+    private async Task TestReleaseGateRejectsInvalidLaneRepetitionsAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            var (exitCode, output) = await InvokeRuntimeAsync(
+                $"release-gate --mode core --lane-repetitions 0 --repo-root \"{repoRoot}\" --allow-mock").ConfigureAwait(false);
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("Invalid --lane-repetitions", StringComparison.Ordinal),
+                "A non-positive --lane-repetitions must be refused legibly.");
+            AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
+                "A --lane-repetitions of 0 must not be remapped to 1 before starting the release-core matrix.");
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestReleaseGateRejectsInvalidCoreMinTotalAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            var (exitCode, output) = await InvokeRuntimeAsync(
+                $"release-gate --mode core --core-min-total 0 --repo-root \"{repoRoot}\" --allow-mock").ConfigureAwait(false);
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("Invalid --core-min-total", StringComparison.Ordinal),
+                "A non-positive --core-min-total must be refused legibly.");
+            AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
+                "A --core-min-total of 0 must be refused before starting the release-core matrix.");
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()

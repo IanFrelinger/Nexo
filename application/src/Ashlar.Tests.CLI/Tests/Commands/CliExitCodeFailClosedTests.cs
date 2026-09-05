@@ -51,6 +51,9 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestWorkflowHistoryInvalidLimitExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeGateInvalidMinTotalExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowOptimizeInvalidMaxCandidatesExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidBudgetRunsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidEarlyStopMinRunsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeReleaseGateInvalidLaneRepetitionsExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -1005,6 +1008,79 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "A --max-candidates of 0 must not be remapped to 1 before evaluating candidates.");
             AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
                 "A --max-candidates of 0 must not start optimize orchestration.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowOptimizeInvalidBudgetRunsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow optimize --budget-runs 0 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize --budget-runs 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --budget-runs", StringComparison.Ordinal),
+                "A non-positive --budget-runs must be refused legibly.");
+            AssertTrue(!output.Contains("\"budgetRuns\": 1", StringComparison.Ordinal),
+                "A --budget-runs of 0 must not be remapped to 1 before evaluating candidates.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "A --budget-runs of 0 must not be remapped to 1 before evaluating candidates.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowOptimizeInvalidEarlyStopMinRunsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow optimize --early-stop-min-runs 0 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize --early-stop-min-runs 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --early-stop-min-runs", StringComparison.Ordinal),
+                "A non-positive --early-stop-min-runs must be refused legibly.");
+            AssertTrue(!output.Contains("\"earlyStopMinRuns\": 1", StringComparison.Ordinal),
+                "A --early-stop-min-runs of 0 must not be remapped to 1 before evaluating candidates.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "A --early-stop-min-runs of 0 must not start candidate evaluation.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeReleaseGateInvalidLaneRepetitionsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime release-gate --mode core --lane-repetitions 0 --allow-mock").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime release-gate --lane-repetitions 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --lane-repetitions", StringComparison.Ordinal),
+                "A non-positive --lane-repetitions must be refused legibly.");
+            AssertTrue(!output.Contains("release-core matrix", StringComparison.Ordinal),
+                "A --lane-repetitions of 0 must not be remapped to 1 before starting the release-core matrix.");
         }
         finally
         {
