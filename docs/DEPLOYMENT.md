@@ -23,7 +23,7 @@ This document is the **default “what do I run in production?”** map. Other c
 
 - **Image:** `ghcr.io/<owner>/nexo-cli` (built by `.github/workflows/container-image-publish.yml` from `.docker/Dockerfile.cli`)
 - **Pin:** use tag **`sha-<12-char-commit>`** (always pushed) or a **semver tag** `v1.2.3` / `1.2.3` when you cut a Git **annotated tag** `v1.2.3` on `master`/`main` (workflow publishes those tags in addition to `latest`).
-- **Example:** `docker pull ghcr.io/ianfrelinger/ashlar-cli:sha-abc123def456`
+- **Example:** `docker pull ghcr.io/ianfrelinger/nexo-cli:sha-abc123def456`
 
 ## Golden path C — Agent server (mounted workspace)
 

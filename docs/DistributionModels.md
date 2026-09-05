@@ -40,7 +40,7 @@ Use these as **stable entrypoints** when writing runbooks or samples; replace im
 | **NuGet host sample (local pack)** | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` + **`scripts/verify-stable-sdk-host-sample-packages.sh`** |
 | **NuGet metapackage (consumers)** | **`Ashlar.Hosting.Bundle`** at the release semver (see **`docs/PUBLISHING.md`**) |
 | **HTTP / API container** | Build **`.docker/Dockerfile.api`**; container listens on **`8080`** (`ASPNETCORE_URLS=http://+:8080`). Smoke script: **`scripts/ci/distribution-matrix-api-http-smoke.sh`**. |
-| **CLI container (public)** | **`ghcr.io/ianfrelinger/ashlar-cli:latest`** — smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
+| **CLI container (public)** | **`ghcr.io/ianfrelinger/nexo-cli:latest`** — smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
 | **Compose (operator lab)** | **`deploy/compose/docker-compose.ephemeral.yml`** (light deps) or **`deploy/compose/docker-compose.portal.yml`** (Director stack) — hub **`docs/DEPLOYMENT.md`**. |
 | **Mesh prefab** | **`deploy/compose/docker-compose.friend-mesh.yml`** + **`docs/FriendMeshPrefab.md`** |
 | **Mesh lab (heterogeneous)** | **`deploy/compose/docker-compose.mesh-lab.yml`** — peer-a = commercial fleet host, peer-b/worker = open `Ashlar.API` | **`docs/MeshVirtualLab.md`**, **`scripts/mesh-lab-verify.sh`** |
