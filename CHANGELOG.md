@@ -40,6 +40,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Ship Tier C uses the canonical `VERSION` file.** Fail-closed preflight rejects dummy prereleases such as `0.0.0-ship-gate-local`, so `ship-gate-tier-c` no longer defaults to one.
 - **Security Tier B runs the net10.0 API suite with a counted floor.** The previous `dotnet test -f net8.0` matched zero `Tests/API` cases (those files compile only on net10.0) and still exited 0.
 - **Brick.Contracts authoring ports are declared PublicAPI.** Five `Authoring/Ports` files suppressed RS0016, so an undeclared addition compiled clean. The symbols now live in `PublicAPI.Unshipped.txt` (147 lines) and fail the build if they drift.
+- **Cert-gate ownership walks prune `.ashlar/`.** A leftover packaging-lane consumer under `.ashlar/release-manager/external-product/` no longer fails `EveryTestProject_IsRegistered`.
 - **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
 - **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.
 - **Distributed contracts** factories reject undefined enums, malformed digests, non-positive duration, and succeeded evidence without a hash.

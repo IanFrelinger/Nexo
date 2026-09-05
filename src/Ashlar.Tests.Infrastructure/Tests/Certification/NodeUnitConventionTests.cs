@@ -232,7 +232,7 @@ public sealed class NodeUnitConventionTests
         {
             var dir = pending.Pop();
             var name = Path.GetFileName(dir);
-            if (name is ".git" or ".claude" or ".github" or "bin" or "obj" or "node_modules" or "TestResults")
+            if (name is ".git" or ".claude" or ".ashlar" or ".github" or "bin" or "obj" or "node_modules" or "TestResults")
                 continue;
             if (dir != root && (File.Exists(Path.Combine(dir, ".git")) || Directory.Exists(Path.Combine(dir, ".git"))))
                 continue; // a nested checkout carries its own copies, and they belong to that tree

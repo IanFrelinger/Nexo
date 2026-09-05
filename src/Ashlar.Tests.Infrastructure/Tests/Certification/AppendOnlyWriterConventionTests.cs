@@ -134,7 +134,8 @@ public sealed class AppendOnlyWriterConventionTests
 
         if (string.Equals(name, "bin", StringComparison.Ordinal)
             || string.Equals(name, "obj", StringComparison.Ordinal)
-            || string.Equals(name, ".claude", StringComparison.Ordinal))
+            || string.Equals(name, ".claude", StringComparison.Ordinal)
+            || string.Equals(name, ".ashlar", StringComparison.Ordinal))
         {
             return true;
         }

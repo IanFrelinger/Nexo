@@ -97,12 +97,18 @@ public sealed class TestOwnershipConventionTests
             Write(Path.Combine(root, "src", "Real.Tests", "obj", "Real.Tests.csproj"), TestProject);
             Write(Path.Combine(root, "src", "Real.Tests", "bin", "Real.Tests.csproj"), TestProject);
 
+            // Generated packaging-lane consumer trees must not fail the required check.
+            Write(
+                Path.Combine(root, ".ashlar", "release-manager", "external-product", "IntensityBrick.Tests", "IntensityBrick.Tests.csproj"),
+                TestProject);
+
             var discovered = DiscoverTestProjects(root);
 
             discovered.Should().BeEquivalentTo(
                 new[] { "src/Real.Tests/Real.Tests.csproj" },
                 "a copy of a project inside another checkout is not this repository's project, "
-                + "and build output is not a project at all");
+                + "build output is not a project at all, and generated .ashlar trees are not "
+                + "this repository's test projects");
         }
         finally
         {
@@ -245,7 +251,8 @@ public sealed class TestOwnershipConventionTests
 
         if (string.Equals(name, "bin", StringComparison.Ordinal)
             || string.Equals(name, "obj", StringComparison.Ordinal)
-            || string.Equals(name, ".claude", StringComparison.Ordinal))
+            || string.Equals(name, ".claude", StringComparison.Ordinal)
+            || string.Equals(name, ".ashlar", StringComparison.Ordinal))
         {
             return true;
         }
