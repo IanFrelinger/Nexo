@@ -7,3 +7,4 @@ path-regex	reason
 ^docs/ProjectTiers\.md$	records the extraction event
 ^docs/DistributionModels\.md$	records the out-of-tree consumer proof
 ^docs/DogfoodCampaign\.md$	explains the unpublished-VERSION rule by citing both numbers
+^docs/CertificationGate\.md$	canonical 0.1.1-vs-0.1.2 page; package snippets are checkout pins, not nuget.org install instructions
