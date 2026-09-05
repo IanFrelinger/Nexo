@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 121");
+        text.Should().Contain("--min-tests 122");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1307,6 +1307,22 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("No tests matched the filter");
         text.Should().Contain("ExitCode.ValidationFailed");
         text.Should().NotContain("passed = process.ExitCode == 0");
+    }
+
+    [Fact]
+    public void FormatJsonLookups_UseWantsJsonHelper()
+    {
+        foreach (var rel in new[]
+        {
+            "application/src/Ashlar.CLI/Commands/TestPortableCommand.cs",
+            "application/src/Ashlar.CLI/Commands/TestMultiEnvCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DockerCommand.cs",
+        })
+        {
+            var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(), rel));
+            text.Should().Contain("CommandExecutionSupport.WantsJson");
+            text.Should().NotContain("o.Name == \"--format-json\"");
+        }
     }
 
     [Fact]

@@ -14,10 +14,10 @@ internal static class CommandExecutionSupport
     /// <c>--format-json</c>.
     ///
     /// <para>The option is located by ALIAS, never by name alone. System.CommandLine strips the
-    /// leading <c>--</c> from an option's Name, so the <c>o.Name == "--format-json"</c> lookup used in
-    /// DockerCommand, TestPortableCommand and TestMultiEnvCommand matches nothing and reports "no JSON
-    /// asked for" on every invocation — those commands ignore the very flag they believe they are
-    /// reading. Both spellings are matched here so this helper cannot fail the same silent way.</para>
+    /// leading <c>--</c> from an option's Name, so a <c>o.Name == "--format-json"</c> lookup
+    /// matches nothing and reports "no JSON asked for" on every invocation. Both spellings are
+    /// matched here so this helper cannot fail the same silent way. <c>docker</c>,
+    /// <c>test portable</c>, and <c>test multi-env</c> call this helper.</para>
     /// </summary>
     internal static bool WantsJson(ParseResult parseResult)
     {

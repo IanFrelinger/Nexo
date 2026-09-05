@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 121", text)
+        self.assertIn("--min-tests 122", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -555,6 +555,18 @@ class TestPortableCommandFailClosedTests(unittest.TestCase):
         self.assertIn("No tests matched the filter", text)
         self.assertIn("ExitCode.ValidationFailed", text)
         self.assertNotIn("passed = process.ExitCode == 0", text)
+
+
+class FormatJsonWantsJsonTests(unittest.TestCase):
+    def test_portable_multi_env_and_docker_use_wants_json(self) -> None:
+        for rel in (
+            "application/src/Ashlar.CLI/Commands/TestPortableCommand.cs",
+            "application/src/Ashlar.CLI/Commands/TestMultiEnvCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DockerCommand.cs",
+        ):
+            text = (ROOT / rel).read_text(encoding="utf-8")
+            self.assertIn("CommandExecutionSupport.WantsJson", text)
+            self.assertNotIn('o.Name == "--format-json"', text)
 
 
 class DogfoodTestCommandFailClosedTests(unittest.TestCase):

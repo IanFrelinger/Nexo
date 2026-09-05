@@ -33,10 +33,9 @@ public class TestPortableCommand
             var list = ctx.ParseResult.GetValueForOption(listOpt);
             var scope = ctx.ParseResult.GetValueForOption(scopeOpt) ?? "persistence";
             var filter = ctx.ParseResult.GetValueForOption(filterOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var json = jsonOpt != null && ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = verboseOpt != null && ctx.ParseResult.GetValueForOption(verboseOpt);
 
             var exitCode = await ExecuteAsync(list, scope, json, verbose, filter);

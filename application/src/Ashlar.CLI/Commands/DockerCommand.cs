@@ -53,10 +53,9 @@ public class DockerCommand : Command
             var tag = ctx.ParseResult.GetValueForOption(tagOpt) ?? throw new InvalidOperationException("--tag is required");
             var context = ctx.ParseResult.GetValueForOption(contextOpt) ?? new DirectoryInfo(Environment.CurrentDirectory);
             var buildArgs = ctx.ParseResult.GetValueForOption(buildArgOpt) ?? Array.Empty<string>();
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var json = jsonOpt != null ? ctx.ParseResult.GetValueForOption(jsonOpt) : false;
             var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
             await BuildAsync(dockerfile, tag, context, buildArgs, json, verbose);
         });
@@ -113,10 +112,9 @@ public class DockerCommand : Command
             var volume = ctx.ParseResult.GetValueForOption(volumeOpt) ?? Array.Empty<string>();
             var workdir = ctx.ParseResult.GetValueForOption(workdirOpt);
             var rmImage = ctx.ParseResult.GetValueForOption(rmImageOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var json = jsonOpt != null ? ctx.ParseResult.GetValueForOption(jsonOpt) : false;
             var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
             await RunAsync(image, command, env, volume, workdir, rmImage, json, verbose);
         });
@@ -146,10 +144,9 @@ public class DockerCommand : Command
             var imageTag = ctx.ParseResult.GetValueForOption(imageTagOpt);
             var containerId = ctx.ParseResult.GetValueForOption(containerIdOpt);
             var all = ctx.ParseResult.GetValueForOption(allOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var json = jsonOpt != null ? ctx.ParseResult.GetValueForOption(jsonOpt) : false;
             var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
             await CleanAsync(imageTag, containerId, all, json, verbose);
         });
@@ -167,10 +164,9 @@ public class DockerCommand : Command
         psCmd.SetHandler(async (InvocationContext ctx) =>
         {
             var all = ctx.ParseResult.GetValueForOption(allContainersOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var json = jsonOpt != null ? ctx.ParseResult.GetValueForOption(jsonOpt) : false;
             var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
             await ListContainersAsync(all, json, verbose);
         });
@@ -180,10 +176,9 @@ public class DockerCommand : Command
 
         imagesCmd.SetHandler(async (InvocationContext ctx) =>
         {
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var json = jsonOpt != null ? ctx.ParseResult.GetValueForOption(jsonOpt) : false;
             var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
             await ListImagesAsync(json, verbose);
         });

@@ -126,6 +126,9 @@ public sealed class RootCommandRegistrationTests
 
         CommandExecutionSupport.WantsJson(root.Parse("doctor --format-json")).Should().BeTrue();
         CommandExecutionSupport.WantsJson(root.Parse("doctor")).Should().BeFalse();
+        CommandExecutionSupport.WantsJson(root.Parse("test portable --format-json")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("test multi-env --format-json")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("docker ps --format-json")).Should().BeTrue();
     }
 
     [Fact(Timeout = 15000)]

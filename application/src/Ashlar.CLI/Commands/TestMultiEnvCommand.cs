@@ -58,10 +58,9 @@ public class TestMultiEnvCommand
             var all = ctx.ParseResult.GetValueForOption(allOpt);
             var ephemeral = ctx.ParseResult.GetValueForOption(ephemeralOpt) || string.Equals(Environment.GetEnvironmentVariable("ASHLAR_TEST_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase);
             var noNetwork = ctx.ParseResult.GetValueForOption(noNetworkOpt) || string.Equals(Environment.GetEnvironmentVariable("ASHLAR_TEST_NO_NETWORK"), "1", StringComparison.OrdinalIgnoreCase);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
-            var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
-            var json = jsonOpt != null && ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = verboseOpt != null && ctx.ParseResult.GetValueForOption(verboseOpt);
 
             var exitCode = await ExecuteAsync(suite, env, all, ephemeral, noNetwork, json, verbose);
