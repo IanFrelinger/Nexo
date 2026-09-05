@@ -36,6 +36,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestBootstrapInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
             await TestDoctorInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
             await TestSelfExtendInvalidFocusExitsNonZeroAsync().ConfigureAwait(false);
+            await TestSelfExtendInvalidVisualQaFallbackPolicyExitsNonZeroAsync().ConfigureAwait(false);
             await TestChatInvalidPreferModelExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowStressInvalidPreferExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
@@ -597,6 +598,33 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
         {
             Console.SetOut(ConsoleCapture.Out);
             Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestSelfExtendInvalidVisualQaFallbackPolicyExitsNonZeroAsync()
+    {
+        var specPath = Path.Combine(Path.GetTempPath(), $"ashlar-self-extend-visual-qa-{Guid.NewGuid():N}.json");
+        File.WriteAllText(specPath, """{"workflow":{"visualQaFallbackPolicy":"xyz","runVisualQa":true}}""");
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync($"self-extend preflight --runtime-spec {specPath} --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "self-extend preflight with visualQaFallbackPolicy xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid visualQaFallbackPolicy", StringComparison.Ordinal),
+                "An invalid visualQaFallbackPolicy must be refused legibly.");
+            AssertTrue(!output.Contains("Preflight passed", StringComparison.Ordinal),
+                "An invalid visualQaFallbackPolicy must be refused before running preflight as strict.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (File.Exists(specPath))
+                File.Delete(specPath);
         }
     }
 

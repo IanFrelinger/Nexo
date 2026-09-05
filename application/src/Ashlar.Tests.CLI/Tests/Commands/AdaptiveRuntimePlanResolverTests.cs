@@ -25,6 +25,10 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
             TestResolveRejectsInvalidManifestQaPolicy();
             /// <summary>Test release policy uses strict visual fallback.</summary>
             TestReleasePolicyUsesStrictVisualFallback();
+            /// <summary>Test resolve rejects invalid bootstrap profile.</summary>
+            TestResolveRejectsInvalidBootstrapProfile();
+            /// <summary>Test build runtime spec rejects invalid visual fallback.</summary>
+            TestBuildRuntimeSpecRejectsInvalidVisualFallback();
 
             return Task.FromResult(new TestResult
             {
@@ -209,5 +213,46 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
         /// <summary>Assert true.</summary>
         /// <param name="QA."">Qa.".</param>
         AssertTrue(plan.RunVisualQa, "Release policy on visual goals should still require visual QA.");
+    }
+
+    private void TestResolveRejectsInvalidBootstrapProfile()
+    {
+        try
+        {
+            AdaptiveRuntimePlanResolver.Resolve(
+                "Generate composable backend command handlers and tests",
+                AdaptiveRuntimeManifest.Default(),
+                bootstrapProfileOverride: "xyz",
+                qaPolicyOverride: "auto");
+            AssertTrue(false, "An invalid bootstrap profile override must be refused by Resolve.");
+        }
+        catch (ArgumentException ex)
+        {
+            AssertTrue(ex.Message.Contains("Invalid --bootstrap-profile", StringComparison.Ordinal),
+                "An invalid bootstrap profile override must be refused legibly.");
+        }
+    }
+
+    private void TestBuildRuntimeSpecRejectsInvalidVisualFallback()
+    {
+        var plan = AdaptiveRuntimePlanResolver.Resolve(
+            "Generate composable backend command handlers and tests",
+            AdaptiveRuntimeManifest.Default(),
+            bootstrapProfileOverride: "auto",
+            qaPolicyOverride: "auto") with
+        {
+            VisualQaFallbackPolicy = "xyz"
+        };
+
+        try
+        {
+            AdaptiveRuntimePlanResolver.BuildRuntimeSpec(plan);
+            AssertTrue(false, "An invalid visualQaFallbackPolicy must be refused by BuildRuntimeSpec.");
+        }
+        catch (ArgumentException ex)
+        {
+            AssertTrue(ex.Message.Contains("Invalid visualQaFallbackPolicy", StringComparison.Ordinal),
+                "An invalid visualQaFallbackPolicy must be refused legibly.");
+        }
     }
 }

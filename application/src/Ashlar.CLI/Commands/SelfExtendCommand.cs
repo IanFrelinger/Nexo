@@ -169,6 +169,12 @@ public sealed class SelfExtendCommand : Command
                 return 1;
             }
 
+            if (!TryNormalizeVisualQaFallbackPolicy(runtimeSpec.Workflow.VisualQaFallbackPolicy, out _))
+            {
+                WriteResult(false, InvalidVisualQaFallbackPolicyMessage, fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null, testFilter: null, testSummary: null, focus: runtimeSpec.Workflow.Focus ?? "balanced", maxIterations: 0, iterations: Array.Empty<object>());
+                return 1;
+            }
+
             var workflow = ResolveWorkflow(runtimeSpec.Workflow, focusOverride, maxIterationsOverride);
             var focus = NormalizeFocus(workflow.Focus);
             var phaseList = ResolvePhases(workflow, runTests);
@@ -383,6 +389,12 @@ public sealed class SelfExtendCommand : Command
                 return 1;
             }
 
+            if (!TryNormalizeVisualQaFallbackPolicy(runtimeSpec.Workflow.VisualQaFallbackPolicy, out _))
+            {
+                WritePreflightResult(new PreflightResult(false, InvalidVisualQaFallbackPolicyMessage, Array.Empty<PreflightCheck>()), json);
+                return 1;
+            }
+
             var workflow = ResolveWorkflow(runtimeSpec.Workflow, focusOverride, maxIterationsOverride);
             var focus = NormalizeFocus(workflow.Focus);
 
@@ -446,14 +458,25 @@ public sealed class SelfExtendCommand : Command
         return normalized;
     }
 
+    internal const string InvalidVisualQaFallbackPolicyMessage = "Invalid visualQaFallbackPolicy. Use strict or degrade.";
+
+    internal static bool TryNormalizeVisualQaFallbackPolicy(string? policy, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(policy))
+        {
+            normalized = "strict";
+            return true;
+        }
+
+        normalized = policy.Trim().ToLowerInvariant();
+        return normalized is "strict" or "degrade";
+    }
+
     private static string NormalizeVisualQaFallbackPolicy(string? policy)
     {
-        var normalized = (policy ?? "strict").Trim().ToLowerInvariant();
-        return normalized switch
-        {
-            "degrade" => "degrade",
-            _ => "strict"
-        };
+        if (!TryNormalizeVisualQaFallbackPolicy(policy, out var normalized))
+            throw new ArgumentException(InvalidVisualQaFallbackPolicyMessage);
+        return normalized;
     }
 
     private static string[] ResolvePhases(SelfExtendWorkflowSpec workflow, bool runTests)

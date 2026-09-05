@@ -189,13 +189,17 @@ public static class AdaptiveRuntimePlanResolver
 
     private static string NormalizeBootstrapProfile(string? profile)
     {
-        var normalized = (profile ?? "auto").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(profile))
+            return "auto";
+
+        var normalized = profile.Trim().ToLowerInvariant();
         return normalized switch
         {
+            "auto" => "auto",
             "self-extend-functional" => "self-extend-functional",
             "self-extend-aesthetic" => "self-extend-aesthetic",
             "self-extend-visual" => "self-extend-visual",
-            _ => "auto"
+            _ => throw new ArgumentException("Invalid --bootstrap-profile. Use auto, self-extend-functional, self-extend-aesthetic, or self-extend-visual.")
         };
     }
 
@@ -218,17 +222,30 @@ public static class AdaptiveRuntimePlanResolver
 
     private static string NormalizeFocus(string? focus)
     {
-        var normalized = (focus ?? "balanced").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(focus))
+            return "balanced";
+
+        var normalized = focus.Trim().ToLowerInvariant();
         return normalized switch
         {
+            "balanced" => "balanced",
             "functional" => "functional",
             "aesthetic" => "aesthetic",
-            _ => "balanced"
+            _ => throw new ArgumentException("Invalid focus. Use balanced, functional, or aesthetic.")
         };
     }
 
     private static string NormalizeFallback(string? fallback)
     {
-        return string.Equals(fallback, "strict", StringComparison.OrdinalIgnoreCase) ? "strict" : "degrade";
+        if (string.IsNullOrWhiteSpace(fallback))
+            return "degrade";
+
+        var normalized = fallback.Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "strict" => "strict",
+            "degrade" => "degrade",
+            _ => throw new ArgumentException("Invalid visualQaFallbackPolicy. Use strict or degrade.")
+        };
     }
 }
