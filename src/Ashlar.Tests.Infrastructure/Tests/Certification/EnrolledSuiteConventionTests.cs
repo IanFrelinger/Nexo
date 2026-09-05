@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 87");
+        text.Should().Contain("--min-tests 89");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -723,6 +723,31 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("doctor --json exited");
         text.Should().NotContain("SHIP_GATE_STRICT_DOCTOR");
         text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void ValidateSafe_RunsCountedFrameworkSmoke()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/validate-safe.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 9");
+        text.Should().Contain("BaseFrameworkSmokeTests");
+        text.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
+    }
+
+    [Fact]
+    public void ReadinessGateLocal_RunsCountedCliSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/readiness-gate-local.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 200");
+        text.Should().Contain("FullyQualifiedName!~UnitTestBridgeTests");
+        text.Should().Contain("application-tests-cli-full");
+        text.Should().NotContain(
+            "dotnet test application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj");
     }
 
     [Fact]

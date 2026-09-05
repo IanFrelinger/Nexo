@@ -3,9 +3,8 @@
 # Runs the same tier scripts CI's application-gate workflow runs (its "full"
 # dispatch lane = tiers A+B+C with tier D skipped and ASHLAR_ALLOW_MOCK=1 /
 # APPLICATION_GATE_SKIP_KERNEL=1, per .github/workflows/application-gate.yml),
-# plus the complete Ashlar.Tests.CLI suite as a strictly stronger local gate
-# (CI tier B only samples three command-test classes).
-# and adds the full Ashlar.Applications.Tests suite and a per-project build.
+# plus the counted Ashlar.Tests.CLI suite (same floor and hanging-theory
+# exclusion as application-gate-tier-b; a silent empty match cannot pass).
 # Emits RESULT lines (e2e-loop.sh convention) and, with --json, a
 # machine-readable verdict for orchestrating agents.
 # Canonical environment: the dotnet 10 dev container / CI runner. Works under
@@ -42,7 +41,7 @@ case "$LAYER" in
       "ASHLAR_ALLOW_MOCK=1 APPLICATION_GATE_SKIP_KERNEL=1 bash scripts/application-gate-tier-a.sh"
       "ASHLAR_ALLOW_MOCK=1 bash scripts/application-gate-tier-b.sh"
       "ASHLAR_ALLOW_MOCK=1 bash scripts/application-gate-tier-c.sh"
-      "dotnet build application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj -v minimal && ASHLAR_ALLOW_MOCK=1 dotnet test application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj -f net10.0 --no-build --blame-hang-timeout 120s --blame-hang-dump-type none"
+      "dotnet build application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj -v minimal && ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py --project application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj --expected-prefix \"Ashlar.Tests.CLI.\" --min-tests 200 -- --no-build -f net10.0 --filter \"FullyQualifiedName!~UnitTestBridgeTests\" --blame-hang-timeout 120s --blame-hang-dump-type none"
     )
     if [ "$INCLUDE_TIER_D" = "1" ]; then
       GATE_NAMES+=(application-tier-d)

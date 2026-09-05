@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 87", text)
+        self.assertIn("--min-tests 89", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -748,6 +748,31 @@ class ShipTierBCountedTests(unittest.TestCase):
         )
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
+            text,
+        )
+
+
+class ValidateSafeCountedTests(unittest.TestCase):
+    def test_validate_safe_runs_counted_framework_smoke(self) -> None:
+        text = (ROOT / "scripts" / "validate-safe.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 9", text)
+        self.assertIn("BaseFrameworkSmokeTests", text)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            text,
+        )
+
+
+class ReadinessGateLocalCountedTests(unittest.TestCase):
+    def test_readiness_gate_local_runs_counted_cli_suite(self) -> None:
+        text = (ROOT / "scripts" / "readiness-gate-local.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 200", text)
+        self.assertIn("FullyQualifiedName!~UnitTestBridgeTests", text)
+        self.assertIn("application-tests-cli-full", text)
+        self.assertNotIn(
+            "dotnet test application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj",
             text,
         )
 

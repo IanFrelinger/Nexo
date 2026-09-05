@@ -19,12 +19,17 @@ echo "=== Validate Safe: Build ==="
 dotnet build -v minimal
 
 echo "=== Validate Safe: Smoke Tests ==="
-dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
+# Counted wrapper: a silent empty BaseFrameworkSmoke filter used to pass.
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 9 \
+  -- \
+  -f net8.0 \
   --no-build \
-  --blame-hang-timeout 30s \
-  --blame-hang-dump-type none \
   --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
-  --verbosity minimal
+  --blame-hang-timeout 30s \
+  --blame-hang-dump-type none
 
 echo "=== Validate Safe: Architecture Validation ==="
 dotnet run --project application/src/Ashlar.CLI -- validate
