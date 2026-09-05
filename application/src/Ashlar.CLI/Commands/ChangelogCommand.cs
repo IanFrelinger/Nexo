@@ -67,6 +67,9 @@ public sealed class ChangelogCommand : Command
 
         if (output != null)
         {
+            var directory = Path.GetDirectoryName(output.FullName);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
             await File.WriteAllTextAsync(output.FullName, changelog).ConfigureAwait(false);
             Console.WriteLine($"Changelog written to {output.FullName}");
         }
