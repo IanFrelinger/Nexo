@@ -251,6 +251,28 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Janitor_zeroOrNegativeTtlHours_isRefusedInsteadOfUsingDefaults()
+    {
+        var cmd = NewCmd();
+        foreach (var (proposed, approved, needle) in new (double?, double?, string)[]
+        {
+            (0, null, "Invalid --proposed-ttl-hours"),
+            (-1, null, "Invalid --proposed-ttl-hours"),
+            (null, 0, "Invalid --approved-ttl-hours"),
+            (null, -5, "Invalid --approved-ttl-hours"),
+        })
+        {
+            var stdout = new StringWriter();
+            var stderr = new StringWriter();
+            var rc = await cmd.JanitorAsync(proposed, approved, formatJson: true, stdout, stderr);
+            rc.Should().Be(1);
+            var output = stdout.ToString();
+            output.Should().Contain(needle);
+            output.Should().NotContain("\"ok\": true");
+        }
+    }
+
+    [Fact]
     public async Task List_filters_by_status_and_target_prefix()
     {
         _store.Add(new ChangeProposal { Id = "a", TargetPath = "src/A.cs", NewContent = "x", Summary = "a" });

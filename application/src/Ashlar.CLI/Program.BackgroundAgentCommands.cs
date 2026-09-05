@@ -480,8 +480,8 @@ static partial class Program
         }, propTestRootOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propTestCmd);
 
-        var propJanProposedOpt = new Option<double?>("--proposed-ttl-hours", () => null, "Override Proposed TTL (default 72h)");
-        var propJanApprovedOpt = new Option<double?>("--approved-ttl-hours", () => null, "Override Approved TTL (default 24h)");
+        var propJanProposedOpt = new Option<double?>("--proposed-ttl-hours", () => null, "Override Proposed TTL in hours (must be > 0; default 72h when omitted)");
+        var propJanApprovedOpt = new Option<double?>("--approved-ttl-hours", () => null, "Override Approved TTL in hours (must be > 0; default 24h when omitted)");
         var propJanitorCmd = new Command("janitor", "Run the janitor sweep once: stale anything past its TTL")
         {
             propJanProposedOpt, propJanApprovedOpt

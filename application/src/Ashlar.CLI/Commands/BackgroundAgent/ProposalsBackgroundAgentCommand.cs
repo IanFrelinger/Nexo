@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.Forge;
+using Ashlar.CLI.Commands.Runtime;
 using Ashlar.Tools.Dev;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
@@ -463,6 +464,24 @@ public class ProposalsBackgroundAgentCommand
     {
         try
         {
+            if (!RuntimeCommandUtilities.TryValidateOptionalPositiveDuration(proposedTtlHours))
+            {
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --proposed-ttl-hours" }));
+                else
+                    stderr.WriteLine(RuntimeCommandUtilities.InvalidProposedTtlHoursMessage);
+                return Task.FromResult(1);
+            }
+
+            if (!RuntimeCommandUtilities.TryValidateOptionalPositiveDuration(approvedTtlHours))
+            {
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --approved-ttl-hours" }));
+                else
+                    stderr.WriteLine(RuntimeCommandUtilities.InvalidApprovedTtlHoursMessage);
+                return Task.FromResult(1);
+            }
+
             var janitor = new ProposalJanitor(
                 _store,
                 proposedTtl: proposedTtlHours is > 0 ? TimeSpan.FromHours(proposedTtlHours.Value) : (TimeSpan?)null,
