@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 100", text)
+        self.assertIn("--min-tests 102", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -501,6 +501,49 @@ class InstallerBruteforceGateWorkflowTests(unittest.TestCase):
         self.assertIn("scripts/install/bruteforce-matrix.sh", text)
         self.assertIn("scripts/setup/**", text)
         self.assertIn("scripts/install/**", text)
+
+
+class MultiPlatformFailClosedTests(unittest.TestCase):
+    def test_multi_platform_command_fails_closed_on_zero_tests(self) -> None:
+        text = (
+            ROOT
+            / "application"
+            / "src"
+            / "Ashlar.CLI"
+            / "Commands"
+            / "MultiPlatformTestCommand.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("DotnetTestTool.HasExecutedTests", text)
+        self.assertIn("DotnetTestTool.Succeeded", text)
+        self.assertIn(r"Passed:\s*(\d+)", text)
+        self.assertNotIn("Passed = process.ExitCode == 0 && failed == 0", text)
+        self.assertNotIn("Passed = runResult.Success && failed == 0", text)
+
+    def test_multi_platform_base_fails_closed_on_zero_tests(self) -> None:
+        baseline = (
+            ROOT
+            / "src"
+            / "Ashlar.Tests.Infrastructure"
+            / "Tests"
+            / "MultiPlatform"
+            / "MultiPlatformTestBase.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("RunPassed", baseline)
+        self.assertIn("DotnetTestTool.HasExecutedTests", baseline)
+        self.assertIn(r"Passed:\s*(\d+)", baseline)
+        self.assertNotIn("total == 0 || failed == 0", baseline)
+        self.assertNotIn('output.Contains("passed"', baseline)
+
+        ios = (
+            ROOT
+            / "src"
+            / "Ashlar.Tests.Infrastructure"
+            / "Tests"
+            / "MultiPlatform"
+            / "IosTest.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("RunPassed", ios)
+        self.assertNotIn("total == 0 || failed == 0", ios)
 
 
 class TestPortableCommandFailClosedTests(unittest.TestCase):

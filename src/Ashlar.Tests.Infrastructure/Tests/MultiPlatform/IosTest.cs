@@ -103,7 +103,7 @@ public class Ios80Test : MultiPlatformTestBase
             {
                 Name = TestName,
                 Category = Category,
-                Passed = result.ExitCode == 0 && (total == 0 || failed == 0),
+                Passed = RunPassed(result.ExitCode == 0, output),
                 Message = $"iOS (macOS native): {total} total, {passed} passed, {failed} failed",
                 Duration = duration,
                 ErrorMessage = result.ExitCode != 0 ? result.StandardError : null,

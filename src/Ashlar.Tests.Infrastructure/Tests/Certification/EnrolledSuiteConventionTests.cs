@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 100");
+        text.Should().Contain("--min-tests 102");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1069,6 +1069,35 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("scripts/install/bruteforce-matrix.sh");
         text.Should().Contain("scripts/setup/**");
         text.Should().Contain("scripts/install/**");
+    }
+
+    [Fact]
+    public void MultiPlatformTestCommand_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "application/src/Ashlar.CLI/Commands/MultiPlatformTestCommand.cs"));
+        text.Should().Contain("DotnetTestTool.HasExecutedTests");
+        text.Should().Contain("DotnetTestTool.Succeeded");
+        text.Should().Contain("Passed:\\s*(\\d+)");
+        text.Should().NotContain("Passed = process.ExitCode == 0 && failed == 0");
+        text.Should().NotContain("Passed = runResult.Success && failed == 0");
+    }
+
+    [Fact]
+    public void MultiPlatformTestBase_FailsClosedOnZeroTests()
+    {
+        var baseline = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Tests.Infrastructure/Tests/MultiPlatform/MultiPlatformTestBase.cs"));
+        baseline.Should().Contain("RunPassed");
+        baseline.Should().Contain("DotnetTestTool.HasExecutedTests");
+        baseline.Should().Contain("Passed:\\s*(\\d+)");
+        baseline.Should().NotContain("total == 0 || failed == 0");
+        baseline.Should().NotContain("output.Contains(\"passed\"");
+
+        var ios = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Tests.Infrastructure/Tests/MultiPlatform/IosTest.cs"));
+        ios.Should().Contain("RunPassed");
+        ios.Should().NotContain("total == 0 || failed == 0");
     }
 
     [Fact]

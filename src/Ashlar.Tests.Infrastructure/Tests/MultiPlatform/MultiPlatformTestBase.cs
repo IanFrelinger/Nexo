@@ -3,6 +3,8 @@ using Ashlar.Core.Application.Testing.Abstractions;
 using Ashlar.Core.Application.Testing.Models;
 using Ashlar.Infrastructure.Testing;
 using Ashlar.Infrastructure.Testing.ExecutionPlatform;
+using Ashlar.Tools.Dev;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Ashlar.Tests.Infrastructure.Tests.MultiPlatform;
@@ -208,7 +210,7 @@ public abstract class MultiPlatformTestBase : TestBase
             {
                 Name = TestName,
                 Category = Category,
-                Passed = runResult.Success && (total == 0 || failed == 0),
+                Passed = RunPassed(runResult.Success, output),
                 Message = $"{_description}: {total} total, {passed} passed, {failed} failed",
                 Duration = duration,
                 ErrorMessage = runResult.Success ? null : runResult.StandardError,
@@ -272,32 +274,21 @@ public abstract class MultiPlatformTestBase : TestBase
         }
     }
 
+    internal static bool RunPassed(bool processSuccess, string? output)
+        => processSuccess && DotnetTestTool.HasExecutedTests(output);
+
     protected (int passed, int failed, int total) ParseTestResults(string output)
+        => ParseDotNetCounts(output);
+
+    internal static (int passed, int failed, int total) ParseDotNetCounts(string output)
     {
-        // Try to extract test counts from output
-        var passedMatch = Regex.Match(output, @"(\d+)\s+Passed!", RegexOptions.IgnoreCase);
-        var failedMatch = Regex.Match(output, @"(\d+)\s+Failed!", RegexOptions.IgnoreCase);
-        var totalMatch = Regex.Match(output, @"(\d+)\s+Total", RegexOptions.IgnoreCase);
+        var passedMatch = Regex.Match(output, @"Passed:\s*(\d+)");
+        var failedMatch = Regex.Match(output, @"Failed:\s*(\d+)");
+        var totalMatch = Regex.Match(output, @"Total:\s*(\d+)");
 
-        var passed = passedMatch.Success ? int.Parse(passedMatch.Groups[1].Value) : 0;
-        var failed = failedMatch.Success ? int.Parse(failedMatch.Groups[1].Value) : 0;
-        var total = totalMatch.Success ? int.Parse(totalMatch.Groups[1].Value) : (passed + failed);
-
-        // If no explicit counts found, check for success indicators
-        if (total == 0)
-        {
-            if (output.Contains("✅") || output.Contains("passed", StringComparison.OrdinalIgnoreCase))
-            {
-                passed = 1;
-                total = 1;
-            }
-            else if (output.Contains("❌") || output.Contains("failed", StringComparison.OrdinalIgnoreCase))
-            {
-                failed = 1;
-                total = 1;
-            }
-        }
-
+        var passed = passedMatch.Success ? int.Parse(passedMatch.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
+        var failed = failedMatch.Success ? int.Parse(failedMatch.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
+        var total = totalMatch.Success ? int.Parse(totalMatch.Groups[1].Value, CultureInfo.InvariantCulture) : passed + failed;
         return (passed, failed, total);
     }
 

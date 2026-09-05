@@ -1,11 +1,13 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ashlar.CLI.Output;
 using Ashlar.Infrastructure.Testing.ExecutionPlatform;
 using Ashlar.Infrastructure.Testing;
+using Ashlar.Tools.Dev;
 
 namespace Ashlar.CLI.Commands;
 
@@ -366,12 +368,12 @@ public class MultiPlatformTestCommand : Command
             }
 
             // Parse test results
-            var (passed, failed, total) = ParseTestResults(runResult.StandardOutput);
+            var (passed, failed, total) = ParseTestResults(runResult.StandardOutput + runResult.StandardError);
 
             return new PlatformTestResult
             {
                 PlatformName = platformName,
-                Passed = runResult.Success && failed == 0,
+                Passed = runResult.Success && DotnetTestTool.HasExecutedTests(runResult.StandardOutput, runResult.StandardError),
                 TotalTests = total,
                 PassedTests = passed,
                 FailedTests = failed,
@@ -455,12 +457,12 @@ public class MultiPlatformTestCommand : Command
             var output = await outputTask;
             var error = await errorTask;
 
-            var (passed, failed, total) = ParseTestResults(output);
+            var (passed, failed, total) = ParseTestResults(output + error);
 
             return new PlatformTestResult
             {
                 PlatformName = platformName,
-                Passed = process.ExitCode == 0 && failed == 0,
+                Passed = DotnetTestTool.Succeeded(process.ExitCode, timedOut: false, output, error),
                 TotalTests = total,
                 PassedTests = passed,
                 FailedTests = failed,
@@ -525,17 +527,15 @@ public class MultiPlatformTestCommand : Command
         return string.Join(" ", parts);
     }
 
-    private static (int passed, int failed, int total) ParseTestResults(string output)
+    internal static (int passed, int failed, int total) ParseTestResults(string output)
     {
-        // Parse dotnet test output
-        var passedMatch = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)\s+Passed!");
-        var failedMatch = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)\s+Failed!");
+        var passedMatch = System.Text.RegularExpressions.Regex.Match(output, @"Passed:\s*(\d+)");
+        var failedMatch = System.Text.RegularExpressions.Regex.Match(output, @"Failed:\s*(\d+)");
         var totalMatch = System.Text.RegularExpressions.Regex.Match(output, @"Total:\s*(\d+)");
 
-        var passed = passedMatch.Success ? int.Parse(passedMatch.Groups[1].Value) : 0;
-        var failed = failedMatch.Success ? int.Parse(failedMatch.Groups[1].Value) : 0;
-        var total = totalMatch.Success ? int.Parse(totalMatch.Groups[1].Value) : (passed + failed);
-
+        var passed = passedMatch.Success ? int.Parse(passedMatch.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
+        var failed = failedMatch.Success ? int.Parse(failedMatch.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
+        var total = totalMatch.Success ? int.Parse(totalMatch.Groups[1].Value, CultureInfo.InvariantCulture) : passed + failed;
         return (passed, failed, total);
     }
 
