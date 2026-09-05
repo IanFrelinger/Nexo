@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 55");
+        text.Should().Contain("--min-tests 56");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -638,6 +638,16 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("pull_request:");
         text.Should().Contain("make ingress-unit-gate");
         text.Should().Contain("scripts/ingress-unit-gate.sh");
+    }
+
+    [Fact]
+    public void OnboardingDocsGuardWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/onboarding-docs-guard.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("docs/ProjectTiers.md");
+        text.Should().Contain("Referenced repo paths must exist");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)

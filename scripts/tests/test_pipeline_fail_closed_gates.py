@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 55", text)
+        self.assertIn("--min-tests 56", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -404,6 +404,16 @@ class IngressUnitGateCountedTests(unittest.TestCase):
         self.assertIn("pull_request:", text)
         self.assertIn("make ingress-unit-gate", text)
         self.assertIn("scripts/ingress-unit-gate.sh", text)
+
+
+class OnboardingDocsGuardWorkflowTests(unittest.TestCase):
+    def test_onboarding_docs_guard_workflow_runs_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "onboarding-docs-guard.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("docs/ProjectTiers.md", text)
+        self.assertIn("Referenced repo paths must exist", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):

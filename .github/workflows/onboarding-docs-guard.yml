@@ -1,6 +1,24 @@
 name: Onboarding Docs Guard
 
 on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "docs/GettingStarted.md"
+      - "docs/DocsIndex.md"
+      - "docs/DEPLOYMENT.md"
+      - "docs/PUBLISHING.md"
+      - "docs/RELEASE_RUNBOOK.md"
+      - "docs/CiFirstHardwareSecond.md"
+      - ".devcontainer/**"
+      - ".github/workflows/onboarding-docs-guard.yml"
+      # Referenced-path guard inputs (see "Referenced repo paths must exist" below).
+      - "docs/**/*.md"
+      - "scripts/*.sh"
+      - "scripts/*.ps1"
+      - "Makefile"
+      # ProjectTiers guard input: a new project must get a row in docs/ProjectTiers.md.
+      - "**/*.csproj"
   push:
     branches:
       - master
