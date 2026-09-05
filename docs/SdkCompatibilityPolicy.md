@@ -44,9 +44,9 @@ The analyzers' RS0036 (missing nullable annotation in the API file) and RS0037 (
 
 #### Release step: promote Unshipped -> Shipped on tag
 
-Nothing has shipped yet, so **all** of the current surface (including the 438 lines `Ashlar.Brick.Contracts` had accumulated in its `Shipped.txt` before this policy was enforced) lives in `PublicAPI.Unshipped.txt`, and every `PublicAPI.Shipped.txt` contains only the `#nullable enable` header. This is deliberate: the first tag freezes a **reviewed** baseline rather than whatever happened to be public the day the analyzer was switched on.
+`v0.1.0` and `v0.1.2` already promoted reviewed baselines. Seven projects carry `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` pairs. Non-header shipped line counts on this tree: `Ashlar.Brick.Contracts` 464, `Ashlar.Abstractions` 398, `Ashlar.Contracts` 208 (HTTP DTOs), `Ashlar.Client` 30, `Ashlar.Sdk` 8, `Ashlar.Authoring` 4. `Ashlar.Hosting.Bundle` stays header-only by design. `Ashlar.Contracts.Distributed` remains in `PublicAPI.Unshipped.txt` (80 lines) until the next versioned publish.
 
-When tagging `v0.1.0` (and every release after it), as part of "Before you tag" in `docs/RELEASE_RUNBOOK.md`:
+When tagging the next version (and every release after it), as part of "Before you tag" in `docs/RELEASE_RUNBOOK.md`:
 
 1. Review `PublicAPI.Unshipped.txt` in each stable-tier project. Anything that should not be promised gets made `internal` (or `[Experimental]`) **before** the tag.
 2. Move every line except the `#nullable enable` header from `PublicAPI.Unshipped.txt` to `PublicAPI.Shipped.txt`; leave `Unshipped.txt` with the header only.
