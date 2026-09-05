@@ -11,7 +11,8 @@ using Ashlar.Infrastructure.Observation;
 namespace Ashlar.CLI.Commands;
 
 /// <summary>
-/// Block 1 dogfood validation: Observation pipeline watches Ashlar repo and stores patterns from file events.
+/// Block 1 dogfood validation: Observation pipeline stores patterns from file events
+/// in an isolated watch directory (the live <c>src/</c> tree is too noisy for inotify).
 /// </summary>
 internal static class DogfoodBlock1Command
 {
@@ -40,7 +41,9 @@ internal static class DogfoodBlock1Command
         }
 
         var storePath = Path.Combine(Path.GetTempPath(), $"ashlar-dogfood-block1-{Guid.NewGuid():N}.db");
-        var verifyFile = Path.Combine(srcDir, ".dogfood-block1-verify.tmp");
+        var watchDir = Path.Combine(Path.GetTempPath(), $"ashlar-dogfood-block1-watch-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(watchDir);
+        var verifyFile = Path.Combine(watchDir, "verify.tmp");
 
         try
         {
@@ -52,11 +55,12 @@ internal static class DogfoodBlock1Command
                 null);
 
             var loggerFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning));
-            var fileSource = new FileSystemEventSource(
-                new[] { srcDir },
-                repoRoot,
+            using var fileSource = new FileSystemEventSource(
+                new[] { watchDir },
+                watchDir,
                 new[] { "*" },
                 loggerFactory.CreateLogger<FileSystemEventSource>());
+            fileSource.EnsureWatching();
 
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
             var eventCount = 0;
@@ -119,6 +123,8 @@ internal static class DogfoodBlock1Command
             {
                 if (File.Exists(verifyFile))
                     File.Delete(verifyFile);
+                if (Directory.Exists(watchDir))
+                    Directory.Delete(watchDir, recursive: true);
                 if (File.Exists(storePath))
                     File.Delete(storePath);
             }

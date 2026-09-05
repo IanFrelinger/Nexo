@@ -32,11 +32,12 @@ public sealed class DogfoodBlock1Tests : TempDirTestBase
             null);
 
         var loggerFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning));
-        var fileSource = new FileSystemEventSource(
+        using var fileSource = new FileSystemEventSource(
             new[] { TempDir },
             TempDir,
             new[] { "*" },
             loggerFactory.CreateLogger<FileSystemEventSource>());
+        fileSource.EnsureWatching();
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var eventCount = 0;

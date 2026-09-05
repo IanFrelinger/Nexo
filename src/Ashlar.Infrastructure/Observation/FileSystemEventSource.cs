@@ -23,6 +23,8 @@ public sealed class FileSystemEventSource : IObservableEventSource, IDisposable
     private readonly ConcurrentQueue<NormalizedEvent> _eventQueue = new();
     private readonly SemaphoreSlim _eventAvailable = new(0);
     private readonly List<FileSystemWatcher> _watchers = new();
+    private readonly object _watchLock = new();
+    private bool _watching;
     private bool _disposed;
 
     /// <summary>
@@ -48,41 +50,59 @@ public sealed class FileSystemEventSource : IObservableEventSource, IDisposable
     /// <inheritdoc />
     public string SourceId => SourceIdValue;
 
+    /// <summary>
+    /// Arms watchers before the first write. Call this when a subscriber starts
+    /// on another thread so FileSystemWatcher cannot miss the first events.
+    /// </summary>
+    public void EnsureWatching()
+    {
+        lock (_watchLock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_watching)
+                return;
+
+            if (_watchPaths.Count == 0)
+            {
+                _logger?.LogWarning("No watch paths configured for FileSystemEventSource");
+                return;
+            }
+
+            foreach (var watchPath in _watchPaths)
+            {
+                if (!Directory.Exists(watchPath))
+                {
+                    _logger?.LogWarning("Watch path does not exist: {Path}", watchPath);
+                    continue;
+                }
+
+                foreach (var filter in _filters)
+                {
+                    var watcher = new FileSystemWatcher(watchPath)
+                    {
+                        Filter = filter,
+                        IncludeSubdirectories = true,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.DirectoryName,
+                        InternalBufferSize = 64 * 1024,
+                    };
+                    watcher.Created += OnFileSystemEvent;
+                    watcher.Changed += OnFileSystemEvent;
+                    watcher.Deleted += OnFileSystemEvent;
+                    watcher.Renamed += OnRenamed;
+                    watcher.EnableRaisingEvents = true;
+                    _watchers.Add(watcher);
+                }
+            }
+
+            _watching = true;
+            _logger?.LogInformation("FileSystemEventSource watching {Count} path(s)", _watchPaths.Count);
+        }
+    }
+
     /// <inheritdoc />
     public async IAsyncEnumerable<NormalizedEvent> SubscribeAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (_watchPaths.Count == 0)
-        {
-            _logger?.LogWarning("No watch paths configured for FileSystemEventSource");
-            yield break;
-        }
-
-        foreach (var watchPath in _watchPaths)
-        {
-            if (!Directory.Exists(watchPath))
-            {
-                _logger?.LogWarning("Watch path does not exist: {Path}", watchPath);
-                continue;
-            }
-
-            foreach (var filter in _filters)
-            {
-                var watcher = new FileSystemWatcher(watchPath)
-                {
-                    Filter = filter,
-                    IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.DirectoryName,
-                };
-                watcher.Created += OnFileSystemEvent;
-                watcher.Changed += OnFileSystemEvent;
-                watcher.Deleted += OnFileSystemEvent;
-                watcher.Renamed += OnRenamed;
-                watcher.EnableRaisingEvents = true;
-                _watchers.Add(watcher);
-            }
-        }
-
-        _logger?.LogInformation("FileSystemEventSource watching {Count} path(s)", _watchPaths.Count);
+        EnsureWatching();
 
         try
         {
@@ -107,16 +127,20 @@ public sealed class FileSystemEventSource : IObservableEventSource, IDisposable
         }
         finally
         {
-            foreach (var w in _watchers)
+            lock (_watchLock)
             {
-                w.EnableRaisingEvents = false;
-                w.Created -= OnFileSystemEvent;
-                w.Changed -= OnFileSystemEvent;
-                w.Deleted -= OnFileSystemEvent;
-                w.Renamed -= OnRenamed;
-                w.Dispose();
+                foreach (var w in _watchers)
+                {
+                    w.EnableRaisingEvents = false;
+                    w.Created -= OnFileSystemEvent;
+                    w.Changed -= OnFileSystemEvent;
+                    w.Deleted -= OnFileSystemEvent;
+                    w.Renamed -= OnRenamed;
+                    w.Dispose();
+                }
+                _watchers.Clear();
+                _watching = false;
             }
-            _watchers.Clear();
         }
     }
 
