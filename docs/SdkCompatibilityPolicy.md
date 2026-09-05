@@ -23,6 +23,7 @@ These packages are intended for external integration and carry the promise above
 | Package | Enforced by |
 |---------|-------------|
 | `Ashlar.Sdk` | `Microsoft.CodeAnalysis.PublicApiAnalyzers` (`PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` in the project) + `PublicApiGenerator` snapshot (`application/src/Ashlar.Tests.CLI/PublicApi/Ashlar.Sdk.approved.txt`) |
+| `Ashlar.Contracts` | `Microsoft.CodeAnalysis.PublicApiAnalyzers` — HTTP DTOs shipped in 0.1.2; `Ashlar.Contracts.Distributed` types stay Unshipped until the next versioned publish |
 | `Ashlar.Client` | `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
 | `Ashlar.Brick.Contracts` | `Microsoft.CodeAnalysis.PublicApiAnalyzers` |
 | `Ashlar.Authoring` | `Microsoft.CodeAnalysis.PublicApiAnalyzers` + `PublicApiGenerator` snapshot (`Ashlar.Authoring.approved.txt`) |

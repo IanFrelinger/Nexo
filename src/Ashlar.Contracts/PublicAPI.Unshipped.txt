@@ -1,0 +1,81 @@
+#nullable enable
+Ashlar.Contracts.Distributed.ExecutionEnvelope
+Ashlar.Contracts.Distributed.ExecutionEnvelope.AllowedCapabilities.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Ashlar.Contracts.Distributed.ExecutionEnvelope.AllowedCapabilities.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.EnvelopeId.get -> string!
+Ashlar.Contracts.Distributed.ExecutionEnvelope.EnvelopeId.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.ExecutionEnvelope(string! EnvelopeId, string! SourceNodeId, Ashlar.Contracts.Distributed.ExecutionTarget Target, string! WorkloadKind, string! PayloadHash, string! PolicyPackId, System.DateTimeOffset IssuedAtUtc, System.Collections.Generic.IReadOnlyList<string!>? AllowedCapabilities = null, System.TimeSpan? MaxDuration = null, byte[]? Signature = null) -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.IssuedAtUtc.get -> System.DateTimeOffset
+Ashlar.Contracts.Distributed.ExecutionEnvelope.IssuedAtUtc.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.MaxDuration.get -> System.TimeSpan?
+Ashlar.Contracts.Distributed.ExecutionEnvelope.MaxDuration.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.PayloadHash.get -> string!
+Ashlar.Contracts.Distributed.ExecutionEnvelope.PayloadHash.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.PolicyPackId.get -> string!
+Ashlar.Contracts.Distributed.ExecutionEnvelope.PolicyPackId.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.Signature.get -> byte[]?
+Ashlar.Contracts.Distributed.ExecutionEnvelope.Signature.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.SourceNodeId.get -> string!
+Ashlar.Contracts.Distributed.ExecutionEnvelope.SourceNodeId.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.Target.get -> Ashlar.Contracts.Distributed.ExecutionTarget
+Ashlar.Contracts.Distributed.ExecutionEnvelope.Target.init -> void
+Ashlar.Contracts.Distributed.ExecutionEnvelope.WorkloadKind.get -> string!
+Ashlar.Contracts.Distributed.ExecutionEnvelope.WorkloadKind.init -> void
+Ashlar.Contracts.Distributed.ExecutionTarget
+Ashlar.Contracts.Distributed.ExecutionTarget.Cluster = 2 -> Ashlar.Contracts.Distributed.ExecutionTarget
+Ashlar.Contracts.Distributed.ExecutionTarget.Local = 0 -> Ashlar.Contracts.Distributed.ExecutionTarget
+Ashlar.Contracts.Distributed.ExecutionTarget.Peer = 1 -> Ashlar.Contracts.Distributed.ExecutionTarget
+Ashlar.Contracts.Distributed.INativeExecutionHost
+Ashlar.Contracts.Distributed.INativeExecutionHost.ExecuteAsync(Ashlar.Contracts.Distributed.NativeArtifactManifest! manifest, Ashlar.Contracts.Distributed.ExecutionEnvelope! envelope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.Distributed.ResultEvidence!>!
+Ashlar.Contracts.Distributed.INativeExecutionHost.Supports(Ashlar.Contracts.Distributed.NativeArtifactFormat format) -> bool
+Ashlar.Contracts.Distributed.ITaskScheduler
+Ashlar.Contracts.Distributed.ITaskScheduler.GetResultAsync(string! taskId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.Distributed.ResultEvidence?>!
+Ashlar.Contracts.Distributed.ITaskScheduler.ScheduleAsync(Ashlar.Contracts.Distributed.ExecutionEnvelope! envelope, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.Distributed.ScheduledTaskHandle!>!
+Ashlar.Contracts.Distributed.NativeArtifactFormat
+Ashlar.Contracts.Distributed.NativeArtifactFormat.ManagedAssembly = 2 -> Ashlar.Contracts.Distributed.NativeArtifactFormat
+Ashlar.Contracts.Distributed.NativeArtifactFormat.OutOfProcessWorker = 1 -> Ashlar.Contracts.Distributed.NativeArtifactFormat
+Ashlar.Contracts.Distributed.NativeArtifactFormat.WebAssembly = 0 -> Ashlar.Contracts.Distributed.NativeArtifactFormat
+Ashlar.Contracts.Distributed.NativeArtifactManifest
+Ashlar.Contracts.Distributed.NativeArtifactManifest.AllowedCapabilities.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Ashlar.Contracts.Distributed.NativeArtifactManifest.AllowedCapabilities.init -> void
+Ashlar.Contracts.Distributed.NativeArtifactManifest.ArtifactId.get -> string!
+Ashlar.Contracts.Distributed.NativeArtifactManifest.ArtifactId.init -> void
+Ashlar.Contracts.Distributed.NativeArtifactManifest.ContentHash.get -> string!
+Ashlar.Contracts.Distributed.NativeArtifactManifest.ContentHash.init -> void
+Ashlar.Contracts.Distributed.NativeArtifactManifest.EntryPoint.get -> string!
+Ashlar.Contracts.Distributed.NativeArtifactManifest.EntryPoint.init -> void
+Ashlar.Contracts.Distributed.NativeArtifactManifest.Format.get -> Ashlar.Contracts.Distributed.NativeArtifactFormat
+Ashlar.Contracts.Distributed.NativeArtifactManifest.Format.init -> void
+Ashlar.Contracts.Distributed.NativeArtifactManifest.NativeArtifactManifest(string! ArtifactId, Ashlar.Contracts.Distributed.NativeArtifactFormat Format, string! ContentHash, string! EntryPoint, System.Collections.Generic.IReadOnlyList<string!>? AllowedCapabilities = null) -> void
+Ashlar.Contracts.Distributed.ResultEvidence
+Ashlar.Contracts.Distributed.ResultEvidence.CertificationRecordId.get -> string?
+Ashlar.Contracts.Distributed.ResultEvidence.CertificationRecordId.init -> void
+Ashlar.Contracts.Distributed.ResultEvidence.CompletedAtUtc.get -> System.DateTimeOffset
+Ashlar.Contracts.Distributed.ResultEvidence.CompletedAtUtc.init -> void
+Ashlar.Contracts.Distributed.ResultEvidence.Detail.get -> string?
+Ashlar.Contracts.Distributed.ResultEvidence.Detail.init -> void
+Ashlar.Contracts.Distributed.ResultEvidence.EnvelopeId.get -> string!
+Ashlar.Contracts.Distributed.ResultEvidence.EnvelopeId.init -> void
+Ashlar.Contracts.Distributed.ResultEvidence.OutputHash.get -> string!
+Ashlar.Contracts.Distributed.ResultEvidence.OutputHash.init -> void
+Ashlar.Contracts.Distributed.ResultEvidence.ResultEvidence(string! EnvelopeId, string! TaskId, Ashlar.Contracts.Distributed.ResultEvidenceStatus Status, string! OutputHash, System.DateTimeOffset CompletedAtUtc, string? CertificationRecordId = null, string? Detail = null, byte[]? Signature = null) -> void
+Ashlar.Contracts.Distributed.ResultEvidence.Signature.get -> byte[]?
+Ashlar.Contracts.Distributed.ResultEvidence.Signature.init -> void
+Ashlar.Contracts.Distributed.ResultEvidence.Status.get -> Ashlar.Contracts.Distributed.ResultEvidenceStatus
+Ashlar.Contracts.Distributed.ResultEvidence.Status.init -> void
+Ashlar.Contracts.Distributed.ResultEvidence.TaskId.get -> string!
+Ashlar.Contracts.Distributed.ResultEvidence.TaskId.init -> void
+Ashlar.Contracts.Distributed.ResultEvidenceStatus
+Ashlar.Contracts.Distributed.ResultEvidenceStatus.Failed = 1 -> Ashlar.Contracts.Distributed.ResultEvidenceStatus
+Ashlar.Contracts.Distributed.ResultEvidenceStatus.Rejected = 2 -> Ashlar.Contracts.Distributed.ResultEvidenceStatus
+Ashlar.Contracts.Distributed.ResultEvidenceStatus.Succeeded = 0 -> Ashlar.Contracts.Distributed.ResultEvidenceStatus
+Ashlar.Contracts.Distributed.ScheduledTaskHandle
+Ashlar.Contracts.Distributed.ScheduledTaskHandle.EnvelopeId.get -> string!
+Ashlar.Contracts.Distributed.ScheduledTaskHandle.EnvelopeId.init -> void
+Ashlar.Contracts.Distributed.ScheduledTaskHandle.ScheduledTaskHandle(string! TaskId, string! EnvelopeId) -> void
+Ashlar.Contracts.Distributed.ScheduledTaskHandle.TaskId.get -> string!
+Ashlar.Contracts.Distributed.ScheduledTaskHandle.TaskId.init -> void
+static Ashlar.Contracts.Distributed.ExecutionEnvelope.Create(string! envelopeId, string! sourceNodeId, Ashlar.Contracts.Distributed.ExecutionTarget target, string! workloadKind, string! payloadHash, string! policyPackId, System.DateTimeOffset issuedAtUtc, System.Collections.Generic.IReadOnlyList<string!>? allowedCapabilities = null, System.TimeSpan? maxDuration = null, byte[]? signature = null) -> Ashlar.Contracts.Distributed.ExecutionEnvelope!
+static Ashlar.Contracts.Distributed.NativeArtifactManifest.Create(string! artifactId, Ashlar.Contracts.Distributed.NativeArtifactFormat format, string! contentHash, string! entryPoint, System.Collections.Generic.IReadOnlyList<string!>? allowedCapabilities = null) -> Ashlar.Contracts.Distributed.NativeArtifactManifest!
+static Ashlar.Contracts.Distributed.ResultEvidence.Create(string! envelopeId, string! taskId, Ashlar.Contracts.Distributed.ResultEvidenceStatus status, string! outputHash, System.DateTimeOffset completedAtUtc, string? certificationRecordId = null, string? detail = null, byte[]? signature = null) -> Ashlar.Contracts.Distributed.ResultEvidence!
+static Ashlar.Contracts.Distributed.ScheduledTaskHandle.Create(string! taskId, string! envelopeId) -> Ashlar.Contracts.Distributed.ScheduledTaskHandle!

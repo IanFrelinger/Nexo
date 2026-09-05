@@ -8,7 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <NoWarn>$(NoWarn);1591;RS0036;RS0037</NoWarn>
     <PackageId>Ashlar.Contracts</PackageId>
     <Title>Ashlar Contracts</Title>
     <Description>Shared HTTP DTOs and distributed execution contracts (envelopes, evidence, native host ports) for Ashlar API, client, and product hosts.</Description>
@@ -16,5 +16,14 @@
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
 
 </Project>

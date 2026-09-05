@@ -1,0 +1,209 @@
+#nullable enable
+Ashlar.Contracts.AgentRequest
+Ashlar.Contracts.AgentRequest.AgentName.get -> string!
+Ashlar.Contracts.AgentRequest.AgentName.init -> void
+Ashlar.Contracts.AgentRequest.AgentRequest(string! AgentName, string? InputFilePath = null) -> void
+Ashlar.Contracts.AgentRequest.InputFilePath.get -> string?
+Ashlar.Contracts.AgentRequest.InputFilePath.init -> void
+Ashlar.Contracts.AgentResponse
+Ashlar.Contracts.AgentResponse.AgentResponse(bool Success, string? Message, object? Output) -> void
+Ashlar.Contracts.AgentResponse.Message.get -> string?
+Ashlar.Contracts.AgentResponse.Message.init -> void
+Ashlar.Contracts.AgentResponse.Output.get -> object?
+Ashlar.Contracts.AgentResponse.Output.init -> void
+Ashlar.Contracts.AgentResponse.Success.get -> bool
+Ashlar.Contracts.AgentResponse.Success.init -> void
+Ashlar.Contracts.AshlarIngressEnvelope
+Ashlar.Contracts.AshlarIngressEnvelope.AppId.get -> string?
+Ashlar.Contracts.AshlarIngressEnvelope.AppId.init -> void
+Ashlar.Contracts.AshlarIngressEnvelope.AshlarIngressEnvelope(string! CorrelationId, string! Transport, string? IdempotencyKey = null, string? PayloadVersion = null, string? TenantId = null, string? AppId = null) -> void
+Ashlar.Contracts.AshlarIngressEnvelope.CorrelationId.get -> string!
+Ashlar.Contracts.AshlarIngressEnvelope.CorrelationId.init -> void
+Ashlar.Contracts.AshlarIngressEnvelope.IdempotencyKey.get -> string?
+Ashlar.Contracts.AshlarIngressEnvelope.IdempotencyKey.init -> void
+Ashlar.Contracts.AshlarIngressEnvelope.PayloadVersion.get -> string?
+Ashlar.Contracts.AshlarIngressEnvelope.PayloadVersion.init -> void
+Ashlar.Contracts.AshlarIngressEnvelope.TenantId.get -> string?
+Ashlar.Contracts.AshlarIngressEnvelope.TenantId.init -> void
+Ashlar.Contracts.AshlarIngressEnvelope.Transport.get -> string!
+Ashlar.Contracts.AshlarIngressEnvelope.Transport.init -> void
+Ashlar.Contracts.AshlarIngressTransports
+Ashlar.Contracts.ExecutionBuildRequest
+Ashlar.Contracts.ExecutionBuildRequest.BuildArgs.get -> System.Collections.Generic.Dictionary<string!, string!>?
+Ashlar.Contracts.ExecutionBuildRequest.BuildArgs.init -> void
+Ashlar.Contracts.ExecutionBuildRequest.ContextPath.get -> string!
+Ashlar.Contracts.ExecutionBuildRequest.ContextPath.init -> void
+Ashlar.Contracts.ExecutionBuildRequest.DockerfilePath.get -> string!
+Ashlar.Contracts.ExecutionBuildRequest.DockerfilePath.init -> void
+Ashlar.Contracts.ExecutionBuildRequest.ExecutionBuildRequest(string! DockerfilePath, string! ImageTag, string! ContextPath, System.Collections.Generic.Dictionary<string!, string!>? BuildArgs = null) -> void
+Ashlar.Contracts.ExecutionBuildRequest.ImageTag.get -> string!
+Ashlar.Contracts.ExecutionBuildRequest.ImageTag.init -> void
+Ashlar.Contracts.ExecutionBuildResponse
+Ashlar.Contracts.ExecutionBuildResponse.DurationMs.get -> double
+Ashlar.Contracts.ExecutionBuildResponse.DurationMs.init -> void
+Ashlar.Contracts.ExecutionBuildResponse.ErrorMessage.get -> string?
+Ashlar.Contracts.ExecutionBuildResponse.ErrorMessage.init -> void
+Ashlar.Contracts.ExecutionBuildResponse.ExecutionBuildResponse(bool Success, string? ErrorMessage, double DurationMs) -> void
+Ashlar.Contracts.ExecutionBuildResponse.Success.get -> bool
+Ashlar.Contracts.ExecutionBuildResponse.Success.init -> void
+Ashlar.Contracts.ExecutionRunRequest
+Ashlar.Contracts.ExecutionRunRequest.Command.get -> string![]!
+Ashlar.Contracts.ExecutionRunRequest.Command.init -> void
+Ashlar.Contracts.ExecutionRunRequest.EnvironmentVariables.get -> System.Collections.Generic.Dictionary<string!, string!>?
+Ashlar.Contracts.ExecutionRunRequest.EnvironmentVariables.init -> void
+Ashlar.Contracts.ExecutionRunRequest.ExecutionRunRequest(string! ImageTag, string![]! Command, System.Collections.Generic.Dictionary<string!, string!>? EnvironmentVariables = null, System.Collections.Generic.Dictionary<string!, string!>? VolumeMounts = null, string? WorkingDirectory = null) -> void
+Ashlar.Contracts.ExecutionRunRequest.ImageTag.get -> string!
+Ashlar.Contracts.ExecutionRunRequest.ImageTag.init -> void
+Ashlar.Contracts.ExecutionRunRequest.VolumeMounts.get -> System.Collections.Generic.Dictionary<string!, string!>?
+Ashlar.Contracts.ExecutionRunRequest.VolumeMounts.init -> void
+Ashlar.Contracts.ExecutionRunRequest.WorkingDirectory.get -> string?
+Ashlar.Contracts.ExecutionRunRequest.WorkingDirectory.init -> void
+Ashlar.Contracts.ExecutionRunResponse
+Ashlar.Contracts.ExecutionRunResponse.ContainerId.get -> string?
+Ashlar.Contracts.ExecutionRunResponse.ContainerId.init -> void
+Ashlar.Contracts.ExecutionRunResponse.DurationMs.get -> double
+Ashlar.Contracts.ExecutionRunResponse.DurationMs.init -> void
+Ashlar.Contracts.ExecutionRunResponse.ExecutionRunResponse(bool Success, int ExitCode, string! StandardOutput, string! StandardError, string? ContainerId, double DurationMs) -> void
+Ashlar.Contracts.ExecutionRunResponse.ExitCode.get -> int
+Ashlar.Contracts.ExecutionRunResponse.ExitCode.init -> void
+Ashlar.Contracts.ExecutionRunResponse.StandardError.get -> string!
+Ashlar.Contracts.ExecutionRunResponse.StandardError.init -> void
+Ashlar.Contracts.ExecutionRunResponse.StandardOutput.get -> string!
+Ashlar.Contracts.ExecutionRunResponse.StandardOutput.init -> void
+Ashlar.Contracts.ExecutionRunResponse.Success.get -> bool
+Ashlar.Contracts.ExecutionRunResponse.Success.init -> void
+Ashlar.Contracts.IngressCatalogEntry
+Ashlar.Contracts.IngressCatalogEntry.IngressCatalogEntry(string! Kind, string! Route, string! Notes) -> void
+Ashlar.Contracts.IngressCatalogEntry.Kind.get -> string!
+Ashlar.Contracts.IngressCatalogEntry.Kind.init -> void
+Ashlar.Contracts.IngressCatalogEntry.Notes.get -> string!
+Ashlar.Contracts.IngressCatalogEntry.Notes.init -> void
+Ashlar.Contracts.IngressCatalogEntry.Route.get -> string!
+Ashlar.Contracts.IngressCatalogEntry.Route.init -> void
+Ashlar.Contracts.IngressCatalogResponse
+Ashlar.Contracts.IngressCatalogResponse.EntryPoints.get -> System.Collections.Generic.IReadOnlyList<Ashlar.Contracts.IngressCatalogEntry!>!
+Ashlar.Contracts.IngressCatalogResponse.EntryPoints.init -> void
+Ashlar.Contracts.IngressCatalogResponse.IngressCatalogResponse(System.Collections.Generic.IReadOnlyList<Ashlar.Contracts.IngressCatalogEntry!>! EntryPoints) -> void
+Ashlar.Contracts.IngressContextResponse
+Ashlar.Contracts.IngressContextResponse.AppId.get -> string?
+Ashlar.Contracts.IngressContextResponse.AppId.init -> void
+Ashlar.Contracts.IngressContextResponse.CorrelationId.get -> string?
+Ashlar.Contracts.IngressContextResponse.CorrelationId.init -> void
+Ashlar.Contracts.IngressContextResponse.IdempotencyKey.get -> string?
+Ashlar.Contracts.IngressContextResponse.IdempotencyKey.init -> void
+Ashlar.Contracts.IngressContextResponse.IngressContextResponse(string? CorrelationId, string? Transport, string? TenantId, string? AppId, string? IdempotencyKey, string? PayloadVersion) -> void
+Ashlar.Contracts.IngressContextResponse.PayloadVersion.get -> string?
+Ashlar.Contracts.IngressContextResponse.PayloadVersion.init -> void
+Ashlar.Contracts.IngressContextResponse.TenantId.get -> string?
+Ashlar.Contracts.IngressContextResponse.TenantId.init -> void
+Ashlar.Contracts.IngressContextResponse.Transport.get -> string?
+Ashlar.Contracts.IngressContextResponse.Transport.init -> void
+Ashlar.Contracts.ISmsIngressApprovalStore
+Ashlar.Contracts.ISmsIngressApprovalStore.TryRecordApprovalAsync(string! from, string! approvalToken, string? messageSid, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Ashlar.Contracts.SmsInboundSimulationResponse!>!
+Ashlar.Contracts.OrchestrationRequest
+Ashlar.Contracts.OrchestrationRequest.BarrierLevel.get -> string?
+Ashlar.Contracts.OrchestrationRequest.BarrierLevel.init -> void
+Ashlar.Contracts.OrchestrationRequest.OrchestrationRequest(string! Request, string? RuntimeSpecJson = null, string? PreferModel = null, string? Provider = null, string? BarrierLevel = null, string? PreferredRegion = null) -> void
+Ashlar.Contracts.OrchestrationRequest.PreferModel.get -> string?
+Ashlar.Contracts.OrchestrationRequest.PreferModel.init -> void
+Ashlar.Contracts.OrchestrationRequest.PreferredRegion.get -> string?
+Ashlar.Contracts.OrchestrationRequest.PreferredRegion.init -> void
+Ashlar.Contracts.OrchestrationRequest.Provider.get -> string?
+Ashlar.Contracts.OrchestrationRequest.Provider.init -> void
+Ashlar.Contracts.OrchestrationRequest.Request.get -> string!
+Ashlar.Contracts.OrchestrationRequest.Request.init -> void
+Ashlar.Contracts.OrchestrationRequest.RuntimeSpecJson.get -> string?
+Ashlar.Contracts.OrchestrationRequest.RuntimeSpecJson.init -> void
+Ashlar.Contracts.OrchestrationResponse
+Ashlar.Contracts.OrchestrationResponse.Conflicts.get -> int?
+Ashlar.Contracts.OrchestrationResponse.Conflicts.init -> void
+Ashlar.Contracts.OrchestrationResponse.ErrorCode.get -> string?
+Ashlar.Contracts.OrchestrationResponse.ErrorCode.init -> void
+Ashlar.Contracts.OrchestrationResponse.Escalations.get -> int?
+Ashlar.Contracts.OrchestrationResponse.Escalations.init -> void
+Ashlar.Contracts.OrchestrationResponse.OrchestrationResponse(bool Success, string? Summary, object? Output, int? Conflicts = null, int? Escalations = null, string? ErrorCode = null) -> void
+Ashlar.Contracts.OrchestrationResponse.Output.get -> object?
+Ashlar.Contracts.OrchestrationResponse.Output.init -> void
+Ashlar.Contracts.OrchestrationResponse.Success.get -> bool
+Ashlar.Contracts.OrchestrationResponse.Success.init -> void
+Ashlar.Contracts.OrchestrationResponse.Summary.get -> string?
+Ashlar.Contracts.OrchestrationResponse.Summary.init -> void
+Ashlar.Contracts.SmsInboundSimulationRequest
+Ashlar.Contracts.SmsInboundSimulationRequest.AppId.get -> string?
+Ashlar.Contracts.SmsInboundSimulationRequest.AppId.init -> void
+Ashlar.Contracts.SmsInboundSimulationRequest.Body.get -> string!
+Ashlar.Contracts.SmsInboundSimulationRequest.Body.init -> void
+Ashlar.Contracts.SmsInboundSimulationRequest.From.get -> string!
+Ashlar.Contracts.SmsInboundSimulationRequest.From.init -> void
+Ashlar.Contracts.SmsInboundSimulationRequest.MessageSid.get -> string?
+Ashlar.Contracts.SmsInboundSimulationRequest.MessageSid.init -> void
+Ashlar.Contracts.SmsInboundSimulationRequest.SmsInboundSimulationRequest(string! From, string! Body, string? MessageSid = null, string? AppId = null) -> void
+Ashlar.Contracts.SmsInboundSimulationResponse
+Ashlar.Contracts.SmsInboundSimulationResponse.Accepted.get -> bool
+Ashlar.Contracts.SmsInboundSimulationResponse.Accepted.init -> void
+Ashlar.Contracts.SmsInboundSimulationResponse.ApprovalToken.get -> string?
+Ashlar.Contracts.SmsInboundSimulationResponse.ApprovalToken.init -> void
+Ashlar.Contracts.SmsInboundSimulationResponse.IdempotentReplay.get -> bool
+Ashlar.Contracts.SmsInboundSimulationResponse.IdempotentReplay.init -> void
+Ashlar.Contracts.SmsInboundSimulationResponse.Message.get -> string!
+Ashlar.Contracts.SmsInboundSimulationResponse.Message.init -> void
+Ashlar.Contracts.SmsInboundSimulationResponse.SmsInboundSimulationResponse(bool Accepted, string? ApprovalToken, string! Message, bool IdempotentReplay) -> void
+Ashlar.Contracts.SmsIngressApprovalStoreKind
+Ashlar.Contracts.SmsIngressDynamoDbOptions
+Ashlar.Contracts.SmsIngressDynamoDbOptions.SmsIngressDynamoDbOptions() -> void
+Ashlar.Contracts.SmsIngressDynamoDbOptions.TableName.get -> string!
+Ashlar.Contracts.SmsIngressDynamoDbOptions.TableName.set -> void
+Ashlar.Contracts.SmsIngressExternalIds
+Ashlar.Contracts.StatusResponse
+Ashlar.Contracts.StatusResponse.ActiveAgents.get -> int
+Ashlar.Contracts.StatusResponse.ActiveAgents.init -> void
+Ashlar.Contracts.StatusResponse.ActivePackId.get -> string?
+Ashlar.Contracts.StatusResponse.ActivePackId.init -> void
+Ashlar.Contracts.StatusResponse.ActivePackVersion.get -> string?
+Ashlar.Contracts.StatusResponse.ActivePackVersion.init -> void
+Ashlar.Contracts.StatusResponse.Message.get -> string!
+Ashlar.Contracts.StatusResponse.Message.init -> void
+Ashlar.Contracts.StatusResponse.Mode.get -> string!
+Ashlar.Contracts.StatusResponse.Mode.init -> void
+Ashlar.Contracts.StatusResponse.StatusResponse(string! Mode, string! Message, int TotalAgents, int ActiveAgents, string? ActivePackId = null, string? ActivePackVersion = null) -> void
+Ashlar.Contracts.StatusResponse.TotalAgents.get -> int
+Ashlar.Contracts.StatusResponse.TotalAgents.init -> void
+Ashlar.Contracts.TrustStatusResponse
+Ashlar.Contracts.TrustStatusResponse.ActivePolicyPackId.get -> string?
+Ashlar.Contracts.TrustStatusResponse.ActivePolicyPackId.init -> void
+Ashlar.Contracts.TrustStatusResponse.ActivePolicyPackVersion.get -> string?
+Ashlar.Contracts.TrustStatusResponse.ActivePolicyPackVersion.init -> void
+Ashlar.Contracts.TrustStatusResponse.IsPaused.get -> bool
+Ashlar.Contracts.TrustStatusResponse.IsPaused.init -> void
+Ashlar.Contracts.TrustStatusResponse.Status.get -> string!
+Ashlar.Contracts.TrustStatusResponse.Status.init -> void
+Ashlar.Contracts.TrustStatusResponse.TrustStatusResponse(bool IsPaused, string! Status, string? ActivePolicyPackId, string? ActivePolicyPackVersion) -> void
+Ashlar.Contracts.UnsupportedSmsIngressApprovalStore
+Ashlar.Contracts.UnsupportedSmsIngressApprovalStore.TryRecordApprovalAsync(string! from, string! approvalToken, string? messageSid, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Ashlar.Contracts.SmsInboundSimulationResponse!>!
+Ashlar.Contracts.UnsupportedSmsIngressApprovalStore.UnsupportedSmsIngressApprovalStore() -> void
+Ashlar.Contracts.ValidationRequest
+Ashlar.Contracts.ValidationRequest.Filter.get -> string?
+Ashlar.Contracts.ValidationRequest.Filter.init -> void
+Ashlar.Contracts.ValidationRequest.ValidationRequest(string? Filter = null) -> void
+Ashlar.Contracts.ValidationResponse
+Ashlar.Contracts.ValidationResponse.FailedTests.get -> int
+Ashlar.Contracts.ValidationResponse.FailedTests.init -> void
+Ashlar.Contracts.ValidationResponse.Message.get -> string?
+Ashlar.Contracts.ValidationResponse.Message.init -> void
+Ashlar.Contracts.ValidationResponse.Passed.get -> bool
+Ashlar.Contracts.ValidationResponse.Passed.init -> void
+Ashlar.Contracts.ValidationResponse.PassedTests.get -> int
+Ashlar.Contracts.ValidationResponse.PassedTests.init -> void
+Ashlar.Contracts.ValidationResponse.TotalTests.get -> int
+Ashlar.Contracts.ValidationResponse.TotalTests.init -> void
+Ashlar.Contracts.ValidationResponse.ValidationResponse(bool Passed, string? Message, int TotalTests, int PassedTests, int FailedTests) -> void
+const Ashlar.Contracts.AshlarIngressEnvelope.HttpContextItemKey = "Ashlar.IngressEnvelope" -> string!
+const Ashlar.Contracts.AshlarIngressTransports.A2A = "a2a" -> string!
+const Ashlar.Contracts.AshlarIngressTransports.Http = "http" -> string!
+const Ashlar.Contracts.AshlarIngressTransports.Mcp = "mcp" -> string!
+const Ashlar.Contracts.AshlarIngressTransports.SmsSimulated = "sms-simulated" -> string!
+const Ashlar.Contracts.AshlarIngressTransports.WebSocket = "websocket" -> string!
+const Ashlar.Contracts.SmsIngressApprovalStoreKind.DynamoDb = "DynamoDb" -> string!
+const Ashlar.Contracts.SmsIngressApprovalStoreKind.Memory = "Memory" -> string!
+const Ashlar.Contracts.SmsIngressDynamoDbOptions.SectionPath = "Ashlar:SmsIngressDynamoDb" -> string!
+static Ashlar.Contracts.SmsIngressExternalIds.Build(string! from, string! approvalToken, string? messageSid) -> string!
