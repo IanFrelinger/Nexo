@@ -73,7 +73,9 @@ public sealed class DogfoodCommand : Command
             var config = ctx.ParseResult.GetValueForOption(configOpt);
             var output = ctx.ParseResult.GetValueForOption(outputOpt);
             var lane = ctx.ParseResult.GetValueForOption(laneOpt);
-            Environment.Exit(await DogfoodCampaignCommand.ExecuteAsync(json, full, verbose, config, output, lane, ctx.GetCancellationToken()));
+            // Do not Environment.Exit here: leftover MSBuild / VBCSCompiler nodes from a
+            // specialist's `dotnet test` make Exit hang inside the container.
+            ctx.ExitCode = await DogfoodCampaignCommand.ExecuteAsync(json, full, verbose, config, output, lane, ctx.GetCancellationToken());
         });
         AddCommand(campaignCmd);
     }

@@ -28,6 +28,12 @@ public sealed class ProcessCampaignProcessInvoker : ICampaignProcessInvoker
         foreach (var argument in arguments)
             psi.ArgumentList.Add(argument);
 
+        // Specialists must not leave MSBuild / VBCSCompiler nodes behind; those
+        // keep `dotnet run` alive after the campaign has already printed Pass.
+        psi.Environment["DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER"] = "1";
+        psi.Environment["UseSharedCompilation"] = "false";
+        psi.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+
         using var process = new Process { StartInfo = psi };
         var stdout = new StringBuilder();
         var stderr = new StringBuilder();

@@ -115,7 +115,9 @@ public sealed class RegressionLaneRunner : ICampaignLaneRunner
             "net8.0",
             "--filter",
             "FullyQualifiedName~CampaignAgentSetConventionTests",
-            "--nologo"
+            "--nologo",
+            "/p:UseSharedCompilation=false",
+            "/nodereuse:false"
         });
     }
 
