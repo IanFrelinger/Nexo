@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 110", text)
+        self.assertIn("--min-tests 111", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1013,6 +1013,23 @@ class MakefileDogfoodCountedTests(unittest.TestCase):
             script,
         )
         self.assertNotIn('dotnet test "$INFRA"', script)
+
+
+class CiVerifyCountedTests(unittest.TestCase):
+    def test_ci_verify_runs_counted_prod_style_and_smoke(self) -> None:
+        text = (ROOT / "application" / "src" / "Ashlar.CLI" / "Commands" / "CiCommand.cs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 123", text)
+        self.assertIn("--min-tests 9", text)
+        self.assertIn("Ashlar.Tests.Infrastructure.", text)
+        self.assertIn(
+            "Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests",
+            text,
+        )
+        self.assertIn("FullyQualifiedName~BaseFrameworkSmokeTests", text)
+        self.assertNotIn('$"test \\"{infraTestsProject}\\"', text)
 
 
 class TestProdStyleCountedTests(unittest.TestCase):

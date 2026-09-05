@@ -88,24 +88,28 @@ public sealed class CiCommand : Command
             return buildInfraExit;
         }
 
-        // Step 2: Production-like integration (real DI graphs / hosts; fail fast before lighter smoke)
+        // Step 2: Production-like integration (real DI graphs / hosts; fail fast before lighter smoke).
+        // Same class as `make test-prod-style`: a silent empty match must not pass.
         Console.WriteLine("=== CI Verify: Production-like tests (ProdStyle, FluentAssertions-safe filter) ===");
+        var counted = Path.Combine(repoRoot, "scripts", "run-dotnet-test-counted.py");
         var prodStyleExit = await RunProcessAsync(
-            "dotnet",
-            $"test \"{infraTestsProject}\" -f net8.0 --no-build --blame-hang-timeout 120s --blame-hang-dump-type none --filter \"Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests\" --verbosity minimal",
-            repoRoot);
+            "python3",
+            $"\"{counted}\" --project \"{infraTestsProject}\" --expected-prefix \"Ashlar.Tests.Infrastructure.\" --min-tests 123 -- -f net8.0 --no-build --filter \"Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests\" --blame-hang-timeout 120s --blame-hang-dump-type none",
+            repoRoot,
+            extraEnv: new Dictionary<string, string> { ["ASHLAR_ALLOW_MOCK"] = "1" });
         if (prodStyleExit != 0)
         {
             Console.Error.WriteLine($"ci verify: Production-like tests failed (exit {prodStyleExit})");
             return prodStyleExit;
         }
 
-        // Step 3: Smoke tests (BaseFrameworkSmokeTests)
+        // Step 3: Smoke tests (BaseFrameworkSmokeTests). Same counted floor as Ship B.
         Console.WriteLine("=== CI Verify: Smoke Tests ===");
         var testExit = await RunProcessAsync(
-            "dotnet",
-            $"test \"{infraTestsProject}\" --no-build --blame-hang-timeout 30s --blame-hang-dump-type none --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --verbosity minimal",
-            repoRoot);
+            "python3",
+            $"\"{counted}\" --project \"{infraTestsProject}\" --expected-prefix \"Ashlar.Tests.Infrastructure.\" --min-tests 9 -- -f net8.0 --no-build --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --blame-hang-timeout 30s --blame-hang-dump-type none",
+            repoRoot,
+            extraEnv: new Dictionary<string, string> { ["ASHLAR_ALLOW_MOCK"] = "1" });
         if (testExit != 0)
         {
             Console.Error.WriteLine($"ci verify: Smoke tests failed (exit {testExit})");

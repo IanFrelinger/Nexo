@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 110");
+        text.Should().Contain("--min-tests 111");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -754,6 +754,20 @@ public sealed class EnrolledSuiteConventionTests
             ".github/workflows/kernel-gate.yml"));
         workflow.Should().Contain("src/Ashlar.AI.Pipeline/**");
         workflow.Should().Contain("src/Ashlar.Tests.AI.Pipeline/**");
+    }
+
+    [Fact]
+    public void CiVerify_RunsCountedProdStyleAndSmoke()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "application/src/Ashlar.CLI/Commands/CiCommand.cs"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 123");
+        text.Should().Contain("--min-tests 9");
+        text.Should().Contain("Ashlar.Tests.Infrastructure.");
+        text.Should().Contain("Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests");
+        text.Should().Contain("FullyQualifiedName~BaseFrameworkSmokeTests");
+        text.Should().NotContain("$\"test \\\"{infraTestsProject}\\\"");
     }
 
     [Fact]
