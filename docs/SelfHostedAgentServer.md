@@ -79,7 +79,7 @@ Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `-
 | `ASHLAR_REPO_MOUNT_SUFFIX` | *(empty)* | Appended to the bind mount (e.g. **`:z`** or **`:Z`** on Linux with SELinux; **`:ro`** for read-only trees). |
 | `ASHLAR_AGENT_SERVER_HTTP_PORT` | `8080` | Published host port for Ashlar.API. |
 | `ASHLAR_OLLAMA_HOST_PORT` | `11434` | Published host port for bundled Ollama. |
-| `ASHLAR_OLLAMA_IMAGE` | `ollama/ollama:latest` | Ollama image pin (tag for reproducibility). |
+| `ASHLAR_OLLAMA_IMAGE` | `ollama/ollama:0.33.3@sha256:32931b46719f673c05fdbaa81ccb26da18ea4a1c57590a754874ab28ba269eb2` | Ollama image pin (tag + multi-arch digest; see `ci/ollama-image`). |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Base URL **inside** the API container (service name when using bundled Ollama). |
 | `OLLAMA_MODEL` | `llama3.1:latest` | Default model hint for providers (align with `ollama pull`). |
 | `ASHLAR_BACKGROUND_AGENTS_CONFIG` | `/work/apps/runtime-studio/config/agent_set.local.json` | JSON with `BackgroundAgents:Agents`. If you change `ASHLAR_CONTAINER_WORKDIR`, update this path to match. |

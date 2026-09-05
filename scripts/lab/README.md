@@ -19,7 +19,8 @@ docker build -f .docker/Dockerfile.cli -t ashlar-cli:lab .
 
 # 2. a lab network + a live model sidecar (for the autonomy scenarios)
 docker network create ashlar-lab
-docker run -d --name ashlar-lab-ollama --network ashlar-lab ollama/ollama:latest
+docker run -d --name ashlar-lab-ollama --network ashlar-lab \
+  "${ASHLAR_OLLAMA_IMAGE:-ollama/ollama:0.33.3@sha256:32931b46719f673c05fdbaa81ccb26da18ea4a1c57590a754874ab28ba269eb2}"
 docker exec ashlar-lab-ollama ollama pull qwen2.5-coder:1.5b
 
 # 3. an on-network probe host with curl/jq/openssl (the image has none) —

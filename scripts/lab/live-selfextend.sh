@@ -31,7 +31,8 @@ trap cleanup EXIT
 echo "== 1. network + ollama sidecar =="
 docker network create "$NET" >/dev/null 2>&1 || true
 docker rm -f "$OLLAMA" >/dev/null 2>&1 || true
-docker run -d --name "$OLLAMA" --network "$NET" ollama/ollama >/dev/null
+OLLAMA_IMAGE="${ASHLAR_OLLAMA_IMAGE:-ollama/ollama:0.33.3@sha256:32931b46719f673c05fdbaa81ccb26da18ea4a1c57590a754874ab28ba269eb2}"
+docker run -d --name "$OLLAMA" --network "$NET" "$OLLAMA_IMAGE" >/dev/null
 # wait for the daemon
 for i in $(seq 1 30); do
   docker exec "$OLLAMA" sh -c 'curl -sf http://localhost:11434/ >/dev/null 2>&1' && break; sleep 1

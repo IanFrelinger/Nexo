@@ -14,7 +14,7 @@ This document is the **default “what do I run in production?”** map. Other c
 **Pin a version (recommended):**
 
 1. Build and tag images yourself in CI or locally, **or** use GHCR images once you publish them with **semver or digest** tags (see below).
-2. In `deploy/compose/docker-compose.portal.yml`, replace `build:` with `image: ghcr.io/<owner>/nexo-api:<tag>` (and pin `ollama/ollama` to a digest if you need full reproducibility).
+2. In `deploy/compose/docker-compose.portal.yml`, replace `build:` with `image: ghcr.io/<owner>/nexo-api:<tag>`. The bundled Ollama service already defaults to the digest in `ci/ollama-image` (`ASHLAR_OLLAMA_IMAGE` overrides).
 3. Never rely on **`latest`** for production unless you accept silent upgrades.
 
 ## Golden path B — CLI only (agents, CI, minimal host)
