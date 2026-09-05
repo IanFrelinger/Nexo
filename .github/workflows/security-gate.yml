@@ -1,10 +1,11 @@
 # Security & trust gate.
 # See docs/production-readiness/SecurityHardeningPlan-v1.md
 #
-# PR coverage is Tiers A–C only (trust core, API, CLI). Tiers D (supply chain)
-# and E (air-gapped container) stay dispatch-only here. A green PR security-gate
-# is not equivalent to the autonomous release-manager `security` lane, which
-# runs `make security-gate-full` including D/E.
+# PR coverage is Tiers A–C plus the Tier E host suite (counted AirGapped|Safety
+# on net10, no container). Tier D (supply chain) and the Tier E
+# `--network none` container stay dispatch-only. A green PR security-gate is
+# still not equivalent to the autonomous release-manager `security` lane,
+# which runs `make security-gate-full` with SECURITY_GATE_AIRGAPPED_CONTAINER=1.
 name: Security Gate
 
 on:
@@ -91,8 +92,11 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'd' || inputs.tier == 'full')
         run: make security-gate-tier-d
 
-      - name: Tier E (air-gapped)
-        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'e' || inputs.tier == 'full')
+      # Same `!=` form as Tiers A–C so pull_request runs the counted host
+      # suite (53). The air-gapped container proof needs Docker and stays
+      # on dispatch / the release-manager lane.
+      - name: Tier E (air-gapped host suite)
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'e' || inputs.tier == 'full'
         run: make security-gate-tier-e
         env:
           ASHLAR_ALLOW_MOCK: "1"

@@ -248,6 +248,17 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void SecurityGateWorkflow_RunsTierEHostSuiteOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/security-gate.yml"));
+        text.Should().Contain("security-gate-tier-e");
+        text.Should().NotContain(
+            "github.event_name == 'workflow_dispatch' && (inputs.tier == 'e' || inputs.tier == 'full')");
+        text.Should().NotContain("SECURITY_GATE_AIRGAPPED_CONTAINER:");
+    }
+
+    [Fact]
     public void ShipTierA_RunsCountedHostDiSmoke()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

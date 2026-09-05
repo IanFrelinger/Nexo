@@ -384,6 +384,17 @@ class SecurityTierECountedTests(unittest.TestCase):
         self.assertIn("-f net10.0", text)
         self.assertNotIn("-f net8.0", text)
 
+    def test_security_gate_workflow_runs_tier_e_host_suite_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "security-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("security-gate-tier-e", text)
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && (inputs.tier == 'e' || inputs.tier == 'full')",
+            text,
+        )
+        self.assertNotIn("SECURITY_GATE_AIRGAPPED_CONTAINER:", text)
+
 
 class ShipTierACountedTests(unittest.TestCase):
     def test_ship_gate_tier_a_runs_counted_host_di_smoke(self) -> None:
