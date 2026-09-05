@@ -24,6 +24,58 @@ def vulnerability_records(value: Any) -> list[dict[str, Any]]:
     return records
 
 
+def validate_report(report: Any, expected_projects: int) -> list[str]:
+    problems: list[str] = []
+    if not isinstance(report, dict):
+        return ["report root is not an object"]
+    if report.get("version") != 1:
+        problems.append(f"unsupported report version: {report.get('version')!r}")
+    parameters = report.get("parameters")
+    if not isinstance(parameters, str) or "--vulnerable" not in parameters:
+        problems.append("report does not describe a vulnerability scan")
+    sources = report.get("sources")
+    if not isinstance(sources, list) or not sources:
+        problems.append("report has no advisory sources")
+    nuget_problems = report.get("problems")
+    if nuget_problems:
+        problems.append(f"NuGet reported problems: {nuget_problems!r}")
+    projects = report.get("projects")
+    if not isinstance(projects, list):
+        problems.append("report projects is not an array")
+        return problems
+    if len(projects) != expected_projects:
+        problems.append(
+            f"report covers {len(projects)} projects; expected {expected_projects}"
+        )
+    if any(not isinstance(project, dict) or not project.get("path") for project in projects):
+        problems.append("one or more project records has no path")
+    return problems
+
+
+def expected_project_count(target: str) -> int:
+    if target.lower().endswith((".sln", ".slnx")):
+        run = subprocess.run(
+            ["dotnet", "sln", target, "list"],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        if run.returncode != 0:
+            raise ValueError(
+                f"could not enumerate {target} (exit {run.returncode}): {run.stdout}"
+            )
+        count = sum(
+            1
+            for line in run.stdout.splitlines()
+            if line.strip().lower().endswith(".csproj")
+        )
+        if count < 1:
+            raise ValueError(f"{target} contains no projects")
+        return count
+    return 1
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("target", help="Solution or project to scan.")
@@ -41,6 +93,8 @@ def main(argv: list[str] | None = None) -> int:
         "--include-transitive",
         "--format",
         "json",
+        "--output-version",
+        "1",
     ]
     run = subprocess.run(
         command,
@@ -62,6 +116,19 @@ def main(argv: list[str] | None = None) -> int:
         report = json.loads(run.stdout[json_start:])
     except json.JSONDecodeError as exc:
         print(f"vulnerability-scan: malformed JSON evidence: {exc}", file=sys.stderr)
+        return 2
+
+    try:
+        expected_projects = expected_project_count(args.target)
+    except ValueError as exc:
+        print(f"vulnerability-scan: invalid target coverage: {exc}", file=sys.stderr)
+        return 2
+    report_problems = validate_report(report, expected_projects)
+    if report_problems:
+        print(
+            "vulnerability-scan: unusable evidence: " + "; ".join(report_problems),
+            file=sys.stderr,
+        )
         return 2
 
     vulnerable = vulnerability_records(report)

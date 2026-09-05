@@ -49,6 +49,10 @@ HOST="${ASHLAR_PROD_DRY_RUN_HOST:-127.0.0.1}"
 BASE_URL="http://${HOST}:${PORT}"
 
 DC=(docker compose -f "$COMPOSE_FILE")
+DOWN_ARGS=(down --remove-orphans)
+if [[ "${ASHLAR_RELEASE_AUDIT:-0}" == "1" ]]; then
+  DOWN_ARGS+=(--volumes)
+fi
 STACK_STARTED=0
 
 cleanup_stack() {
@@ -56,7 +60,7 @@ cleanup_stack() {
   trap - EXIT INT TERM
   if [[ "$STACK_STARTED" -eq 1 && -z "${KEEP_UP:-}" ]]; then
     echo "Cleaning up interrupted/failed dry-run stack..." >&2
-    if ! "${DC[@]}" down --remove-orphans; then
+    if ! "${DC[@]}" "${DOWN_ARGS[@]}"; then
       echo "FAIL: dry-run stack cleanup failed." >&2
       rc=1
     fi
@@ -152,7 +156,7 @@ echo "Prod-shaped dry run OK (${COMPOSE_FILE})."
 
 if [[ -z "${KEEP_UP:-}" ]]; then
   echo "Stopping stack..."
-  "${DC[@]}" down --remove-orphans
+  "${DC[@]}" "${DOWN_ARGS[@]}"
   STACK_STARTED=0
   echo "Done. Use --keep-up to leave containers running for manual checks."
 else

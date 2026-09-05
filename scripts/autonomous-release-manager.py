@@ -13,10 +13,12 @@ import argparse
 import concurrent.futures
 import dataclasses
 import datetime as dt
+import fcntl
 import hashlib
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -30,9 +32,9 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 CANONICAL_PLAN_RELATIVE_PATH = "ci/autonomous-release-manager.json"
-TRUSTED_PLAN_SHA256 = "e7bee5fcb0b93c36d96ae99d119c934fc1b135efd08530102c85b947ac33c4e2"
+TRUSTED_PLAN_SHA256 = "638a2ae47cb355a2e791f5f4840d188c054d6209d99e8a1cfb8cb2a10ad518c7"
 MAX_AUDIT_EXECUTION_SECONDS = 18_000
-PROCESS_TERMINATION_GRACE_SECONDS = 0.5
+PROCESS_TERMINATION_GRACE_SECONDS = 10
 CANONICAL_LANES = {
     "code",
     "tests",
@@ -49,8 +51,11 @@ SPECIALIST_AGENTS = (
     "documentation-auditor",
     "operations-auditor",
 )
+_SEMVER_CORE = r"(?:0|[1-9][0-9]*)"
+_SEMVER_PRERELEASE = r"(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
 SEMVER_RE = re.compile(
-    r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    rf"^{_SEMVER_CORE}\.{_SEMVER_CORE}\.{_SEMVER_CORE}"
+    rf"(?:-{_SEMVER_PRERELEASE}(?:\.{_SEMVER_PRERELEASE})*)?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
 FORBIDDEN_COMMAND_FRAGMENTS = (
@@ -79,23 +84,26 @@ SHELL_EXECUTABLES = {
     "zsh",
 }
 SHELL_CODE_FLAGS = {"-c", "/c", "-command", "-encodedcommand"}
-SENSITIVE_ENV_MARKERS = (
-    "API_KEY",
-    "PASSWORD",
-    "PRIVATE_KEY",
-    "SECRET",
-    "TOKEN",
-)
-SENSITIVE_ENV_NAMES = {
-    "DOCKER_CONFIG",
-    "GOOGLE_APPLICATION_CREDENTIALS",
-    "SSH_AUTH_SOCK",
+SAFE_INHERITED_ENV = {
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "LANG",
+    "LC_ALL",
+    "NO_PROXY",
+    "SSL_CERT_DIR",
+    "SSL_CERT_FILE",
+    "TZ",
+    "http_proxy",
+    "https_proxy",
+    "no_proxy",
 }
-SENSITIVE_ENV_PREFIXES = (
-    "ASHLAR_",
-    "AWS_",
-    "AZURE_",
-    "GOOGLE_",
+TRUSTED_PATH_DIRECTORIES = (
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/usr/local/sbin",
+    "/usr/sbin",
+    "/sbin",
 )
 
 
@@ -416,14 +424,14 @@ def validate_cursor_assets(repo_root: Path) -> None:
         raise PlanError(f"{rule_path} must require explicit publishing authorization.")
 
 
-def validate_plan_binding(repo_root: Path, plan_path: Path) -> str:
+def validate_plan_binding(repo_root: Path, plan_path: Path, sha: str) -> str:
     relative = str(plan_path.relative_to(repo_root)).replace(os.sep, "/")
     if relative != CANONICAL_PLAN_RELATIVE_PATH:
         raise PlanError(
             f"Only the canonical tracked plan is executable: {CANONICAL_PLAN_RELATIVE_PATH}."
         )
     show = subprocess.run(
-        ["git", "show", f"HEAD:{relative}"],
+        ["git", "show", f"{sha}:{relative}"],
         cwd=repo_root,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -441,6 +449,23 @@ def validate_plan_binding(repo_root: Path, plan_path: Path) -> str:
             f"{digest}."
         )
     return digest
+
+
+def validate_coordinator_binding(repo_root: Path, sha: str) -> str:
+    relative = "scripts/autonomous-release-manager.py"
+    show = subprocess.run(
+        ["git", "show", f"{sha}:{relative}"],
+        cwd=repo_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if show.returncode != 0:
+        raise PlanError(f"Coordinator is not tracked at {sha}.")
+    current = Path(__file__).read_bytes()
+    if current != show.stdout:
+        raise PlanError("Coordinator differs from the audited commit.")
+    return hashlib.sha256(current).hexdigest()
 
 
 def _render(value: str, context: dict[str, str]) -> str:
@@ -488,22 +513,93 @@ def _terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
         process.wait(timeout=5)
 
 
-def _sanitized_environment() -> dict[str, str]:
-    environment: dict[str, str] = {}
-    for name, value in os.environ.items():
-        upper = name.upper()
-        if name in SENSITIVE_ENV_NAMES:
+def _token_processes(token: str) -> list[int]:
+    proc = Path("/proc")
+    if not proc.is_dir():
+        return []
+    needle = f"ASHLAR_AUDIT_STEP_TOKEN={token}".encode()
+    matches: list[int] = []
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
             continue
-        if any(upper.startswith(prefix) for prefix in SENSITIVE_ENV_PREFIXES):
+        pid = int(entry.name)
+        if pid == os.getpid():
             continue
-        if any(marker in upper for marker in SENSITIVE_ENV_MARKERS):
+        try:
+            environment = (entry / "environ").read_bytes().split(b"\0")
+        except (FileNotFoundError, PermissionError, ProcessLookupError):
             continue
-        environment[name] = value
+        if needle in environment:
+            matches.append(pid)
+    return matches
+
+
+def _kill_token_processes(token: str) -> list[int]:
+    found: set[int] = set()
+    deadline = time.monotonic() + PROCESS_TERMINATION_GRACE_SECONDS
+    while True:
+        pids = _token_processes(token)
+        found.update(pids)
+        if not pids:
+            return sorted(found)
+        for pid in pids:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        if time.monotonic() >= deadline:
+            remaining = _token_processes(token)
+            if remaining:
+                raise RuntimeError(
+                    f"Could not contain descendant processes: {sorted(remaining)}"
+                )
+            return sorted(found)
+        time.sleep(0.02)
+
+
+def _kill_detached_token_processes(token: str, primary_group: int) -> list[int]:
+    killed: list[int] = []
+    for pid in _token_processes(token):
+        try:
+            process_group = os.getpgid(pid)
+        except (ProcessLookupError, PermissionError):
+            continue
+        if process_group == primary_group:
+            continue
+        try:
+            os.kill(pid, signal.SIGKILL)
+            killed.append(pid)
+        except ProcessLookupError:
+            pass
+    return killed
+
+
+def _sanitized_environment(worktree: Path, step_token: str) -> dict[str, str]:
+    environment = {
+        name: os.environ[name]
+        for name in SAFE_INHERITED_ENV
+        if name in os.environ
+    }
+    trusted_paths = list(TRUSTED_PATH_DIRECTORIES)
+    dotnet_root = os.environ.get("DOTNET_ROOT")
+    if dotnet_root:
+        trusted_paths.insert(0, dotnet_root)
+    audit_home = worktree / ".ashlar" / "release-manager" / "home"
+    nuget_cache = worktree / ".ashlar" / "release-manager" / "nuget"
+    audit_home.mkdir(parents=True, exist_ok=True)
+    nuget_cache.mkdir(parents=True, exist_ok=True)
     environment.update(
         {
+            "ASHLAR_AUDIT_STEP_TOKEN": step_token,
             "CI": "true",
+            "DOTNET_CLI_HOME": str(audit_home),
             "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
             "DOTNET_NOLOGO": "true",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "HOME": str(audit_home),
+            "NUGET_PACKAGES": str(nuget_cache),
+            "PATH": os.pathsep.join(trusted_paths),
             "ASHLAR_RELEASE_AUDIT": "1",
         }
     )
@@ -532,10 +628,23 @@ def run_step(
             error="Working directory escaped the isolated worktree.",
         )
 
-    environment = _sanitized_environment()
+    step_token = uuid.uuid4().hex
+    environment = _sanitized_environment(worktree, step_token)
     environment.update(
         {_render(key, context): _render(value, context) for key, value in step.environment.items()}
     )
+    resolved_executable = shutil.which(command[0], path=environment["PATH"])
+    if resolved_executable is None:
+        return StepResult(
+            name=step.name,
+            command=command,
+            status="error",
+            exit_code=None,
+            duration_seconds=0,
+            timeout_seconds=timeout_seconds,
+            error=f"Executable is unavailable on trusted PATH: {command[0]}",
+        )
+    command = (resolved_executable, *command[1:])
 
     log_handle.write(
         (
@@ -576,10 +685,23 @@ def run_step(
         status = "passed" if exit_code == 0 else "failed"
         error = None
     except subprocess.TimeoutExpired:
+        _kill_detached_token_processes(step_token, process.pid)
         _terminate_process_tree(process)
         exit_code = process.poll()
         status = "timeout"
         error = f"Exceeded {timeout_seconds} seconds."
+    try:
+        escaped_descendants = _kill_token_processes(step_token)
+    except RuntimeError as exc:
+        escaped_descendants = []
+        status = "error"
+        error = str(exc)
+    if escaped_descendants and status == "passed":
+        status = "failed"
+        error = (
+            "Step left descendant processes after its leader exited; "
+            f"contained pids={escaped_descendants}."
+        )
 
     duration = round(time.monotonic() - started, 3)
     log_handle.write(
@@ -774,6 +896,42 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
                     ),
                 }
             )
+        else:
+            findings.append(
+                {
+                    "id": "uncut-unreleased-changelog",
+                    "severity": "blocker",
+                    "message": (
+                        f"Move CHANGELOG [Unreleased] entries under [{canonical}] "
+                        "before declaring the candidate ready."
+                    ),
+                }
+            )
+    if SEMVER_RE.fullmatch(canonical) and SEMVER_RE.fullmatch(published):
+        if _semver_precedence(canonical) < _semver_precedence(published):
+            findings.append(
+                {
+                    "id": "candidate-version-downgrade",
+                    "severity": "blocker",
+                    "message": (
+                        f"VERSION {canonical} is older than published pin {published}."
+                    ),
+                }
+            )
+        if _semver_precedence(canonical) > _semver_precedence(published):
+            release_heading = re.compile(
+                rf"(?m)^## \[{re.escape(canonical)}\] - [0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}$"
+            )
+            if not release_heading.search(changelog):
+                findings.append(
+                    {
+                        "id": "candidate-changelog-section-missing",
+                        "severity": "blocker",
+                        "message": (
+                            f"CHANGELOG.md has no dated [{canonical}] release section."
+                        ),
+                    }
+                )
 
     status = subprocess.run(
         ["git", "status", "--porcelain", "--untracked-files=all"],
@@ -918,8 +1076,8 @@ def write_reports(
     findings: list[dict[str, str]],
     lane_results: list[LaneResult],
 ) -> tuple[Path, Path, str]:
-    result_ids = {result.lane_id for result in lane_results}
-    if result_ids != CANONICAL_LANES:
+    result_ids = [result.lane_id for result in lane_results]
+    if len(result_ids) != len(CANONICAL_LANES) or set(result_ids) != CANONICAL_LANES:
         findings = [
             *findings,
             {
@@ -974,7 +1132,9 @@ def write_reports(
     ]
     for finding in findings:
         lines.append(
-            f"- **{finding['severity'].upper()}** `{finding['id']}` — {finding['message']}"
+            f"- **{_markdown_inline(finding['severity'].upper())}** "
+            f"`{_markdown_inline(finding['id'])}` — "
+            f"{_markdown_inline(finding['message'])}"
         )
     lines.extend(
         [
@@ -987,8 +1147,9 @@ def write_reports(
     )
     for result in lane_results:
         lines.append(
-            f"| `{result.lane_id}` | **{result.status.upper()}** | "
-            f"{result.duration_seconds:.1f}s | `{result.log_path}` "
+            f"| `{_markdown_inline(result.lane_id)}` | "
+            f"**{_markdown_inline(result.status.upper())}** | "
+            f"{result.duration_seconds:.1f}s | `{_markdown_inline(result.log_path)}` "
             f"(`sha256:{result.log_sha256}`) |"
         )
     lines.extend(["", "## Failed steps", ""])
@@ -1001,8 +1162,9 @@ def write_reports(
     if failed_steps:
         for result, step in failed_steps:
             lines.append(
-                f"- `{result.lane_id}/{step.name}` — {step.status}; "
-                f"exit={step.exit_code}; {step.error or 'see lane log'}"
+                f"- `{_markdown_inline(result.lane_id)}/{_markdown_inline(step.name)}` "
+                f"— {_markdown_inline(step.status)}; exit={step.exit_code}; "
+                f"{_markdown_inline(step.error or 'see lane log')}"
             )
     else:
         lines.append("- None.")
@@ -1043,7 +1205,8 @@ def main(argv: list[str] | None = None) -> int:
         sha = _git(repo_root, "rev-parse", "HEAD")
         plan_path = (repo_root / args.plan).resolve()
         plan_path.relative_to(repo_root)
-        plan_sha256 = validate_plan_binding(repo_root, plan_path)
+        plan_sha256 = validate_plan_binding(repo_root, plan_path, sha)
+        coordinator_sha256 = validate_coordinator_binding(repo_root, sha)
         plan = load_plan(plan_path)
         validate_cursor_assets(repo_root)
     except (PlanError, RuntimeError, ValueError) as exc:
@@ -1074,7 +1237,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     output_directory.mkdir(parents=True, exist_ok=True)
     findings = repository_findings(repo_root, version, sha)
-    coordinator_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     pre_execution_blockers = {
         "dirty-release-sha",
         "invalid-published-version",
@@ -1225,19 +1387,22 @@ def main(argv: list[str] | None = None) -> int:
         "reportPath": json_reference,
         "markdownPath": markdown_reference,
     }
-    _atomic_write(
-        latest_root / "latest.json",
-        json.dumps(latest, indent=2, sort_keys=True) + "\n",
-    )
-    _atomic_write(
-        latest_root / "latest.md",
-        (
-            "# Latest autonomous release-manager run\n\n"
-            f"- Verdict: **{verdict.upper()}**\n"
-            f"- Commit: `{_markdown_inline(sha)}`\n"
-            f"- Report: `{_markdown_inline(markdown_reference)}`\n"
-        ),
-    )
+    with (latest_root / ".latest.lock").open("a+", encoding="utf-8") as latest_lock:
+        fcntl.flock(latest_lock.fileno(), fcntl.LOCK_EX)
+        _atomic_write(
+            latest_root / "latest.json",
+            json.dumps(latest, indent=2, sort_keys=True) + "\n",
+        )
+        _atomic_write(
+            latest_root / "latest.md",
+            (
+                "# Latest autonomous release-manager run\n\n"
+                f"- Verdict: **{verdict.upper()}**\n"
+                f"- Commit: `{_markdown_inline(sha)}`\n"
+                f"- Report: `{_markdown_inline(markdown_reference)}`\n"
+            ),
+        )
+        fcntl.flock(latest_lock.fileno(), fcntl.LOCK_UN)
 
     print(f"release-manager: verdict={verdict}")
     print(f"release-manager: report={markdown_path}")

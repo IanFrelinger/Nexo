@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import subprocess
 import sys
 import tempfile
@@ -11,16 +12,20 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-def discovered_count(output: str, expected_prefix: str) -> int:
-    return sum(
-        1
+def discovered_tests(output: str, expected_prefix: str) -> list[str]:
+    return [
+        line.strip()
         for line in output.splitlines()
         if line.strip().startswith(expected_prefix)
-    )
+    ]
 
 
-def executed_count(results_directory: Path) -> int:
+def executed_evidence(
+    results_directory: Path,
+) -> tuple[int, collections.Counter[str], collections.Counter[str]]:
     total = 0
+    all_outcomes: collections.Counter[str] = collections.Counter()
+    passed: collections.Counter[str] = collections.Counter()
     trx_files = list(results_directory.rglob("*.trx"))
     if not trx_files:
         raise ValueError("dotnet test produced no TRX result.")
@@ -32,7 +37,46 @@ def executed_count(results_directory: Path) -> int:
         if counters is None:
             raise ValueError(f"{path} has no test counters.")
         total += int(counters.attrib.get("executed", counters.attrib.get("total", "0")))
-    return total
+        for result in root.findall(".//{*}UnitTestResult"):
+            name = result.attrib.get("testName")
+            outcome = result.attrib.get("outcome")
+            if not name or not outcome:
+                raise ValueError(f"{path} has an incomplete UnitTestResult.")
+            all_outcomes[name] += 1
+            if outcome.lower() == "passed":
+                passed[name] += 1
+    if sum(all_outcomes.values()) != total:
+        raise ValueError(
+            f"TRX counters report {total} executions, but "
+            f"{sum(all_outcomes.values())} result identities were recorded."
+        )
+    return total, all_outcomes, passed
+
+
+def executed_count(results_directory: Path) -> int:
+    return executed_evidence(results_directory)[0]
+
+
+def identity_problems(
+    discovered: list[str],
+    all_outcomes: collections.Counter[str],
+    passed: collections.Counter[str],
+) -> list[str]:
+    expected = collections.Counter(discovered)
+    problems: list[str] = []
+    missing = expected - all_outcomes
+    not_passed = expected - passed
+    if missing:
+        problems.append(
+            "discovered identities did not execute: "
+            + ", ".join(sorted(missing.elements()))
+        )
+    if not_passed:
+        problems.append(
+            "mandatory identities were not passed: "
+            + ", ".join(sorted(not_passed.elements()))
+        )
+    return problems
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -72,7 +116,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"counted-test: discovery failed (exit {listed.returncode}).", file=sys.stderr)
         return listed.returncode
 
-    expected = discovered_count(listed.stdout, args.expected_prefix)
+    discovered = discovered_tests(listed.stdout, args.expected_prefix)
+    expected = len(discovered)
     if expected < args.min_tests:
         print(
             f"counted-test: discovered {expected} matching tests; "
@@ -96,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
         if executed.returncode != 0:
             return executed.returncode
         try:
-            actual = executed_count(results)
+            actual, all_outcomes, passed = executed_evidence(results)
         except (OSError, ET.ParseError, ValueError) as exc:
             print(f"counted-test: invalid execution evidence: {exc}", file=sys.stderr)
             return 1
@@ -106,6 +151,10 @@ def main(argv: list[str] | None = None) -> int:
             f"counted-test: executed {actual}, but discovery reported {expected}.",
             file=sys.stderr,
         )
+        return 1
+    problems = identity_problems(discovered, all_outcomes, passed)
+    if problems:
+        print("counted-test: " + "; ".join(problems), file=sys.stderr)
         return 1
     print(f"counted-test: PASS (discovered={expected}, executed={actual})")
     return 0

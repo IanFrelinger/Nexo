@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import concurrent.futures
+import collections
 import importlib.util
 import json
 import os
@@ -127,10 +128,14 @@ class PlanValidationTests(unittest.TestCase):
 
     def test_canonical_plan_is_bound_to_head_and_code_digest(self) -> None:
         repo = SCRIPT.parents[1]
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+        ).strip()
         digest = arm.validate_plan_binding(
-            repo, repo / arm.CANONICAL_PLAN_RELATIVE_PATH
+            repo, repo / arm.CANONICAL_PLAN_RELATIVE_PATH, sha
         )
         self.assertEqual(arm.TRUSTED_PLAN_SHA256, digest)
+        self.assertEqual(64, len(arm.validate_coordinator_binding(repo, sha)))
 
     def test_missing_semantic_agents_fail_validation(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -222,6 +227,42 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual("blocked", verdict)
             self.assertIn("**BLOCKED**", markdown.read_text(encoding="utf-8"))
 
+    def test_duplicate_lane_results_cannot_produce_ready(self) -> None:
+        results = [
+            arm.LaneResult(
+                lane_id=lane_id,
+                title=lane_id,
+                objective="Audit.",
+                required=True,
+                status="passed",
+                duration_seconds=1,
+                log_path=f"logs/{lane_id}.log",
+                log_sha256="0" * 64,
+                steps=(),
+            )
+            for lane_id in sorted(arm.CANONICAL_LANES)
+        ]
+        results.append(results[0])
+        with tempfile.TemporaryDirectory() as temp:
+            json_path, _, verdict = arm.write_reports(
+                output_directory=Path(temp),
+                run_id="run",
+                started_at="2026-09-05T00:00:00+00:00",
+                completed_at="2026-09-05T00:00:01+00:00",
+                sha="a" * 40,
+                version="0.2.0",
+                plan_sha256="1" * 64,
+                coordinator_sha256="2" * 64,
+                findings=[],
+                lane_results=results,
+            )
+            report = json.loads(json_path.read_text(encoding="utf-8"))
+        self.assertEqual("blocked", verdict)
+        self.assertIn(
+            "incomplete-lane-results",
+            {finding["id"] for finding in report["repositoryFindings"]},
+        )
+
     def test_lanes_with_same_host_resource_are_serialized(self) -> None:
         def lane(lane_id: str) -> object:
             return arm.LaneSpec(
@@ -273,7 +314,7 @@ class ExecutionTests(unittest.TestCase):
             )
             parent_code = (
                 "import subprocess,sys,time;"
-                f"subprocess.Popen([{sys.executable!r}, '-c', {child_code!r}]);"
+                f"subprocess.Popen([{sys.executable!r}, '-c', {child_code!r}], start_new_session=True);"
                 "time.sleep(10)"
             )
             lane = arm.LaneSpec(
@@ -310,47 +351,125 @@ class ExecutionTests(unittest.TestCase):
             self.assertFalse(sentinel.exists())
             self.assertEqual(digest_at_return, digest_later)
 
+    def test_inherited_bash_env_cannot_inject_step_code(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sentinel = root / "bash-env-ran"
+            injected = root / "injected.sh"
+            injected.write_text(f"touch {sentinel}\n", encoding="utf-8")
+            probe = root / "probe.sh"
+            probe.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            probe.chmod(0o755)
+            lane = arm.LaneSpec(
+                lane_id="security",
+                title="Environment",
+                objective="Reject inherited shell hooks.",
+                required=True,
+                timeout_seconds=5,
+                exclusive_resources=(),
+                steps=(arm.StepSpec("probe", ("bash", "probe.sh"), 2, {}, "."),),
+            )
+            previous = os.environ.get("BASH_ENV")
+            os.environ["BASH_ENV"] = str(injected)
+            try:
+                result = arm.run_lane(
+                    lane,
+                    root,
+                    {"version": "0.2.0", "sha": "a" * 40, "workspace": str(root)},
+                    root / "output",
+                )
+            finally:
+                if previous is None:
+                    os.environ.pop("BASH_ENV", None)
+                else:
+                    os.environ["BASH_ENV"] = previous
+
+            self.assertEqual("passed", result.status)
+            self.assertFalse(sentinel.exists())
+
 
 class RepositoryStateTests(unittest.TestCase):
+    @staticmethod
+    def initialize_repo(
+        root: Path, version: str, published: str, changelog: str
+    ) -> str:
+        (root / "ci").mkdir()
+        (root / "VERSION").write_text(version + "\n", encoding="utf-8")
+        (root / "ci" / "published-version").write_text(
+            published + "\n", encoding="utf-8"
+        )
+        (root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+        subprocess.run(
+            ["git", "init", "-q", "-b", "main"],
+            cwd=root,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"], cwd=root, check=True
+        )
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "fixture"],
+            cwd=root,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root, text=True
+        ).strip()
+
     def test_unreleased_content_requires_version_advance(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            (root / "ci").mkdir()
-            (root / "VERSION").write_text("0.1.2\n", encoding="utf-8")
-            (root / "ci" / "published-version").write_text("0.1.2\n", encoding="utf-8")
-            (root / "CHANGELOG.md").write_text(
+            sha = self.initialize_repo(
+                root,
+                "0.1.2",
+                "0.1.2",
                 "# Changelog\n\n## [Unreleased]\n\n- New release work.\n\n## [0.1.2]\n",
-                encoding="utf-8",
             )
-            subprocess.run(
-                ["git", "init", "-q", "-b", "main"],
-                cwd=root,
-                check=True,
-                stdout=subprocess.DEVNULL,
-            )
-            subprocess.run(
-                ["git", "config", "user.email", "test@example.com"], cwd=root, check=True
-            )
-            subprocess.run(
-                ["git", "config", "user.name", "Test"], cwd=root, check=True
-            )
-            subprocess.run(["git", "add", "."], cwd=root, check=True)
-            subprocess.run(
-                ["git", "commit", "-m", "fixture"],
-                cwd=root,
-                check=True,
-                stdout=subprocess.DEVNULL,
-            )
-            sha = subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], cwd=root, text=True
-            ).strip()
-
             findings = arm.repository_findings(root, "0.1.2", sha)
 
         self.assertIn(
             "candidate-version-not-advanced",
             {finding["id"] for finding in findings},
         )
+
+    def test_downgrade_is_blocked_even_with_empty_unreleased(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sha = self.initialize_repo(
+                root,
+                "0.9.0",
+                "1.0.0",
+                "# Changelog\n\n## [Unreleased]\n\n## [0.9.0] - 2026-09-05\n",
+            )
+            findings = arm.repository_findings(root, "0.9.0", sha)
+        self.assertIn(
+            "candidate-version-downgrade",
+            {finding["id"] for finding in findings},
+        )
+
+    def test_candidate_requires_dated_changelog_section(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sha = self.initialize_repo(
+                root,
+                "1.1.0",
+                "1.0.0",
+                "# Changelog\n\n## [Unreleased]\n\n## [1.0.0] - 2026-09-01\n",
+            )
+            findings = arm.repository_findings(root, "1.1.0", sha)
+        self.assertIn(
+            "candidate-changelog-section-missing",
+            {finding["id"] for finding in findings},
+        )
+
+    def test_semver_rejects_leading_zeroes(self) -> None:
+        self.assertIsNone(arm.SEMVER_RE.fullmatch("01.2.3"))
+        self.assertIsNone(arm.SEMVER_RE.fullmatch("1.2.3-01"))
+        self.assertIsNotNone(arm.SEMVER_RE.fullmatch("1.2.3-rc.1+build.5"))
 
 
 class EvidenceParserTests(unittest.TestCase):
@@ -361,7 +480,10 @@ The following Tests are available:
     Ashlar.Tests.CLI.Two(value: 1)
     Other.Tests.Three
 """
-        self.assertEqual(2, counted.discovered_count(output, "Ashlar.Tests.CLI."))
+        self.assertEqual(
+            ["Ashlar.Tests.CLI.One", "Ashlar.Tests.CLI.Two(value: 1)"],
+            counted.discovered_tests(output, "Ashlar.Tests.CLI."),
+        )
 
     def test_trx_execution_count_is_summed(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -369,6 +491,10 @@ The following Tests are available:
             path.write_text(
                 """<?xml version="1.0"?>
 <TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult testName="Ashlar.Tests.One" outcome="Passed" />
+    <UnitTestResult testName="Ashlar.Tests.Two" outcome="Passed" />
+  </Results>
   <ResultSummary outcome="Completed">
     <Counters total="3" executed="2" passed="2" failed="0" />
   </ResultSummary>
@@ -377,6 +503,18 @@ The following Tests are available:
                 encoding="utf-8",
             )
             self.assertEqual(2, counted.executed_count(Path(temp)))
+
+    def test_unrelated_test_identities_cannot_satisfy_discovery(self) -> None:
+        problems = counted.identity_problems(
+            ["Ashlar.Tests.Expected.One", "Ashlar.Tests.Expected.Two"],
+            collections.Counter(
+                ["Ashlar.Tests.Unrelated.One", "Ashlar.Tests.Unrelated.Two"]
+            ),
+            collections.Counter(
+                ["Ashlar.Tests.Unrelated.One", "Ashlar.Tests.Unrelated.Two"]
+            ),
+        )
+        self.assertTrue(any("did not execute" in problem for problem in problems))
 
     def test_vulnerability_records_find_nested_packages(self) -> None:
         report = {
@@ -398,6 +536,19 @@ The following Tests are available:
         }
         records = vulnerabilities.vulnerability_records(report)
         self.assertEqual(["unsafe"], [record["id"] for record in records])
+
+    def test_vulnerability_report_rejects_empty_and_problem_evidence(self) -> None:
+        self.assertTrue(vulnerabilities.validate_report({}, 1))
+        report = {
+            "version": 1,
+            "parameters": "--vulnerable --include-transitive",
+            "sources": ["https://api.nuget.org/v3/index.json"],
+            "projects": [],
+            "problems": ["NU1900: advisory source unavailable"],
+        }
+        problems = vulnerabilities.validate_report(report, 1)
+        self.assertTrue(any("NuGet reported problems" in problem for problem in problems))
+        self.assertTrue(any("expected 1" in problem for problem in problems))
 
 
 class ReleaseScriptSafetyTests(unittest.TestCase):
@@ -431,6 +582,7 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
             curl.chmod(0o755)
             environment = os.environ.copy()
             environment["PATH"] = f"{fake_bin}{os.pathsep}{environment['PATH']}"
+            environment["ASHLAR_RELEASE_AUDIT"] = "1"
             environment["COMPOSE_PROJECT_NAME"] = "ashlar-release-manager-test"
             run = subprocess.run(
                 ["bash", "scripts/prod-dry-run.sh", "--portal", "--no-build"],
@@ -444,7 +596,7 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
 
             self.assertNotEqual(0, run.returncode)
             self.assertIn(
-                "compose -f deploy/compose/docker-compose.portal.yml down --remove-orphans",
+                "compose -f deploy/compose/docker-compose.portal.yml down --remove-orphans --volumes",
                 docker_log.read_text(encoding="utf-8"),
             )
 
