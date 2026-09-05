@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 80 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 82 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -96,7 +96,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | paths: `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI — PR runs script-interface, bootstrap, scaffold/optimize, daemon, and flag-combo jobs | push `master`/`main`/`cursor/**`, dispatch |
 | `runtime-release-gate.yml` | Runtime Release Gate / `runtime-release-lanes` | paths: CLI runtime/release commands, `docs/runtime/benchmarks/**` — PR runs gating core + visual (`--allow-mock`); chaos stays `continue-on-error` | push `master`/`main`, dispatch |
 | `installer-bruteforce-gate.yml` | Installer Bruteforce Gate / `bruteforce-matrix` | paths: `scripts/setup/**`, `scripts/install/**`, CLI — host bash syntax/help/fail cases plus CLI restore/build (12 cases; container bootstrap is `--dry-run`) | push `master`/`main`/`cursor/**`, dispatch |
-| `rc-gate.yml` | RC Gate / `rc-gate` | paths: RC docs + `scripts/rc-gate*.sh` — PR/push/schedule produce `ci release-bundle` then fail-close Tier C; A/B/D stay dispatch-only (D needs authenticated `gh` and refuses the old advisory skip) | monthly schedule, push `master`/`main`, dispatch |
+| `rc-gate.yml` | RC Gate / `rc-gate` | paths: RC docs + `docs/exceptions.yaml` + `scripts/rc-gate*.sh` — PR/push/schedule produce `ci release-bundle` then fail-close Tier C and Tier E exceptions policy; A/B/D stay dispatch-only (D needs authenticated `gh` and refuses the old advisory skip) | monthly schedule, push `master`/`main`, dispatch |
 | `ops-gate.yml` | Ops Gate / `ops-gate` | paths: dogfood tests, A/B/C/E scripts, `scripts/oh-shit-demo.sh`, counted wrapper — PR runs counted A (floor 6), B (floor 4), C closed-loop (floor 1), and quick operator demo; D needs Docker plus proof flags | dispatch |
 
 ### Push-only (path-filtered) workflows

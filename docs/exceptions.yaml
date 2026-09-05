@@ -1,4 +1,5 @@
 # High/Critical vulnerability or policy exceptions.
 # Each entry MUST include: owner, expires (YYYY-MM-DD), mitigation, sign_off.
-# RC gate tier E validates this file when RC_GATE_STRICT_EXCEPTIONS=1.
+# RC gate tier E always validates this file. A High/Critical row missing those
+# fields, or an expired High/Critical waiver, fails the gate.
 exceptions: []

@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 80");
+        text.Should().Contain("--min-tests 82");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -374,6 +374,32 @@ public sealed class EnrolledSuiteConventionTests
             ".github/workflows/rc-gate.yml"));
         workflow.Should().Contain("ci release-bundle --profile quick");
         workflow.Should().Contain("make rc-gate-tier-c");
+    }
+
+    [Fact]
+    public void RcTierE_FailsClosedOnExceptionsPolicy()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/rc-gate-tier-e.sh"));
+        text.Should().Contain("error: exceptions: missing");
+        text.Should().Contain("error: exceptions: policy validation failed");
+        text.Should().Contain("rc-gate-tier-e: FAIL");
+        text.Should().Contain("rc-gate-tier-e: PASS");
+        text.Should().NotContain("RC_GATE_STRICT_EXCEPTIONS");
+        text.Should().NotContain("policy validation failed (non-strict)");
+    }
+
+    [Fact]
+    public void RcGateWorkflow_RunsTierEOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/rc-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("docs/exceptions.yaml");
+        text.Should().Contain("make rc-gate-tier-e");
+        text.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'e'");
+        text.Should().NotContain(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'e'");
     }
 
     [Fact]

@@ -9,18 +9,20 @@ on:
   pull_request:
     paths:
       - "docs/production-readiness/RCHardeningPlan-v1.md"
+      - "docs/exceptions.yaml"
       - "scripts/rc-gate*.sh"
       - ".github/workflows/rc-gate.yml"
   push:
     branches: [master, main]
     paths:
       - "docs/production-readiness/RCHardeningPlan-v1.md"
+      - "docs/exceptions.yaml"
       - "scripts/rc-gate*.sh"
       - ".github/workflows/rc-gate.yml"
   workflow_dispatch:
     inputs:
       tier:
-        description: "Gate tier (a = multi-hour ashlar-ready meta-gate; full = a+b+c+d)"
+        description: "Gate tier (a = multi-hour ashlar-ready meta-gate; full = a+b+c+d+e)"
         required: false
         default: "c"
         type: choice
@@ -29,6 +31,7 @@ on:
           - b
           - c
           - d
+          - e
           - full
       trigger_gh:
         description: "Dispatch missing GitHub workflows"
@@ -80,6 +83,12 @@ jobs:
           RC_GATE_TRIGGER_GH: ${{ github.event_name == 'workflow_dispatch' && inputs.trigger_gh && '1' || '0' }}
           RC_GATE_GH_BRANCH: ${{ github.ref_name }}
         run: make rc-gate-tier-d
+
+      # Same `!=` form as Tier C so pull_request, push, and schedule fail-close
+      # the exceptions policy. A/B/D stay dispatch-only.
+      - name: Tier E (exceptions policy)
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'e' || inputs.tier == 'full'
+        run: make rc-gate-tier-e
 
       - name: Upload RC reports
         if: always()

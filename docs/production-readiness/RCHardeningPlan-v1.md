@@ -2,7 +2,7 @@
 
 Moves from **security gate green** to **release-ready with evidence** — mirrors [Release candidate checklist v1](../ReleaseCandidateChecklist-v1.md).
 
-**Automation:** `make rc-gate-full`. PRs that touch RC docs or `scripts/rc-gate*.sh` produce a `ci release-bundle` then run Tier C. A/B/D stay dispatch-only.
+**Automation:** `make rc-gate-full`. PRs that touch RC docs, `docs/exceptions.yaml`, or `scripts/rc-gate*.sh` produce a `ci release-bundle` then run Tier C and Tier E. A/B/D stay dispatch-only.
 
 ## Prerequisites
 
@@ -20,6 +20,7 @@ make security-gate-full
 | B | Ship gate + `ci release-bundle` | `make rc-gate-tier-b` |
 | C | Evidence audit (bundle, security, rollback docs) | `make rc-gate-tier-c` |
 | D | GitHub Actions RC workflows | `make rc-gate-tier-d` |
+| E | Exceptions policy, rollback drill record, sign-off | `make rc-gate-tier-e` |
 
 ## Flags
 

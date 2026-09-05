@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 80", text)
+        self.assertIn("--min-tests 82", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -515,6 +515,21 @@ class RcGateWorkflowTests(unittest.TestCase):
         self.assertIn("github.event_name != 'workflow_dispatch'", text)
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'c'",
+            text,
+        )
+
+    def test_rc_gate_workflow_runs_tier_e_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "rc-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("docs/exceptions.yaml", text)
+        self.assertIn("make rc-gate-tier-e", text)
+        self.assertIn(
+            "github.event_name != 'workflow_dispatch' || inputs.tier == 'e'",
+            text,
+        )
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'e'",
             text,
         )
 
@@ -1144,6 +1159,63 @@ class RcTierCFailClosedTests(unittest.TestCase):
         self.assertEqual(0, run.returncode)
         self.assertIn("release-bundle: PASS", run.stdout)
         self.assertIn("rc-gate-tier-c: PASS", run.stdout)
+
+
+class RcTierEFailClosedTests(unittest.TestCase):
+    def _run_e(self, exceptions: Path | None) -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env["RC_EXCEPTIONS_FILE"] = (
+            str(exceptions) if exceptions is not None else "/nonexistent/exceptions.yaml"
+        )
+        return subprocess.run(
+            ["bash", str(ROOT / "scripts" / "rc-gate-tier-e.sh")],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+
+    def test_rc_tier_e_script_fails_closed_on_exceptions_policy(self) -> None:
+        text = (ROOT / "scripts" / "rc-gate-tier-e.sh").read_text(encoding="utf-8")
+        self.assertIn("error: exceptions: missing", text)
+        self.assertIn("error: exceptions: policy validation failed", text)
+        self.assertIn("rc-gate-tier-e: FAIL", text)
+        self.assertNotIn("RC_GATE_STRICT_EXCEPTIONS", text)
+        self.assertNotIn("policy validation failed (non-strict)", text)
+        exceptions = (ROOT / "docs" / "exceptions.yaml").read_text(encoding="utf-8")
+        self.assertNotIn("RC_GATE_STRICT_EXCEPTIONS", exceptions)
+
+    def test_rc_tier_e_fails_when_exceptions_file_missing(self) -> None:
+        run = self._run_e(None)
+        self.assertEqual(1, run.returncode)
+        self.assertIn("exceptions: missing", run.stdout)
+        self.assertIn("rc-gate-tier-e: FAIL", run.stdout)
+        self.assertNotIn("rc-gate-tier-e: PASS", run.stdout)
+
+    def test_rc_tier_e_fails_when_high_critical_policy_violated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "exceptions.yaml"
+            path.write_text(
+                "exceptions:\n"
+                "  - id: TEST-1\n"
+                "    severity: High\n",
+                encoding="utf-8",
+            )
+            run = self._run_e(path)
+        self.assertEqual(1, run.returncode)
+        self.assertIn("exceptions BLOCK:", run.stdout)
+        self.assertIn("policy validation failed", run.stdout)
+        self.assertIn("rc-gate-tier-e: FAIL", run.stdout)
+        self.assertNotIn("rc-gate-tier-e: PASS", run.stdout)
+
+    def test_rc_tier_e_passes_on_committed_exceptions_file(self) -> None:
+        run = self._run_e(ROOT / "docs" / "exceptions.yaml")
+        self.assertEqual(0, run.returncode)
+        self.assertIn("High/Critical policy OK", run.stdout)
+        self.assertIn("rc-gate-tier-e: PASS", run.stdout)
+        self.assertNotIn("rc-gate-tier-e: FAIL", run.stdout)
 
 
 class SecurityTierDFailClosedTests(unittest.TestCase):

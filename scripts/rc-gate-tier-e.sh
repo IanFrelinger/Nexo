@@ -9,7 +9,6 @@ mkdir -p "$REPORT_DIR"
 AUDIT="$REPORT_DIR/policy-audit.txt"
 : >"$AUDIT"
 
-fail=0
 note() { echo "$1" | tee -a "$AUDIT"; }
 warn() { echo "::warning::$1" | tee -a "$AUDIT"; }
 
@@ -17,12 +16,12 @@ EXCEPTIONS_FILE="${RC_EXCEPTIONS_FILE:-docs/exceptions.yaml}"
 
 echo "== RC Tier E: exceptions policy =="
 if [ ! -f "$EXCEPTIONS_FILE" ]; then
-  warn "exceptions: missing $EXCEPTIONS_FILE"
-  if [ "${RC_GATE_STRICT_EXCEPTIONS:-0}" = "1" ]; then
-    fail=1
-  fi
-else
-  python3 - "$EXCEPTIONS_FILE" <<'PY'
+  echo "error: exceptions: missing $EXCEPTIONS_FILE" >&2
+  echo "rc-gate-tier-e: FAIL" >&2
+  exit 1
+fi
+
+if ! python3 - "$EXCEPTIONS_FILE" <<'PY'
 import sys, datetime, re
 from pathlib import Path
 
@@ -122,17 +121,12 @@ if blocked:
     raise SystemExit(1)
 print(f"exceptions: {len(items)} entries, High/Critical policy OK ({parser_used})")
 PY
-  rc=$?
-  if [ "$rc" -ne 0 ]; then
-    if [ "${RC_GATE_STRICT_EXCEPTIONS:-0}" = "1" ]; then
-      fail=1
-    else
-      warn "exceptions: policy validation failed (non-strict)"
-    fi
-  else
-    note "exceptions: policy OK ($EXCEPTIONS_FILE)"
-  fi
+then
+  echo "error: exceptions: policy validation failed" >&2
+  echo "rc-gate-tier-e: FAIL" >&2
+  exit 1
 fi
+note "exceptions: policy OK ($EXCEPTIONS_FILE)"
 
 echo "== RC Tier E: rollback drill record =="
 DRILL_DOC="docs/production-readiness/RollbackDrill-v1.md"
@@ -152,11 +146,6 @@ if [ -f "$SIGNOFF" ]; then
   fi
 else
   warn "sign-off: missing $SIGNOFF"
-fi
-
-if [ "$fail" -ne 0 ]; then
-  echo "rc-gate-tier-e: FAIL (see $AUDIT)" >&2
-  exit 1
 fi
 
 echo ""
