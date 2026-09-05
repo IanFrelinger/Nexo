@@ -17,6 +17,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestStressRunsWithInjectedRequestAndPersistsHistoryAsync(cancellationToken).ConfigureAwait(false);
             await TestStressReturnsFailureWhenExecutorFailsAsync(cancellationToken).ConfigureAwait(false);
             await TestReportGeneratesMarkdownBenchmarkOutputAsync(cancellationToken).ConfigureAwait(false);
+            await TestReportInvalidSinceRefusesBeforeHistoryLookupAsync().ConfigureAwait(false);
             await TestReportFiltersByRunIdAsync(cancellationToken).ConfigureAwait(false);
             await TestStressClassifiesRuntimeContextFailureFromErrorCodeAsync(cancellationToken).ConfigureAwait(false);
             await TestStressHonorsWarmupShuffleAndCooldownExecutionControlsAsync(cancellationToken).ConfigureAwait(false);
@@ -417,6 +418,36 @@ public sealed class WorkflowCommandTests : UnitTestBase
         finally
         {
             Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestReportInvalidSinceRefusesBeforeHistoryLookupAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            var command = CreateCommand();
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteReportAsync(
+                    repoRoot,
+                    limit: 20,
+                    benchmarkSet: null,
+                    runId: null,
+                    baselineRunId: null,
+                    since: "xyz",
+                    outputPath: null,
+                    json: false)).ConfigureAwait(false);
+
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("Invalid --since", StringComparison.Ordinal),
+                "An invalid --since must be refused legibly.");
+            AssertTrue(!output.Contains("No workflow stress history", StringComparison.Ordinal),
+                "An invalid --since must be refused before the history lookup.");
+        }
+        finally
+        {
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
         }

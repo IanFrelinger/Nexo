@@ -20,6 +20,20 @@ internal sealed class ReportHandler(
         string? outputPath,
         bool json)
     {
+        if (!string.IsNullOrWhiteSpace(since) && !DateTimeOffset.TryParse(since, out _))
+        {
+            if (json)
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --since" }));
+            }
+            else
+            {
+                Console.Error.WriteLine("Invalid --since. Use an ISO-8601 UTC timestamp (e.g. 2026-04-11T00:00:00Z).");
+            }
+
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {

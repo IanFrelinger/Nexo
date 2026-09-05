@@ -28,6 +28,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestObserveInvalidDurationExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             await TestTrustAuditInvalidSinceExitsNonZeroWithoutQueryingLogAsync().ConfigureAwait(false);
             await TestBackgroundAgentLogsInvalidSinceExitsNonZeroWithoutListingAsync().ConfigureAwait(false);
+            await TestWorkflowReportInvalidSinceExitsNonZeroWithoutListingAsync().ConfigureAwait(false);
+            await TestChangelogMissingOutputParentCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -372,6 +374,67 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
         {
             Console.SetOut(ConsoleCapture.Out);
             Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowReportInvalidSinceExitsNonZeroWithoutListingAsync()
+    {
+        var repoRoot = Path.Combine(Path.GetTempPath(), $"ashlar-wf-since-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(repoRoot);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new WorkflowCommand((_, _, _, _, _, _) =>
+                Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(
+                    Ok: true,
+                    Summary: "stub",
+                    ConflictCount: 0,
+                    EscalationCount: 0))));
+            var exitCode = await root.InvokeAsync($"workflow report --repo-root {repoRoot} --since xyz").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow report --since xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --since", StringComparison.Ordinal),
+                "An invalid --since must be refused legibly.");
+            AssertTrue(!output.Contains("No workflow stress history", StringComparison.Ordinal),
+                "An invalid --since must be refused before the history lookup.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestChangelogMissingOutputParentCreatesDirectoryWithoutStackTraceAsync()
+    {
+        var dest = Path.Combine(Path.GetTempPath(), $"ashlar-changelog-{Guid.NewGuid():N}", "out.md");
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ChangelogCommand());
+            var exitCode = await root.InvokeAsync($"changelog --output {dest}").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode == 0, "changelog --output must create a missing parent directory and exit 0.");
+            AssertTrue(File.Exists(dest), "changelog --output must write the file after creating the parent directory.");
+            AssertTrue(!output.Contains("DirectoryNotFoundException", StringComparison.Ordinal)
+                && !output.Contains("   at ", StringComparison.Ordinal),
+                "A missing changelog --output parent directory must not print a stack trace.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            var parent = Path.GetDirectoryName(dest);
+            if (!string.IsNullOrEmpty(parent) && Directory.Exists(parent))
+                Directory.Delete(parent, recursive: true);
         }
     }
 }
