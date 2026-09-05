@@ -493,24 +493,20 @@ def _terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
     except ProcessLookupError:
         return
 
-    deadline = time.monotonic() + PROCESS_TERMINATION_GRACE_SECONDS
-    while time.monotonic() < deadline:
-        try:
-            os.killpg(process_group, 0)
-        except ProcessLookupError:
-            break
-        time.sleep(0.05)
-    else:
+    try:
+        process.wait(timeout=PROCESS_TERMINATION_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
         try:
             os.killpg(process_group, signal.SIGKILL)
         except ProcessLookupError:
             pass
-
-    try:
         process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        process.wait(timeout=5)
+    else:
+        # The leader may have exited while same-group children remain.
+        try:
+            os.killpg(process_group, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
 
 def _token_processes(token: str) -> list[int]:
