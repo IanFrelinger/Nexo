@@ -131,6 +131,10 @@ public sealed class RootCommandRegistrationTests
         CommandExecutionSupport.WantsJson(root.Parse("docker ps --format-json")).Should().BeTrue();
         CommandExecutionSupport.WantsJson(root.Parse("--format-json dogfood block2")).Should().BeTrue();
         CommandExecutionSupport.WantsJson(root.Parse("dogfood block2")).Should().BeFalse();
+        CommandExecutionSupport.WantsJson(root.Parse("--format-json self-extend preflight")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("--format-json bootstrap check")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("--format-json workflow scaffold")).Should().BeTrue();
+        CommandExecutionSupport.WantsJson(root.Parse("self-extend preflight")).Should().BeFalse();
 
         var verbose = root.Options.Single(o => o.HasAlias("--verbose"));
         verbose.Name.Should().Be("verbose", "the prefix is stripped — never match on Name alone");

@@ -34,7 +34,7 @@ public sealed class BootstrapCommand : Command
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
             var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt);
             ctx.ExitCode = await RunCheckAsync(profile, includeOptional, json, ctx.GetCancellationToken()).ConfigureAwait(false);
         });
         /// <summary>Add command.</summary>
@@ -50,7 +50,7 @@ public sealed class BootstrapCommand : Command
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
             var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt);
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
             ctx.ExitCode = await RunApplyAsync(profile, includeOptional, yes, dryRun, json, ctx.GetCancellationToken()).ConfigureAwait(false);
@@ -68,7 +68,7 @@ public sealed class BootstrapCommand : Command
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
             var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt);
             ctx.ExitCode = await RunCheckAsync(profile, includeOptional, json, ctx.GetCancellationToken()).ConfigureAwait(false);
         });
     }

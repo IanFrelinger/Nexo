@@ -39,7 +39,7 @@ public sealed class NewCommand : Command
         {
             var name = context.ParseResult.GetValueForArgument(nameArg);
             var output = context.ParseResult.GetValueForOption(outputOpt) ?? Environment.CurrentDirectory;
-            var json = context.ParseResult.GetValueForOption(jsonOpt);
+            var json = CommandExecutionSupport.WantsJson(context.ParseResult, jsonOpt);
             var ashlarVersion = context.ParseResult.GetValueForOption(ashlarVersionOpt);
             context.ExitCode = ExecuteBrick(name, output, json, ashlarVersion);
         });

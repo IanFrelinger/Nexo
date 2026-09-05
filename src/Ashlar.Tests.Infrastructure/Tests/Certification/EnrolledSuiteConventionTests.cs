@@ -1350,6 +1350,13 @@ public sealed class EnrolledSuiteConventionTests
             "application/src/Ashlar.CLI/Commands/DockerCommand.cs",
             "application/src/Ashlar.CLI/Commands/DogfoodCommand.cs",
             "application/src/Ashlar.CLI/Commands/DogfoodTestCommand.cs",
+            "application/src/Ashlar.CLI/Commands/DoctorCommand.cs",
+            "application/src/Ashlar.CLI/Commands/SelfExtendCommand.cs",
+            "application/src/Ashlar.CLI/Commands/BootstrapCommand.cs",
+            "application/src/Ashlar.CLI/Commands/NewCommand.cs",
+            "application/src/Ashlar.CLI/Commands/WorkflowCommand.Configure.cs",
+            "application/src/Ashlar.CLI/Commands/RuntimeCommand.Configure.cs",
+            "application/src/Ashlar.CLI/Program.TrustCommands.cs",
         })
         {
             var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(), rel));
@@ -1368,6 +1375,8 @@ public sealed class EnrolledSuiteConventionTests
             "application/src/Ashlar.CLI/Commands/DockerCommand.cs",
             "application/src/Ashlar.CLI/Commands/DogfoodCommand.cs",
             "application/src/Ashlar.CLI/Commands/DogfoodTestCommand.cs",
+            "application/src/Ashlar.CLI/Commands/ObserveCommand.cs",
+            "application/src/Ashlar.CLI/Commands/WorkflowCommand.Configure.cs",
         })
         {
             var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(), rel));

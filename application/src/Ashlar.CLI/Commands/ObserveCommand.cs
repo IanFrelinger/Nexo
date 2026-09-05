@@ -37,7 +37,7 @@ public sealed class ObserveCommand : Command
             var path = ctx.ParseResult.GetValueForOption(pathOpt);
             var durationStr = ctx.ParseResult.GetValueForOption(durationOpt) ?? "10m";
             var dump = ctx.ParseResult.GetValueForOption(dumpOpt);
-            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult, verboseOpt);
             var maxDuration = ParseDuration(durationStr);
             await ExecuteAsync(path, maxDuration, dump, verbose);
         });

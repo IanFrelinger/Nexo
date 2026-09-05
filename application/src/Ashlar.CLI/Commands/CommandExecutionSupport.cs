@@ -46,6 +46,29 @@ internal static class CommandExecutionSupport
     }
 
     /// <summary>
+    /// True when the caller asked for JSON via a command-local bool option
+    /// (usually <c>--json</c>) OR the root global <c>--format-json</c>.
+    ///
+    /// <para>A local <c>GetValueForOption(jsonOpt)</c> alone drops a leading
+    /// <c>--format-json command …</c> because that token binds the root option,
+    /// not the command-local one. Every JSON rendering that spells its own
+    /// <c>--json</c> must go through this OR.</para>
+    /// </summary>
+    internal static bool WantsJson(ParseResult parseResult, Option<bool> localJson)
+    {
+        return parseResult.GetValueForOption(localJson) || WantsJson(parseResult);
+    }
+
+    /// <summary>
+    /// True when the caller asked for verbose via a command-local
+    /// <c>--verbose</c> OR the root global of the same spelling.
+    /// </summary>
+    internal static bool WantsVerbose(ParseResult parseResult, Option<bool> localVerbose)
+    {
+        return parseResult.GetValueForOption(localVerbose) || WantsVerbose(parseResult);
+    }
+
+    /// <summary>
     /// The refusal a command with no JSON rendering returns when <c>--format-json</c> was passed, and
     /// null when it was not — so a handler can read <c>RefuseJsonFormat(...) ?? RealWork(...)</c>.
     ///

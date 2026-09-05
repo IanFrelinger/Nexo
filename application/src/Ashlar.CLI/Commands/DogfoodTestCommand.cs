@@ -32,10 +32,8 @@ internal static class DogfoodTestCommand
             // Local `--format-json` / `--verbose` on the block, plus the root
             // globals. A leading `--format-json dogfood block2` used to print
             // prose on a JSON pipe because only the local Option was read.
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt)
-                || CommandExecutionSupport.WantsJson(ctx.ParseResult);
-            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt)
-                || CommandExecutionSupport.WantsVerbose(ctx.ParseResult);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt);
+            var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult, verboseOpt);
             var filterOverride = ctx.ParseResult.GetValueForOption(filterOpt);
             var effectiveFilter = string.IsNullOrWhiteSpace(filterOverride) ? filter : filterOverride.Trim();
             Environment.Exit(await ExecuteAsync(name, effectiveFilter, json, verbose));

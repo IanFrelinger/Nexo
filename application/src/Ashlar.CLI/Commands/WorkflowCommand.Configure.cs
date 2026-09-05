@@ -23,7 +23,7 @@ public sealed partial class WorkflowCommand
             var exitCode = ExecuteScaffoldAsync(
                 ctx.ParseResult.GetValueForOption(outputOpt) ?? string.Empty,
                 ctx.ParseResult.GetValueForOption(forceOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         /// <summary>Add command.</summary>
@@ -122,8 +122,8 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(cooldownMsOpt),
                 ctx.ParseResult.GetValueForOption(includeMeshPeersOpt),
                 ctx.ParseResult.GetValueForOption(meshCapabilityOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt),
-                ctx.ParseResult.GetValueForOption(verboseOpt),
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt),
+                CommandExecutionSupport.WantsVerbose(ctx.ParseResult, verboseOpt),
                 ctx.GetCancellationToken()).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
@@ -148,7 +148,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
                 ctx.ParseResult.GetValueForOption(limitOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         /// <summary>Add command.</summary>
@@ -184,7 +184,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(baselineRunIdOpt),
                 ctx.ParseResult.GetValueForOption(sinceOpt),
                 ctx.ParseResult.GetValueForOption(outputOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         /// <summary>Add command.</summary>
@@ -230,7 +230,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(maxAverageLatencyRegressionMsOpt),
                 ctx.ParseResult.GetValueForOption(minAverageScoreDeltaOpt),
                 ctx.ParseResult.GetValueForOption(maxRegressedScenariosOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         /// <summary>Add command.</summary>
@@ -262,7 +262,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(promoteRunIdOpt) ?? string.Empty,
                 ctx.ParseResult.GetValueForOption(promoteNotesOpt),
                 ctx.ParseResult.GetValueForOption(promotePolicyFileOpt),
-                ctx.ParseResult.GetValueForOption(promoteJsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, promoteJsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         baseline.AddCommand(promote);
@@ -279,7 +279,7 @@ public sealed partial class WorkflowCommand
             var exitCode = ExecuteBaselineListAsync(
                 ctx.ParseResult.GetValueForOption(listRepoRootOpt) ?? Environment.CurrentDirectory,
                 ctx.ParseResult.GetValueForOption(listBenchmarkSetOpt),
-                ctx.ParseResult.GetValueForOption(listJsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, listJsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         baseline.AddCommand(list);
@@ -299,7 +299,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(showRepoRootOpt) ?? Environment.CurrentDirectory,
                 ctx.ParseResult.GetValueForOption(showBenchmarkSetOpt),
                 ctx.ParseResult.GetValueForOption(showBaselineIdOpt),
-                ctx.ParseResult.GetValueForOption(showJsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, showJsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         baseline.AddCommand(show);
@@ -466,8 +466,8 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(promoteWinnerOpt),
                 ctx.ParseResult.GetValueForOption(policyFileOpt),
                 ctx.ParseResult.GetValueForOption(reportOutputOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt),
-                ctx.ParseResult.GetValueForOption(verboseOpt),
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt),
+                CommandExecutionSupport.WantsVerbose(ctx.ParseResult, verboseOpt),
                 ctx.GetCancellationToken()).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });

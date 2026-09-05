@@ -81,7 +81,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(allowVisualCapabilityDegradeOpt),
                 ctx.ParseResult.GetValueForOption(autoRemediateOpt),
                 ctx.ParseResult.GetValueForOption(maxRemediationAttemptsOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt),
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
         /// <summary>Add command.</summary>
@@ -127,7 +127,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(maxIterationsOpt),
                 ctx.ParseResult.GetValueForOption(useHistoryOpt),
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).ConfigureAwait(false);
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).ConfigureAwait(false);
         });
         /// <summary>Add command.</summary>
         AddCommand(planCmd);
@@ -199,7 +199,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(persistHistoryOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt) ?? "adhoc",
                 ctx.ParseResult.GetValueForOption(allowVisualCapabilityDegradeOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt),
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
         /// <summary>Add command.</summary>
@@ -229,7 +229,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(goalOpt),
                 ctx.ParseResult.GetValueForOption(policyOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).GetAwaiter().GetResult();
         });
         /// <summary>Add command.</summary>
         AddCommand(historyCmd);
@@ -252,7 +252,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(goalOpt) ?? string.Empty,
                 ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).GetAwaiter().GetResult();
         });
         /// <summary>Add command.</summary>
         AddCommand(recommendCmd);
@@ -293,7 +293,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
                 ctx.ParseResult.GetValueForOption(stageOpt),
                 ctx.ParseResult.GetValueForOption(minConsecutivePassesOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt)).GetAwaiter().GetResult();
         });
         /// <summary>Add command.</summary>
         AddCommand(gateCmd);
@@ -414,7 +414,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(ncrLoadMsSloOpt),
                 ctx.ParseResult.GetValueForOption(ncrOutcomeMsSloOpt),
                 ctx.ParseResult.GetValueForOption(ncrFailureRateSloOpt),
-                ctx.ParseResult.GetValueForOption(jsonOpt),
+                CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
         /// <summary>Add command.</summary>

@@ -47,8 +47,7 @@ public sealed class DoctorCommand : Command
             // global, so `doctor --format-json` parsed and was then dropped on the floor: the caller
             // got prose on the stdout it was piping into a parser. The JSON payload below already
             // exists — answer to both spellings rather than invent a second report.
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt)
-                || CommandExecutionSupport.WantsJson(ctx.ParseResult);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt);
             var fix = ctx.ParseResult.GetValueForOption(fixOpt);
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);

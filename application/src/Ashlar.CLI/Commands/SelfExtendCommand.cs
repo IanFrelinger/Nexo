@@ -54,7 +54,7 @@ public sealed class SelfExtendCommand : Command
             var repoRoot = ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory;
             var provider = ctx.ParseResult.GetValueForOption(providerOpt);
             var allowMock = ctx.ParseResult.GetValueForOption(allowMockOpt);
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt);
             var runTests = ctx.ParseResult.GetValueForOption(runTestsOpt);
             var testFilter = ctx.ParseResult.GetValueForOption(testFilterOpt) ?? "SelfExtendGenerated";
             var runtimeSpecPath = ctx.ParseResult.GetValueForOption(runtimeSpecOpt);
@@ -101,7 +101,7 @@ public sealed class SelfExtendCommand : Command
             var runtimeSpecJson = ctx.ParseResult.GetValueForOption(runtimeSpecJsonOpt);
             var focus = ctx.ParseResult.GetValueForOption(focusOpt);
             var maxIterations = ctx.ParseResult.GetValueForOption(maxIterationsOpt);
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, jsonOpt);
             ctx.ExitCode = await ExecutePreflightAsync(
                 repoRoot,
                 provider,

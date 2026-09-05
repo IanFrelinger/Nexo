@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Ashlar.CLI.Commands;
 
@@ -11,37 +12,30 @@ static partial class Program
     {
         // ashlar trust - Audit and access boundary (Phase 4)
         var trustCmd = new Command("trust", "Trust & Information Architecture: audit log and access boundary");
+        var auditCountOpt = new Option<int>("--count", () => 50, "Max entries to show");
+        var auditSinceOpt = new Option<string?>("--since", "Filter by time (e.g. 1h, 30m, or ISO date)");
+        var auditUntilOpt = new Option<string?>("--until", "Filter until time (e.g. 1h, 30m, or ISO date)");
+        var auditTypeOpt = new Option<string?>("--type", "Filter by event type (Sanitization, BoundaryChange, Classification)");
+        var auditJsonOpt = new Option<bool>("--json", "Export as JSON (compliance format)");
+        var auditMdOpt = new Option<bool>("--md", "Export as Markdown");
+        var auditCsvOpt = new Option<bool>("--csv", "Export as CSV (compliance)");
         var trustAuditCmd = new Command("audit", "Show or export data decision audit log")
         {
-            new Option<int>("--count", () => 50, "Max entries to show"),
-            new Option<string?>("--since", "Filter by time (e.g. 1h, 30m, or ISO date)"),
-            new Option<string?>("--until", "Filter until time (e.g. 1h, 30m, or ISO date)"),
-            new Option<string?>("--type", "Filter by event type (Sanitization, BoundaryChange, Classification)"),
-            new Option<bool>("--json", "Export as JSON (compliance format)"),
-            new Option<bool>("--md", "Export as Markdown"),
-            new Option<bool>("--csv", "Export as CSV (compliance)")
+            auditCountOpt, auditSinceOpt, auditUntilOpt, auditTypeOpt, auditJsonOpt, auditMdOpt, auditCsvOpt
         };
-        trustAuditCmd.SetHandler(
-            /// <summary>Async.</summary>
-            /// <param name="count">Count.</param>
-            /// <param name="since">Since.</param>
-            /// <param name="until">Until.</param>
-            /// <param name="type">Type.</param>
-            /// <param name="json">Json.</param>
-            /// <param name="md">Md.</param>
-            /// <param name="csv">Csv.</param>
-            async (int count, string? since, string? until, string? type, bool json, bool md, bool csv) =>
-            {
-                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
-                Environment.Exit(await cmd.AuditAsync(count, since, until, type, json, md, csv));
-            },
-            trustAuditCmd.Options[0] as Option<int> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[3] as Option<string?> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[4] as Option<bool> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[5] as Option<bool> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[6] as Option<bool> ?? throw new InvalidOperationException());
+        trustAuditCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+            var json = CommandExecutionSupport.WantsJson(ctx.ParseResult, auditJsonOpt);
+            Environment.Exit(await cmd.AuditAsync(
+                ctx.ParseResult.GetValueForOption(auditCountOpt),
+                ctx.ParseResult.GetValueForOption(auditSinceOpt),
+                ctx.ParseResult.GetValueForOption(auditUntilOpt),
+                ctx.ParseResult.GetValueForOption(auditTypeOpt),
+                json,
+                ctx.ParseResult.GetValueForOption(auditMdOpt),
+                ctx.ParseResult.GetValueForOption(auditCsvOpt)));
+        });
         trustCmd.AddCommand(trustAuditCmd);
         var trustPauseCmd = new Command("pause", "Pause observation (halt all data collection)");
         trustPauseCmd.AddOption(jsonOpt);
