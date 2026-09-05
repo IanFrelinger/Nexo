@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Ashlar.CLI.Commands;
 using Ashlar.CLI.Runtime;
 using Ashlar.Orchestration.Models;
 
@@ -45,6 +46,17 @@ internal sealed class StressHandler(
         bool verbose,
         CancellationToken ct)
     {
+        if (!string.IsNullOrWhiteSpace(preferOverride))
+        {
+            if (!OrchestrateCommand.TryNormalizePreferModel(preferOverride, out var normalizedPrefer))
+            {
+                WriteResult(new WorkflowStressResult(false, OrchestrateCommand.InvalidPreferMessage), json);
+                return 1;
+            }
+
+            preferOverride = normalizedPrefer;
+        }
+
         var resolvedSpecPath = resolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try

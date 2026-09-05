@@ -114,12 +114,25 @@ public class OrchestrateCommand
             ["CorrelationId"] = correlationId
         });
 
+        if (!string.IsNullOrWhiteSpace(preferModel) && !TryNormalizePreferModel(preferModel, out _))
+        {
+            return new StructuredOrchestrationResult(
+                Ok: false,
+                CorrelationId: correlationId,
+                Error: InvalidPreferModelMessage,
+                ErrorCode: "INVALID_PREFER_MODEL",
+                Success: false,
+                AgentCount: 0,
+                Conflicts: 0,
+                Escalations: 0);
+        }
+
         try
         {
             var spec = OrchestrationRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
-            if (!string.IsNullOrWhiteSpace(preferModel))
+            if (!string.IsNullOrWhiteSpace(preferModel) && TryNormalizePreferModel(preferModel, out var normalizedPrefer))
             {
-                spec = spec with { Model = spec.Model with { Prefer = preferModel!.Trim() } };
+                spec = spec with { Model = spec.Model with { Prefer = normalizedPrefer } };
             }
             if (!string.IsNullOrWhiteSpace(provider))
             {
@@ -209,6 +222,26 @@ public class OrchestrateCommand
             ["CorrelationId"] = correlationId
         });
 
+        if (!string.IsNullOrWhiteSpace(preferModel) && !TryNormalizePreferModel(preferModel, out _))
+        {
+            if (json)
+            {
+                _renderer.RenderJson(new
+                {
+                    ok = false,
+                    correlationId,
+                    error = InvalidPreferModelMessage,
+                    errorCode = "INVALID_PREFER_MODEL"
+                });
+            }
+            else
+            {
+                _renderer.RenderError(InvalidPreferModelMessage);
+            }
+
+            return (int)ExitCode.ValidationFailed;
+        }
+
         if (verbose)
         {
             _renderer.RenderProgressStart($"CorrelationId={correlationId} :: orchestrating request: {request}");
@@ -217,9 +250,9 @@ public class OrchestrateCommand
         try
         {
             var spec = OrchestrationRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
-            if (!string.IsNullOrWhiteSpace(preferModel))
+            if (!string.IsNullOrWhiteSpace(preferModel) && TryNormalizePreferModel(preferModel, out var normalizedPrefer))
             {
-                spec = spec with { Model = spec.Model with { Prefer = preferModel!.Trim() } };
+                spec = spec with { Model = spec.Model with { Prefer = normalizedPrefer } };
             }
             if (!string.IsNullOrWhiteSpace(provider))
             {
@@ -417,6 +450,23 @@ public class OrchestrateCommand
                 return headerValue;
         }
         return null;
+    }
+
+    internal const string InvalidPreferModelMessage = "Invalid --prefer-model. Use agentic, deterministic, or auto.";
+
+    internal const string InvalidPreferMessage = "Invalid --prefer. Use agentic, deterministic, or auto.";
+
+    /// <summary>Accepts documented model preferences only: agentic, deterministic, or auto.</summary>
+    internal static bool TryNormalizePreferModel(string? prefer, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(prefer))
+        {
+            normalized = "auto";
+            return true;
+        }
+
+        normalized = prefer.Trim().ToLowerInvariant();
+        return normalized is "agentic" or "deterministic" or "auto";
     }
 }
 

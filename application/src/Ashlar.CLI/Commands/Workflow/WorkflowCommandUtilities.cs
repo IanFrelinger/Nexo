@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Ashlar.CLI.Commands;
 using Ashlar.CLI.Runtime;
 using Ashlar.Orchestration.Models;
 using Process = System.Diagnostics.Process;
@@ -157,7 +158,11 @@ internal static class WorkflowCommandUtilities
         if (!string.IsNullOrWhiteSpace(provider))
             updated = updated with { Provider = provider };
         if (!string.IsNullOrWhiteSpace(prefer))
-            updated = updated with { Prefer = prefer };
+        {
+            if (!OrchestrateCommand.TryNormalizePreferModel(prefer, out var normalizedPrefer))
+                throw new ArgumentException(OrchestrateCommand.InvalidPreferMessage);
+            updated = updated with { Prefer = normalizedPrefer };
+        }
         return updated;
     }
 

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Ashlar.CLI.Commands;
 using Ashlar.CLI.Runtime;
 namespace Ashlar.CLI.Commands.Workflow;
 /// <summary>Handles optimize requests.</summary>
@@ -40,6 +41,17 @@ internal sealed partial class OptimizeHandler(
         bool verbose,
         CancellationToken ct)
     {
+        if (!string.IsNullOrWhiteSpace(preferOverride))
+        {
+            if (!OrchestrateCommand.TryNormalizePreferModel(preferOverride, out var normalizedPrefer))
+            {
+                WriteResult(new WorkflowOptimizeResult(false, OrchestrateCommand.InvalidPreferMessage), json);
+                return 1;
+            }
+
+            preferOverride = normalizedPrefer;
+        }
+
         var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try

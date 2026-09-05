@@ -79,6 +79,17 @@ public sealed class ChatCommand : Command
         bool demoLocal,
         CancellationToken ct)
     {
+        if (!string.IsNullOrWhiteSpace(preferModel))
+        {
+            if (!OrchestrateCommand.TryNormalizePreferModel(preferModel, out var normalizedPrefer))
+            {
+                Console.Error.WriteLine(OrchestrateCommand.InvalidPreferModelMessage);
+                return 1;
+            }
+
+            preferModel = normalizedPrefer;
+        }
+
         var state = new ChatState(provider, preferModel, ephemeral);
         if (state.Ephemeral)
             Environment.SetEnvironmentVariable("ASHLAR_EPHEMERAL_MODELS", "1");
@@ -186,7 +197,12 @@ public sealed class ChatCommand : Command
                     Console.WriteLine("Usage: /model <agentic|deterministic|auto>");
                     return null;
                 }
-                state.PreferModel = parts[1];
+                if (!OrchestrateCommand.TryNormalizePreferModel(parts[1], out var normalizedPrefer))
+                {
+                    Console.WriteLine("Invalid /model. Use agentic, deterministic, or auto.");
+                    return null;
+                }
+                state.PreferModel = normalizedPrefer;
                 Console.WriteLine($"Prefer-model set to: {state.PreferModel}");
                 return null;
 

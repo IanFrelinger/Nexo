@@ -36,6 +36,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestBootstrapInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
             await TestDoctorInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
             await TestSelfExtendInvalidFocusExitsNonZeroAsync().ConfigureAwait(false);
+            await TestChatInvalidPreferModelExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowStressInvalidPreferExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -590,6 +592,62 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "An invalid --focus must be refused legibly.");
             AssertTrue(!output.Contains("Preflight passed", StringComparison.Ordinal),
                 "An invalid --focus must be refused before running preflight as balanced.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestChatInvalidPreferModelExitsNonZeroAsync()
+    {
+        var orchestrateCalled = false;
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ChatCommand(() =>
+            {
+                orchestrateCalled = true;
+                throw new InvalidOperationException("orchestrate must not run for invalid --prefer-model");
+            }));
+            var exitCode = await root.InvokeAsync("chat --prefer-model xyz --prompt hello --skip-bootstrap-check").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "chat --prefer-model xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --prefer-model", StringComparison.Ordinal),
+                "An invalid --prefer-model must be refused legibly.");
+            AssertTrue(!orchestrateCalled,
+                "An invalid --prefer-model must be refused before starting orchestration.");
+            AssertTrue(!output.Contains("Chat demo-local mode enabled", StringComparison.Ordinal),
+                "An invalid --prefer-model must be refused before demo-local orchestration.");
+            AssertTrue(!output.Contains("Orchestration completed successfully", StringComparison.Ordinal),
+                "An invalid --prefer-model must not complete orchestration.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowStressInvalidPreferExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow stress --prefer xyz --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow stress --prefer xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --prefer", StringComparison.Ordinal),
+                "An invalid --prefer must be refused legibly.");
+            AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
+                "An invalid --prefer must be refused before starting workflow stress.");
         }
         finally
         {
