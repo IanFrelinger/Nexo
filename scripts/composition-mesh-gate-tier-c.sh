@@ -13,10 +13,17 @@ FLEET_TESTS="commercial/tests/Ashlar.Commercial.Tests.Fleet/Ashlar.Commercial.Te
 FLEET_HOST_TESTS="commercial/tests/Ashlar.Commercial.Tests.Fleet.Host/Ashlar.Commercial.Tests.Fleet.Host.csproj"
 MESH_DIRECTOR_TESTS="commercial/tests/Ashlar.Commercial.Tests.MeshDirector/Ashlar.Commercial.Tests.MeshDirector.csproj"
 
-echo "== Mesh Tier C: fleet / clustered task control plane (in-process) =="
-dotnet build "$FLEET_TESTS" -f net8.0 -v minimal
-ASHLAR_ALLOW_MOCK=1 dotnet test "$FLEET_TESTS" -f net8.0 --no-build \
-  --blame-hang-timeout 180s --blame-hang-dump-type none
+echo "== Mesh Tier C: fleet / clustered task control plane (in-process, counted) =="
+# An unfiltered project run still exits 0 when discovery matches nothing.
+# The counted wrapper is the fail-closed runner (176 unique identities on net8.0).
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$FLEET_TESTS" \
+  --expected-prefix "Ashlar.Commercial.Tests.Fleet." \
+  --min-tests 176 \
+  -- \
+  -f net8.0 \
+  --blame-hang-timeout 180s \
+  --blame-hang-dump-type none
 
 echo ""
 echo "== Mesh Tier C: commercial Fleet.Host endpoints (net10.0, counted) =="

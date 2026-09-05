@@ -178,6 +178,15 @@ class CompositionMeshTierABCountedTests(unittest.TestCase):
 
 
 class CompositionMeshTierCFleetHostTests(unittest.TestCase):
+    def test_tier_c_runs_counted_fleet_suite_on_net8(self) -> None:
+        text = (ROOT / "scripts" / "composition-mesh-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Commercial.Tests.Fleet.csproj", text)
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--expected-prefix \"Ashlar.Commercial.Tests.Fleet.\"", text)
+        self.assertIn("--min-tests 176", text)
+        self.assertIn("-f net8.0", text)
+        self.assertNotIn('dotnet test "$FLEET_TESTS"', text)
+
     def test_tier_c_runs_counted_fleet_host_suite_on_net10(self) -> None:
         text = (ROOT / "scripts" / "composition-mesh-gate-tier-c.sh").read_text(encoding="utf-8")
         self.assertIn("Ashlar.Commercial.Tests.Fleet.Host", text)

@@ -48,6 +48,18 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void MeshTierC_RunsCountedFleetSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/composition-mesh-gate-tier-c.sh"));
+        text.Should().Contain("Ashlar.Commercial.Tests.Fleet.csproj");
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--expected-prefix \"Ashlar.Commercial.Tests.Fleet.\"");
+        text.Should().Contain("--min-tests 176");
+        text.Should().NotContain("dotnet test \"$FLEET_TESTS\"");
+    }
+
+    [Fact]
     public void MeshTierC_RunsCountedMeshDirectorSuite()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

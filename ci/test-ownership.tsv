@@ -40,7 +40,7 @@
 project	runner	expires	note
 application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj	complete-cli-suite	-	Release proof is the tests-lane counted suite (207 rows, excludes hanging UnitTestBridgeTests). security-gate-tier-c is the 61-test PR subset. Also in Ashlar.PrimeTime.slnf
 commercial/tests/Ashlar.Commercial.Tests.Fleet.Host/Ashlar.Commercial.Tests.Fleet.Host.csproj	composition-mesh-gate-tier-c	-	THE MOTIVATING CASE, now enrolled: Ashlar.sln + counted net10.0 floor (4) in composition-mesh-gate-tier-c. [was UNOWNED until 2027-03-31]
-commercial/tests/Ashlar.Commercial.Tests.Fleet/Ashlar.Commercial.Tests.Fleet.csproj	composition-mesh-gate-tier-c	-	commercial fleet
+commercial/tests/Ashlar.Commercial.Tests.Fleet/Ashlar.Commercial.Tests.Fleet.csproj	composition-mesh-gate-tier-c	-	commercial fleet (counted net8.0 floor 176)
 commercial/tests/Ashlar.Commercial.Tests.MeshDirector/Ashlar.Commercial.Tests.MeshDirector.csproj	composition-mesh-gate-tier-c	-	counted net8.0 floor (4) in composition-mesh-gate-tier-c [was UNOWNED until 2027-03-31]
 samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj	full-platform-readiness-gate	-	sample; reached by ashlar validate, not by any solution
 samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj	UNOWNED	2027-06-30	scaffolding template with placeholder identifiers, not a real suite; deliberately the longest expiry and staggered clear of the 2027-03-31 group
