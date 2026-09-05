@@ -1,0 +1,46 @@
+# Counted AwsSns (11) + DynamoDb (2) ingress units. Previously only
+# `make ashlar-ready-gate` / `make ingress-unit-gate` ran them; there
+# was no GitHub workflow, so a PR that broke those suites stayed green.
+name: ingress-unit-gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ingress-unit-gate.yml"
+      - "scripts/ingress-unit-gate.sh"
+      - "scripts/run-dotnet-test-counted.py"
+      - "src/Ashlar.Ingress.AwsSns/**"
+      - "src/Ashlar.Ingress.AwsSns.Tests/**"
+      - "src/Ashlar.Ingress.DynamoDb/**"
+      - "src/Ashlar.Ingress.DynamoDb.Tests/**"
+      - "Makefile"
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/ingress-unit-gate.yml"
+      - "scripts/ingress-unit-gate.sh"
+      - "scripts/run-dotnet-test-counted.py"
+      - "src/Ashlar.Ingress.AwsSns/**"
+      - "src/Ashlar.Ingress.AwsSns.Tests/**"
+      - "src/Ashlar.Ingress.DynamoDb/**"
+      - "src/Ashlar.Ingress.DynamoDb.Tests/**"
+      - "Makefile"
+  workflow_dispatch:
+
+jobs:
+  ingress-unit:
+    name: AwsSns + DynamoDb counted units
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Ingress unit suites
+        run: make ingress-unit-gate

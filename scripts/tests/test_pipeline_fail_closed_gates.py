@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 54", text)
+        self.assertIn("--min-tests 55", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -396,6 +396,14 @@ class IngressUnitGateCountedTests(unittest.TestCase):
     def test_ashlar_ready_invokes_ingress_unit_gate(self) -> None:
         text = (ROOT / "scripts" / "ashlar-ready-gate.sh").read_text(encoding="utf-8")
         self.assertIn("make ingress-unit-gate", text)
+
+    def test_ingress_unit_gate_workflow_runs_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "ingress-unit-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("make ingress-unit-gate", text)
+        self.assertIn("scripts/ingress-unit-gate.sh", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):

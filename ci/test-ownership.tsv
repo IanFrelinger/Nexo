@@ -45,8 +45,8 @@ commercial/tests/Ashlar.Commercial.Tests.MeshDirector/Ashlar.Commercial.Tests.Me
 samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj	full-platform-readiness-gate	-	sample; reached by ashlar validate, not by any solution
 samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj	UNOWNED	2027-06-30	scaffolding template with placeholder identifiers, not a real suite; deliberately the longest expiry and staggered clear of the 2027-03-31 group
 src/Ashlar.Analyzers.Tests/Ashlar.Analyzers.Tests.csproj	cert-gate	-	counted net8.0 floor (56) appended to the required cert-gate check [was UNOWNED until 2027-03-31]
-src/Ashlar.Ingress.AwsSns.Tests/Ashlar.Ingress.AwsSns.Tests.csproj	ingress-unit-gate	-	counted net8.0 floor (11) in ingress-unit-gate (ashlar-ready) [was UNOWNED until 2027-03-31]
-src/Ashlar.Ingress.DynamoDb.Tests/Ashlar.Ingress.DynamoDb.Tests.csproj	ingress-unit-gate	-	counted net8.0 floor (2) in ingress-unit-gate (ashlar-ready) [was UNOWNED until 2027-03-31]
+src/Ashlar.Ingress.AwsSns.Tests/Ashlar.Ingress.AwsSns.Tests.csproj	ingress-unit-gate	-	counted net8.0 floor (11) in ingress-unit-gate.yml (PR + ashlar-ready) [was UNOWNED until 2027-03-31]
+src/Ashlar.Ingress.DynamoDb.Tests/Ashlar.Ingress.DynamoDb.Tests.csproj	ingress-unit-gate	-	counted net8.0 floor (2) in ingress-unit-gate.yml (PR + ashlar-ready) [was UNOWNED until 2027-03-31]
 src/Ashlar.Mcp.Client.Tests/Ashlar.Mcp.Client.Tests.csproj	mcp-a2a-gate	-	counted net8.0 floor (33) in scripts/mcp-a2a-gate.sh
 src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj	mcp-a2a-gate	-	counted net8.0 floor (40) in scripts/mcp-a2a-gate.sh
 src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj	make-test	-	in Kernel and Runtime solutions

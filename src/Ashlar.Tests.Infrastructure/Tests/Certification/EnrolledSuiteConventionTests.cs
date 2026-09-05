@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 54");
+        text.Should().Contain("--min-tests 55");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -623,6 +623,16 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("Ashlar.Ingress.DynamoDb.Tests");
         text.Should().Contain("--min-tests 11");
         text.Should().Contain("--min-tests 2");
+    }
+
+    [Fact]
+    public void IngressUnitGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/ingress-unit-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("make ingress-unit-gate");
+        text.Should().Contain("scripts/ingress-unit-gate.sh");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)
