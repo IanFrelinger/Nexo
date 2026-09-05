@@ -9,7 +9,7 @@ nothing of value lived only on the wiped machine except the operator signing key
 
 ## 1. What this product is
 
-**Ashlar** (repo still named `Nexo` on GitHub: `github.com/IanFrelinger/Nexo`) is a development
+**Ashlar** is a development
 tool + runtime for building and deploying **governed, cryptographically certified AI/agentic
 applications** — CLI and GUI, targeting AWS, Azure, and native platforms, with an optional
 self-extending runtime.
@@ -102,7 +102,7 @@ Goal: multiple coding agents across nodes co-produce verified extensions.
 ## 6. Machine re-setup after the wipe
 
 1. Install: git, Docker Desktop, Claude Code, `gh` (auth to github.com/IanFrelinger).
-2. `git clone https://github.com/IanFrelinger/Nexo.git` (any path; sessions used
+2. `git clone https://github.com/IanFrelinger/Ashlar.git` (any path; sessions used
    `C:\Users\icfre\Downloads\Nexo-Framework`).
 3. **Everything builds/tests inside the dev container** — host runs may be blocked by Windows
    Application Control (that is WHY the container lane exists):

@@ -216,7 +216,7 @@ Needs the **.NET 10 SDK** (`global.json` pins `10.0.100`, `rollForward: latestFe
 SDK 10.0.400 satisfies it.
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
+git clone https://github.com/IanFrelinger/Ashlar.git && cd Ashlar
 dotnet build Ashlar.sln
 ```
 

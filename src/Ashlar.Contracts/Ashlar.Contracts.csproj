@@ -13,7 +13,7 @@
     <Title>Ashlar Contracts</Title>
     <Description>Shared HTTP DTOs and distributed execution contracts (envelopes, evidence, native host ports) for Ashlar API, client, and product hosts.</Description>
     <PackageTags>ashlar;ai;contracts;dto</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

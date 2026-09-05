@@ -4,14 +4,16 @@
 
 # Ashlar
 
-[![Kernel Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml)
-[![Kernel Coverage Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml)
+[![Kernel Gate](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-gate.yml)
+[![Kernel Coverage Gate](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-coverage-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-coverage-gate.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](global.json)
 
-> **Ashlar: auditable AI workflows on infrastructure you control — every artifact certified, every action on the record.**
+> **Ashlar: local-first .NET runtime for auditable AI workflows you embed — every artifact certified, every action on the record.**
 
-Ashlar is a self-hosted .NET runtime for AI workflows you can audit. Three things you get, each with a command behind it:
+Ashlar is a self-hosted .NET runtime for AI workflows you can audit and embed in your products. Build trustworthy AI applications on infrastructure you control.
+
+**Three things you get, each with a command behind it:**
 
 1. **Auditable workflows.** Submit a task and you get the output **and** the record of what ran: the task is stored under an id, and the trust log carries an entry whose `sourceId` is that id (`POST /api/copilot/task` → `GET /api/trust/dashboard`).
 2. **Certified artifacts.** Code that Ashlar — or a model — proposes only becomes trusted after the certification gate: analyzer fence → witness (correctness) → mutation testing (does the witness have teeth) → determinism. The gate is the one required CI check on `master` (`cert-gate`), and every ADMIT/REJECT it has proven is a row in [`docs/certification-evidence.md`](docs/certification-evidence.md).
@@ -19,11 +21,13 @@ Ashlar is a self-hosted .NET runtime for AI workflows you can audit. Three thing
 
 **Start here:** [`docs/TesterQuickstart.md`](docs/TesterQuickstart.md) — clone, build `Ashlar.Kernel.sln`, run the API on loopback, submit one task, read its audit trail, then run the gate and watch it admit and reject. About fifteen minutes; no Docker, no API keys.
 
-Other lanes: [**Try**](#lane-1--try-run-the-portal) (portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose) · [**Integrate**](docs/IntegratorGuide.md) (embed Ashlar in your host).
+**To embed Ashlar in your application:** [`docs/IntegratorGuide.md`](docs/IntegratorGuide.md) — NuGet packages, HTTP client, SDK integration, and distribution models.
+
+Other lanes: [**Try**](#lane-1--try-run-the-portal) (portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose).
 
 The trust loop that makes "certified" checkable — and the experimental, hold-mode autonomy loop built on it — is described in [Trust loop / certification](#trust-loop--certification-experimental) below. The observe → adapt → improve engine that watches how teams build, test, release, and operate software is one subsystem among several, not the product.
 
-Repository: <https://github.com/IanFrelinger/Nexo>
+Repository: <https://github.com/IanFrelinger/Ashlar>
 
 ## Architecture at a glance
 
@@ -120,6 +124,7 @@ Where to read and what to run:
 
 ## Why Ashlar
 
+- **Embed and build on it.** Distribute Ashlar as NuGet packages, HTTP API, CLI containers, or source integration. Embed the runtime in your application via `services.AddAshlar()` for complete control over AI workflow execution with built-in audit trails and certification.
 - **Control before capability.** Nothing is trusted because a model said so: proposals pass a gate, execution can be confined to attested containers, and admission is held until an operator flips it. Trust tiers, policy packs, and pause/resume sit on the execution path, not beside it.
 - **Proof, not claims.** The audit trail is queryable (`/api/trust/dashboard`, `/api/copilot/tasks`), the certificate is checkable (`cert-gate`), and the evidence ledger cites the run that proved each row.
 - **Data sovereignty.** Cloud providers are opt-in execution targets, not dependencies. Air-gapped and self-hosted deployments are first-class; the API fails closed on network exposure without auth.
@@ -146,7 +151,7 @@ Pick the lane that matches your goal. Most people should start with **Try**.
 The fastest way to see Ashlar work. Uses the mock provider, so **no API keys are required**.
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
+git clone https://github.com/IanFrelinger/Ashlar.git && cd Ashlar
 docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart .
 docker run --rm -p 127.0.0.1:8080:8080 ashlar:quickstart
 # Open http://localhost:8080
@@ -157,8 +162,8 @@ The image has no auth; publish on all interfaces (`-p 8080:8080`) only behind au
 Prefer the CLI? Pull the published image and run a command:
 
 ```bash
-docker pull ghcr.io/ianfrelinger/nexo-cli:latest
-docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
+docker pull ghcr.io/ianfrelinger/ashlar-cli:latest
+docker run --rm ghcr.io/ianfrelinger/ashlar-cli:latest --help
 ```
 
 ### Lane 2 — Develop (dev container + CLI)
@@ -207,8 +212,8 @@ dotnet run --project application/src/Ashlar.CLI -- pipeline diagnostics --format
 Use this only when containers are not an option. Requires .NET SDK 10.x (LTS). The CLI and API ship on `net10.0`; libraries and test hosts that still carry `net8.0` roll forward onto the 10.x runtime (`RollForward=Major`, set in `Directory.Build.targets`), so an SDK-10-only machine works without a separate .NET 8 runtime.
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git
-cd Nexo
+git clone https://github.com/IanFrelinger/Ashlar.git
+cd Ashlar
 bash scripts/setup/setup.sh all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 dotnet run --project application/src/Ashlar.CLI -- doctor --json
@@ -217,8 +222,8 @@ dotnet run --project application/src/Ashlar.CLI -- doctor --json
 Windows PowerShell:
 
 ```powershell
-git clone https://github.com/IanFrelinger/Nexo.git
-Set-Location Nexo
+git clone https://github.com/IanFrelinger/Ashlar.git
+Set-Location Ashlar
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 dotnet run --project application/src/Ashlar.CLI -- doctor --json
@@ -265,7 +270,7 @@ Validate a pipeline template from a mounted workspace with the published CLI ima
 
 ```bash
 docker run --rm -v "$PWD:/work" -w /work \
-  ghcr.io/ianfrelinger/nexo-cli:0.1.2 \
+  ghcr.io/ianfrelinger/ashlar-cli:0.1.2 \
   pipeline validate --template /work/path/to/template.json
 ```
 
@@ -305,8 +310,8 @@ Ship Ashlar from published container images and compose files. Host-native scrip
 
 | Image | Use |
 |-------|-----|
-| `ghcr.io/ianfrelinger/nexo-cli:0.1.2` | **Recommended for operators** — the immutable, smoke-tested, multi-arch release tag. Automation, agents, validation, and mounted-workspace commands. (`deploy/node.yml` pins its digest.) |
-| `ghcr.io/ianfrelinger/nexo-cli:latest` | Rolling tag, republished on every `master` push — fine for "just try it", but it moves and can be GC'd, so pin `:0.1.2` (or a digest) for anything durable. |
+| `ghcr.io/ianfrelinger/ashlar-cli:0.1.2` | **Recommended for operators** — the immutable, smoke-tested, multi-arch release tag. Automation, agents, validation, and mounted-workspace commands. (`deploy/node.yml` pins its digest.) |
+| `ghcr.io/ianfrelinger/ashlar-cli:latest` | Rolling tag, republished on every `master` push — fine for "just try it", but it moves and can be GC'd, so pin `:0.1.2` (or a digest) for anything durable. |
 | Build from `.docker/Dockerfile.quickstart` | Single-container API + portal smoke path with mock-friendly defaults. |
 | Build from `.docker/Dockerfile.api` | API image used by compose stacks. |
 
@@ -350,7 +355,7 @@ See [`docs/Configuration.md`](docs/Configuration.md).
 The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/protocols/ingress, commercial satellites, and tests. Two similarly named folders mean two different things: singular **`application/`** = the CLI/API hosts, **`apps/`** = agent-set/host configuration.
 
 ```text
-Nexo/                             # the repo/clone directory (github.com/IanFrelinger/Nexo; the product is Ashlar)
+Ashlar/                           # the repo/clone directory (github.com/IanFrelinger/Ashlar)
 ├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
 ├── application/src/              # Ashlar.CLI, Ashlar.API hosts + Ashlar.Tests.CLI (open)
 ├── products/                     # extractable product scaffolds (workstation, cluster, cloud, native)
