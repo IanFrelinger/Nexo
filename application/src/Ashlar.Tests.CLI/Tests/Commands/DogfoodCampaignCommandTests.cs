@@ -13,6 +13,6 @@ public sealed class DogfoodCampaignCommandTests
         var command = new DogfoodCommand();
         command.Subcommands.Should().Contain(c => c.Name == "campaign");
         var campaign = command.Subcommands.Single(c => c.Name == "campaign");
-        campaign.Options.Select(o => o.Name).Should().Contain(new[] { "--full", "--config", "--output", "--lane" });
+        campaign.Options.Select(o => o.Name).Should().Contain(new[] { "full", "config", "output", "lane" });
     }
 }
