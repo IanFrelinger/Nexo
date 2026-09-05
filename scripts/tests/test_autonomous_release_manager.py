@@ -3,6 +3,7 @@ from __future__ import annotations
 import concurrent.futures
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -123,6 +124,13 @@ class PlanValidationTests(unittest.TestCase):
 
     def test_committed_semantic_agents_and_skill_are_complete(self) -> None:
         arm.validate_cursor_assets(SCRIPT.parents[1])
+
+    def test_canonical_plan_is_bound_to_head_and_code_digest(self) -> None:
+        repo = SCRIPT.parents[1]
+        digest = arm.validate_plan_binding(
+            repo, repo / arm.CANONICAL_PLAN_RELATIVE_PATH
+        )
+        self.assertEqual(arm.TRUSTED_PLAN_SHA256, digest)
 
     def test_missing_semantic_agents_fail_validation(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -390,6 +398,55 @@ The following Tests are available:
         }
         records = vulnerabilities.vulnerability_records(report)
         self.assertEqual(["unsafe"], [record["id"] for record in records])
+
+
+class ReleaseScriptSafetyTests(unittest.TestCase):
+    def test_preflight_refuses_version_mismatch_before_pack(self) -> None:
+        repo = SCRIPT.parents[1]
+        run = subprocess.run(
+            ["bash", "scripts/release-preflight-local.sh", "9.9.9"],
+            cwd=repo,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        self.assertNotEqual(0, run.returncode)
+        self.assertIn("does not match VERSION file", run.stdout)
+        self.assertNotIn("Pack graph vs MSBuild", run.stdout)
+
+    def test_prod_dry_run_cleans_stack_on_failure(self) -> None:
+        repo = SCRIPT.parents[1]
+        with tempfile.TemporaryDirectory() as temp:
+            fake_bin = Path(temp)
+            docker_log = fake_bin / "docker.log"
+            docker = fake_bin / "docker"
+            docker.write_text(
+                f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> {str(docker_log)!r}\nexit 0\n",
+                encoding="utf-8",
+            )
+            docker.chmod(0o755)
+            curl = fake_bin / "curl"
+            curl.write_text("#!/usr/bin/env bash\nexit 22\n", encoding="utf-8")
+            curl.chmod(0o755)
+            environment = os.environ.copy()
+            environment["PATH"] = f"{fake_bin}{os.pathsep}{environment['PATH']}"
+            environment["COMPOSE_PROJECT_NAME"] = "ashlar-release-manager-test"
+            run = subprocess.run(
+                ["bash", "scripts/prod-dry-run.sh", "--portal", "--no-build"],
+                cwd=repo,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+
+            self.assertNotEqual(0, run.returncode)
+            self.assertIn(
+                "compose -f deploy/compose/docker-compose.portal.yml down --remove-orphans",
+                docker_log.read_text(encoding="utf-8"),
+            )
 
 
 if __name__ == "__main__":
