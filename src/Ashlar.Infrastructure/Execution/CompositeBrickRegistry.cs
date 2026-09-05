@@ -43,7 +43,7 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
                 if (entry != null)
                 {
                     var executeBaseUrl = entry.HostBaseUrl ?? catalog.BaseUrl.TrimEnd('/');
-                    var capabilityFetch = WaitOffSyncContext(catalog.GetCapabilitiesWithStalenessAsync);
+                    var capabilityFetch = WaitOffSyncContext(() => catalog.GetCapabilitiesWithStalenessAsync());
                     entry.HostCapabilities ??= capabilityFetch.Capabilities;
                     if (capabilityFetch.IsStale)
                     {
@@ -76,9 +76,9 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
         {
             try
             {
-                var entries = WaitOffSyncContext(catalog.GetAllAsync);
+                var entries = WaitOffSyncContext(() => catalog.GetAllAsync());
                 var baseUrl = catalog.BaseUrl.TrimEnd('/');
-                var capabilityFetch = WaitOffSyncContext(catalog.GetCapabilitiesWithStalenessAsync);
+                var capabilityFetch = WaitOffSyncContext(() => catalog.GetCapabilitiesWithStalenessAsync());
                 var hostCapabilities = capabilityFetch.Capabilities;
                 if (capabilityFetch.IsStale)
                 {
