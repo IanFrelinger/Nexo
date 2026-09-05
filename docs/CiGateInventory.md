@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 70 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 71 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -87,7 +87,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `autonomous-release-manager.yml` | Autonomous Release Manager / `Validate release manager` | paths: coordinator, plan, tests, workflow | weekly schedule + dispatch run the full six-lane audit; PRs run only unit tests and immutable-plan validation |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` — 3-OS loop plus e2e-loop collapse floor 143 (Linux) / 137 (otherwise) | dispatch |
 | `production-readiness-gate-v1.yml` | Production Readiness Gate v1 / `scripts/production-readiness-gate-v1-tests.sh` | paths: pipelines sources/tests, CLI, readiness docs — counted Pipelines 68 (net8 + net10) + host-DI 2 | push `master`/`main`/`cursor/**`, dispatch |
-| `ship-gate.yml` | Ship Gate / `ship-gate` | paths: BaseFramework smoke tests, `scripts/ship-gate-tier-b.sh`, `scripts/ship-gate-tier-d.sh` — PR runs counted Tier B smoke (9) + ProdStyle and always runs `ci release-bundle`; A/C stay dispatch-only | dispatch |
+| `ship-gate.yml` | Ship Gate / `ship-gate` | paths: BaseFramework smoke tests, `scripts/ship-gate-tier-b.sh`, `scripts/ship-gate-tier-c.sh`, `scripts/ship-gate-tier-d.sh` — PR runs counted Tier B smoke (9) + ProdStyle, pack+consume preflight, and `ci release-bundle`; A stays dispatch-only | dispatch |
 | `ingress-unit-gate.yml` | ingress-unit-gate / `AwsSns + DynamoDb counted units` | paths: ingress sources/tests, `scripts/ingress-unit-gate.sh`, counted wrapper — counted AwsSns 11 + DynamoDb 2 | push `master`/`main`/`cursor/**`, dispatch |
 | `onboarding-docs-guard.yml` | Onboarding Docs Guard / `guard` | paths: README, `docs/**/*.md`, `scripts/*.{sh,ps1}`, `Makefile`, `**/*.csproj` — startup-doc greps, referenced-path existence, ProjectTiers census | push `master`/`main`/`cursor/**`, dispatch |
 | `pack-hosting-graph-alignment.yml` | Pack hosting graph alignment / `verify` | paths: `src/**/*.csproj`, pack scripts, `Directory.Build.props` — pack list vs `Ashlar.Hosting` MSBuild graph (17 packed) | push `master`/`main`/`cursor/**`, dispatch |
