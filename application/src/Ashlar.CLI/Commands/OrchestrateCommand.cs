@@ -130,6 +130,19 @@ public class OrchestrateCommand
         try
         {
             var spec = OrchestrationRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
+            if (!TryValidateRuntimeSpecPrefers(spec, out var invalidPrefer))
+            {
+                return new StructuredOrchestrationResult(
+                    Ok: false,
+                    CorrelationId: correlationId,
+                    Error: invalidPrefer,
+                    ErrorCode: "INVALID_RUNTIME_SPEC_PREFER",
+                    Success: false,
+                    AgentCount: 0,
+                    Conflicts: 0,
+                    Escalations: 0);
+            }
+
             if (!string.IsNullOrWhiteSpace(preferModel) && TryNormalizePreferModel(preferModel, out var normalizedPrefer))
             {
                 spec = spec with { Model = spec.Model with { Prefer = normalizedPrefer } };
@@ -250,6 +263,26 @@ public class OrchestrateCommand
         try
         {
             var spec = OrchestrationRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
+            if (!TryValidateRuntimeSpecPrefers(spec, out var invalidPrefer))
+            {
+                if (json)
+                {
+                    _renderer.RenderJson(new
+                    {
+                        ok = false,
+                        correlationId,
+                        error = invalidPrefer,
+                        errorCode = "INVALID_RUNTIME_SPEC_PREFER"
+                    });
+                }
+                else
+                {
+                    _renderer.RenderError(invalidPrefer);
+                }
+
+                return (int)ExitCode.ValidationFailed;
+            }
+
             if (!string.IsNullOrWhiteSpace(preferModel) && TryNormalizePreferModel(preferModel, out var normalizedPrefer))
             {
                 spec = spec with { Model = spec.Model with { Prefer = normalizedPrefer } };
@@ -456,6 +489,8 @@ public class OrchestrateCommand
 
     internal const string InvalidPreferMessage = "Invalid --prefer. Use agentic, deterministic, or auto.";
 
+    internal const string InvalidRuntimeSpecPreferMessage = "Invalid prefer in runtime spec. Use agentic, deterministic, or auto.";
+
     /// <summary>Accepts documented model preferences only: agentic, deterministic, or auto.</summary>
     internal static bool TryNormalizePreferModel(string? prefer, out string normalized)
     {
@@ -467,6 +502,38 @@ public class OrchestrateCommand
 
         normalized = prefer.Trim().ToLowerInvariant();
         return normalized is "agentic" or "deterministic" or "auto";
+    }
+
+    /// <summary>Refuses unknown Prefer values on the default, domain, and agent scopes.</summary>
+    internal static bool TryValidateRuntimeSpecPrefers(OrchestrationRuntimeSpec spec, out string error)
+    {
+        error = InvalidRuntimeSpecPreferMessage;
+        if (spec is null)
+            return false;
+
+        if (!TryNormalizePreferModel(spec.Model?.Prefer, out _))
+            return false;
+
+        if (spec.Domains != null)
+        {
+            foreach (var entry in spec.Domains.Values)
+            {
+                if (!TryNormalizePreferModel(entry.Prefer, out _))
+                    return false;
+            }
+        }
+
+        if (spec.Agents != null)
+        {
+            foreach (var entry in spec.Agents.Values)
+            {
+                if (!TryNormalizePreferModel(entry.Prefer, out _))
+                    return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
     }
 }
 

@@ -69,6 +69,12 @@ internal sealed class StressHandler(
             return 1;
         }
 
+        if (!WorkflowCommandUtilities.TryValidateWorkflowLabPrefers(spec, out var invalidPrefer))
+        {
+            WriteResult(new WorkflowStressResult(false, invalidPrefer), json);
+            return 1;
+        }
+
         var repoRoot = Environment.CurrentDirectory;
         var requests = normalizeRequests(spec.Requests);
         var compositions = normalizeCompositions(spec.Compositions);

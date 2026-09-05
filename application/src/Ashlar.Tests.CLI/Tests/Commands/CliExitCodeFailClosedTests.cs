@@ -42,6 +42,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestWorkflowOptimizeInvalidSearchStrategyExitsNonZeroAsync().ConfigureAwait(false);
             await TestImproveInvalidAutonomyExitsNonZeroAsync().ConfigureAwait(false);
             await TestMultiEnvInvalidSuiteExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidSpecPreferExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowStressInvalidSpecPreferExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -761,6 +763,81 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
         {
             Console.SetOut(ConsoleCapture.Out);
             Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private static string WriteWorkflowLabSpecWithPrefer(string prefer)
+    {
+        var specPath = Path.Combine(Path.GetTempPath(), $"ashlar-workflow-prefer-{Guid.NewGuid():N}.json");
+        File.WriteAllText(specPath,
+            $$"""
+            {
+              "execution": { "iterations": 1, "persistHistory": false },
+              "requests": [{ "id": "hello", "prompt": "hello" }],
+              "compositions": [{
+                "id": "solo",
+                "roles": [{ "agentId": "builder-1", "role": "builder", "goal": "Handle the request." }]
+              }],
+              "modelProfiles": [{
+                "id": "mock",
+                "default": { "prefer": "{{prefer}}", "provider": "mock-json" }
+              }]
+            }
+            """);
+        return specPath;
+    }
+
+    private async Task TestWorkflowOptimizeInvalidSpecPreferExitsNonZeroAsync()
+    {
+        var specPath = WriteWorkflowLabSpecWithPrefer("xyz");
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync($"workflow optimize --spec {specPath} --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize with prefer xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid prefer in runtime spec", StringComparison.Ordinal),
+                "An invalid runtime-spec prefer must be refused legibly.");
+            AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
+                "An invalid runtime-spec prefer must be refused before starting optimize orchestration.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "An invalid runtime-spec prefer must be refused before evaluating optimize candidates.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (File.Exists(specPath))
+                File.Delete(specPath);
+        }
+    }
+
+    private async Task TestWorkflowStressInvalidSpecPreferExitsNonZeroAsync()
+    {
+        var specPath = WriteWorkflowLabSpecWithPrefer("xyz");
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync($"workflow stress --spec {specPath} --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow stress with prefer xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid prefer in runtime spec", StringComparison.Ordinal),
+                "An invalid runtime-spec prefer must be refused legibly.");
+            AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
+                "An invalid runtime-spec prefer must be refused before starting workflow stress.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (File.Exists(specPath))
+                File.Delete(specPath);
         }
     }
 }

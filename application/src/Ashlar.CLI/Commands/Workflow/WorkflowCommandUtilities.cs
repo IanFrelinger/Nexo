@@ -152,17 +152,65 @@ internal static class WorkflowCommandUtilities
     }
 
 
+    internal static bool TryValidateWorkflowLabPrefers(WorkflowLabRuntimeSpec spec, out string error)
+    {
+        error = OrchestrateCommand.InvalidRuntimeSpecPreferMessage;
+        if (spec is null)
+            return false;
+
+        foreach (var profile in spec.ModelProfiles ?? Array.Empty<WorkflowLabModelProfileSpec>())
+        {
+            if (!OrchestrateCommand.TryNormalizePreferModel(profile.Default?.Prefer, out _))
+                return false;
+
+            if (profile.Domains != null)
+            {
+                foreach (var entry in profile.Domains.Values)
+                {
+                    if (!OrchestrateCommand.TryNormalizePreferModel(entry.Prefer, out _))
+                        return false;
+                }
+            }
+
+            if (profile.Agents != null)
+            {
+                foreach (var entry in profile.Agents.Values)
+                {
+                    if (!OrchestrateCommand.TryNormalizePreferModel(entry.Prefer, out _))
+                        return false;
+                }
+            }
+        }
+
+        foreach (var composition in spec.Compositions ?? Array.Empty<WorkflowLabCompositionSpec>())
+        {
+            foreach (var role in composition.Roles ?? Array.Empty<WorkflowLabAgentRoleSpec>())
+            {
+                if (!string.IsNullOrWhiteSpace(role.Prefer) &&
+                    !OrchestrateCommand.TryNormalizePreferModel(role.Prefer, out _))
+                    return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+
     internal static ModelRuntimeSpec ApplyOverrides(ModelRuntimeSpec runtime, string? provider, string? prefer)
     {
-        var updated = runtime with { Prefer = string.IsNullOrWhiteSpace(runtime.Prefer) ? "auto" : runtime.Prefer };
+        var preferToApply = !string.IsNullOrWhiteSpace(prefer) ? prefer : runtime.Prefer;
+        if (!OrchestrateCommand.TryNormalizePreferModel(preferToApply, out var normalizedPrefer))
+        {
+            throw new ArgumentException(
+                !string.IsNullOrWhiteSpace(prefer)
+                    ? OrchestrateCommand.InvalidPreferMessage
+                    : OrchestrateCommand.InvalidRuntimeSpecPreferMessage);
+        }
+
+        var updated = runtime with { Prefer = normalizedPrefer };
         if (!string.IsNullOrWhiteSpace(provider))
             updated = updated with { Provider = provider };
-        if (!string.IsNullOrWhiteSpace(prefer))
-        {
-            if (!OrchestrateCommand.TryNormalizePreferModel(prefer, out var normalizedPrefer))
-                throw new ArgumentException(OrchestrateCommand.InvalidPreferMessage);
-            updated = updated with { Prefer = normalizedPrefer };
-        }
         return updated;
     }
 

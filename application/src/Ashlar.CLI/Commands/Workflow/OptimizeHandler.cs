@@ -71,6 +71,12 @@ internal sealed partial class OptimizeHandler(
             WriteResult(new WorkflowOptimizeResult(false, $"Failed to load workflow lab spec: {ex.Message}"), json);
             return 1;
         }
+        if (!WorkflowCommandUtilities.TryValidateWorkflowLabPrefers(spec, out var invalidPrefer))
+        {
+            WriteResult(new WorkflowOptimizeResult(false, invalidPrefer), json);
+            return 1;
+        }
+
         var repoRoot = Environment.CurrentDirectory;
         var requests = WorkflowCommandUtilities.NormalizeRequests(spec.Requests);
         var compositions = WorkflowCommandUtilities.NormalizeCompositions(spec.Compositions);
