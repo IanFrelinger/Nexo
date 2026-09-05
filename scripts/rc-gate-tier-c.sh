@@ -15,7 +15,7 @@ note() { echo "$1" | tee -a "$AUDIT"; }
 warn() { echo "::warning::$1" | tee -a "$AUDIT"; }
 
 echo "== RC Tier C: release bundle report =="
-BUNDLE_JSON=".ashlar/release-bundle/last-run/release-bundle-report.json"
+BUNDLE_JSON="${RC_GATE_BUNDLE_JSON:-.ashlar/release-bundle/last-run/release-bundle-report.json}"
 if [ -f "$BUNDLE_JSON" ]; then
   if grep -q '"Verdict": "PASS"' "$BUNDLE_JSON" || grep -q '"verdict": "PASS"' "$BUNDLE_JSON"; then
     note "release-bundle: PASS ($BUNDLE_JSON)"
@@ -77,7 +77,7 @@ if [ "$found" -eq 0 ]; then
   warn "rollback: no rollback section found in standard docs"
 fi
 
-if [ "$fail" -ne 0 ] && [ "${RC_GATE_STRICT_EVIDENCE:-0}" = "1" ]; then
+if [ "$fail" -ne 0 ]; then
   echo "rc-gate-tier-c: FAIL (see $AUDIT)" >&2
   exit 1
 fi

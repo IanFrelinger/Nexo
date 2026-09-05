@@ -27,7 +27,7 @@ make security-gate-full
 | `RC_GATE_SKIP_PRIOR=1` | Skip tier A (default in `rc-gate-full`) |
 | `RC_GATE_SKIP_DOCKER=1` | Tier A: `ASHLAR_READY_SKIP_DOCKER=1` |
 | `RC_GATE_RELEASE_BUNDLE_FULL=1` | Tier B: also `ci release-bundle --profile full` |
-| `RC_GATE_STRICT_EVIDENCE=1` | Tier C fails on bundle FAIL |
+| `RC_GATE_BUNDLE_JSON` | Tier C: override path to `release-bundle-report.json` |
 | `RC_GATE_STRICT_SECURITY=1` | Tier C fails on High/Critical CVEs |
 | `RC_GATE_TRIGGER_GH=1` | Tier D: dispatch + watch on workflow miss |
 | `RC_GATE_GH_ADVISORY_ONLY=1` | Tier D: warn instead of fail |

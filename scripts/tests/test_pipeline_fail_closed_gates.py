@@ -336,7 +336,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 64", text)
+        self.assertIn("--min-tests 65", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -887,6 +887,49 @@ class RcTierDFailClosedTests(unittest.TestCase):
         self.assertEqual(2, run.returncode)
         self.assertIn("requires an authenticated GitHub CLI", run.stdout)
         self.assertNotIn("rc-gate-tier-d: PASS", run.stdout)
+
+
+class RcTierCFailClosedTests(unittest.TestCase):
+    def _run_c(self, bundle: Path | None) -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env["RC_GATE_BUNDLE_JSON"] = (
+            str(bundle) if bundle is not None else "/nonexistent/release-bundle-report.json"
+        )
+        return subprocess.run(
+            ["bash", str(ROOT / "scripts" / "rc-gate-tier-c.sh")],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+
+    def test_rc_tier_c_fails_when_bundle_missing(self) -> None:
+        run = self._run_c(None)
+        self.assertEqual(1, run.returncode)
+        self.assertIn("release-bundle: missing", run.stdout)
+        self.assertIn("rc-gate-tier-c: FAIL", run.stdout)
+        self.assertNotIn("rc-gate-tier-c: PASS", run.stdout)
+
+    def test_rc_tier_c_fails_when_bundle_verdict_is_not_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp) / "release-bundle-report.json"
+            bundle.write_text('{"verdict": "FAIL"}\n', encoding="utf-8")
+            run = self._run_c(bundle)
+        self.assertEqual(1, run.returncode)
+        self.assertIn("release-bundle: FAIL", run.stdout)
+        self.assertIn("rc-gate-tier-c: FAIL", run.stdout)
+        self.assertNotIn("rc-gate-tier-c: PASS", run.stdout)
+
+    def test_rc_tier_c_passes_when_bundle_verdict_is_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp) / "release-bundle-report.json"
+            bundle.write_text('{"verdict": "PASS"}\n', encoding="utf-8")
+            run = self._run_c(bundle)
+        self.assertEqual(0, run.returncode)
+        self.assertIn("release-bundle: PASS", run.stdout)
+        self.assertIn("rc-gate-tier-c: PASS", run.stdout)
 
 
 class SecurityTierEFailClosedTests(unittest.TestCase):

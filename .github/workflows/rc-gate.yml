@@ -55,6 +55,12 @@ jobs:
         env:
           ASHLAR_ALLOW_MOCK: "1"
 
+      - name: Produce release-bundle evidence
+        if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full'))
+        env:
+          ASHLAR_ALLOW_MOCK: "1"
+        run: dotnet run --project application/src/Ashlar.CLI -- ci release-bundle --profile quick
+
       - name: Tier C (evidence)
         if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full'))
         run: make rc-gate-tier-c
