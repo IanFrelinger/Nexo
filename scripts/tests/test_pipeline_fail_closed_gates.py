@@ -326,6 +326,16 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         self.assertIn("CERT_GATE_MIN_TESTS", guard)
         self.assertIn("discovery collapsed", guard)
 
+    def test_cert_gate_main_filter_excludes_enrolled_suite_conventions(self) -> None:
+        config = (ROOT / "scripts" / "cert-gate-config.sh").read_text(encoding="utf-8")
+        self.assertIn("FullyQualifiedName!~EnrolledSuiteConventionTests", config)
+
+    def test_cert_gate_runs_counted_enrolled_suite_conventions(self) -> None:
+        text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
+        self.assertIn("EnrolledSuiteConventionTests", text)
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 47", text)
+
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
     def test_cert_gate_runs_counted_analyzer_suite(self) -> None:

@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 counted; main Infra filter uses list-tests plus collapse floor **400** (listed 484 on a505823d) | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 47 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **400** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |

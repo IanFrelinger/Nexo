@@ -162,6 +162,26 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void CertGate_MainFilterExcludesEnrolledSuiteConventions()
+    {
+        var config = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/cert-gate-config.sh"));
+        config.Should().Contain("FullyQualifiedName!~EnrolledSuiteConventionTests");
+    }
+
+    [Fact]
+    public void CertGate_RunsCountedEnrolledSuiteConventions()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/run-cert-gate.sh"));
+        text.Should().Contain("EnrolledSuiteConventionTests");
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 47");
+        text.Should().Contain(
+            "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
+    }
+
+    [Fact]
     public void CertGate_RunsCountedAnalyzerSuite()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

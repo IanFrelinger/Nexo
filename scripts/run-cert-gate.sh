@@ -46,6 +46,19 @@ if [[ "${TEST_EXIT}" -ne 0 ]]; then
   exit "${TEST_EXIT}"
 fi
 
+# Convention facts used to ride the Certification substring and inflate the live
+# total. They still run on the required check, with a static unique floor.
+echo "== cert-gate: enrolled suite conventions (net8.0, counted) =="
+python3 scripts/run-dotnet-test-counted.py \
+  --project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
+  --expected-prefix "Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests." \
+  --min-tests 47 \
+  -- \
+  -f net8.0 \
+  --filter "FullyQualifiedName~EnrolledSuiteConventionTests" \
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
+
 # Analyzer unit triads used to be sln-only / UNOWNED. They are the fence catalog
 # the required PR check exists to protect; the counted wrapper is fail-closed.
 echo "== cert-gate: analyzer unit suite (net8.0, counted) =="
