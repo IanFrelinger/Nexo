@@ -38,32 +38,53 @@ public sealed class ObserveCommand : Command
             var durationStr = ctx.ParseResult.GetValueForOption(durationOpt) ?? "10m";
             var dump = ctx.ParseResult.GetValueForOption(dumpOpt);
             var verbose = CommandExecutionSupport.WantsVerbose(ctx.ParseResult, verboseOpt);
-            var maxDuration = ParseDuration(durationStr);
+            if (!TryParseDuration(durationStr, out var maxDuration))
+            {
+                Console.Error.WriteLine("Invalid --duration. Use a duration such as 5m, 30m, 1h, or 0 for until Ctrl+C.");
+                ctx.ExitCode = 1;
+                return;
+            }
             // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
             ctx.ExitCode = await ExecuteAsync(path, maxDuration, dump, verbose);
         });
     }
 
-    private static TimeSpan ParseDuration(string s)
+    private static bool TryParseDuration(string s, out TimeSpan duration)
     {
+        duration = default;
         s = s.Trim().ToLowerInvariant();
-        if (s == "0" || s == "infinite") return TimeSpan.MaxValue;
-        if (s.EndsWith("m"))
+        if (s == "0" || s == "infinite")
         {
-            var n = int.TryParse(s[..^1], out var v) ? v : 10;
-            return TimeSpan.FromMinutes(n);
+            duration = TimeSpan.MaxValue;
+            return true;
         }
-        if (s.EndsWith("h"))
+
+        if (s.Length >= 2)
         {
-            var n = int.TryParse(s[..^1], out var v) ? v : 1;
-            return TimeSpan.FromHours(n);
+            var unit = s[^1];
+            if (unit is 'm' or 'h' or 's')
+            {
+                if (!int.TryParse(s[..^1], out var n) || n < 0)
+                    return false;
+
+                duration = unit switch
+                {
+                    'm' => TimeSpan.FromMinutes(n),
+                    'h' => TimeSpan.FromHours(n),
+                    's' => TimeSpan.FromSeconds(n),
+                    _ => default
+                };
+                return true;
+            }
         }
-        if (s.EndsWith("s"))
+
+        if (int.TryParse(s, out var mins) && mins > 0)
         {
-            var n = int.TryParse(s[..^1], out var v) ? v : 60;
-            return TimeSpan.FromSeconds(n);
+            duration = TimeSpan.FromMinutes(mins);
+            return true;
         }
-        return int.TryParse(s, out var mins) ? TimeSpan.FromMinutes(mins) : TimeSpan.FromMinutes(10);
+
+        return false;
     }
 
     private static async Task<int> ExecuteAsync(string? path, TimeSpan maxDuration, bool dump, bool verbose)

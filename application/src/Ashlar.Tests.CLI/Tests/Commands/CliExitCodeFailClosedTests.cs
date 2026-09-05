@@ -25,6 +25,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestImproveMissingStoreCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
             await TestSelfContextInvalidLookbackExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             await TestChangelogInvalidSinceExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
+            await TestObserveInvalidDurationExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -290,6 +291,37 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
         {
             Console.SetOut(ConsoleCapture.Out);
             Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestObserveInvalidDurationExitsNonZeroWithoutStackTraceAsync()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ashlar-observe-duration-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ObserveCommand());
+            var exitCode = await root.InvokeAsync($"observe --path {tempRoot} --duration xm").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "observe --duration xm must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --duration", StringComparison.Ordinal),
+                "An invalid --duration must be refused legibly.");
+            AssertTrue(!output.Contains("No watch paths", StringComparison.Ordinal),
+                "An invalid --duration must be refused before the watch-path check.");
+            AssertTrue(!output.Contains("FormatException", StringComparison.Ordinal)
+                && !output.Contains("   at ", StringComparison.Ordinal),
+                "An invalid --duration must not print a stack trace.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
         }
     }
 }
