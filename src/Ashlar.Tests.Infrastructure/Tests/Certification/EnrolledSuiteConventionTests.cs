@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 84");
+        text.Should().Contain("--min-tests 86");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -265,8 +265,20 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("--min-tests 200");
         text.Should().Contain("FullyQualifiedName!~UnitTestBridgeTests");
         text.Should().Contain("-f net10.0");
-        text.Should().Contain("APPLICATION_GATE_STRICT_DOCTOR");
+        text.Should().NotContain("APPLICATION_GATE_STRICT_DOCTOR");
         text.Should().NotContain("dotnet test \"$CLI_TESTS\"");
+    }
+
+    [Fact]
+    public void ApplicationTierB_FailsClosedOnDoctor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/application-gate-tier-b.sh"));
+        text.Should().Contain("doctor --json exited");
+        text.Should().Contain("application-gate-tier-b: FAIL");
+        text.Should().Contain("application-gate-tier-b: PASS");
+        text.Should().NotContain("APPLICATION_GATE_STRICT_DOCTOR");
+        text.Should().NotContain("warnings may fail strict profile");
     }
 
     [Fact]
@@ -695,9 +707,21 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("run-dotnet-test-counted.py");
         text.Should().Contain("--min-tests 9");
         text.Should().Contain("BaseFrameworkSmokeTests");
-        text.Should().Contain("SHIP_GATE_STRICT_DOCTOR");
         text.Should().Contain("doctor --json exited");
+        text.Should().NotContain("SHIP_GATE_STRICT_DOCTOR");
         text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void ShipTierB_FailsClosedOnDoctor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ship-gate-tier-b.sh"));
+        text.Should().Contain("doctor --json exited");
+        text.Should().Contain("ship-gate-tier-b: FAIL");
+        text.Should().Contain("ship-gate-tier-b: PASS");
+        text.Should().NotContain("SHIP_GATE_STRICT_DOCTOR");
+        text.Should().NotContain("warnings may fail strict profile");
     }
 
     [Fact]

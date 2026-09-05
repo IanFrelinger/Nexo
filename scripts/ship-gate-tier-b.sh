@@ -32,10 +32,9 @@ ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- doctor --json
 doctor_exit=$?
 set -e
 if [ "$doctor_exit" -ne 0 ]; then
-  echo "doctor --json exited $doctor_exit (warnings may fail strict profile; review output)" >&2
-  if [ "${SHIP_GATE_STRICT_DOCTOR:-0}" = "1" ]; then
-    exit "$doctor_exit"
-  fi
+  echo "doctor --json exited $doctor_exit" >&2
+  echo "ship-gate-tier-b: FAIL" >&2
+  exit "$doctor_exit"
 fi
 
 if [ "${SHIP_GATE_RUN_CI_VERIFY:-0}" = "1" ]; then

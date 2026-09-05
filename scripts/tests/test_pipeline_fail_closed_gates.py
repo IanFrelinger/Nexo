@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 84", text)
+        self.assertIn("--min-tests 86", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -569,8 +569,17 @@ class ApplicationTierBCountedCliTests(unittest.TestCase):
         self.assertIn("--min-tests 200", text)
         self.assertIn("FullyQualifiedName!~UnitTestBridgeTests", text)
         self.assertIn("-f net10.0", text)
-        self.assertIn("APPLICATION_GATE_STRICT_DOCTOR", text)
+        self.assertNotIn("APPLICATION_GATE_STRICT_DOCTOR", text)
         self.assertNotIn('dotnet test "$CLI_TESTS"', text)
+
+    def test_application_gate_tier_b_fails_closed_on_doctor(self) -> None:
+        text = (ROOT / "scripts" / "application-gate-tier-b.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("doctor --json exited", text)
+        self.assertIn("application-gate-tier-b: FAIL", text)
+        self.assertNotIn("APPLICATION_GATE_STRICT_DOCTOR", text)
+        self.assertNotIn("warnings may fail strict profile", text)
 
 
 class KernelTierACountedTests(unittest.TestCase):
@@ -686,9 +695,16 @@ class ShipTierBCountedTests(unittest.TestCase):
         text = (ROOT / "scripts" / "ship-gate-tier-b.sh").read_text(encoding="utf-8")
         self.assertIn("run-dotnet-test-counted.py", text)
         self.assertIn("--min-tests 9", text)
-        self.assertIn("SHIP_GATE_STRICT_DOCTOR", text)
         self.assertIn("doctor --json exited", text)
+        self.assertNotIn("SHIP_GATE_STRICT_DOCTOR", text)
         self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_ship_gate_tier_b_fails_closed_on_doctor(self) -> None:
+        text = (ROOT / "scripts" / "ship-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("doctor --json exited", text)
+        self.assertIn("ship-gate-tier-b: FAIL", text)
+        self.assertNotIn("SHIP_GATE_STRICT_DOCTOR", text)
+        self.assertNotIn("warnings may fail strict profile", text)
 
     def test_ship_gate_tier_b_invokes_counted_prod_style_target(self) -> None:
         text = (ROOT / "scripts" / "ship-gate-tier-b.sh").read_text(encoding="utf-8")

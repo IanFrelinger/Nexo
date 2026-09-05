@@ -15,7 +15,7 @@ make composition-mesh-gate-full   # or COMPOSITION_MESH_GATE_SKIP_TIER_D=1 for i
 | Tier | Focus | Command |
 |------|--------|---------|
 | A | Production Readiness Gate v1 (CLI + LiteDB resume) | `make ship-gate-tier-a` |
-| B | ProdStyle + smoke + doctor | `make ship-gate-tier-b` (`SHIP_GATE_RUN_CI_VERIFY=1` for full `ci verify`) |
+| B | ProdStyle + smoke + doctor (non-zero `doctor --json` fails the tier) | `make ship-gate-tier-b` (`SHIP_GATE_RUN_CI_VERIFY=1` for full `ci verify`) |
 | C | Release preflight (local feed consumer) | `make ship-gate-tier-c` |
 | D | Release bundle (`ci release-bundle`, includes runtime SLO gate + doctor) | `make ship-gate-tier-d` |
 
