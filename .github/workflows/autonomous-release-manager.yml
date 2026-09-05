@@ -1,0 +1,85 @@
+name: Autonomous Release Manager
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Candidate SemVer; must match the root VERSION file (blank = VERSION)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autonomous-release-manager-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Six-lane release audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            10.0.x
+            8.0.x
+
+      - name: Unit-test release manager
+        run: python3 -m unittest discover -s scripts/tests -p "test_autonomous_release_manager.py" -v
+
+      - name: Validate immutable audit plan
+        run: python3 scripts/autonomous-release-manager.py --validate-only
+
+      - name: Run release audit sub-agents
+        id: audit
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set +e
+          args=(
+            --plan ci/autonomous-release-manager.json
+            --output .ashlar/release-manager/current
+          )
+          if [[ -n "${REQUESTED_VERSION}" ]]; then
+            args+=(--version "${REQUESTED_VERSION}")
+          fi
+          python3 scripts/autonomous-release-manager.py "${args[@]}"
+          rc=$?
+          echo "exit_code=${rc}" >> "$GITHUB_OUTPUT"
+          exit "$rc"
+
+      - name: Publish release verdict to job summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f .ashlar/release-manager/current/report.md ]]; then
+            cat .ashlar/release-manager/current/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Autonomous Release Manager" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**BLOCKED:** coordinator produced no report." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload auditable release evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-manager-${{ github.sha }}
+          path: |
+            .ashlar/release-manager/current/
+            .ashlar/release-manager/latest.json
+            .ashlar/release-manager/latest.md
+          if-no-files-found: error
+          retention-days: 30

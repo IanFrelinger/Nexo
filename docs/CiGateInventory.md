@@ -2,7 +2,7 @@
 
 This file describes what CI **actually does** on this repository: which workflow files exist, what triggers each one, and which checks branch protection **really** requires. Workflow YAML controls when checks run; GitHub branch protection (a repository setting, not YAML) controls which check names must be green before merge. Where the two disagree, this file follows the settings and says so.
 
-Snapshot: **57 workflow files** under `.github/workflows/` (`git ls-files ".github/workflows/*.yml"`), verified 2026-09-04. Includes `products-gate.yml` (added with the product-split scaffolds).
+Snapshot: **58 workflow files** under `.github/workflows/` (`git ls-files ".github/workflows/*.yml"`), verified 2026-09-05. Includes `products-gate.yml` and the weekly/manual `autonomous-release-manager.yml`.
 
 ## Required checks (branch protection) — what is enforced today
 
@@ -49,17 +49,17 @@ gh api --method PATCH -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-
 
 ## Trigger map
 
-Counts by trigger class (57 files):
+Counts by trigger class (58 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
 | Runs on `pull_request` | 15 | 3 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`), 11 path-filtered (including `products-gate`), 1 label-driven (`release-staging-on-label`) |
-| Push- and/or schedule-driven (path-filtered on `master`/`main`/`cursor/**`), plus `workflow_dispatch` | 20 | Post-merge / scheduled signal; never blocks a PR |
+| Push- and/or schedule-driven, plus `workflow_dispatch` | 21 | Post-merge / scheduled signal; never blocks a PR. Includes the weekly Autonomous Release Manager. |
 | `workflow_dispatch` only | 17 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
 
-Five workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `full-platform-readiness-gate` (Mon 06:00), `onboarding-quickstart-gate` (Mon 07:00), `rc-gate` (06:00 on the 1st of each month), `mesh-lab-tls-gate` (Tue 07:00). (`mesh-lab-stress-gate` lost its schedule 2026-08-16 and is dispatch-only.)
+Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), `distribution-matrix-gate` (Mon 10:00 UTC), `full-platform-readiness-gate` (Mon 06:00), `onboarding-quickstart-gate` (Mon 07:00), `rc-gate` (06:00 on the 1st of each month), `mesh-lab-tls-gate` (Tue 07:00). (`mesh-lab-stress-gate` lost its schedule 2026-08-16 and is dispatch-only.)
 
 ### PR-triggered workflows
 
@@ -117,6 +117,7 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 
 | Workflow file | Trigger |
 | --- | --- |
+| `autonomous-release-manager.yml` | `schedule` Mon 05:00 UTC + dispatch; six isolated, mandatory audit lanes; report uploaded on READY or BLOCKED |
 | `mesh-lab-stress-gate.yml` | dispatch only (schedule removed 2026-08-16) |
 | `mesh-lab-tls-gate.yml` | `schedule` Tue 07:00 UTC + dispatch |
 | `release.yml` | push tags `v*.*.*` + dispatch |

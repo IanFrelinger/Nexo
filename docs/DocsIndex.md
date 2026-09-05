@@ -42,6 +42,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
 - `docs/RELEASE.md` — **release hub** (preflight, dispatch, tag, deep links).
 - `docs/RELEASE_RUNBOOK.md` — release **decision table** (tag vs NuGet-only vs branch images); **`scripts/release-preflight-local.sh`** / **`make release-preflight`** / **`dotnet run … release preflight`** for one-command local preflight.
+- `docs/AutonomousReleaseManager.md` — six mandatory audit sub-agents, isolated-worktree execution, structured evidence, and the fail-closed READY/BLOCKED policy.
 - `docs/GitHubRepoVariables.md` — **Actions variables** for NuGet publish mode, post-push verify, SBOM, cross-verify.
 - `docs/GitHubBranchProtection.md` — **branch protection** guidance (merge gates vs tag releases).
 - `.github/ISSUE_TEMPLATE/release_checklist.yml` — **GitHub issue form** for a release ticket.
@@ -59,7 +60,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/distribution-matrix-gate.yml` — **parallel** gates: NuGet local-pack consumer, CLI image + subcommand help smoke, API image + `curl` `/health` + `/api/status`, `Ashlar.Client` in-process test, pack-graph alignment (plus **weekly** schedule).
-- `docs/CiGateInventory.md` — one-row-per-workflow trigger map (57 files, including `products-gate`) and the enforced branch-protection state (`cert-gate` is the only required check).
+- `docs/CiGateInventory.md` — one-row-per-workflow trigger map (58 files, including `products-gate` and the Autonomous Release Manager) and the enforced branch-protection state (`cert-gate` is the only required check).
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
 - `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).

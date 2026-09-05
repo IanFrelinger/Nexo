@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "maxParallel": 2,
+  "lanes": [
+    {
+      "id": "code",
+      "title": "Code smoke",
+      "objective": "Exercise isolated code lane.",
+      "required": true,
+      "timeoutSeconds": 30,
+      "steps": [
+        {
+          "name": "probe",
+          "command": ["python3", "--version"]
+        }
+      ]
+    },
+    {
+      "id": "tests",
+      "title": "Tests smoke",
+      "objective": "Exercise isolated tests lane.",
+      "required": true,
+      "timeoutSeconds": 30,
+      "steps": [
+        {
+          "name": "probe",
+          "command": ["python3", "--version"]
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security smoke",
+      "objective": "Exercise isolated security lane.",
+      "required": true,
+      "timeoutSeconds": 30,
+      "steps": [
+        {
+          "name": "probe",
+          "command": ["python3", "--version"]
+        }
+      ]
+    },
+    {
+      "id": "packaging",
+      "title": "Packaging smoke",
+      "objective": "Exercise isolated packaging lane.",
+      "required": true,
+      "timeoutSeconds": 30,
+      "steps": [
+        {
+          "name": "probe",
+          "command": ["python3", "--version"]
+        }
+      ]
+    },
+    {
+      "id": "documentation",
+      "title": "Documentation smoke",
+      "objective": "Exercise isolated documentation lane.",
+      "required": true,
+      "timeoutSeconds": 30,
+      "steps": [
+        {
+          "name": "probe",
+          "command": ["python3", "--version"]
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "title": "Operations smoke",
+      "objective": "Exercise isolated operations lane.",
+      "required": true,
+      "timeoutSeconds": 30,
+      "steps": [
+        {
+          "name": "probe",
+          "command": ["python3", "--version"]
+        }
+      ]
+    }
+  ]
+}

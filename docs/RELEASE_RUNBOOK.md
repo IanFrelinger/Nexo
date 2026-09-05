@@ -45,10 +45,14 @@ Trusted Publishing: register **`release.yml`** and **`release-nuget.yml`** as ne
 
 ## Before you tag
 
-1. **Green CI** on the commit — run **`runtime-release-gate`** on that ref.
-2. **`python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py`** after changing `Ashlar.Hosting` refs or pack scripts.
-3. **`bash scripts/verify-stable-sdk-host-sample-packages.sh`** with `ASHLAR_SDK_PACKAGE_VERSION` (isolated cache + `--force-evaluate` by default).
-4. **Promote the public API**: review each stable-tier project's `PublicAPI.Unshipped.txt`, move its lines into `PublicAPI.Shipped.txt`, commit on the release commit (`docs/SdkCompatibilityPolicy.md`, "Release step"). After the tag those lines are the promise.
+1. **Autonomous release-manager verdict is READY** on the exact commit:
+   `make release-manager-audit`. It runs all six required audit lanes in
+   isolated worktrees and never publishes; see
+   [`AutonomousReleaseManager.md`](AutonomousReleaseManager.md).
+2. **Green CI** on the commit — run **`runtime-release-gate`** on that ref.
+3. **`python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py`** after changing `Ashlar.Hosting` refs or pack scripts.
+4. **`bash scripts/verify-stable-sdk-host-sample-packages.sh`** with `ASHLAR_SDK_PACKAGE_VERSION` (isolated cache + `--force-evaluate` by default).
+5. **Promote the public API**: review each stable-tier project's `PublicAPI.Unshipped.txt`, move its lines into `PublicAPI.Shipped.txt`, commit on the release commit (`docs/SdkCompatibilityPolicy.md`, "Release step"). After the tag those lines are the promise.
 
 ## After `release.yml`
 

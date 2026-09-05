@@ -294,7 +294,7 @@ Run these via `dotnet run --project application/src/Ashlar.CLI -- <command>` (sh
 
 | App | What it is | First doc |
 |-----|------------|-----------|
-| Release Manager | Release-readiness automation agent set — extracted 2026-09-01 as the first out-of-tree nuget.org consumer. | [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) |
+| Release Manager | Autonomous six-lane release audit with fail-closed evidence; product host extracted 2026-09-01 as the first out-of-tree nuget.org consumer. | [`docs/AutonomousReleaseManager.md`](docs/AutonomousReleaseManager.md), [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager) |
 | `apps/runtime-studio` | Planner/worker Runtime Studio agent set and operator scripts hosted by CLI or API. | [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 
 ## Deploy (operators)
@@ -413,6 +413,10 @@ dotnet run --project application/src/Ashlar.CLI -- test local
 dotnet test products/Ashlar.Products.sln
 dotnet test src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj \
   --filter FullyQualifiedName~DistributedContractTests
+
+# fail-closed six-lane release audit (isolated worktrees; never publishes)
+make release-manager-validate
+make release-manager-audit
 ```
 
 Testing strategy and guard rails:

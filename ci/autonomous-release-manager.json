@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "maxParallel": 2,
+  "lanes": [
+    {
+      "id": "code",
+      "title": "Code and build integrity",
+      "objective": "Audit the complete project graph, compiler diagnostics, and dependency boundaries. Treat any omitted or failed project as a release blocker.",
+      "required": true,
+      "timeoutSeconds": 3600,
+      "steps": [
+        {
+          "name": "release-build",
+          "command": [
+            "dotnet",
+            "build",
+            "Ashlar.sln",
+            "-c",
+            "Release",
+            "--nologo"
+          ],
+          "timeoutSeconds": 2700
+        },
+        {
+          "name": "dependency-boundary",
+          "command": [
+            "python3",
+            "scripts/verify-open-commercial-dependency-boundary.py"
+          ],
+          "environment": {
+            "DEPENDENCY_BOUNDARY_STRICT": "1"
+          },
+          "timeoutSeconds": 600
+        }
+      ]
+    },
+    {
+      "id": "tests",
+      "title": "Test and CI truth",
+      "objective": "Run the required certification suite, every CLI test (including bridge rows), and product tests. Timeouts and zero-test outcomes are blockers, not skips.",
+      "required": true,
+      "timeoutSeconds": 5400,
+      "steps": [
+        {
+          "name": "cert-gate",
+          "command": [
+            "bash",
+            "scripts/run-cert-gate.sh"
+          ],
+          "timeoutSeconds": 1800
+        },
+        {
+          "name": "complete-cli-suite",
+          "command": [
+            "dotnet",
+            "test",
+            "application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj",
+            "--blame-hang-timeout",
+            "300s",
+            "--blame-hang-dump-type",
+            "none",
+            "--nologo"
+          ],
+          "timeoutSeconds": 1200
+        },
+        {
+          "name": "product-scaffolds",
+          "command": [
+            "dotnet",
+            "test",
+            "products/Ashlar.Products.sln",
+            "--blame-hang-timeout",
+            "120s",
+            "--blame-hang-dump-type",
+            "none",
+            "--nologo"
+          ],
+          "timeoutSeconds": 1200
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security and trust",
+      "objective": "Run trust, authentication, supply-chain, and zero-egress proof. A scan failure, vulnerable dependency, or skipped air-gapped container proof blocks release.",
+      "required": true,
+      "timeoutSeconds": 7200,
+      "steps": [
+        {
+          "name": "security-gate-full",
+          "command": [
+            "make",
+            "security-gate-full"
+          ],
+          "environment": {
+            "SECURITY_GATE_AIRGAPPED_CONTAINER": "1",
+            "SECURITY_GATE_SKIP_PRIOR": "1",
+            "SECURITY_GATE_STRICT_SUPPLY_CHAIN": "1"
+          },
+          "timeoutSeconds": 6000
+        },
+        {
+          "name": "full-solution-vulnerability-scan",
+          "command": [
+            "dotnet",
+            "list",
+            "Ashlar.sln",
+            "package",
+            "--vulnerable",
+            "--include-transitive"
+          ],
+          "timeoutSeconds": 900
+        }
+      ]
+    },
+    {
+      "id": "packaging",
+      "title": "Packaging and external consumption",
+      "objective": "Pack the exact candidate version, restore it in an isolated consumer, and verify the external brick-host-client shape without publishing anything.",
+      "required": true,
+      "timeoutSeconds": 5400,
+      "steps": [
+        {
+          "name": "release-preflight",
+          "command": [
+            "bash",
+            "scripts/release-preflight-local.sh",
+            "{version}"
+          ],
+          "timeoutSeconds": 3600
+        },
+        {
+          "name": "external-product-shape",
+          "command": [
+            "bash",
+            "scripts/verify-external-product-shape.sh"
+          ],
+          "timeoutSeconds": 1800
+        }
+      ]
+    },
+    {
+      "id": "documentation",
+      "title": "Documentation and product claims",
+      "objective": "Fail claims that drift from published versions, public API promises, repository layout, or UAT. Documentation is part of the release artifact.",
+      "required": true,
+      "timeoutSeconds": 2700,
+      "steps": [
+        {
+          "name": "published-version-claims",
+          "command": [
+            "bash",
+            "scripts/verify-docs-published-version.sh"
+          ],
+          "timeoutSeconds": 300
+        },
+        {
+          "name": "public-api-and-documentation-uat",
+          "command": [
+            "bash",
+            "tests/uat/tier9.sh"
+          ],
+          "timeoutSeconds": 1200
+        },
+        {
+          "name": "onboarding-doc-conventions",
+          "command": [
+            "dotnet",
+            "test",
+            "src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            "--filter",
+            "FullyQualifiedName~PublishedVersionDocsLintTests|FullyQualifiedName~Onboarding",
+            "--blame-hang-timeout",
+            "120s",
+            "--blame-hang-dump-type",
+            "none",
+            "--nologo"
+          ],
+          "timeoutSeconds": 1200
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "title": "Operations and deployment",
+      "objective": "Prove the non-Docker full-stack gate, both production-shaped Compose lanes, and disaster recovery. A missing engine is a blocker for a production release.",
+      "required": true,
+      "timeoutSeconds": 10800,
+      "steps": [
+        {
+          "name": "full-stack-no-docker",
+          "command": [
+            "bash",
+            "scripts/ashlar-ready-gate.sh"
+          ],
+          "environment": {
+            "ASHLAR_READY_SKIP_DOCKER": "1"
+          },
+          "timeoutSeconds": 5400
+        },
+        {
+          "name": "portal-production-dry-run",
+          "command": [
+            "bash",
+            "scripts/prod-dry-run.sh",
+            "--portal"
+          ],
+          "timeoutSeconds": 2400
+        },
+        {
+          "name": "agent-server-production-dry-run",
+          "command": [
+            "bash",
+            "scripts/prod-dry-run.sh",
+            "--agent-server"
+          ],
+          "timeoutSeconds": 2400
+        },
+        {
+          "name": "disaster-recovery",
+          "command": [
+            "make",
+            "dr-gate-full"
+          ],
+          "timeoutSeconds": 3600
+        }
+      ]
+    }
+  ]
+}
