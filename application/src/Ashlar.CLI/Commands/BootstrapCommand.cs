@@ -75,6 +75,12 @@ public sealed class BootstrapCommand : Command
 
     internal static async Task<int> RunCheckAsync(string profile, bool includeOptional, bool json, CancellationToken ct)
     {
+        if (!BootstrapRuntime.TryNormalizeCliProfile(profile, out _))
+        {
+            WriteInvalidProfile(json);
+            return 1;
+        }
+
         var assessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
         BootstrapRuntime.RenderAssessment(assessment, json);
         return 0;
@@ -82,6 +88,12 @@ public sealed class BootstrapCommand : Command
 
     internal static async Task<int> RunApplyAsync(string profile, bool includeOptional, bool yes, bool dryRun, bool json, CancellationToken ct)
     {
+        if (!BootstrapRuntime.TryNormalizeCliProfile(profile, out _))
+        {
+            WriteInvalidProfile(json);
+            return 1;
+        }
+
         var assessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
         if (!assessment.Supported)
         {
@@ -167,5 +179,17 @@ public sealed class BootstrapCommand : Command
         }
 
         return success ? 0 : 1;
+    }
+
+    private static void WriteInvalidProfile(bool json)
+    {
+        const string message = "Invalid --profile. Use demo, self-extend-functional, self-extend-aesthetic, or self-extend-visual.";
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new { ok = false, error = message }, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.Error.WriteLine(message);
     }
 }

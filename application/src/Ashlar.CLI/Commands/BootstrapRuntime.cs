@@ -252,15 +252,31 @@ internal static class BootstrapRuntime
             Console.WriteLine($"Install plan: {string.Join(", ", plan.Select(p => p.DisplayName))}");
     }
 
+    internal static bool TryNormalizeCliProfile(string? profile, out string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(profile))
+        {
+            normalized = "demo";
+            return true;
+        }
+
+        normalized = profile.Trim().ToLowerInvariant();
+        return normalized is "demo" or "self-extend-functional" or "self-extend-aesthetic" or "self-extend-visual";
+    }
+
     private static string NormalizeBootstrapProfile(string? profile)
     {
-        var normalized = (profile ?? "demo").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(profile))
+            return "demo";
+
+        var normalized = profile.Trim().ToLowerInvariant();
         return normalized switch
         {
+            "demo" or "auto" => "demo",
             "self-extend-functional" => "self-extend-functional",
             "self-extend-aesthetic" => "self-extend-aesthetic",
             "self-extend-visual" => "self-extend-visual",
-            _ => "demo"
+            _ => throw new ArgumentException("Invalid --profile. Use demo, self-extend-functional, self-extend-aesthetic, or self-extend-visual.")
         };
     }
 

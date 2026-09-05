@@ -33,6 +33,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestRuntimePlanInvalidQaPolicyExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeGateInvalidPolicyExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimePlanInvalidManifestQaPolicyExitsNonZeroAsync().ConfigureAwait(false);
+            await TestBootstrapInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
+            await TestDoctorInvalidProfileExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -521,6 +523,54 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             Console.SetError(ConsoleCapture.Error);
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestBootstrapInvalidProfileExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new BootstrapCommand());
+            var exitCode = await root.InvokeAsync("bootstrap check --profile xyz --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "bootstrap check --profile xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --profile", StringComparison.Ordinal),
+                "An invalid --profile must be refused legibly.");
+            AssertTrue(!output.Contains("\"profile\": \"demo\"", StringComparison.Ordinal),
+                "An invalid --profile must be refused before assessing as demo.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestDoctorInvalidProfileExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new DoctorCommand());
+            var exitCode = await root.InvokeAsync("doctor --profile xyz --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "doctor --profile xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --profile", StringComparison.Ordinal),
+                "An invalid --profile must be refused legibly.");
+            AssertTrue(!output.Contains("\"overallOk\"", StringComparison.Ordinal),
+                "An invalid --profile must be refused before running doctor probes.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 }

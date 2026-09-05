@@ -69,6 +69,16 @@ public sealed class DoctorCommand : Command
         // Project readiness is a SEPARATE question from environment health, reported alongside it
         // but never folded into the environment exit code. It is null when the path is not an
         // ashlar project, and the block is then omitted entirely.
+        if (!BootstrapRuntime.TryNormalizeCliProfile(profile, out _))
+        {
+            const string message = "Invalid --profile. Use demo, self-extend-functional, self-extend-aesthetic, or self-extend-visual.";
+            if (json)
+                Console.WriteLine(JsonSerializer.Serialize(new { ok = false, error = message }, new JsonSerializerOptions { WriteIndented = true }));
+            else
+                Console.Error.WriteLine(message);
+            return 1;
+        }
+
         var readiness = DoctorProjectReadiness.Assess(projectPath ?? Environment.CurrentDirectory);
 
         var dependencyAssessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
