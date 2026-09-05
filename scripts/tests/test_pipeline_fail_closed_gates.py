@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 116", text)
+        self.assertIn("--min-tests 117", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1114,6 +1114,23 @@ class MakefileDockerSmokeTrxFloorTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(ok_run.returncode, 0)
+
+
+class TrustMultiEnvTrxFloorTests(unittest.TestCase):
+    def test_trust_multi_env_asserts_host_trx_floor(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "test-trust-multi-env.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("assert-trx-min-executed.py", text)
+        self.assertIn("--min-executed 1", text)
+        self.assertIn("trust-infra-ubuntu.trx", text)
+        self.assertIn("trust-bg-ubuntu.trx", text)
+        self.assertIn("trust-infra-alpine.trx", text)
+        self.assertIn("trust-bg-alpine.trx", text)
+        self.assertIn("trust-infra-debian.trx", text)
+        self.assertIn("trust-bg-debian.trx", text)
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("pull_request:", text)
 
 
 class MakefileSlnfMinFloorTests(unittest.TestCase):

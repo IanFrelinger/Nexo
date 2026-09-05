@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 116");
+        text.Should().Contain("--min-tests 117");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -811,6 +811,23 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/assert-trx-min-executed.py"));
         helper.Should().Contain("executed_in_trx");
         helper.Should().Contain("--min-executed");
+    }
+
+    [Fact]
+    public void TrustMultiEnvWorkflow_AssertsHostTrxFloor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/test-trust-multi-env.yml"));
+        text.Should().Contain("assert-trx-min-executed.py");
+        text.Should().Contain("--min-executed 1");
+        text.Should().Contain("trust-infra-ubuntu.trx");
+        text.Should().Contain("trust-bg-ubuntu.trx");
+        text.Should().Contain("trust-infra-alpine.trx");
+        text.Should().Contain("trust-bg-alpine.trx");
+        text.Should().Contain("trust-infra-debian.trx");
+        text.Should().Contain("trust-bg-debian.trx");
+        text.Should().Contain("workflow_dispatch:");
+        text.Should().NotContain("pull_request:");
     }
 
     [Fact]

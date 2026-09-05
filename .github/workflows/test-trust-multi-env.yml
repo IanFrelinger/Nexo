@@ -5,6 +5,8 @@
 #
 # Run Trust tests across Ubuntu, Alpine, and Debian Docker containers.
 # Validates Trust & Information Architecture features (sanitization, knowledge log, access boundary, audit).
+# Images may lack Python, so the in-container invocation stays raw; the host
+# TRX floor fail-closes an empty match after each mount.
 name: Trust Tests (Multi-Env Docker)
 
 permissions:
@@ -29,6 +31,8 @@ jobs:
           docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" ashlar-trust:ubuntu bash -c \
             "cd /workspace && dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-ubuntu.trx' --results-directory /workspace/test-results && \
              dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj -f net10.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-ubuntu.trx' --results-directory /workspace/test-results"
+          python3 scripts/assert-trx-min-executed.py --trx test-results/trust/trust-infra-ubuntu.trx --min-executed 1
+          python3 scripts/assert-trx-min-executed.py --trx test-results/trust/trust-bg-ubuntu.trx --min-executed 1
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         continue-on-error: true
@@ -51,6 +55,8 @@ jobs:
           docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" ashlar-trust:alpine bash -c \
             "cd /workspace && dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-alpine.trx' --results-directory /workspace/test-results && \
              dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj -f net10.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-alpine.trx' --results-directory /workspace/test-results"
+          python3 scripts/assert-trx-min-executed.py --trx test-results/trust/trust-infra-alpine.trx --min-executed 1
+          python3 scripts/assert-trx-min-executed.py --trx test-results/trust/trust-bg-alpine.trx --min-executed 1
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         continue-on-error: true
@@ -73,6 +79,8 @@ jobs:
           docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" ashlar-trust:debian bash -c \
             "cd /workspace && dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-debian.trx' --results-directory /workspace/test-results && \
              dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj -f net10.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-debian.trx' --results-directory /workspace/test-results"
+          python3 scripts/assert-trx-min-executed.py --trx test-results/trust/trust-infra-debian.trx --min-executed 1
+          python3 scripts/assert-trx-min-executed.py --trx test-results/trust/trust-bg-debian.trx --min-executed 1
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         continue-on-error: true
