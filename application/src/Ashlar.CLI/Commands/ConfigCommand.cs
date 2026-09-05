@@ -201,6 +201,9 @@ public class ConfigCommand
             var config = await _mediator.Send(query);
             var options = new JsonSerializerOptions { WriteIndented = true };
             var text = JsonSerializer.Serialize(config, options);
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
             await File.WriteAllTextAsync(path, text).ConfigureAwait(false);
             if (json)
                 Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = true, path }));
