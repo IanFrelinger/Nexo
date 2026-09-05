@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 53");
+        text.Should().Contain("--min-tests 54");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -463,6 +463,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("--min-tests 9");
         text.Should().Contain("BaseFrameworkSmokeTests");
         text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void ShipGateWorkflow_RunsTierBOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/ship-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("ship-gate-tier-b");
+        text.Should().NotContain(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'");
     }
 
     [Fact]

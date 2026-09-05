@@ -110,6 +110,7 @@ Production CLI flows, `ci verify`, release preflight, release bundle:
 ```bash
 make ship-gate-full
 SHIP_GATE_SKIP_TIER_B=1 make ship-gate-full   # skip heavy ProdStyle ci verify
+# ship-gate.yml PR path: counted BaseFrameworkSmoke (9) + ProdStyle; A/C/D stay dispatch-only
 ```
 
 See **`docs/production-readiness/ShipHardeningPlan-v1.md`**.

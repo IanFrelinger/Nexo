@@ -53,9 +53,9 @@ Counts by trigger class (58 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 22 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 17 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness), 1 label-driven (`release-staging-on-label`) |
+| Runs on `pull_request` | 23 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 18 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness/ship-gate), 1 label-driven (`release-staging-on-label`) |
 | Push- and/or schedule-driven, plus `workflow_dispatch` | 15 | Post-merge / scheduled signal; never blocks a PR. |
-| `workflow_dispatch` only | 16 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
+| `workflow_dispatch` only | 15 | Manual lanes (mesh labs, multi-env Docker suites, ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
 
@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 53 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **400** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 54 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **400** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -87,6 +87,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `autonomous-release-manager.yml` | Autonomous Release Manager / `Validate release manager` | paths: coordinator, plan, tests, workflow | weekly schedule + dispatch run the full six-lane audit; PRs run only unit tests and immutable-plan validation |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` | dispatch |
 | `production-readiness-gate-v1.yml` | Production Readiness Gate v1 / `scripts/production-readiness-gate-v1-tests.sh` | paths: pipelines sources/tests, CLI, readiness docs — counted Pipelines 68 (net8 + net10) + host-DI 2 | push `master`/`main`/`cursor/**`, dispatch |
+| `ship-gate.yml` | Ship Gate / `ship-gate` | paths: BaseFramework smoke tests, `scripts/ship-gate-tier-b.sh` — PR runs counted Tier B smoke (9) + ProdStyle; A/C/D stay dispatch-only | dispatch |
 
 ### Push-only (path-filtered) workflows
 
@@ -111,7 +112,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 
 ### Manual-only workflows (`workflow_dispatch`)
 
-`composition-mesh-gate`, `container-image-publish`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `ship-gate`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (18).
+`composition-mesh-gate`, `container-image-publish`, `cross-platform-tests`, `installer-bruteforce-gate`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (17).
 
 Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not run on PRs; run them with `gh workflow run "<name>" --ref <branch>`.
 
