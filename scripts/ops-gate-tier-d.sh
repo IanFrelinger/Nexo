@@ -7,8 +7,8 @@ cd "$ROOT"
 export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"
 
 if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
-  echo "== Ops Tier D: skipped (Docker not available) =="
-  exit 0
+  echo "error: ops-gate-tier-d requires a working Docker daemon; refusing to skip mesh resilience" >&2
+  exit 2
 fi
 
 if [ "${OPS_GATE_MESH_DEEP:-0}" = "1" ]; then

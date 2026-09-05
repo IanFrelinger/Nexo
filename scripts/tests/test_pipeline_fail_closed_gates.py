@@ -334,7 +334,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 47", text)
+        self.assertIn("--min-tests 50", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -630,6 +630,45 @@ class SecurityTierBCountedNet10Tests(unittest.TestCase):
         self.assertIn("--min-tests 44", text)
         self.assertNotIn('dotnet test "$INFRA" -f net8.0', text)
         self.assertNotIn('dotnet build "$INFRA" -f net8.0', text)
+
+
+class DockerTierFailClosedTests(unittest.TestCase):
+    def _run_with_dead_docker(self, script: str) -> subprocess.CompletedProcess[str]:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_bin = Path(tmp) / "bin"
+            fake_bin.mkdir()
+            docker = fake_bin / "docker"
+            docker.write_text("#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
+            docker.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+            return subprocess.run(
+                ["bash", str(ROOT / "scripts" / script)],
+                cwd=ROOT,
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+
+    def test_application_tier_d_refuses_missing_docker(self) -> None:
+        run = self._run_with_dead_docker("application-gate-tier-d.sh")
+        self.assertEqual(2, run.returncode)
+        self.assertIn("requires a working Docker daemon", run.stdout)
+        self.assertNotIn("application-gate-tier-d: PASS", run.stdout)
+
+    def test_mesh_tier_d_refuses_missing_docker(self) -> None:
+        run = self._run_with_dead_docker("composition-mesh-gate-tier-d.sh")
+        self.assertEqual(2, run.returncode)
+        self.assertIn("requires a working Docker daemon", run.stdout)
+        self.assertNotIn("composition-mesh-gate-tier-d: PASS", run.stdout)
+
+    def test_ops_tier_d_refuses_missing_docker(self) -> None:
+        run = self._run_with_dead_docker("ops-gate-tier-d.sh")
+        self.assertEqual(2, run.returncode)
+        self.assertIn("requires a working Docker daemon", run.stdout)
+        self.assertNotIn("ops-gate-tier-d: PASS", run.stdout)
 
 
 class SecurityTierEFailClosedTests(unittest.TestCase):

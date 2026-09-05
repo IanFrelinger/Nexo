@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 47");
+        text.Should().Contain("--min-tests 50");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -289,6 +289,36 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("Tests/API/**");
         text.Should().Contain("application-gate-tier-c");
         text.Should().NotContain("github.event_name == 'workflow_dispatch' && inputs.tier == 'c'");
+    }
+
+    [Fact]
+    public void ApplicationTierD_RefusesMissingDocker()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/application-gate-tier-d.sh"));
+        text.Should().Contain("requires a working Docker daemon");
+        text.Should().Contain("exit 2");
+        text.Should().NotContain("skipped (no Docker)");
+    }
+
+    [Fact]
+    public void MeshTierD_RefusesMissingDocker()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/composition-mesh-gate-tier-d.sh"));
+        text.Should().Contain("requires a working Docker daemon");
+        text.Should().Contain("exit 2");
+        text.Should().NotContain("skipped (Docker not available)");
+    }
+
+    [Fact]
+    public void OpsTierD_RefusesMissingDocker()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ops-gate-tier-d.sh"));
+        text.Should().Contain("requires a working Docker daemon");
+        text.Should().Contain("exit 2");
+        text.Should().NotContain("skipped (Docker not available)");
     }
 
     [Fact]

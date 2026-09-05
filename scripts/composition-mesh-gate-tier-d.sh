@@ -7,8 +7,8 @@ cd "$ROOT"
 export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"
 
 if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
-  echo "== Mesh Tier D: skipped (Docker not available) =="
-  exit 0
+  echo "error: composition-mesh-gate-tier-d requires a working Docker daemon; refusing to skip the mesh lab" >&2
+  exit 2
 fi
 
 ENV_FILE="${1:-.env.mesh-lab}"
