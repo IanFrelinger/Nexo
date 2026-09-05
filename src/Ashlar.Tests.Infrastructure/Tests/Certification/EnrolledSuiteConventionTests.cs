@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 65");
+        text.Should().Contain("--min-tests 66");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -359,6 +359,17 @@ public sealed class EnrolledSuiteConventionTests
             ".github/workflows/rc-gate.yml"));
         workflow.Should().Contain("ci release-bundle --profile quick");
         workflow.Should().Contain("make rc-gate-tier-c");
+    }
+
+    [Fact]
+    public void ShipTierD_RunsReleaseBundle()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ship-gate-tier-d.sh"));
+        text.Should().Contain("ci release-bundle");
+        text.Should().Contain("SHIP_GATE_BUNDLE_PROFILE");
+        text.Should().Contain("ship-gate-tier-d: PASS");
+        text.Should().NotContain("SHIP_GATE_RUN_RUNTIME_GATE");
     }
 
     [Fact]

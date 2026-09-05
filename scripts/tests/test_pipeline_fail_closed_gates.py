@@ -336,7 +336,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 65", text)
+        self.assertIn("--min-tests 66", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -682,6 +682,15 @@ class ShipTierACountedTests(unittest.TestCase):
         self.assertIn("run-dotnet-test-counted.py", text)
         self.assertIn("--min-tests 2", text)
         self.assertNotIn('dotnet test "$INFRA_TESTS"', text)
+
+
+class ShipTierDFailClosedTests(unittest.TestCase):
+    def test_ship_gate_tier_d_always_runs_release_bundle(self) -> None:
+        text = (ROOT / "scripts" / "ship-gate-tier-d.sh").read_text(encoding="utf-8")
+        self.assertIn("ci release-bundle", text)
+        self.assertIn("SHIP_GATE_BUNDLE_PROFILE", text)
+        self.assertIn("ship-gate-tier-d: PASS", text)
+        self.assertNotIn("SHIP_GATE_RUN_RUNTIME_GATE", text)
 
 
 class OpenCoreBoundaryCensusTests(unittest.TestCase):

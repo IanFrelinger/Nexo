@@ -54,7 +54,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
         run: make ship-gate-tier-c
 
-      - name: Tier D (doctor sign-off)
+      - name: Tier D (release bundle)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'd' || inputs.tier == 'full')
         run: make ship-gate-tier-d
         env:
