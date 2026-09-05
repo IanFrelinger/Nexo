@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 56", text)
+        self.assertIn("--min-tests 57", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -414,6 +414,15 @@ class OnboardingDocsGuardWorkflowTests(unittest.TestCase):
         self.assertIn("pull_request:", text)
         self.assertIn("docs/ProjectTiers.md", text)
         self.assertIn("Referenced repo paths must exist", text)
+
+
+class E2eLoopCollapseFloorTests(unittest.TestCase):
+    def test_e2e_loop_has_os_aware_collapse_floor(self) -> None:
+        text = (ROOT / "scripts" / "e2e-loop.sh").read_text(encoding="utf-8")
+        self.assertIn("E2E_LOOP_MIN_SCENARIOS", text)
+        self.assertIn("E2E_LOOP_MIN_SCENARIOS=143", text)
+        self.assertIn("E2E_LOOP_MIN_SCENARIOS=137", text)
+        self.assertIn("discovery collapsed", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):

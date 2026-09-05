@@ -837,6 +837,17 @@ unset ASHLAR_KEY_DIR
 echo
 echo "==================== e2e-loop verdict ===================="
 echo "scenarios: $N   pass: $PASS   fail: $FAIL"
+if [ -z "${E2E_LOOP_MIN_SCENARIOS:-}" ]; then
+  if [ "$(uname -s)" = "Linux" ]; then
+    E2E_LOOP_MIN_SCENARIOS=143
+  else
+    E2E_LOOP_MIN_SCENARIOS=137
+  fi
+fi
+if [ "$N" -lt "$E2E_LOOP_MIN_SCENARIOS" ]; then
+  echo "e2e-loop discovery collapsed (scenarios=$N, collapse-min=$E2E_LOOP_MIN_SCENARIOS) — claims were deleted or the Linux-only block vanished." >&2
+  exit 1
+fi
 if [ "$FAIL" -gt 0 ]; then
   echo "FAILED scenarios:"; awk -F'\t' '$4=="FAIL"' "$RESULTS" | sed 's/^/  /'
   exit 1

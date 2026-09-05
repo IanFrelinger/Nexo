@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 56");
+        text.Should().Contain("--min-tests 57");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -648,6 +648,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("pull_request:");
         text.Should().Contain("docs/ProjectTiers.md");
         text.Should().Contain("Referenced repo paths must exist");
+    }
+
+    [Fact]
+    public void E2eLoop_HasCollapseFloor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/e2e-loop.sh"));
+        text.Should().Contain("E2E_LOOP_MIN_SCENARIOS");
+        text.Should().Contain("E2E_LOOP_MIN_SCENARIOS=143");
+        text.Should().Contain("E2E_LOOP_MIN_SCENARIOS=137");
+        text.Should().Contain("discovery collapsed");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)
