@@ -39,11 +39,11 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
         {
             try
             {
-                var entry = catalog.GetByIdAsync(id).GetAwaiter().GetResult();
+                var entry = WaitOffSyncContext(() => catalog.GetByIdAsync(id));
                 if (entry != null)
                 {
                     var executeBaseUrl = entry.HostBaseUrl ?? catalog.BaseUrl.TrimEnd('/');
-                    var capabilityFetch = catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult();
+                    var capabilityFetch = WaitOffSyncContext(catalog.GetCapabilitiesWithStalenessAsync);
                     entry.HostCapabilities ??= capabilityFetch.Capabilities;
                     if (capabilityFetch.IsStale)
                     {
@@ -76,9 +76,9 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
         {
             try
             {
-                var entries = catalog.GetAllAsync().GetAwaiter().GetResult();
+                var entries = WaitOffSyncContext(catalog.GetAllAsync);
                 var baseUrl = catalog.BaseUrl.TrimEnd('/');
-                var capabilityFetch = catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult();
+                var capabilityFetch = WaitOffSyncContext(catalog.GetCapabilitiesWithStalenessAsync);
                 var hostCapabilities = capabilityFetch.Capabilities;
                 if (capabilityFetch.IsStale)
                 {
@@ -100,5 +100,16 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
         }
 
         return set.Values.ToList();
+    }
+
+    /// <summary>
+    /// Catalog I/O is async; <see cref="IBrickRegistry"/> is sync. Blocking on the caller
+    /// context deadlocks under ASP.NET. Offload to the thread pool so continuations
+    /// cannot require the blocked request thread.
+    /// </summary>
+    private static T WaitOffSyncContext<T>(Func<Task<T>> start)
+    {
+        ArgumentNullException.ThrowIfNull(start);
+        return Task.Run(start).GetAwaiter().GetResult();
     }
 }

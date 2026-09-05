@@ -149,6 +149,81 @@ public class InfrastructureExecutionGapCoverageTests
         registry.GetAllBricks().Should().HaveCount(2);
     }
 
+    [Fact(Timeout = 10000)]
+    public void CompositeBrickRegistry_catalog_io_does_not_deadlock_on_sync_context()
+    {
+        var remoteEntry = new BrickCatalogEntryDto
+        {
+            Id = "remote-b1",
+            Name = "Remote",
+            Category = "Control",
+            Description = "remote brick",
+            HasDeterministic = true,
+            Interface = new BrickInterfaceDto
+            {
+                Inputs = new List<BrickInputDefinitionDto>(),
+                Outputs = new List<BrickOutputDefinitionDto>(),
+            },
+        };
+
+        var catalog = new Mock<IRemoteBrickCatalog>();
+        catalog.Setup(c => c.BaseUrl).Returns("http://remote:7777");
+        catalog.Setup(c => c.GetByIdAsync("remote-b1", It.IsAny<CancellationToken>()))
+            .Returns(async (string _, CancellationToken _) =>
+            {
+                await Task.Yield();
+                return remoteEntry;
+            });
+        catalog.Setup(c => c.GetCapabilitiesWithStalenessAsync(It.IsAny<CancellationToken>()))
+            .Returns(async (CancellationToken _) =>
+            {
+                await Task.Yield();
+                return new CapabilitiesFetchResult { IsStale = false };
+            });
+
+        using var http = new HttpClient();
+        var registry = new CompositeBrickRegistry(
+            new StubBrickRegistry(),
+            new[] { catalog.Object },
+            http,
+            NullLogger<CompositeBrickRegistry>.Instance);
+
+        using var done = new ManualResetEventSlim(false);
+        Exception? error = null;
+        DomainBrick? brick = null;
+        var thread = new Thread(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(new BlockingSyncContext());
+            try
+            {
+                brick = registry.GetBrick("remote-b1");
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
+            finally
+            {
+                done.Set();
+            }
+        })
+        {
+            IsBackground = true,
+        };
+        thread.Start();
+        done.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("catalog I/O must not deadlock on a captured sync context");
+        error.Should().BeNull();
+        brick.Should().BeOfType<RemoteBrick>();
+    }
+
+    private sealed class BlockingSyncContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback d, object? state) =>
+            throw new InvalidOperationException("Continuations must not require the blocked caller context.");
+
+        public override void Send(SendOrPostCallback d, object? state) => d(state);
+    }
+
     [Fact]
     public async Task RemoteBrick_executes_via_http_and_maps_response()
     {
