@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 62", text)
+        self.assertIn("--min-tests 63", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -476,6 +476,17 @@ class RuntimeReleaseGateWorkflowTests(unittest.TestCase):
         self.assertIn("runtime release-gate", text)
         self.assertIn("--mode ${{ matrix.lane }}", text)
         self.assertIn("--allow-mock", text)
+
+
+class InstallerBruteforceGateWorkflowTests(unittest.TestCase):
+    def test_installer_bruteforce_gate_workflow_runs_on_pull_request(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "installer-bruteforce-gate.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/install/bruteforce-matrix.sh", text)
+        self.assertIn("scripts/setup/**", text)
+        self.assertIn("scripts/install/**", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):

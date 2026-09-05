@@ -1,6 +1,24 @@
 name: Installer Bruteforce Gate
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/installer-bruteforce-gate.yml'
+      - 'scripts/setup/**'
+      - 'scripts/install/**'
+      - 'application/src/Ashlar.CLI/**'
+      - 'src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj'
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - '.github/workflows/installer-bruteforce-gate.yml'
+      - 'scripts/setup/**'
+      - 'scripts/install/**'
+      - 'application/src/Ashlar.CLI/**'
+      - 'src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj'
   workflow_dispatch:
 
 jobs:

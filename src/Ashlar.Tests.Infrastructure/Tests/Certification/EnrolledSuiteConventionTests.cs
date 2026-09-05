@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 62");
+        text.Should().Contain("--min-tests 63");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -712,6 +712,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("runtime release-gate");
         text.Should().Contain("--mode ${{ matrix.lane }}");
         text.Should().Contain("--allow-mock");
+    }
+
+    [Fact]
+    public void InstallerBruteforceGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/installer-bruteforce-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("scripts/install/bruteforce-matrix.sh");
+        text.Should().Contain("scripts/setup/**");
+        text.Should().Contain("scripts/install/**");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)
