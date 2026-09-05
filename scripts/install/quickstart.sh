@@ -2,7 +2,7 @@
 # Ashlar Quickstart — one command to a working portal.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/IanFrelinger/Ashlar/master/scripts/install/quickstart.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/IanFrelinger/Nexo/master/scripts/install/quickstart.sh | bash
 #
 # Or from a cloned repo:
 #   bash scripts/install/quickstart.sh

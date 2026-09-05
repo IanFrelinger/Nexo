@@ -12,10 +12,10 @@ services:
   node:
     # PINNED BY DIGEST, and to a `sha-<12>` tag rather than `:latest`.
     #
-    # `:latest` is republished on every master push and its previous manifest becomes untagged and
-    # eligible for GHCR garbage collection — so a node pinned to the :latest INDEX digest 404s
-    # after a few merges, and one pinned to the moving tag silently changes under you. Observed
-    # 2026-08-28: :latest moved twice inside a single working session.
+    # `:latest` is published only on explicit dispatch of container-image-publish.yml. Its previous
+    # manifest becomes untagged and eligible for GHCR garbage collection — so a node pinned to the
+    # :latest INDEX digest 404s after a later dispatch, and one pinned to the moving tag silently
+    # changes under you.
     #
     # The `sha-<12>` tags only became multi-arch on master builds as of 0983d74. Anything older is
     # amd64-only and fails on an arm64 node with "no matching manifest for linux/arm64".

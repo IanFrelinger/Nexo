@@ -33,7 +33,7 @@ bash scripts/run-cert-gate.sh
 
 ## Running Project B by hand (local feed)
 
-Prerequisites: .NET SDK per `global.json`; nothing here is on nuget.org, so the `0.1.0` packages come from a **local folder feed** that `scripts/pack-certified-brick-reuse.sh` builds at `artifacts/certified-brick-feed` (override with `ASHLAR_CERTIFIED_REUSE_FEED`; version with `ASHLAR_CERTIFIED_REUSE_VERSION`). The script packs `Ashlar.Brick.Contracts`, `Ashlar.Authoring` and `Ashlar.Certification.Contracts`, writes a `NuGet.Config` for the feed + nuget.org, re-runs certification through `tools/Ashlar.ExportCertifiedBrick` (rewriting `certification-record.json`), and finally packs the certified artifact:
+Prerequisites: .NET SDK per `global.json`. This sample's default path uses a **local folder feed** so certification replay stays bit-identical (`scripts/pack-certified-brick-reuse.sh` → `artifacts/certified-brick-feed`; override with `ASHLAR_CERTIFIED_REUSE_FEED`; version with `ASHLAR_CERTIFIED_REUSE_VERSION`). Published Ashlar packages are on nuget.org at `ci/published-version` (`0.1.2`) for production pins. The script packs `Ashlar.Brick.Contracts`, `Ashlar.Authoring` and `Ashlar.Certification.Contracts`, writes a `NuGet.Config` for the feed + nuget.org, re-runs certification through `tools/Ashlar.ExportCertifiedBrick` (rewriting `certification-record.json`), and finally packs the certified artifact:
 
 ```bash
 bash scripts/pack-certified-brick-reuse.sh

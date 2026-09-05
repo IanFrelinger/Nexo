@@ -12,7 +12,7 @@ Snapshot: **58 workflow files** under `.github/workflows/` (`git ls-files ".gith
 | --- | --- | --- |
 | `cert-gate` | `.github/workflows/cert-gate.yml` (job `cert-gate`) | every `pull_request`, every push to `master`, `workflow_dispatch` — no path filter |
 
-Verified with `gh api repos/IanFrelinger/Ashlar/branches/master/protection` (`required_status_checks.contexts == ["cert-gate"]`, `strict: true`, `enforce_admins: true`). Everything else in this document is **advisory**: a red `layer-boundary / verify`, `Kernel Gate / kernel-gate`, or `Docs Link Check / lychee` does not block a merge. Earlier revisions of this file listed 15 required contexts; that was never the repository setting.
+Verified with `gh api repos/IanFrelinger/Nexo/branches/master/protection` (`required_status_checks.contexts == ["cert-gate"]`, `strict: true`, `enforce_admins: true`). Everything else in this document is **advisory**: a red `layer-boundary / verify`, `Kernel Gate / kernel-gate`, or `Docs Link Check / lychee` does not block a merge. Earlier revisions of this file listed 15 required contexts; that was never the repository setting.
 
 ### Why the other gates are not required (and cannot simply be added)
 
@@ -137,7 +137,7 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 
 ## Pruning (2026-08-16)
 
-Every workflow file was classified from `gh run list --workflow <file> --limit 15 --json conclusion,createdAt,event` plus its `on:` block (PR `ci/workflow-pruning`; the full 62-row table is in that PR's description). Classes: **active-green**, **active-flaky**, **dead** (no run in 60 days and no `push`/`pull_request`/`schedule` trigger that can fire), **duplicate**, **always-red**. Only `cert-gate` is required by branch protection (verified with `gh api repos/IanFrelinger/Ashlar/branches/master/protection`), so none of the changes below affects merges.
+Every workflow file was classified from `gh run list --workflow <file> --limit 15 --json conclusion,createdAt,event` plus its `on:` block (PR `ci/workflow-pruning`; the full 62-row table is in that PR's description). Classes: **active-green**, **active-flaky**, **dead** (no run in 60 days and no `push`/`pull_request`/`schedule` trigger that can fire), **duplicate**, **always-red**. Only `cert-gate` is required by branch protection (verified with `gh api repos/IanFrelinger/Nexo/branches/master/protection`), so none of the changes below affects merges.
 
 **Deleted (7)** — recoverable from git history at `71963059`:
 

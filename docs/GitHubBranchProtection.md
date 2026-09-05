@@ -4,7 +4,7 @@ Branch protection cannot run **`release.yml`** (that workflow is triggered by **
 
 ## What `master` enforces today
 
-The upstream `master` rule (verified 2026-08-16 via `gh api repos/IanFrelinger/Ashlar/branches/master/protection`) requires **one** status check, **`cert-gate`**, with "require branches to be up to date" (`strict: true`) and `enforce_admins: true`. Every other gate — `testing-strategy`, `domain-coverage`, `kernel-coverage`, `layer-boundary / verify`, `Kernel Gate`, `Application Gate`, … — reports on PRs when its `paths:` filter matches but does **not** block a merge. The authoritative inventory is [`CiGateInventory.md`](CiGateInventory.md).
+The upstream `master` rule (verified 2026-08-16 via `gh api repos/IanFrelinger/Nexo/branches/master/protection`) requires **one** status check, **`cert-gate`**, with "require branches to be up to date" (`strict: true`) and `enforce_admins: true`. Every other gate — `testing-strategy`, `domain-coverage`, `kernel-coverage`, `layer-boundary / verify`, `Kernel Gate`, `Application Gate`, … — reports on PRs when its `paths:` filter matches but does **not** block a merge. The authoritative inventory is [`CiGateInventory.md`](CiGateInventory.md).
 
 ## Recommended rules for `master` (or `main`) — proposal, not the current setting
 

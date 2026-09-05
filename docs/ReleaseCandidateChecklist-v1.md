@@ -7,10 +7,10 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 - [ ] Trigger `production-readiness-gate-v1` in GitHub Actions.
 - [ ] Trigger `environment-setup-gate-v1` in GitHub Actions.
 - [ ] Trigger `runtime-release-gate` in GitHub Actions (core + visual required, chaos non-gating).
-- [ ] Trigger `runtime-release-promotion` in GitHub Actions (strict thresholds).
+- [ ] Do **not** treat `runtime-release-promotion` as mandatory: `docs/CiGateInventory.md` records it as manual-only / historically red. Required release proof is `runtime-release-gate` plus an autonomous release-manager **READY** verdict on the candidate SHA.
 - [ ] Trigger `installer-bruteforce-gate` in GitHub Actions.
 - [ ] Trigger `container-image-gate` in GitHub Actions.
-- [ ] Trigger `container-image-publish` in GitHub Actions (or verify latest successful publish on `master`).
+- [ ] Trigger `container-image-publish` only on explicit `workflow_dispatch` if a rolling `:latest` image is required. Versioned images stay on READY-gated `release.yml`.
 - [ ] Trigger `onboarding-docs-guard` in GitHub Actions.
 - [ ] Confirm ephemeral setup container jobs pass for each distro in matrix.
 - [ ] Confirm matrix jobs pass on:

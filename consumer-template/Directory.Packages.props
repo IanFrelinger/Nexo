@@ -2,7 +2,7 @@
   <!-- Copy into your solution root as Directory.Packages.props (central package management). -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Must match a published Ashlar release (repo root VERSION when consuming from your fork). -->
+    <!-- Must match ci/published-version (not an unreleased repo VERSION). -->
     <AshlarConsumerPackageVersion>0.1.2</AshlarConsumerPackageVersion>
   </PropertyGroup>
   <ItemGroup>

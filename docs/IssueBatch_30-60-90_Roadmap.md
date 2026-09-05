@@ -100,9 +100,9 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 11) [Phase 90] First application-suite vertical — ✅ COMPLETE
 
-**Status:** Implemented. Engineering release manager at `apps/release-manager/` with four background agents (repo-monitor, test-runner, slo-collector, report-generator). Runs as daemon via `ashlar background-agent daemon --config`. Uses kernel primitives (background agents, trust controls, pipelines) without bypasses.
+**Status:** Historical. The in-tree `apps/release-manager/` vertical graduated and was extracted on 2026-09-01 to [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager). This repository's release-readiness coordinator is documented in `docs/AutonomousReleaseManager.md` (`scripts/autonomous-release-manager.py`, six immutable lanes). Do not treat `apps/release-manager/` as a living path here.
 
-**Evidence:** Agent set config, operator docs in `apps/release-manager/README.md`. All agents configured with exfiltration policy and data sensitivity controls.
+**Evidence:** Extraction note in `LICENSING.md` / `README.md`; in-repo coordinator in `docs/AutonomousReleaseManager.md`.
 
 ---
 

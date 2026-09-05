@@ -7,7 +7,7 @@ This document is the **anchor** for operators. Link out to detailed guides you a
 ### Before first production deploy
 
 - [ ] Read `docs/Configuration.md` and set environment variables for prod (strict mode, providers, trust).
-- [ ] Choose stack: compose files in repo root (`docker-compose*.yml`) or your orchestrator manifests.
+- [ ] Choose stack: `deploy/compose/docker-compose.portal.yml` (or agent-server / ephemeral / cloud) or your orchestrator manifests. See `docs/DEPLOYMENT.md`.
 - [ ] TLS termination decided (reverse proxy vs platform ingress).
 - [ ] Secrets injected via your secret store, not `.env` in source control.
 

@@ -306,7 +306,7 @@ Ship Ashlar from published container images and compose files. Host-native scrip
 | Image | Use |
 |-------|-----|
 | `ghcr.io/ianfrelinger/nexo-cli:0.1.2` | **Recommended for operators** — the immutable, smoke-tested, multi-arch release tag. Automation, agents, validation, and mounted-workspace commands. (`deploy/node.yml` pins its digest.) |
-| `ghcr.io/ianfrelinger/nexo-cli:latest` | Rolling tag, republished on every `master` push — fine for "just try it", but it moves and can be GC'd, so pin `:0.1.2` (or a digest) for anything durable. |
+| `ghcr.io/ianfrelinger/nexo-cli:latest` | Rolling tag, published only on explicit `workflow_dispatch` of `container-image-publish.yml` — fine for "just try it", but it moves and can be GC'd, so pin `:0.1.2` (or a digest) for anything durable. |
 | Build from `.docker/Dockerfile.quickstart` | Single-container API + portal smoke path with mock-friendly defaults. |
 | Build from `.docker/Dockerfile.api` | API image used by compose stacks. |
 
