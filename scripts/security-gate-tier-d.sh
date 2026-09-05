@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Security Tier D: supply-chain — vulnerable + deprecated package scan.
 # Scans application + key kernel projects (avoids Ashlar.Core YamlDotNet registration bug on some NuGet clients).
-# Strict mode (SECURITY_GATE_STRICT_SUPPLY_CHAIN=1) fails on any vulnerable package or scan failure.
+# A failed scan or any vulnerable package is a FAIL.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -71,12 +71,9 @@ if [ "$SCAN_FAIL" -eq 1 ]; then
 fi
 
 if [ "$VULN_FOUND" -eq 1 ]; then
-  if [ "${SECURITY_GATE_STRICT_SUPPLY_CHAIN:-0}" = "1" ]; then
-    echo "Vulnerable packages detected (SECURITY_GATE_STRICT_SUPPLY_CHAIN=1)" >&2
-    exit 1
-  else
-    echo "::warning::Vulnerable packages detected — see $VULN_REPORT (set SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 to fail)"
-  fi
+  echo "Vulnerable packages detected — see $VULN_REPORT" >&2
+  echo "security-gate-tier-d: FAIL (vulnerable packages; see $REPORT_DIR)" >&2
+  exit 1
 fi
 
 echo ""

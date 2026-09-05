@@ -2,7 +2,7 @@
 
 Validates the **trust boundary** (policy packs, audit log, access boundary), **API auth & mesh security middleware**, **CLI trust surfaces**, **supply chain**, and **air-gapped operation** — the production "waterproofing" layer before exposing Ashlar to the internet.
 
-**Automation:** `make security-gate-full`. PRs that touch the security-gate paths run A–D plus the E host suite. D fails when the supply-chain scan cannot run, and the workflow sets `SECURITY_GATE_STRICT_SUPPLY_CHAIN=1`. The E `--network none` container stays dispatch-only.
+**Automation:** `make security-gate-full`. PRs that touch the security-gate paths run A–D plus the E host suite. D fails when the supply-chain scan cannot run or reports a vulnerable package. The E `--network none` container stays dispatch-only.
 
 ## Prerequisites
 
@@ -27,7 +27,6 @@ make ship-gate-full
 | `SECURITY_GATE_SKIP_PRIOR=1` | Skip ship-gate prerequisite |
 | `SECURITY_GATE_SKIP_TIER_D=1` | Skip supply-chain scan |
 | `SECURITY_GATE_SKIP_TIER_E=1` | Skip air-gapped tier |
-| `SECURITY_GATE_STRICT_SUPPLY_CHAIN=1` | Tier D fails on any vulnerable transitive |
 | `SECURITY_GATE_AIRGAPPED_CONTAINER=1` | Tier E requires a working Docker daemon and runs the `--network none` container suite; missing Docker is a failure, not a skip |
 
 ## What each tier proves

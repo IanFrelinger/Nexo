@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 83");
+        text.Should().Contain("--min-tests 84");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -751,6 +751,18 @@ public sealed class EnrolledSuiteConventionTests
             ".github/workflows/security-gate.yml"));
         workflow.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'd'");
         workflow.Should().Contain("SECURITY_GATE_STRICT_SUPPLY_CHAIN: \"1\"");
+    }
+
+    [Fact]
+    public void SecurityTierD_FailsClosedOnVulnerablePackages()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/security-gate-tier-d.sh"));
+        text.Should().Contain("Vulnerable packages detected");
+        text.Should().Contain("security-gate-tier-d: FAIL");
+        text.Should().Contain("security-gate-tier-d: PASS");
+        text.Should().NotContain("SECURITY_GATE_STRICT_SUPPLY_CHAIN");
+        text.Should().NotContain("set SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 to fail");
     }
 
     [Fact]

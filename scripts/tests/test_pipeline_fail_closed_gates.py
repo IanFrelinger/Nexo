@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 83", text)
+        self.assertIn("--min-tests 84", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1302,6 +1302,46 @@ class SecurityTierDFailClosedTests(unittest.TestCase):
             )
         self.assertEqual(1, run.returncode)
         self.assertIn("supply-chain scan could not run", run.stdout)
+        self.assertIn("security-gate-tier-d: FAIL", run.stdout)
+        self.assertNotIn("security-gate-tier-d: PASS", run.stdout)
+
+    def test_security_tier_d_script_fails_closed_on_vulnerable_packages(self) -> None:
+        text = (ROOT / "scripts" / "security-gate-tier-d.sh").read_text(encoding="utf-8")
+        self.assertIn("Vulnerable packages detected", text)
+        self.assertIn("security-gate-tier-d: FAIL", text)
+        self.assertNotIn("SECURITY_GATE_STRICT_SUPPLY_CHAIN", text)
+        self.assertNotIn("set SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 to fail", text)
+
+    def test_security_tier_d_fails_when_vulnerable_packages_are_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_bin = Path(tmp) / "bin"
+            fake_bin.mkdir()
+            dotnet = fake_bin / "dotnet"
+            dotnet.write_text(
+                "#!/usr/bin/env bash\n"
+                "if [[ \"$*\" == *--vulnerable* ]]; then\n"
+                "  echo 'The following packages have the following vulnerable'\n"
+                "  echo 'Severity: High'\n"
+                "  exit 0\n"
+                "fi\n"
+                "exit 0\n",
+                encoding="utf-8",
+            )
+            dotnet.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+            env.pop("SECURITY_GATE_STRICT_SUPPLY_CHAIN", None)
+            run = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "security-gate-tier-d.sh")],
+                cwd=ROOT,
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        self.assertEqual(1, run.returncode)
+        self.assertIn("Vulnerable packages detected", run.stdout)
         self.assertIn("security-gate-tier-d: FAIL", run.stdout)
         self.assertNotIn("security-gate-tier-d: PASS", run.stdout)
 

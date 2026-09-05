@@ -136,14 +136,13 @@ Trust boundary, API auth, mesh security, supply chain, air-gapped:
 make security-gate-tier-a    # counted trust core (97)
 make security-gate-tier-b    # API security middleware
 make security-gate-tier-c    # counted CLI trust surface (61) + trust JSON smoke
-make security-gate-tier-d    # dotnet list package --vulnerable / --deprecated (artifacts in .ashlar/security-gate/)
+make security-gate-tier-d    # dotnet list package --vulnerable / --deprecated (artifacts in .ashlar/security-gate/); fails on scan error or any vulnerable package
 make security-gate-tier-e    # counted air-gapped + safety (52, net10)
 make security-gate-full
-SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 make security-gate-tier-d
 SECURITY_GATE_AIRGAPPED_CONTAINER=1 make security-gate-tier-e  # fails if Docker is missing
 ```
 
-PR workflow `security-gate.yml` runs Tiers A–C only. Tiers D and E are dispatch-only there; the autonomous release-manager `security` lane runs `make security-gate-full`.
+PR workflow `security-gate.yml` runs Tiers A–D plus the E host suite. The E `--network none` container stays dispatch-only; the autonomous release-manager `security` lane runs `make security-gate-full`.
 
 See **`docs/production-readiness/SecurityHardeningPlan-v1.md`**.
 
