@@ -16,7 +16,7 @@
     <Title>Ashlar Hosting (bundle)</Title>
     <Description>Metapackage that pulls the full Ashlar.Hosting dependency graph at a single version. Prefer this over referencing only Ashlar.Hosting when consuming from nuget.org.</Description>
     <PackageTags>ashlar;hosting;metapackage</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <!-- PackageLicenseExpression (Apache-2.0) comes from Directory.Build.targets; do not restate it here. -->
     <PackageReadmeFile>README.md</PackageReadmeFile>

@@ -13,7 +13,7 @@
     <Title>Ashlar AI Pipeline</Title>
     <Description>Microsoft.Extensions.AI governed chat pipeline for Ashlar (local Ollama, local LLamaSharp/ONNX-key target, and future cloud targets).</Description>
     <PackageTags>ashlar;ai;meai;ichatclient;ollama;llamasharp;bedrock</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
