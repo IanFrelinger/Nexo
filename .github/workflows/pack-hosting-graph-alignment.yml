@@ -2,8 +2,25 @@
 name: Pack hosting graph alignment
 
 on:
+  pull_request:
+    paths:
+      - "src/**/*.csproj"
+      - "scripts/pack-ashlar-hosting-graph.sh"
+      - "scripts/pack-ashlar-hosting-graph.ps1"
+      - "scripts/pack-ashlar-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-ashlar-hosting-graph-alignment.py"
+      - "scripts/verify-nuget-org-packages-visible.sh"
+      - "scripts/verify-nuget-org-restore-published-version.sh"
+      - "scripts/verify-nuget-org-restore-with-isolated-cache.sh"
+      - "docs/samples/NugetOrgRestoreVerify/**"
+      - "Directory.Build.props"
+      - ".github/workflows/pack-hosting-graph-alignment.yml"
+      - ".github/workflows/reusable-release-nuget.yml"
   push:
-    branches: [master, main]
+    branches:
+      - master
+      - main
+      - "cursor/**"
     paths:
       - "src/**/*.csproj"
       - "scripts/pack-ashlar-hosting-graph.sh"

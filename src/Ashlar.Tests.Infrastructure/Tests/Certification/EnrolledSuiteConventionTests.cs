@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 57");
+        text.Should().Contain("--min-tests 58");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -659,6 +659,16 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("E2E_LOOP_MIN_SCENARIOS=143");
         text.Should().Contain("E2E_LOOP_MIN_SCENARIOS=137");
         text.Should().Contain("discovery collapsed");
+    }
+
+    [Fact]
+    public void PackHostingGraphAlignmentWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/pack-hosting-graph-alignment.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("verify-pack-ashlar-hosting-graph-alignment.py");
+        text.Should().Contain("src/**/*.csproj");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)

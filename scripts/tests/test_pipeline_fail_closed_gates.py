@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 57", text)
+        self.assertIn("--min-tests 58", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -423,6 +423,16 @@ class E2eLoopCollapseFloorTests(unittest.TestCase):
         self.assertIn("E2E_LOOP_MIN_SCENARIOS=143", text)
         self.assertIn("E2E_LOOP_MIN_SCENARIOS=137", text)
         self.assertIn("discovery collapsed", text)
+
+
+class PackHostingGraphAlignmentWorkflowTests(unittest.TestCase):
+    def test_pack_hosting_graph_alignment_workflow_runs_on_pull_request(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "pack-hosting-graph-alignment.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("verify-pack-ashlar-hosting-graph-alignment.py", text)
+        self.assertIn("src/**/*.csproj", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):

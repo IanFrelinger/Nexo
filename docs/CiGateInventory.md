@@ -53,8 +53,8 @@ Counts by trigger class (59 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 25 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 20 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness/ship-gate, `ingress-unit-gate`, `onboarding-docs-guard`), 1 label-driven (`release-staging-on-label`) |
-| Push- and/or schedule-driven, plus `workflow_dispatch` | 14 | Post-merge / scheduled signal; never blocks a PR. |
+| Runs on `pull_request` | 26 | 4 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`, `composition-mesh-gate`), 21 path-filtered (including `products-gate`, Release Manager validation, compat/dr/perf/production-readiness/ship-gate, `ingress-unit-gate`, `onboarding-docs-guard`, `pack-hosting-graph-alignment`), 1 label-driven (`release-staging-on-label`) |
+| Push- and/or schedule-driven, plus `workflow_dispatch` | 13 | Post-merge / scheduled signal; never blocks a PR. |
 | `workflow_dispatch` only | 15 | Manual lanes (mesh labs, multi-env Docker suites, ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
 | Reusable (`workflow_call`) | 3 | `reusable-*` |
@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 57 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 58 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -90,6 +90,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `ship-gate.yml` | Ship Gate / `ship-gate` | paths: BaseFramework smoke tests, `scripts/ship-gate-tier-b.sh` — PR runs counted Tier B smoke (9) + ProdStyle; A/C/D stay dispatch-only | dispatch |
 | `ingress-unit-gate.yml` | ingress-unit-gate / `AwsSns + DynamoDb counted units` | paths: ingress sources/tests, `scripts/ingress-unit-gate.sh`, counted wrapper — counted AwsSns 11 + DynamoDb 2 | push `master`/`main`/`cursor/**`, dispatch |
 | `onboarding-docs-guard.yml` | Onboarding Docs Guard / `guard` | paths: README, `docs/**/*.md`, `scripts/*.{sh,ps1}`, `Makefile`, `**/*.csproj` — startup-doc greps, referenced-path existence, ProjectTiers census | push `master`/`main`/`cursor/**`, dispatch |
+| `pack-hosting-graph-alignment.yml` | Pack hosting graph alignment / `verify` | paths: `src/**/*.csproj`, pack scripts, `Directory.Build.props` — pack list vs `Ashlar.Hosting` MSBuild graph (17 packed) | push `master`/`main`/`cursor/**`, dispatch |
 
 ### Push-only (path-filtered) workflows
 
@@ -107,7 +108,6 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `grpc-transport-gate.yml` | gRPC transport gate / `scripts/grpc-transport-gate.sh` | `src/Ashlar.Transport.Grpc/**`, `src/Ashlar.Tests.Transport/**` — PR + push; counted ProdStyle floor 81 |
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate | README, GettingStarted, setup/install scripts, CLI; **weekly schedule** |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |
-| `pack-hosting-graph-alignment.yml` | Pack hosting graph alignment | `master`/`main`; `src/**/*.csproj`, pack scripts, NugetOrgRestoreVerify sample |
 | `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule** |
 | `runtime-release-gate.yml` | Runtime Release Gate | `master`/`main`; CLI runtime/release commands, `docs/runtime/benchmarks/**` |
 
