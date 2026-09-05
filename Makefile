@@ -68,8 +68,12 @@ prod-dry-run-agent-server:
 # Production-like integration (Category=ProdStyle): Ashlar.Tests.Infrastructure only — real DI hosts / graphs.
 # Run this before the full suite when validating framework behaviour locally or in CI-style gates.
 test-prod-style:
-	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
-	ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build \
+	ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+	  --project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
+	  --expected-prefix "Ashlar.Tests.Infrastructure." \
+	  --min-tests 123 \
+	  -- \
+	  -f net8.0 \
 	  --filter "Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests" \
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
 

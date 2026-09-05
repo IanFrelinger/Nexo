@@ -285,12 +285,31 @@ class KernelTierBCountedTests(unittest.TestCase):
         )
 
 
+class TestProdStyleCountedTests(unittest.TestCase):
+    def test_makefile_runs_counted_prod_style_suite(self) -> None:
+        text = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 123", text)
+        self.assertIn(
+            "Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests",
+            text,
+        )
+        self.assertNotIn(
+            "ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build",
+            text,
+        )
+
+
 class ShipTierBCountedTests(unittest.TestCase):
     def test_ship_gate_tier_b_runs_counted_framework_smoke(self) -> None:
         text = (ROOT / "scripts" / "ship-gate-tier-b.sh").read_text(encoding="utf-8")
         self.assertIn("run-dotnet-test-counted.py", text)
         self.assertIn("--min-tests 9", text)
         self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_ship_gate_tier_b_invokes_counted_prod_style_target(self) -> None:
+        text = (ROOT / "scripts" / "ship-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("make test-prod-style", text)
 
 
 class SecurityTierECountedTests(unittest.TestCase):

@@ -204,6 +204,18 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void TestProdStyle_RunsCountedSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "Makefile"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 123");
+        text.Should().Contain("Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests");
+        text.Should().NotContain(
+            "ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build");
+    }
+
+    [Fact]
     public void ShipTierB_RunsCountedFrameworkSmoke()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

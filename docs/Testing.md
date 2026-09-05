@@ -11,7 +11,7 @@ Ashlar uses multiple mechanisms to prevent tests from hanging indefinitely and k
 | Scope | blame-hang-timeout | Per-test timeout | Notes |
 |-------|--------------------|------------------|-------|
 | prime-time | 300s | varies | **`Ashlar.PrimeTime.slnf`** — ProdStyle then full (`make test-prime-time` / `make test-prime-time-full`) |
-| prod-style | 120s | varies | **Category=ProdStyle** — Infrastructure-only (`make test-prod-style`) |
+| prod-style | 120s | varies | **Category=ProdStyle** — Infrastructure-only counted (`make test-prod-style`, 123 unique) |
 | smoke | 30s | — | BaseFrameworkSmokeTests; local `make test` |
 | integration | 60s | 15s (Integration tests) | Category=Integration |
 | persistence | 60s | — | InMemoryPersistenceTests |
