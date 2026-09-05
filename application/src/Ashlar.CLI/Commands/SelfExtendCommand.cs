@@ -499,7 +499,7 @@ public sealed class SelfExtendCommand : Command
             var functionalFilter = string.IsNullOrWhiteSpace(functionalFilterOverride)
                 ? workflow.FunctionalTestFilter
                 : functionalFilterOverride;
-            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, functionalFilter, "functional-filter", required: true, allowMock, ct).ConfigureAwait(false));
+            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, functionalFilter, "functional-filter", required: true, ct).ConfigureAwait(false));
         }
 
         if (runAesthetic)
@@ -507,7 +507,7 @@ public sealed class SelfExtendCommand : Command
             var aestheticFilter = string.IsNullOrWhiteSpace(workflow.AestheticTestFilter)
                 ? "UiDomainKnowledgeRetentionTests"
                 : workflow.AestheticTestFilter;
-            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, aestheticFilter, "aesthetic-filter", required: true, allowMock, ct).ConfigureAwait(false));
+            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, aestheticFilter, "aesthetic-filter", required: true, ct).ConfigureAwait(false));
 
             var smokeCheck = CheckUiSmokeProject(workflow.UiSmokeProjectPath, repoRoot, allowMock);
             checks.Add(smokeCheck);
@@ -565,7 +565,6 @@ public sealed class SelfExtendCommand : Command
         string filter,
         string id,
         bool required,
-        bool allowMock,
         CancellationToken ct)
     {
         var run = await RunProcessAsync(
@@ -589,11 +588,7 @@ public sealed class SelfExtendCommand : Command
         if (run.ExitCode != 0)
             return new PreflightCheck(id, false, required, $"Test discovery command failed for filter '{filter}' (exit={run.ExitCode}).");
         if (totalTests <= 0)
-        {
-            if (allowMock)
-                return new PreflightCheck(id, true, required, $"No tests discovered for filter '{filter}' (allow-mock: skipping strict discoverability).");
             return new PreflightCheck(id, false, required, $"No tests discovered for filter '{filter}'.");
-        }
         return new PreflightCheck(id, true, required, $"Discovered {totalTests} test(s) for filter '{filter}'.");
     }
 
@@ -670,7 +665,7 @@ public sealed class SelfExtendCommand : Command
             var functionalFilter = string.IsNullOrWhiteSpace(functionalFilterOverride)
                 ? workflow.FunctionalTestFilter
                 : functionalFilterOverride;
-            var functional = await RunGeneratedTestSuiteAsync(repoRoot, functionalFilter, allowMock, ct).ConfigureAwait(false);
+            var functional = await RunGeneratedTestSuiteAsync(repoRoot, functionalFilter, ct).ConfigureAwait(false);
             var functionalPass = functional.ExitCode == 0;
             passed &= functionalPass;
             notes.Add(functionalPass
@@ -691,7 +686,7 @@ public sealed class SelfExtendCommand : Command
                 var aestheticFilter = string.IsNullOrWhiteSpace(workflow.AestheticTestFilter)
                     ? "UiDomainKnowledgeRetentionTests"
                     : workflow.AestheticTestFilter;
-                var aesthetic = await RunGeneratedTestSuiteAsync(repoRoot, aestheticFilter, allowMock, ct).ConfigureAwait(false);
+                var aesthetic = await RunGeneratedTestSuiteAsync(repoRoot, aestheticFilter, ct).ConfigureAwait(false);
                 var aestheticPass = aesthetic.ExitCode == 0;
                 passed &= aestheticPass;
                 notes.Add(aestheticPass
@@ -874,7 +869,6 @@ public sealed class SelfExtendCommand : Command
     private static async Task<(int ExitCode, string StdOut, string StdErr)> RunGeneratedTestSuiteAsync(
         string repoRoot,
         string testFilter,
-        bool allowMock,
         CancellationToken ct)
     {
         var build = await RunProcessAsync(
@@ -902,13 +896,10 @@ public sealed class SelfExtendCommand : Command
             },
             ct).ConfigureAwait(false);
 
-        // Treat "0 tests discovered" as failure for generated-extension validation (strict unless mock/offline lane).
+        // Same class as `ashlar test local`: a silent empty match must not pass,
+        // including the leftover allow-mock skip that used to treat TotalTests 0 as success.
         if (run.ExitCode == 0 && run.StdOut.Contains("\"TotalTests\":0", StringComparison.Ordinal))
-        {
-            if (allowMock)
-                return run;
             return (1, run.StdOut, run.StdErr + Environment.NewLine + $"No tests discovered for filter '{testFilter}'.");
-        }
 
         return run;
     }

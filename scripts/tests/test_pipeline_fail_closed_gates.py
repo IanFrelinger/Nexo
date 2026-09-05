@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 118", text)
+        self.assertIn("--min-tests 119", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -587,6 +587,17 @@ class TestCommandFailClosedTests(unittest.TestCase):
         self.assertIn("TotalTests < 1", text)
         self.assertIn("No tests matched the filter", text)
         self.assertIn("ExitCode.ValidationFailed", text)
+
+
+class SelfExtendCommandFailClosedTests(unittest.TestCase):
+    def test_self_extend_fails_closed_on_zero_tests(self) -> None:
+        text = (
+            ROOT / "application" / "src" / "Ashlar.CLI" / "Commands" / "SelfExtendCommand.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("No tests discovered for filter", text)
+        self.assertIn('"TotalTests":0', text)
+        self.assertNotIn("allow-mock: skipping strict discoverability", text)
+        self.assertNotIn("if (allowMock)\n                return run;", text)
 
 
 class TestRunRunnerAdapterFailClosedTests(unittest.TestCase):

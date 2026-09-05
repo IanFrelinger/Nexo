@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 118");
+        text.Should().Contain("--min-tests 119");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1292,6 +1292,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("TotalTests < 1");
         text.Should().Contain("No tests matched the filter");
         text.Should().Contain("ExitCode.ValidationFailed");
+    }
+
+    [Fact]
+    public void SelfExtendCommand_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "application/src/Ashlar.CLI/Commands/SelfExtendCommand.cs"));
+        text.Should().Contain("No tests discovered for filter");
+        text.Should().Contain("\"TotalTests\":0");
+        text.Should().NotContain("allow-mock: skipping strict discoverability");
+        text.Should().NotContain("if (allowMock)\n                return run;");
     }
 
     [Fact]
