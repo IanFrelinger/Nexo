@@ -1,6 +1,13 @@
 name: Optimize Agent Cluster Gate
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/optimize-agent-cluster-gate.yml"
+      - "apps/runtime-studio/**"
+      - "scripts/sandbox/**"
+      - "application/src/Ashlar.CLI/**"
+      - "application/src/Ashlar.CLI/Runtime/**"
   push:
     branches: [master, main, "cursor/**"]
     paths:

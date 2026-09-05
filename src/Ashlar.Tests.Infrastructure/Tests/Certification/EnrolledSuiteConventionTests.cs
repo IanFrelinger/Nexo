@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 60");
+        text.Should().Contain("--min-tests 61");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -690,6 +690,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("scripts/setup/setup.sh check");
         text.Should().Contain("./scripts/setup/setup.ps1 -Mode check");
         text.Should().Contain("github.event_name != 'pull_request'");
+    }
+
+    [Fact]
+    public void OptimizeAgentClusterGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/optimize-agent-cluster-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("optimize_agent_cluster.sh");
+        text.Should().Contain("Unified workflow");
+        text.Should().Contain("--skip-optimize");
     }
 
     private static string[] OwnershipRow(string csprojLeaf)

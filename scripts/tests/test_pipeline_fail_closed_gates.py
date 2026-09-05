@@ -335,7 +335,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 60", text)
+        self.assertIn("--min-tests 61", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -454,6 +454,17 @@ class EnvironmentSetupGateWorkflowTests(unittest.TestCase):
         self.assertIn("scripts/setup/setup.sh check", text)
         self.assertIn("./scripts/setup/setup.ps1 -Mode check", text)
         self.assertIn("github.event_name != 'pull_request'", text)
+
+
+class OptimizeAgentClusterGateWorkflowTests(unittest.TestCase):
+    def test_optimize_agent_cluster_gate_workflow_runs_on_pull_request(self) -> None:
+        text = (
+            ROOT / ".github" / "workflows" / "optimize-agent-cluster-gate.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pull_request:", text)
+        self.assertIn("optimize_agent_cluster.sh", text)
+        self.assertIn("Unified workflow", text)
+        self.assertIn("--skip-optimize", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):
