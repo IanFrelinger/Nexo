@@ -148,6 +148,19 @@ public class ObservationsBackgroundAgentCommandTests : IDisposable
     [ThreadStatic] private static StringWriter? _lastBuf;
     [ThreadStatic] private static StringWriter? _lastErrBuf;
 
+    [Fact]
+    public async Task ZeroOrNegativeSinceHours_isRefusedInsteadOfIgnoringTheWindow()
+    {
+        var cmd = new ObservationsBackgroundAgentCommand(_store, NullLogger<ObservationsBackgroundAgentCommand>.Instance);
+        foreach (var since in new double[] { 0, -1 })
+        {
+            var (rc, stdout) = await CaptureAsync(() => Run(cmd, source: null, kind: null, sinceHours: since, tail: null, summary: false, formatJson: true));
+            rc.Should().Be(1);
+            stdout.Should().Contain("Invalid --since-hours");
+            stdout.Should().NotContain("\"ok\": true");
+        }
+    }
+
     private Task<int> Run(
         ObservationsBackgroundAgentCommand cmd,
         string? source,

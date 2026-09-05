@@ -185,6 +185,21 @@ public class ObjectivesBackgroundAgentCommandTests : IDisposable
         row.GetProperty("Errors").GetInt32().Should().Be(1);
     }
 
+    [Fact]
+    public async Task Report_zeroOrNegativeSinceHours_isRefused()
+    {
+        var cmd = NewCmd();
+        foreach (var since in new double[] { 0, -1 })
+        {
+            var (rc, stdout) = await CaptureAsync(() => cmd.ReportAsync(
+                id: null, status: null, sinceHours: since,
+                formatJson: true, stdout: TestStdout!, stderr: TestStderr!));
+            rc.Should().Be(1);
+            stdout.Should().Contain("Invalid --since-hours");
+            stdout.Should().NotContain("\"ok\": true");
+        }
+    }
+
     // Test helpers — write through caller-supplied streams so xUnit's parallel
     // execution doesn't clobber Console.Out across fixtures.
     private StringWriter? TestStdout;

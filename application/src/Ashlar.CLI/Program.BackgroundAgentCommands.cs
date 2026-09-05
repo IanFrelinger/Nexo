@@ -206,7 +206,7 @@ static partial class Program
         // ashlar background-agent stats
         var statsAgentOpt = new Option<string?>("--agent", () => null, "Filter to a specific agent id");
         var statsRoleOpt = new Option<string?>("--role", () => null, "Filter to a specific role (planner, optimizer, tester, extender, ...)");
-        var statsSinceOpt = new Option<double?>("--since-hours", () => null, "Only events newer than now-N hours");
+        var statsSinceOpt = new Option<double?>("--since-hours", () => null, "Only events newer than now-N hours (must be > 0)");
         var statsBgCmd = new Command("stats", "Aggregate the cycle event log (cycles.jsonl) into per-agent throughput / denial / error stats")
         {
             statsAgentOpt,
@@ -231,7 +231,7 @@ static partial class Program
         // Joins cycle activity (cycles.jsonl) with admission outcomes (<project>/.ashlar/gates) over
         // a window, so an operator can leave the node unattended and see what it proposed and what
         // the gate decided. Read-only and offline.
-        var reportSinceOpt = new Option<double?>("--since-hours", () => null, "Window in hours (default 24)");
+        var reportSinceOpt = new Option<double?>("--since-hours", () => null, "Window in hours (must be > 0; default 24 when omitted)");
         var reportProjectOpt = new Option<string?>("--project", () => null, "Project root whose .ashlar/gates to read (default: current directory)");
         var reportBgCmd = new Command("report", "Overnight report: cycle activity joined with admission-gate outcomes over a window")
         {
@@ -253,7 +253,7 @@ static partial class Program
         // "what does the daemon currently know about the codebase?".
         var obsSourceOpt = new Option<string?>("--source", () => null, "Filter to a specific source (typically the agent id)");
         var obsKindOpt = new Option<string?>("--kind", () => null, "Filter by kind (Build, Test, Analysis, AgentAction, UserSignal)");
-        var obsSinceOpt = new Option<double?>("--since-hours", () => null, "Only observations newer than now-N hours");
+        var obsSinceOpt = new Option<double?>("--since-hours", () => null, "Only observations newer than now-N hours (must be > 0)");
         var obsTailOpt = new Option<int?>("--tail", () => null, "Show only the most recent N rows after filtering");
         var obsSummaryOpt = new Option<bool>("--summary", () => false, "Group counts by source/kind/severity instead of listing rows");
         var observationsBgCmd = new Command("observations", "Inspect the structured observations log (observations.jsonl)")
@@ -359,7 +359,7 @@ static partial class Program
 
         var objReportIdOpt = new Option<string?>("--id", () => null, "Limit report to one objective");
         var objReportStatusOpt = new Option<string?>("--status", () => null, "Filter by status (Pending, InProgress, Done, Blocked)");
-        var objReportSinceOpt = new Option<double?>("--since-hours", () => null, "Only count observations newer than now-N hours");
+        var objReportSinceOpt = new Option<double?>("--since-hours", () => null, "Only count observations newer than now-N hours (must be > 0)");
         var objReportCmd = new Command("report", "Cross-correlate objectives with observations (per-objective build/test/error counts)")
         {
             objReportIdOpt, objReportStatusOpt, objReportSinceOpt

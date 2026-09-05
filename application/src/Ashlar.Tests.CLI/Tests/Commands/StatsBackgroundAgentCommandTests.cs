@@ -155,6 +155,19 @@ public class StatsBackgroundAgentCommandTests : IDisposable
     [ThreadStatic] private static StringWriter? _lastBuf;
     [ThreadStatic] private static StringWriter? _lastErrBuf;
 
+    [Fact]
+    public async Task ZeroOrNegativeSinceHours_isRefusedInsteadOfIgnoringTheWindow()
+    {
+        var cmd = new StatsBackgroundAgentCommand(_store, NullLogger<StatsBackgroundAgentCommand>.Instance);
+        foreach (var since in new double[] { 0, -1 })
+        {
+            var (rc, stdout) = await CaptureAsync(() => Run(cmd, agent: null, role: null, sinceHours: since, formatJson: true));
+            rc.Should().Be(1);
+            stdout.Should().Contain("Invalid --since-hours");
+            stdout.Should().NotContain("\"ok\": true");
+        }
+    }
+
     private Task<int> Run(StatsBackgroundAgentCommand cmd, string? agent, string? role, double? sinceHours, bool formatJson)
     {
         _lastBuf = new StringWriter();

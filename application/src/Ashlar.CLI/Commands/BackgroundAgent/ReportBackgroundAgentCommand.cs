@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.Telemetry;
+using Ashlar.CLI.Commands.Runtime;
 using Ashlar.Manifest.Admission;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
@@ -38,7 +39,7 @@ public class ReportBackgroundAgentCommand
     }
 
     /// <summary>Print the report. See the stream overload for the actual work.</summary>
-    /// <param name="sinceHours">Window; defaults to 24h when null or ≤ 0.</param>
+    /// <param name="sinceHours">Window in hours. Omitted defaults to 24h. Values ≤ 0 are refused.</param>
     /// <param name="project">Project root whose <c>.ashlar/gates</c> to read; defaults to the CWD.</param>
     /// <param name="formatJson">Emit a JSON document instead of a human report.</param>
     public Task<int> ExecuteAsync(double? sinceHours, string? project, bool formatJson, CancellationToken ct = default)
@@ -51,6 +52,15 @@ public class ReportBackgroundAgentCommand
     {
         try
         {
+            if (!RuntimeCommandUtilities.TryValidateOptionalPositiveDuration(sinceHours))
+            {
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --since-hours" }));
+                else
+                    stderr.WriteLine(RuntimeCommandUtilities.InvalidSinceHoursMessage);
+                return 1;
+            }
+
             var window = sinceHours is > 0 ? sinceHours.Value : 24.0;
             var cutoff = DateTimeOffset.UtcNow - TimeSpan.FromHours(window);
             var projectRoot = string.IsNullOrWhiteSpace(project) ? Directory.GetCurrentDirectory() : project!;

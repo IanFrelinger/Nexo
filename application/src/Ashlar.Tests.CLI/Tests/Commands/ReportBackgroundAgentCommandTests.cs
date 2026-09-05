@@ -134,4 +134,20 @@ public sealed class ReportBackgroundAgentCommandTests : IDisposable
         output.Should().Contain("No cycles in the window");
         output.Should().NotContain("old-agent");
     }
+
+    [Fact]
+    public async Task ZeroOrNegativeSinceHours_isRefusedWithoutRemappingTo24()
+    {
+        var cmd = NewCmd();
+        foreach (var since in new double[] { 0, -1 })
+        {
+            var stdout = new StringWriter();
+            var stderr = new StringWriter();
+            var rc = await cmd.ExecuteAsync(since, _project, formatJson: true, stdout, stderr);
+            rc.Should().Be(1);
+            var output = stdout.ToString() + stderr.ToString();
+            output.Should().Contain("Invalid --since-hours");
+            output.Should().NotContain("\"windowHours\": 24");
+        }
+    }
 }

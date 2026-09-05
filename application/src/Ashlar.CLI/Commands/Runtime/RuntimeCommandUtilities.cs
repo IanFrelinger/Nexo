@@ -102,6 +102,8 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidMaxRemediationAttemptsMessage = "Invalid --max-remediation-attempts. Use a non-negative integer.";
 
+    internal const string InvalidSinceHoursMessage = "Invalid --since-hours. Use a positive number.";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;
@@ -118,6 +120,9 @@ internal static class RuntimeCommandUtilities
 
     internal static bool TryValidatePositiveDuration(double value)
         => double.IsFinite(value) && value > 0d;
+
+    internal static bool TryValidateOptionalPositiveDuration(double? value)
+        => !value.HasValue || TryValidatePositiveDuration(value.Value);
 
 
 }

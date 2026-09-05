@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.Objectives;
 using Ashlar.BackgroundAgents.Observations;
+using Ashlar.CLI.Commands.Runtime;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
 
@@ -401,6 +402,15 @@ public class ObjectivesBackgroundAgentCommand
     {
         try
         {
+            if (!RuntimeCommandUtilities.TryValidateOptionalPositiveDuration(sinceHours))
+            {
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --since-hours" }));
+                else
+                    stderr.WriteLine(RuntimeCommandUtilities.InvalidSinceHoursMessage);
+                return Task.FromResult(1);
+            }
+
             ObjectiveStatus? statusFilter = null;
             if (!string.IsNullOrWhiteSpace(status))
             {
