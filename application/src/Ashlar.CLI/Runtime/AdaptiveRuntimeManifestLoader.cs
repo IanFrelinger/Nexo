@@ -38,8 +38,20 @@ public static class AdaptiveRuntimeManifestLoader
         {
             DomainPacks = NormalizeArray(source.DomainPacks),
             UiCapabilities = NormalizeArray(source.UiCapabilities),
-            QaPolicyProfile = string.IsNullOrWhiteSpace(source.QaPolicyProfile) ? null : source.QaPolicyProfile.Trim().ToLowerInvariant()
+            QaPolicyProfile = NormalizeQaPolicyProfile(source.QaPolicyProfile)
         };
+    }
+
+    private static string? NormalizeQaPolicyProfile(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim().ToLowerInvariant();
+        if (normalized is not ("auto" or "demo" or "release" or "prod" or "research"))
+            throw new InvalidOperationException("Invalid qaPolicyProfile. Use auto, demo, release, prod, or research.");
+
+        return normalized;
     }
 
     private static string[] NormalizeArray(string[]? items)

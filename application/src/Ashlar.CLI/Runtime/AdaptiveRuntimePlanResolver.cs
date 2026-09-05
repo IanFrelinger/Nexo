@@ -201,14 +201,18 @@ public static class AdaptiveRuntimePlanResolver
 
     private static string NormalizeQaPolicy(string? policy)
     {
-        var normalized = (policy ?? "auto").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(policy))
+            return "auto";
+
+        var normalized = policy.Trim().ToLowerInvariant();
         return normalized switch
         {
+            "auto" => "auto",
             "demo" => "demo",
             "release" => "release",
             "prod" => "prod",
             "research" => "research",
-            _ => "auto"
+            _ => throw new ArgumentException("Invalid qaPolicyProfile. Use auto, demo, release, prod, or research.")
         };
     }
 

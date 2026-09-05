@@ -32,6 +32,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestChangelogMissingOutputParentCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
             await TestRuntimePlanInvalidQaPolicyExitsNonZeroAsync().ConfigureAwait(false);
             await TestRuntimeGateInvalidPolicyExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimePlanInvalidManifestQaPolicyExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -456,6 +457,32 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "An invalid --qa-policy must be refused legibly.");
             AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
                 "An invalid --qa-policy must be refused before computing a plan.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimePlanInvalidManifestQaPolicyExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new RuntimeCommand());
+            var exitCode = await root.InvokeAsync(
+                """runtime plan --goal test --use-history false --runtime-manifest-json {"qaPolicyProfile":"xyz"}""")
+                .ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime plan with qaPolicyProfile xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid qaPolicyProfile", StringComparison.Ordinal),
+                "An invalid qaPolicyProfile must be refused legibly.");
+            AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
+                "An invalid qaPolicyProfile must be refused before computing a plan as demo.");
         }
         finally
         {

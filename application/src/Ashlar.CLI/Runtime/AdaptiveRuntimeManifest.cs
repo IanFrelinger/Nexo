@@ -21,7 +21,7 @@ public sealed record AdaptiveRuntimeManifest
     public string[] UiCapabilities { get; init; } = Array.Empty<string>();
 
     /// <summary>
-    /// Optional QA policy profile override: demo | prod | research.
+    /// Optional QA policy profile override: auto | demo | release | prod | research.
     /// </summary>
     public string? QaPolicyProfile { get; init; }
 

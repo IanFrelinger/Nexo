@@ -22,6 +22,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestPlanRejectsInvalidQaPolicyAsync().ConfigureAwait(false);
             await TestPlanRejectsInvalidBootstrapProfileAsync().ConfigureAwait(false);
             await TestGateRejectsInvalidPolicyAsync().ConfigureAwait(false);
+            await TestPlanRejectsInvalidManifestQaPolicyAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -221,6 +222,18 @@ public sealed class RuntimeCommandTests : UnitTestBase
             "An invalid --bootstrap-profile must be refused legibly.");
         AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
             "An invalid --bootstrap-profile must be refused before computing a plan.");
+    }
+
+    private async Task TestPlanRejectsInvalidManifestQaPolicyAsync()
+    {
+        var (exitCode, output) = await InvokeRuntimeAsync(
+            """plan --goal test --use-history false --runtime-manifest-json {"qaPolicyProfile":"xyz"} --json""")
+            .ConfigureAwait(false);
+        AssertEqual(1, exitCode);
+        AssertTrue(output.Contains("Invalid qaPolicyProfile", StringComparison.Ordinal),
+            "An invalid runtime-manifest qaPolicyProfile must be refused legibly.");
+        AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
+            "An invalid qaPolicyProfile must be refused before computing a plan as demo.");
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()

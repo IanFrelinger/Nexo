@@ -19,6 +19,10 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
             TestManifestPolicyAndGoalEnrichment();
             /// <summary>Test manifest loader inline json.</summary>
             TestManifestLoaderInlineJson();
+            /// <summary>Test manifest loader rejects invalid qa policy.</summary>
+            TestManifestLoaderRejectsInvalidQaPolicy();
+            /// <summary>Test resolve rejects invalid manifest qa policy.</summary>
+            TestResolveRejectsInvalidManifestQaPolicy();
             /// <summary>Test release policy uses strict visual fallback.</summary>
             TestReleasePolicyUsesStrictVisualFallback();
 
@@ -154,6 +158,39 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
         /// <summary>Assert equal.</summary>
         AssertEqual("demo", manifest.QaPolicyProfile);
         AssertEqual("dark", manifest.Preferences.Values.First());
+    }
+
+    private void TestManifestLoaderRejectsInvalidQaPolicy()
+    {
+        try
+        {
+            AdaptiveRuntimeManifestLoader.Load(path: null, json: """{"qaPolicyProfile":"xyz"}""");
+            AssertTrue(false, "An invalid qaPolicyProfile must be refused at load.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            AssertTrue(ex.Message.Contains("Invalid qaPolicyProfile", StringComparison.Ordinal),
+                "An invalid qaPolicyProfile must be refused legibly.");
+        }
+    }
+
+    private void TestResolveRejectsInvalidManifestQaPolicy()
+    {
+        var manifest = new AdaptiveRuntimeManifest { QaPolicyProfile = "xyz" };
+        try
+        {
+            AdaptiveRuntimePlanResolver.Resolve(
+                "Generate composable backend command handlers and tests",
+                manifest,
+                bootstrapProfileOverride: "auto",
+                qaPolicyOverride: "auto");
+            AssertTrue(false, "An invalid manifest qaPolicyProfile must be refused by Resolve.");
+        }
+        catch (ArgumentException ex)
+        {
+            AssertTrue(ex.Message.Contains("Invalid qaPolicyProfile", StringComparison.Ordinal),
+                "An invalid manifest qaPolicyProfile must be refused legibly.");
+        }
     }
 
     private void TestReleasePolicyUsesStrictVisualFallback()
