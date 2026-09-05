@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 117", text)
+        self.assertIn("--min-tests 118", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1131,6 +1131,23 @@ class TrustMultiEnvTrxFloorTests(unittest.TestCase):
         self.assertIn("trust-bg-debian.trx", text)
         self.assertIn("workflow_dispatch:", text)
         self.assertNotIn("pull_request:", text)
+
+
+class CrossPlatformTestsTrxFloorTests(unittest.TestCase):
+    def test_cross_platform_tests_asserts_host_trx_floor(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "cross-platform-tests.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("assert-trx-min-executed.sh", text)
+        self.assertIn("--min-executed 1", text)
+        self.assertIn("cross-platform-tests: no TRX written", text)
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("pull_request:", text)
+        helper = (ROOT / "scripts" / "assert-trx-min-executed.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("assert-trx-min-executed.py", helper)
+        self.assertIn("python3", helper)
 
 
 class MakefileSlnfMinFloorTests(unittest.TestCase):

@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 117");
+        text.Should().Contain("--min-tests 118");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -828,6 +828,22 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("trust-bg-debian.trx");
         text.Should().Contain("workflow_dispatch:");
         text.Should().NotContain("pull_request:");
+    }
+
+    [Fact]
+    public void CrossPlatformTestsWorkflow_AssertsHostTrxFloor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/cross-platform-tests.yml"));
+        text.Should().Contain("assert-trx-min-executed.sh");
+        text.Should().Contain("--min-executed 1");
+        text.Should().Contain("cross-platform-tests: no TRX written");
+        text.Should().Contain("workflow_dispatch:");
+        text.Should().NotContain("pull_request:");
+        var helper = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/assert-trx-min-executed.sh"));
+        helper.Should().Contain("assert-trx-min-executed.py");
+        helper.Should().Contain("python3");
     }
 
     [Fact]

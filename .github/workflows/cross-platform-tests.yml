@@ -22,6 +22,9 @@ name: Cross-Platform Tests
 #
 # Re-enable by uncommenting the push block below. workflow_dispatch stays live, so the
 # failure can be reproduced from the Actions tab without reinstating the noise.
+#
+# After any selected scope writes TRX, the host refuses a missing or empty result
+# (raw `dotnet test --filter` still exits 0 when discovery matches nothing).
 
 on:
   workflow_dispatch:
@@ -208,6 +211,20 @@ jobs:
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=full-${{ matrix.os }}.trx" \
             --results-directory test-results
+
+      - name: Refuse empty or missing TRX
+        if: success()
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(test-results/*.trx)
+          if [[ ${#files[@]} -lt 1 ]]; then
+            echo "cross-platform-tests: no TRX written" >&2
+            exit 1
+          fi
+          for trx in "${files[@]}"; do
+            bash scripts/assert-trx-min-executed.sh --trx "$trx" --min-executed 1
+          done
 
       - name: Publish test results
         if: always() && runner.os == 'Linux'
