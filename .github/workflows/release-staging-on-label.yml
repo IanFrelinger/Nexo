@@ -58,8 +58,10 @@ jobs:
       - name: Dispatch release.yml (staging-only guard passed)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           gh workflow run release.yml \
-            --ref "${{ github.event.pull_request.head.ref }}" \
-            -f "version=${{ steps.version.outputs.version }}" \
+            --ref "${PR_HEAD_REF}" \
+            -f "version=${RELEASE_VERSION}" \
             -f skip_multi_arch=false
