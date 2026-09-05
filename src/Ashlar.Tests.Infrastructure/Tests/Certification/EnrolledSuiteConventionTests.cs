@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 73");
+        text.Should().Contain("--min-tests 75");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -428,6 +428,38 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'a'");
         text.Should().NotContain(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'a'");
+    }
+
+    [Fact]
+    public void OpsTierB_RunsCountedDogfoodBlocks()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/ops-gate-tier-b.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests");
+        text.Should().Contain("OPS_GATE_MIN_DOGFOOD_B_TESTS");
+        text.Should().Contain(
+            "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Dogfood.DogfoodBlock\"");
+        text.Should().Contain("DogfoodBlock7Tests");
+        text.Should().Contain("DogfoodBlock9LocalIpcTests");
+        text.Should().Contain("-f net8.0");
+        text.Should().Contain("counted-dogfood-7-9-ipc");
+        text.Should().NotContain("dogfood-phase-de");
+        text.Should().NotContain("dogfood-block9-ipc");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void OpsGateWorkflow_RunsTierBOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/ops-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("scripts/ops-gate-tier-b.sh");
+        text.Should().Contain("ops-gate-tier-b");
+        text.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'b'");
+        text.Should().NotContain(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'");
     }
 
     [Fact]

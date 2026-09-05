@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 73", text)
+        self.assertIn("--min-tests 75", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -932,6 +932,38 @@ class DockerTierFailClosedTests(unittest.TestCase):
         )
         self.assertNotIn(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'a'",
+            text,
+        )
+
+    def test_ops_gate_tier_b_runs_counted_dogfood_blocks(self) -> None:
+        text = (ROOT / "scripts" / "ops-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("OPS_GATE_MIN_DOGFOOD_B_TESTS", text)
+        self.assertIn(
+            '--expected-prefix "Ashlar.Tests.Infrastructure.Tests.Dogfood.DogfoodBlock"',
+            text,
+        )
+        self.assertIn("DogfoodBlock7Tests", text)
+        self.assertIn("DogfoodBlock9LocalIpcTests", text)
+        self.assertIn("-f net8.0", text)
+        self.assertIn("counted-dogfood-7-9-ipc", text)
+        self.assertNotIn("dogfood-phase-de", text)
+        self.assertNotIn("dogfood-block9-ipc", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_ops_gate_workflow_runs_tier_b_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "ops-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/ops-gate-tier-b.sh", text)
+        self.assertIn("ops-gate-tier-b", text)
+        self.assertIn(
+            "github.event_name != 'workflow_dispatch' || inputs.tier == 'b'",
+            text,
+        )
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'b'",
             text,
         )
 

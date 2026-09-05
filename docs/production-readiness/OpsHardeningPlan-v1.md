@@ -2,7 +2,7 @@
 
 Validates **Ashlar on Ashlar**: dogfood self-improvement blocks, optional mesh chaos/deep lab, and the operator demo script — after [Ship readiness v1](ShipReadiness-v1.md).
 
-**Automation:** `make ops-gate-full`. Pull requests that touch dogfood tests or `scripts/ops-gate-tier-a.sh` run counted Tier A only (Blocks 1–6, unique-identity floor 6). B/C/E stay dispatch-only. D still requires Docker plus `OPS_GATE_MESH_DEEP=1` or `OPS_GATE_CHAOS_LITE=1`.
+**Automation:** `make ops-gate-full`. Pull requests that touch dogfood tests or the A/B scripts run counted Tier A (Blocks 1–6, unique-identity floor 6) and Tier B (Blocks 7–9 + IPC, floor 4). C/E stay dispatch-only. D still requires Docker plus `OPS_GATE_MESH_DEEP=1` or `OPS_GATE_CHAOS_LITE=1`.
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ make ship-gate-full
 | Tier | Focus | Command |
 |------|--------|---------|
 | A | Dogfood blocks 1–6 (counted wrapper, floor 6) | `make ops-gate-tier-a` |
-| B | Dogfood blocks 7–9 + IPC mesh | `make ops-gate-tier-b` |
+| B | Dogfood blocks 7–9 + IPC mesh (counted wrapper, floor 4) | `make ops-gate-tier-b` |
 | C | Closed-loop self-improvement | `make ops-gate-tier-c` |
 | D | Mesh deep E2E or chaos-lite | `OPS_GATE_MESH_DEEP=1 make ops-gate-tier-d` (no-flag / `make ops-gate-full` default skips D; the script exits 2 instead of PASS) |
 | E | Oh-shit demo (quick) | `make ops-gate-tier-e` |

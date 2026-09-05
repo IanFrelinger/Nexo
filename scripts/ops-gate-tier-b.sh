@@ -1,12 +1,31 @@
 #!/usr/bin/env bash
-# Ops Tier B: dogfood blocks 7–9 + local IPC mesh.
+# Ops Gate Tier B — dogfood Blocks 7–9 plus local IPC mesh.
+#
+# Makefile per-block dogfood targets remain developer shortcuts. This gate
+# does not invoke them. A raw project-wide filter can pass while a listed
+# block class is missing, so the counted wrapper is the only path here.
 set -euo pipefail
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "== Ops Tier B: dogfood phase D+E (blocks 7–9) =="
-make dogfood-phase-de
-make dogfood-block9-ipc
+INFRA="$ROOT/src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
+MIN_TESTS="${OPS_GATE_MIN_DOGFOOD_B_TESTS:-4}"
+FILTER="FullyQualifiedName~DogfoodBlock7Tests|\
+FullyQualifiedName~DogfoodBlock8Tests|\
+FullyQualifiedName~DogfoodBlock9Tests|\
+FullyQualifiedName~DogfoodBlock9LocalIpcTests"
+
+echo "==> ops-gate-tier-b: counted dogfood Blocks 7–9 + IPC (min ${MIN_TESTS})"
+python3 "$ROOT/scripts/run-dotnet-test-counted.py" \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure.Tests.Dogfood.DogfoodBlock" \
+  --min-tests "$MIN_TESTS" \
+  -- \
+  -c Release \
+  -f net8.0 \
+  --filter "$FILTER" \
+  --verbosity minimal
 
 echo ""
-echo "ops-gate-tier-b: PASS"
+echo "ops-gate-tier-b: PASS (verified: counted-dogfood-7-9-ipc)"
