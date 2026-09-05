@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
+using BrickBuildCompileOptions = Ashlar.Core.Application.Certification.Models.BrickCompileOptions;
 
 namespace Ashlar.Infrastructure.Certification;
 
@@ -199,7 +200,7 @@ internal static class AstMutationCatalog
     /// reproduces the default parse exactly.
     /// </summary>
     public static IReadOnlyList<AstMutation> CollectMutations(
-        string sourceCode, IReadOnlyList<string>? compilationReferences, BrickCompileOptions? compileOptions)
+        string sourceCode, IReadOnlyList<string>? compilationReferences, BrickBuildCompileOptions? compileOptions)
     {
         var tree = CSharpSyntaxTree.ParseText(sourceCode, BrickCompilation.ParseOptions(compileOptions));
         var root = tree.GetRoot();
@@ -285,7 +286,7 @@ internal static class AstMutationCatalog
     /// will be compiled against, so a type that resolves here resolves there.
     /// </summary>
     private static CSharpCompilation BindCandidate(
-        SyntaxTree candidate, IReadOnlyList<string>? compilationReferences, BrickCompileOptions? compileOptions)
+        SyntaxTree candidate, IReadOnlyList<string>? compilationReferences, BrickBuildCompileOptions? compileOptions)
     {
         var parseOptions = BrickCompilation.ParseOptions(compileOptions);
         var preambleLines = CandidateSourceWrapper.Wrap(string.Empty)

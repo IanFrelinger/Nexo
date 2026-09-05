@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks;
+using BrickBuildCompileOptions = Ashlar.Core.Application.Certification.Models.BrickCompileOptions;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
@@ -242,14 +243,14 @@ public sealed class BrickCompileOptionsTests : IDisposable
             + "globalUsings=global using global::System.IO; global using global::System;");
 
         var input = a.ToCertificationInput();
-        input.Kind.Should().Be(BrickCompileOptions.InputKind);
+        input.Kind.Should().Be(BrickBuildCompileOptions.InputKind);
         input.Id.Should().Be(a.Canonical(), "a reader of the record sees the options, not just a digest");
         input.Hash.Should().Be(Ashlar.Certification.Contracts.BrickContentHasher.ComputeSha256(a.Canonical()));
     }
 
     // ── fixtures ──────────────────────────────────────────────────────────────────────────
 
-    private static BrickCompileOptions Options(
+    private static BrickBuildCompileOptions Options(
         string languageVersion = "12.0",
         IReadOnlyList<string>? symbols = null,
         bool checkOverflow = false,

@@ -2,6 +2,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using Ashlar.Core.Application.Certification.Models;
+using BrickBuildCompileOptions = Ashlar.Core.Application.Certification.Models.BrickCompileOptions;
 
 namespace Ashlar.Infrastructure.Certification;
 
@@ -40,10 +41,10 @@ internal static class CompiledCompilationOptions
 
     /// <summary>
     /// The options recorded in <paramref name="assemblyPath"/>'s portable PDB, with
-    /// <see cref="BrickCompileOptions.GlobalUsings"/> left empty for the caller to fill from the
+    /// <see cref="BrickBuildCompileOptions.GlobalUsings"/> left empty for the caller to fill from the
     /// compiled <c>global using</c> source — or a refusal naming what could not be read.
     /// </summary>
-    public static BrickCompileOptions Read(string assemblyPath)
+    public static BrickBuildCompileOptions Read(string assemblyPath)
     {
         var entries = ReadEntries(assemblyPath);
 
@@ -62,7 +63,7 @@ internal static class CompiledCompilationOptions
                 .ToArray()
             : Array.Empty<string>();
 
-        return new BrickCompileOptions
+        return new BrickBuildCompileOptions
         {
             LanguageVersion = languageVersion.Trim(),
             PreprocessorSymbols = symbols,

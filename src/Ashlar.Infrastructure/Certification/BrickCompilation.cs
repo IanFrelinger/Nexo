@@ -3,11 +3,12 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
+using BrickBuildCompileOptions = Ashlar.Core.Application.Certification.Models.BrickCompileOptions;
 
 namespace Ashlar.Infrastructure.Certification;
 
 /// <summary>
-/// The one place a <see cref="BrickCompileOptions"/> becomes Roslyn options, so every in-process
+/// The one place a <see cref="BrickBuildCompileOptions"/> becomes Roslyn options, so every in-process
 /// compile of a candidate — the analyzer fence, the mutation catalog's binding compilation, every
 /// mutant — parses and compiles the SAME program the build did.
 /// </summary>
@@ -37,7 +38,7 @@ internal static class BrickCompilation
     private const string WrapperAliasTarget = "Ashlar.Core.Domain.Bricks.Brick";
 
     /// <summary>Parse options for the candidate and for every tree compiled beside it.</summary>
-    public static CSharpParseOptions ParseOptions(BrickCompileOptions? options)
+    public static CSharpParseOptions ParseOptions(BrickBuildCompileOptions? options)
     {
         if (options is null)
         {
@@ -59,7 +60,7 @@ internal static class BrickCompilation
     }
 
     /// <summary>Compilation options for the candidate: overflow checking, nullable context, unsafe.</summary>
-    public static CSharpCompilationOptions CompilationOptions(BrickCompileOptions? options, OutputKind outputKind)
+    public static CSharpCompilationOptions CompilationOptions(BrickBuildCompileOptions? options, OutputKind outputKind)
     {
         var result = new CSharpCompilationOptions(outputKind);
         if (options is null)
@@ -86,7 +87,7 @@ internal static class BrickCompilation
     /// is legal here too.
     /// </summary>
     public static IReadOnlyList<SyntaxTree> CompanionTrees(
-        BrickCompileOptions? options, CancellationToken cancellationToken = default)
+        BrickBuildCompileOptions? options, CancellationToken cancellationToken = default)
     {
         if (options is null || options.GlobalUsings.Count == 0)
         {
@@ -112,7 +113,7 @@ internal static class BrickCompilation
     /// any leg runs and before anything is executed — rather than surfacing later as "the analyzer gate
     /// crashed". Every check here is one the legs would otherwise hit mid-run.
     /// </summary>
-    public static void AssertHonourable(BrickCompileOptions options)
+    public static void AssertHonourable(BrickBuildCompileOptions options)
     {
         var parse = ParseOptions(options);
         CompilationOptions(options, OutputKind.DynamicallyLinkedLibrary);
@@ -168,7 +169,7 @@ internal static class BrickCompilation
         string assemblyName,
         string outputPath,
         IEnumerable<string>? references,
-        BrickCompileOptions? options,
+        BrickBuildCompileOptions? options,
         CancellationToken cancellationToken)
         => compiler.CompileAsync(
             wrappedSource,

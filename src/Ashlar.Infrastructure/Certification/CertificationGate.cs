@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
+using BrickBuildCompileOptions = Ashlar.Core.Application.Certification.Models.BrickCompileOptions;
 
 namespace Ashlar.Infrastructure.Certification;
 
@@ -45,7 +46,7 @@ public sealed class CertificationGate : ICertificationGate
 
     private static readonly CertificationInput NoBuildCompileOptionsInput = new()
     {
-        Kind = BrickCompileOptions.InputKind,
+        Kind = BrickBuildCompileOptions.InputKind,
         Id = NoBuildCompileOptionsId,
         Hash = BrickContentHasher.ComputeSha256(NoBuildCompileOptionsId),
     };
@@ -557,8 +558,8 @@ public sealed class CertificationGate : ICertificationGate
         inputs.Add(new CertificationInput
         {
             Kind = CertificationInputKinds.CompileOptions,
-            Id = BrickCompileOptions.LanguageVersionName,
-            Hash = BrickContentHasher.ComputeSha256(BrickCompileOptions.CanonicalBlob)
+            Id = Ashlar.Infrastructure.Certification.BrickCompileOptions.LanguageVersionName,
+            Hash = BrickContentHasher.ComputeSha256(Ashlar.Infrastructure.Certification.BrickCompileOptions.CanonicalBlob)
         });
 
         if (request.EmittedArtifact is { } artifact)
