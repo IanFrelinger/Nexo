@@ -334,7 +334,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 52", text)
+        self.assertIn("--min-tests 53", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -708,6 +708,13 @@ class DockerTierFailClosedTests(unittest.TestCase):
         self.assertEqual(2, run.returncode)
         self.assertIn("chaos-lite requires .env.mesh-lab", run.stdout)
         self.assertNotIn("ops-gate-tier-d: PASS", run.stdout)
+
+    def test_kernel_tier_e_refuses_missing_docker(self) -> None:
+        run = self._run_with_dead_docker("kernel-gate-tier-e.sh")
+        self.assertEqual(2, run.returncode)
+        self.assertIn("requires a working Docker daemon", run.stdout)
+        self.assertNotIn("kernel-gate-tier-e: PASS", run.stdout)
+        self.assertNotIn("prod-dry-run skipped", run.stdout)
 
     def test_ops_gate_full_does_not_invoke_d_without_proof_flags(self) -> None:
         text = (ROOT / "Makefile").read_text(encoding="utf-8")

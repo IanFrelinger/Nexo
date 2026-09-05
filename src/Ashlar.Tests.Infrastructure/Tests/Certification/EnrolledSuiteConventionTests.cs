@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 52");
+        text.Should().Contain("--min-tests 53");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -410,6 +410,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("Ashlar.Tests.Orchestration.Performance");
         text.Should().NotContain("dotnet test \"$INFRA\"");
         text.Should().NotContain("dotnet test \"$ORCH\"");
+    }
+
+    [Fact]
+    public void KernelTierE_RefusesMissingDocker()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/kernel-gate-tier-e.sh"));
+        text.Should().Contain("requires a working Docker daemon");
+        text.Should().Contain("refusing to skip prod-dry-run");
+        text.Should().Contain("exit 2");
+        text.Should().NotContain("prod-dry-run skipped");
     }
 
     [Fact]

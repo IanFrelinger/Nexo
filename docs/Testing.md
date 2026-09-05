@@ -53,7 +53,7 @@ make bootstrap-mesh-lab-env   # create .env.mesh-lab from example (gitignored)
 KERNEL_GATE_MESH_E2E=1 make kernel-gate-tier-c   # adds ~2min Docker mesh E2E
 make mesh-lab-e2e .env.mesh-lab                   # or run mesh E2E directly
 # Skip tiers on full run:
-make kernel-gate-tier-e       # Tier E: OpenTelemetry + perf tests + prod Compose dry run
+make kernel-gate-tier-e       # Tier E: counted OTel/perf + Compose dry run (exits 2 without Docker)
 KERNEL_GATE_CHAOS_LITE=1 make kernel-gate-tier-e   # optional mesh network-negative
 KERNEL_GATE_SKIP_TIER_E=1 make kernel-gate-full   # skip Docker prod dry run
 ```
