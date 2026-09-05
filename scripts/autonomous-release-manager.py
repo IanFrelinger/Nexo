@@ -18,7 +18,6 @@ import hashlib
 import json
 import os
 import re
-import shutil
 import signal
 import subprocess
 import sys
@@ -101,6 +100,8 @@ TRUSTED_PATH_DIRECTORIES = (
     "/usr/local/bin",
     "/usr/bin",
     "/bin",
+    "/usr/share/dotnet",
+    "/opt/hostedtoolcache/dotnet",
     "/usr/local/sbin",
     "/usr/sbin",
     "/sbin",
@@ -431,7 +432,7 @@ def validate_plan_binding(repo_root: Path, plan_path: Path, sha: str) -> str:
             f"Only the canonical tracked plan is executable: {CANONICAL_PLAN_RELATIVE_PATH}."
         )
     show = subprocess.run(
-        ["git", "show", f"{sha}:{relative}"],
+        [_trusted_executable("git"), "show", f"{sha}:{relative}"],
         cwd=repo_root,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -454,7 +455,7 @@ def validate_plan_binding(repo_root: Path, plan_path: Path, sha: str) -> str:
 def validate_coordinator_binding(repo_root: Path, sha: str) -> str:
     relative = "scripts/autonomous-release-manager.py"
     show = subprocess.run(
-        ["git", "show", f"{sha}:{relative}"],
+        [_trusted_executable("git"), "show", f"{sha}:{relative}"],
         cwd=repo_root,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -475,6 +476,19 @@ def _render(value: str, context: dict[str, str]) -> str:
     if re.search(r"\{[A-Za-z][A-Za-z0-9_]*\}", rendered):
         raise PlanError(f"Unknown template variable in {value!r}.")
     return rendered
+
+
+def _trusted_executable(name: str) -> str:
+    if Path(name).name != name:
+        candidate = Path(name)
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate.resolve())
+        raise PlanError(f"Executable is unavailable: {name}")
+    for directory in TRUSTED_PATH_DIRECTORIES:
+        candidate = Path(directory) / name
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate.resolve())
+    raise PlanError(f"Executable is unavailable on trusted PATH: {name}")
 
 
 def _terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
@@ -577,9 +591,6 @@ def _sanitized_environment(worktree: Path, step_token: str) -> dict[str, str]:
         if name in os.environ
     }
     trusted_paths = list(TRUSTED_PATH_DIRECTORIES)
-    dotnet_root = os.environ.get("DOTNET_ROOT")
-    if dotnet_root:
-        trusted_paths.insert(0, dotnet_root)
     audit_home = worktree / ".ashlar" / "release-manager" / "home"
     nuget_cache = worktree / ".ashlar" / "release-manager" / "nuget"
     audit_home.mkdir(parents=True, exist_ok=True)
@@ -632,8 +643,9 @@ def run_step(
     environment.update(
         {_render(key, context): _render(value, context) for key, value in step.environment.items()}
     )
-    resolved_executable = shutil.which(command[0], path=environment["PATH"])
-    if resolved_executable is None:
+    try:
+        resolved_executable = _trusted_executable(command[0])
+    except PlanError as exc:
         return StepResult(
             name=step.name,
             command=command,
@@ -641,7 +653,7 @@ def run_step(
             exit_code=None,
             duration_seconds=0,
             timeout_seconds=timeout_seconds,
-            error=f"Executable is unavailable on trusted PATH: {command[0]}",
+            error=str(exc),
         )
     command = (resolved_executable, *command[1:])
 
@@ -882,7 +894,10 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
         else:
             unreleased = after_heading.partition("\n## [")[0]
 
-    meaningful = any(line.startswith("- ") for line in unreleased.splitlines())
+    meaningful = any(
+        re.match(r"^\s*[-*+]\s+", line) is not None
+        for line in unreleased.splitlines()
+    )
     if meaningful and SEMVER_RE.fullmatch(canonical) and SEMVER_RE.fullmatch(published):
         if _semver_precedence(canonical) <= _semver_precedence(published):
             findings.append(
@@ -933,7 +948,7 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
                 )
 
     status = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=all"],
+        [_trusted_executable("git"), "status", "--porcelain", "--untracked-files=all"],
         cwd=repo_root,
         text=True,
         stdout=subprocess.PIPE,
@@ -950,7 +965,13 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
         )
 
     if canonical != published and subprocess.run(
-        ["git", "rev-parse", "--verify", "--quiet", f"refs/tags/v{canonical}"],
+        [
+            _trusted_executable("git"),
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            f"refs/tags/v{canonical}",
+        ],
         cwd=repo_root,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -976,7 +997,7 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
 
 def _git(repo_root: Path, *args: str) -> str:
     result = subprocess.run(
-        ["git", *args],
+        [_trusted_executable("git"), *args],
         cwd=repo_root,
         text=True,
         stdout=subprocess.PIPE,
@@ -1006,7 +1027,13 @@ def prepare_worktrees(
 
 def remove_worktree(repo_root: Path, path: Path) -> str | None:
     result = subprocess.run(
-            ["git", "worktree", "remove", "--force", str(path)],
+            [
+                _trusted_executable("git"),
+                "worktree",
+                "remove",
+                "--force",
+                str(path),
+            ],
             cwd=repo_root,
             text=True,
             stdout=subprocess.PIPE,

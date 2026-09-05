@@ -137,6 +137,25 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(arm.TRUSTED_PLAN_SHA256, digest)
         self.assertEqual(64, len(arm.validate_coordinator_binding(repo, sha)))
 
+    def test_coordinator_git_ignores_inherited_path(self) -> None:
+        repo = SCRIPT.parents[1]
+        with tempfile.TemporaryDirectory() as temp:
+            sentinel = Path(temp) / "fake-git-ran"
+            fake_git = Path(temp) / "git"
+            fake_git.write_text(
+                f"#!/usr/bin/env sh\ntouch {str(sentinel)!r}\nexit 1\n",
+                encoding="utf-8",
+            )
+            fake_git.chmod(0o755)
+            previous = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{temp}{os.pathsep}{previous}"
+            try:
+                head = arm._git(repo, "rev-parse", "HEAD")
+            finally:
+                os.environ["PATH"] = previous
+            self.assertEqual(40, len(head))
+            self.assertFalse(sentinel.exists())
+
     def test_missing_semantic_agents_fail_validation(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaisesRegex(arm.PlanError, "Required Cursor asset is missing"):
@@ -387,6 +406,45 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual("passed", result.status)
             self.assertFalse(sentinel.exists())
 
+    def test_inherited_dotnet_root_cannot_replace_trusted_executable(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sentinel = root / "fake-bash-ran"
+            fake_bash = root / "bash"
+            fake_bash.write_text(
+                f"#!/usr/bin/env sh\ntouch {str(sentinel)!r}\nexit 0\n",
+                encoding="utf-8",
+            )
+            fake_bash.chmod(0o755)
+            probe = root / "probe.sh"
+            probe.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            lane = arm.LaneSpec(
+                lane_id="security",
+                title="Trusted path",
+                objective="Reject DOTNET_ROOT executable injection.",
+                required=True,
+                timeout_seconds=5,
+                exclusive_resources=(),
+                steps=(arm.StepSpec("probe", ("bash", "probe.sh"), 2, {}, "."),),
+            )
+            previous = os.environ.get("DOTNET_ROOT")
+            os.environ["DOTNET_ROOT"] = str(root)
+            try:
+                result = arm.run_lane(
+                    lane,
+                    root,
+                    {"version": "0.2.0", "sha": "a" * 40, "workspace": str(root)},
+                    root / "output",
+                )
+            finally:
+                if previous is None:
+                    os.environ.pop("DOTNET_ROOT", None)
+                else:
+                    os.environ["DOTNET_ROOT"] = previous
+
+            self.assertEqual("passed", result.status)
+            self.assertFalse(sentinel.exists())
+
 
 class RepositoryStateTests(unittest.TestCase):
     @staticmethod
@@ -427,7 +485,7 @@ class RepositoryStateTests(unittest.TestCase):
                 root,
                 "0.1.2",
                 "0.1.2",
-                "# Changelog\n\n## [Unreleased]\n\n- New release work.\n\n## [0.1.2]\n",
+                "# Changelog\n\n## [Unreleased]\n\n* New release work.\n\n## [0.1.2]\n",
             )
             findings = arm.repository_findings(root, "0.1.2", sha)
 
@@ -538,7 +596,8 @@ The following Tests are available:
         self.assertEqual(["unsafe"], [record["id"] for record in records])
 
     def test_vulnerability_report_rejects_empty_and_problem_evidence(self) -> None:
-        self.assertTrue(vulnerabilities.validate_report({}, 1))
+        expected = {str(Path("/repo/project.csproj").resolve())}
+        self.assertTrue(vulnerabilities.validate_report({}, expected))
         report = {
             "version": 1,
             "parameters": "--vulnerable --include-transitive",
@@ -546,9 +605,20 @@ The following Tests are available:
             "projects": [],
             "problems": ["NU1900: advisory source unavailable"],
         }
-        problems = vulnerabilities.validate_report(report, 1)
+        problems = vulnerabilities.validate_report(report, expected)
         self.assertTrue(any("NuGet reported problems" in problem for problem in problems))
-        self.assertTrue(any("expected 1" in problem for problem in problems))
+        self.assertTrue(any("project identities differ" in problem for problem in problems))
+
+    def test_vulnerability_report_rejects_duplicate_project_identities(self) -> None:
+        project = str(Path("/repo/project.csproj").resolve())
+        report = {
+            "version": 1,
+            "parameters": "--vulnerable --include-transitive",
+            "sources": ["https://api.nuget.org/v3/index.json"],
+            "projects": [{"path": project}, {"path": project}],
+        }
+        problems = vulnerabilities.validate_report(report, {project})
+        self.assertTrue(any("duplicate project paths" in problem for problem in problems))
 
 
 class ReleaseScriptSafetyTests(unittest.TestCase):

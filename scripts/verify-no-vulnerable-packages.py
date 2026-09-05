@@ -7,6 +7,7 @@ import argparse
 import json
 import subprocess
 import sys
+from pathlib import Path
 from typing import Any
 
 
@@ -24,7 +25,7 @@ def vulnerability_records(value: Any) -> list[dict[str, Any]]:
     return records
 
 
-def validate_report(report: Any, expected_projects: int) -> list[str]:
+def validate_report(report: Any, expected_projects: set[str]) -> list[str]:
     problems: list[str] = []
     if not isinstance(report, dict):
         return ["report root is not an object"]
@@ -34,7 +35,11 @@ def validate_report(report: Any, expected_projects: int) -> list[str]:
     if not isinstance(parameters, str) or "--vulnerable" not in parameters:
         problems.append("report does not describe a vulnerability scan")
     sources = report.get("sources")
-    if not isinstance(sources, list) or not sources:
+    if (
+        not isinstance(sources, list)
+        or not sources
+        or any(not isinstance(source, str) or not source.strip() for source in sources)
+    ):
         problems.append("report has no advisory sources")
     nuget_problems = report.get("problems")
     if nuget_problems:
@@ -43,16 +48,25 @@ def validate_report(report: Any, expected_projects: int) -> list[str]:
     if not isinstance(projects, list):
         problems.append("report projects is not an array")
         return problems
-    if len(projects) != expected_projects:
+    reported_paths = [
+        str(Path(project.get("path", "")).resolve())
+        for project in projects
+        if isinstance(project, dict) and project.get("path")
+    ]
+    if len(reported_paths) != len(set(reported_paths)):
+        problems.append("report contains duplicate project paths")
+    if set(reported_paths) != expected_projects:
+        missing = sorted(expected_projects - set(reported_paths))
+        unexpected = sorted(set(reported_paths) - expected_projects)
         problems.append(
-            f"report covers {len(projects)} projects; expected {expected_projects}"
+            f"report project identities differ; missing={missing}, unexpected={unexpected}"
         )
     if any(not isinstance(project, dict) or not project.get("path") for project in projects):
         problems.append("one or more project records has no path")
     return problems
 
 
-def expected_project_count(target: str) -> int:
+def expected_project_paths(target: str) -> set[str]:
     if target.lower().endswith((".sln", ".slnx")):
         run = subprocess.run(
             ["dotnet", "sln", target, "list"],
@@ -65,15 +79,15 @@ def expected_project_count(target: str) -> int:
             raise ValueError(
                 f"could not enumerate {target} (exit {run.returncode}): {run.stdout}"
             )
-        count = sum(
-            1
+        paths = {
+            str(Path(line.strip()).resolve())
             for line in run.stdout.splitlines()
             if line.strip().lower().endswith(".csproj")
-        )
-        if count < 1:
+        }
+        if not paths:
             raise ValueError(f"{target} contains no projects")
-        return count
-    return 1
+        return paths
+    return {str(Path(target).resolve())}
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -119,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        expected_projects = expected_project_count(args.target)
+        expected_projects = expected_project_paths(args.target)
     except ValueError as exc:
         print(f"vulnerability-scan: invalid target coverage: {exc}", file=sys.stderr)
         return 2
