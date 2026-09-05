@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 114", text)
+        self.assertIn("--min-tests 115", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1045,6 +1045,19 @@ class MakefileSlnMinFloorTests(unittest.TestCase):
         )
         self.assertNotIn(
             "dotnet test Ashlar.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none",
+            makefile,
+        )
+
+
+class MakefileMeshLabCountedTests(unittest.TestCase):
+    def test_makefile_runs_counted_mesh_lab_suite(self) -> None:
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", makefile)
+        self.assertIn("--min-tests 1", makefile)
+        self.assertIn("Ashlar.Tests.Infrastructure.Tests.Mesh.", makefile)
+        self.assertIn("Category=MeshLab", makefile)
+        self.assertNotIn(
+            "ASHLAR_RUN_MESH_LAB=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0",
             makefile,
         )
 

@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 114");
+        text.Should().Contain("--min-tests 115");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -782,6 +782,19 @@ public sealed class EnrolledSuiteConventionTests
             "ASHLAR_ALLOW_MOCK=1 dotnet test Ashlar.sln --blame-hang-timeout 120s --blame-hang-dump-type none");
         text.Should().NotContain(
             "dotnet test Ashlar.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none");
+    }
+
+    [Fact]
+    public void Makefile_RunsCountedMeshLabSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "Makefile"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 1");
+        text.Should().Contain("Ashlar.Tests.Infrastructure.Tests.Mesh.");
+        text.Should().Contain("Category=MeshLab");
+        text.Should().NotContain(
+            "ASHLAR_RUN_MESH_LAB=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0");
     }
 
     [Fact]

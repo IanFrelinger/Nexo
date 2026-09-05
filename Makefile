@@ -663,9 +663,15 @@ mesh-lab-down:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
 	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
 
-# Optional dotnet gate mirroring mesh-lab-gate (compose + mesh-lab-verify*.sh). Requires Docker + python3.
+# Optional mesh-lab gate. Same class as other kernel slices: a silent empty
+# filter must not pass. Counted wrapper (1 unique MeshLab identity).
 test-mesh-lab:
-	ASHLAR_RUN_MESH_LAB=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 \
+	ASHLAR_RUN_MESH_LAB=1 python3 scripts/run-dotnet-test-counted.py \
+	  --project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
+	  --expected-prefix "Ashlar.Tests.Infrastructure.Tests.Mesh." \
+	  --min-tests 1 \
+	  -- \
+	  -f net8.0 \
 	  --filter "Category=MeshLab" \
 	  --blame-hang-timeout 2700s --blame-hang-dump-type none
 
