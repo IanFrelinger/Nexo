@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -30,6 +31,8 @@ public class TestCommandTests : UnitTestBase
             await TestWithFilter();
             /// <summary>Test general exception.</summary>
             await TestGeneralException();
+            /// <summary>Test json verbose stdout stays parseable.</summary>
+            await TestJsonVerboseStdoutStaysParseable();
 
             return new TestResult
             {
@@ -237,6 +240,65 @@ public class TestCommandTests : UnitTestBase
 
         AssertEqual((int)ExitCode.UnexpectedError, exitCode);
         mockRenderer.Verify(r => r.RenderError(It.IsAny<string>()), Times.Once);
+    }
+
+    private async Task TestJsonVerboseStdoutStaysParseable()
+    {
+        var mockMediator = new Mock<IMediator>();
+        var mockLogger = new Mock<ILogger<TestCommand>>();
+
+        var result = new TestExecutionResult
+        {
+            TotalTests = 2,
+            PassedTests = 2,
+            FailedTests = 0,
+            TotalDuration = TimeSpan.FromMilliseconds(20),
+            Results = new List<TestResult>(),
+            Categories = new List<string>()
+        };
+
+        mockMediator
+            .Setup(m => m.Send(It.IsAny<RunTestsCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        // The real renderer, not the Moq one the other cases use: which stream the progress markers
+        // land on is the thing under test, and a mock renderer writes to neither. The six mock-based
+        // suites prove the call HAPPENED and never where it went, which is how this survived.
+        // Not disposed on purpose: a disposed writer left in Console.Out poisons later tests.
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        int exitCode;
+        try
+        {
+            Console.SetOut(stdout);
+            Console.SetError(stderr);
+
+            var command = new TestCommand(mockMediator.Object, new ConsoleRenderer(), mockLogger.Object);
+            exitCode = await command.ExecuteAsync(null, true, true);
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+
+        AssertEqual((int)ExitCode.Ok, exitCode);
+
+        // --format-json --verbose has to leave stdout holding the document and nothing else.
+        var captured = stdout.ToString().Trim();
+        try
+        {
+            JsonDocument.Parse(captured).Dispose();
+        }
+        catch (JsonException ex)
+        {
+            throw new AssertionException(
+                $"stdout under --format-json --verbose did not parse as JSON ({ex.Message}): {captured}");
+        }
+
+        var diagnostics = stderr.ToString();
+        AssertTrue(diagnostics.Contains("[progress]"), "progress start missing from standard error");
+        AssertTrue(diagnostics.Contains("[complete]"), "progress completion missing from standard error");
     }
 }
 

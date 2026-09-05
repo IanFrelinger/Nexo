@@ -83,4 +83,12 @@ public sealed record CertificationRequest
     /// certificate either way the verdict goes.
     /// </summary>
     public Ports.ICandidateExecutionBackend? ExecutionBackend { get; init; }
+
+    /// <summary>
+    /// Assembly the certifier compiled from <see cref="SourceCode"/>. When set, the
+    /// certificate records its hash as a signed <c>gate-emitted-artifact</c> input and
+    /// exporters ship these exact bytes. Null keeps the in-process fixture path used by
+    /// unit tests that construct <see cref="DomainBrick"/> directly.
+    /// </summary>
+    public GateEmittedArtifact? EmittedArtifact { get; init; }
 }

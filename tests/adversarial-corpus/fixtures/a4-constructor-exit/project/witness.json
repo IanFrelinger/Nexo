@@ -1,0 +1,6 @@
+{
+  "brickId": "exit-ctor",
+  "cases": [
+    { "input": { "n": 1 }, "expectedOutput": { "n": 0 } }
+  ]
+}

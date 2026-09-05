@@ -35,6 +35,19 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Run lychee
+        id: lychee
+        continue-on-error: true
+        uses: lycheeverse/lychee-action@v2.9.0
+        with:
+          args: --no-progress --max-concurrency 8 --user-agent "ashlar-docs-link-check" README.md "docs/**/*.md"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # lychee-action downloads its binary from GitHub Releases. That curl
+      # occasionally dies with SSL connect error 35 before any links are checked
+      # (PR run on f95b9eb5; the push run of the same SHA succeeded).
+      - name: Retry lychee after install flake
+        if: steps.lychee.outcome == 'failure'
         uses: lycheeverse/lychee-action@v2.9.0
         with:
           args: --no-progress --max-concurrency 8 --user-agent "ashlar-docs-link-check" README.md "docs/**/*.md"

@@ -1,0 +1,9 @@
+{
+  "id": "a8-ldtoken-io",
+  "class": "A",
+  "item": "A8",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.IO",
+  "note": "Round-11 attack: typeof(System.IO.File) is ldtoken plus GetTypeFromHandle; the v2 fence only inspected Call/Newobj."
+}

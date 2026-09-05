@@ -44,16 +44,23 @@ public class ConsoleRenderer : IConsoleRenderer
         Console.Error.WriteLine($"Error: {message}");
     }
 
+    // Console.Error, not Console.Out, for all three. Callers gate these markers on --verbose and
+    // never on the format flag, and they bracket the JSON write — so with --format-json --verbose
+    // stdout carries "[progress] …", then the document, then "[complete] …", and the document no
+    // longer parses. The caller piping it into a reader gets a syntax error under exit 0. This is the
+    // failure the host logger was already moved off stdout for (Program.JsonOutputMode), and the
+    // contract --format-json's own help text states: stderr still carries logs.
+
     /// <inheritdoc />
     public void RenderProgressStart(string message)
     {
-        Console.Out.WriteLine($"[progress] {message}");
+        Console.Error.WriteLine($"[progress] {message}");
     }
 
     /// <inheritdoc />
     public void RenderProgressComplete(string message)
     {
-        Console.Out.WriteLine($"[complete] {message}");
+        Console.Error.WriteLine($"[complete] {message}");
     }
 
     /// <inheritdoc />
@@ -62,7 +69,7 @@ public class ConsoleRenderer : IConsoleRenderer
         var stepInfo = report.TotalSteps.HasValue && report.CurrentStep.HasValue
             ? $" ({report.CurrentStep}/{report.TotalSteps})"
             : string.Empty;
-        Console.Out.WriteLine($"[{report.Percentage}%]{stepInfo} {report.Message}");
+        Console.Error.WriteLine($"[{report.Percentage}%]{stepInfo} {report.Message}");
     }
 
     /// <inheritdoc />

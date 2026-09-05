@@ -1,0 +1,8 @@
+{
+  "id": "a8-gate-emitted-hash-bind",
+  "class": "A",
+  "item": "A8",
+  "phase": "certify",
+  "expect": "admit",
+  "reasonContains": "gate-emitted-artifact"
+}

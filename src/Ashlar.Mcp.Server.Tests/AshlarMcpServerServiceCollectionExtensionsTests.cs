@@ -101,6 +101,25 @@ public sealed class AshlarMcpServerServiceCollectionExtensionsTests
     }
 
     [Fact]
+    public void Enabled_under_secure_workstation_profile_is_valid_for_local_ide()
+    {
+        Environment.SetEnvironmentVariable(ValidateAshlarMcpServerOptions.DeploymentProfileVariable, "secure-workstation");
+        try
+        {
+            using var provider = Build(Config(
+                ($"{AshlarMcpServerOptions.SectionPath}:Enabled", "true"),
+                ($"{AshlarMcpServerOptions.SectionPath}:ServerName", "ashlar-ide")));
+
+            var options = provider.GetRequiredService<IOptions<AshlarMcpServerOptions>>().Value;
+            options.Enabled.Should().BeTrue();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ValidateAshlarMcpServerOptions.DeploymentProfileVariable, null);
+        }
+    }
+
+    [Fact]
     public void Invalid_concurrency_fails_validation_when_enabled()
     {
         using var provider = Build(Config(

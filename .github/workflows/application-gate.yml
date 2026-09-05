@@ -44,8 +44,14 @@ jobs:
           ASHLAR_ALLOW_MOCK: "1"
           APPLICATION_GATE_SKIP_KERNEL: "1"
 
+      # Runs on every pull_request, like Tier A above it. It was `github.event_name ==
+      # 'workflow_dispatch' && …`, which is FALSE on a pull_request — this workflow's only automatic
+      # trigger — so the lane existed and nothing ever ran it. Fixing a vacuous filter inside
+      # scripts/application-gate-tier-b.sh moved the vacuous pass from the filter to this line; the
+      # `!=` form is what actually selects the step, and it is the form Tier A already uses.
+      # Measured at ~20s for 199 tests, so cost is not a reason to leave it dispatch-only.
       - name: Tier B
-        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'b'
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'b'
         run: make application-gate-tier-b
         env:
           ASHLAR_ALLOW_MOCK: "1"

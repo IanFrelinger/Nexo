@@ -5,10 +5,14 @@
 set -euo pipefail
 VER="${ASHLAR_NUGET_VERIFY_VERSION:?set ASHLAR_NUGET_VERIFY_VERSION}"
 VER="${VER#v}"
-ATTEMPTS="${ASHLAR_NUGET_VERIFY_ATTEMPTS:-12}"
+ATTEMPTS="${ASHLAR_NUGET_VERIFY_ATTEMPTS:-40}"
 SLEEP_SEC="${ASHLAR_NUGET_VERIFY_SLEEP_SEC:-15}"
-[[ -z "${ATTEMPTS}" ]] && ATTEMPTS=12
+[[ -z "${ATTEMPTS}" ]] && ATTEMPTS=40
 [[ -z "${SLEEP_SEC}" ]] && SLEEP_SEC=15
+if [[ "${ASHLAR_NUGET_VERIFY_ALLOW_SHORT:-}" != "1" ]] && [[ "${ATTEMPTS}" -lt 40 ]]; then
+  echo "::notice::Raising nuget.org registration poll ${ATTEMPTS} -> 40 (v0.1.2 index-lag timeout)"
+  ATTEMPTS=40
+fi
 
 if [[ -n "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS:-}" && "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS}" != "" ]]; then
   mapfile -t IDS < <(echo "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' || true)

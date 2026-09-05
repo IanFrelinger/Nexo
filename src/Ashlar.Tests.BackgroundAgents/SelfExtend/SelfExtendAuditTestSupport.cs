@@ -101,7 +101,18 @@ internal static class SelfExtendAuditTestSupport
             Signed = true,
             Timestamp = DateTimeOffset.UtcNow,
             BrickId = brickId,
-            ContentHash = hash
+            ContentHash = hash,
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+            Inputs =
+            [
+                new CertificationInput
+                {
+                    Kind = CertificationInputKinds.GateEmittedArtifact,
+                    Id = className,
+                    Hash = hash
+                },
+                CertifierIdentity.ToInput()
+            ]
         };
         data = data with { Signature = CertificationRecordSigning.Sign(data) };
 
@@ -115,7 +126,9 @@ internal static class SelfExtendAuditTestSupport
             Timestamp = data.Timestamp,
             BrickId = data.BrickId,
             ContentHash = data.ContentHash,
-            Signature = data.Signature
+            Signature = data.Signature,
+            SchemaVersion = data.SchemaVersion,
+            Inputs = data.Inputs
         });
 
         return (store, brickId, source);

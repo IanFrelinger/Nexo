@@ -1,0 +1,9 @@
+{
+  "id": "b2-appdomain-assemblies",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.AppDomain",
+  "note": "Beat the v1 fence: AppDomain.CurrentDomain.GetAssemblies enumerated the certifier's own loaded assemblies."
+}

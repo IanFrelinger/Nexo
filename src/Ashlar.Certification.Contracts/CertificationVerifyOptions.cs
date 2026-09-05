@@ -22,6 +22,18 @@ public sealed class CertificationVerifyOptions
     public static CertificationVerifyOptions Default { get; } = new();
 
     /// <summary>
+    /// Consumer completeness floor: refuse legacy schema and records that do not name a
+    /// gate-emitted artifact and a certifier identity. Does not require Ed25519 (that is a
+    /// separate trust-root choice) so HMAC-era records that already close class A still verify.
+    /// </summary>
+    public static CertificationVerifyOptions Strict { get; } = new()
+    {
+        MinimumSchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+        RequireGateEmittedArtifact = true,
+        RequireCertifierIdentity = true,
+    };
+
+    /// <summary>
     /// Lowest <see cref="CertificationRecordData.SchemaVersion"/> this verifier accepts. A
     /// record below the floor is refused outright, before any signature is examined; a null
     /// schema version counts as 0.
@@ -52,30 +64,6 @@ public sealed class CertificationVerifyOptions
     public bool RequireEd25519Signature { get; init; }
 
     /// <summary>
-    /// When true, a verifier that cannot bind the EXECUTABLE ARTIFACT refuses rather than
-    /// reporting a pass over the source text alone.
-    /// </summary>
-    /// <remarks>
-    /// <para>A certification record binds the brick's SOURCE, because source is what the gate
-    /// analyzed, mutated and judged. Nothing in the record covers a compiled assembly. So a
-    /// consumer holding a genuine record, the genuine source, and a TAMPERED DLL built from
-    /// something else gets a trusted verdict — every check the verifier runs really does pass; the
-    /// artifact it will actually execute was simply never one of them.</para>
-    ///
-    /// <para>The kernel's own path does not have this gap: the hot-swap host verifies the record
-    /// against the source text it is about to compile, so what runs is what was certified. The gap
-    /// is a consumer who loads a prebuilt assembly and reads "trusted" as covering it.</para>
-    ///
-    /// <para>No record format binds an artifact yet, so this option cannot make the check happen —
-    /// it makes the ABSENCE of the check loud. Setting it turns "trusted (source only)" into an
-    /// explicit refusal, on the same principle as the netstandard2.0 Ed25519 lane below: a
-    /// verifier asked for an assurance it cannot produce must say so, never quietly answer a
-    /// narrower question. Consumers that can compile the verified source instead should do that
-    /// and leave this off.</para>
-    /// </remarks>
-    public bool RequireAssemblyBinding { get; init; }
-
-    /// <summary>
     /// Base64 raw Ed25519 public keys this verifier will accept as signers. Empty or null
     /// disables pinning.
     /// </summary>
@@ -89,9 +77,26 @@ public sealed class CertificationVerifyOptions
     /// </remarks>
     public IReadOnlyCollection<string>? TrustedEd25519PublicKeys { get; init; }
 
+    /// <summary>
+    /// When true, a record without a <c>gate-emitted-artifact</c> input is refused. That input
+    /// is the hash of the assembly the certifier compiled and shipped; without it a consumer
+    /// cannot tell judged bytes from some other compile of the same source.
+    /// </summary>
+    public bool RequireGateEmittedArtifact { get; init; }
+
+    /// <summary>
+    /// When true, a record without a <c>certifier-identity</c> input is refused. The identity
+    /// names the judge; a certificate that omits it cannot be attributed to a gate.
+    /// </summary>
+    public bool RequireCertifierIdentity { get; init; }
+
     /// <summary>True when any strictness beyond today's behaviour is configured.</summary>
     public bool IsStrict =>
-        MinimumSchemaVersion > 0 || RequireEd25519Signature || PinningEnabled || RequireAssemblyBinding;
+        MinimumSchemaVersion > 0
+        || RequireEd25519Signature
+        || PinningEnabled
+        || RequireGateEmittedArtifact
+        || RequireCertifierIdentity;
 
     /// <summary>True when a non-empty trusted-key set is configured.</summary>
     public bool PinningEnabled => TrustedEd25519PublicKeys is { Count: > 0 };

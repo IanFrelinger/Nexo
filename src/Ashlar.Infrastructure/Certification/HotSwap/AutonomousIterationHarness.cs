@@ -310,19 +310,62 @@ public sealed class AutonomousIterationHarness
             if (_executeCandidateInSession && session is not null)
                 executionBackend = new SessionExecutionBackend(session);
 
+            // Real brick source: emit, fence, and (for in-process legs) activate those
+            // bytes. Identity-handle probes and incomplete proposals compile to no
+            // DomainBrick — keep the supplied handle so the gate can still name the
+            // in-process wiring refusal. A compile error or IL-fence hit is a refusal.
+            GateEmittedArtifact? artifact = null;
+            var brick = candidate.Brick;
+            var brickTypeName = candidate.BrickTypeName;
+            try
+            {
+                artifact = GateEmittedArtifactCompiler.Compile(
+                    candidate.SourceCode, candidate.CompilationReferences);
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("contains no public, non-nested, concrete type", StringComparison.Ordinal))
+            {
+                artifact = null;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return new IterationResult(IterationOutcome.ExplainedFailure,
+                    "gate-emitted compile refused the candidate: " + ex.Message,
+                    tier, null, attestation);
+            }
+
+            if (artifact is not null)
+            {
+                try
+                {
+                    IlImportFence.Inspect(artifact.AssemblyBytes);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return new IterationResult(IterationOutcome.ExplainedFailure,
+                        "IL import fence refused the candidate: " + ex.Message,
+                        tier, null, attestation);
+                }
+
+                brickTypeName = artifact.BrickTypeName;
+                if (executionBackend is null)
+                    brick = CertifiedBrickActivator.Activate(artifact);
+            }
+
             var decision = await _gate.CertifyAsync(new CertificationRequest
             {
-                Brick = candidate.Brick,
+                Brick = brick,
                 Witness = candidate.Witness,
                 SourceCode = candidate.SourceCode,
                 ProjectPath = candidate.ProjectPath,
                 CompilationReferences = candidate.CompilationReferences,
-                BrickTypeName = candidate.BrickTypeName,
+                BrickTypeName = brickTypeName,
                 ConstraintManifest = context.Manifest,
                 TouchSet = context.Touch,
                 Lineage = context.Lineage,
                 AdditionalInputs = environmentInputs,
                 ExecutionBackend = executionBackend,
+                EmittedArtifact = artifact,
             }, cancellationToken).ConfigureAwait(false);
 
             if (!decision.Admitted)
@@ -360,8 +403,9 @@ public sealed class AutonomousIterationHarness
                     BrickId = decision.Record.BrickId,
                     SourceCode = candidate.SourceCode,
                     Record = CertificationRecordMapper.ToData(decision.Record),
-                    BrickTypeName = candidate.BrickTypeName,
+                    BrickTypeName = brickTypeName,
                     AdditionalCompilationReferences = candidate.CompilationReferences,
+                    PrecompiledAssembly = artifact?.AssemblyBytes,
                     Autonomous = new AutonomousAdmission
                     {
                         Tier = tier.Tier,

@@ -140,6 +140,30 @@ public sealed class CertificationGate : ICertificationGate
         var contentHash = BrickContentHasher.ComputeSha256(request.SourceCode);
         var inputs = BuildInputs(request);
 
+        try
+        {
+            request = BindEmittedArtifact(request);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new CertificationDecision
+            {
+                Admitted = false,
+                FailureCheck = "load",
+                Record = BuildRecord(
+                    admitted: false,
+                    signed: false,
+                    status: "FAIL",
+                    brickId,
+                    timestamp,
+                    contentHash,
+                    ex.Message,
+                    mutation: null,
+                    gatesPassed: Array.Empty<CertificationGatePass>(),
+                    inputs)
+            };
+        }
+
         // Declared ahead of the recursion refusal because the shared Fail/GatesPassedBefore
         // closures reference it; it is re-assigned with the real per-run configuration once
         // the analyzer fence actually evaluates. A recursion refusal never reads it
@@ -470,6 +494,7 @@ public sealed class CertificationGate : ICertificationGate
                 ? compileOptions.ToCertificationInput()
                 : NoBuildCompileOptionsInput);
             inputs.AddRange(request.AdditionalInputs);
+            RecordCompileAuthority(request, inputs);
             // Where execution happened is certificate-relevant on PASS and FAIL alike:
             // a verdict minted over backend observations names the backend.
             if (request.ExecutionBackend is { } executionBackend)
@@ -496,6 +521,70 @@ public sealed class CertificationGate : ICertificationGate
                 "Witness spec for {BrickId} could not be serialized for input hashing; omitting the witness input",
                 request.Witness.BrickId);
             return request.AdditionalInputs;
+        }
+    }
+
+    /// <summary>
+    /// When a PE is bound, the gate inspects and activates those bytes and witnesses
+    /// the resulting instance. A caller-supplied brick object is not the judged program.
+    /// </summary>
+    private static CertificationRequest BindEmittedArtifact(CertificationRequest request)
+    {
+        if (request.EmittedArtifact is not { } artifact)
+            return request;
+
+        var bytesHash = BrickContentHasher.ComputeSha256(artifact.AssemblyBytes);
+        if (!string.Equals(bytesHash, artifact.AssemblySha256, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "gate-emitted artifact hash does not match the supplied bytes.");
+
+        var sourceHash = BrickContentHasher.ComputeSha256(request.SourceCode);
+        if (!string.Equals(sourceHash, artifact.SourceSha256, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "gate-emitted artifact was not compiled from this request's source.");
+
+        var brick = CertifiedBrickActivator.Activate(artifact);
+        if (!string.Equals(brick.Id, request.Brick.Id, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(
+                $"gate-emitted brick Id '{brick.Id}' does not match request '{request.Brick.Id}'.");
+
+        return request with { Brick = brick, BrickTypeName = artifact.BrickTypeName };
+    }
+
+    private static void RecordCompileAuthority(CertificationRequest request, List<CertificationInput> inputs)
+    {
+        inputs.Add(CertifierIdentity.ToInput());
+        inputs.Add(new CertificationInput
+        {
+            Kind = CertificationInputKinds.CompileOptions,
+            Id = BrickCompileOptions.LanguageVersionName,
+            Hash = BrickContentHasher.ComputeSha256(BrickCompileOptions.CanonicalBlob)
+        });
+
+        if (request.EmittedArtifact is { } artifact)
+        {
+            inputs.Add(new CertificationInput
+            {
+                Kind = CertificationInputKinds.GateEmittedArtifact,
+                Id = artifact.BrickTypeName,
+                Hash = artifact.AssemblySha256
+            });
+            inputs.Add(IlImportFence.ToInput());
+            inputs.Add(new CertificationInput
+            {
+                Kind = CertificationInputKinds.ExecutionMode,
+                Id = "gate-emitted",
+                Hash = BrickContentHasher.ComputeSha256("gate-emitted")
+            });
+        }
+        else
+        {
+            inputs.Add(new CertificationInput
+            {
+                Kind = CertificationInputKinds.ExecutionMode,
+                Id = "in-process-fixture",
+                Hash = BrickContentHasher.ComputeSha256("in-process-fixture")
+            });
         }
     }
 

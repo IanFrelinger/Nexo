@@ -51,10 +51,12 @@ public sealed class FileCertificationRecordStore : ICertificationRecordStore
     ///
     /// <para>Two limits worth stating plainly. Neither the staged bytes nor the directory entry is
     /// flushed, so this survives PROCESS death, not machine power loss — after a crash the rename
-    /// may be durable while the contents are not. And on Windows the replace is atomic-or-throw
-    /// rather than unconditional: if a concurrent reader holds the destination open, the move
-    /// throws and the old record stands. Both leave the previous verdict intact or absent, never
-    /// forged, which is the property that matters here.</para>
+    /// may be durable while the contents are not. On Windows a concurrent replace of the same
+    /// destination can throw <see cref="UnauthorizedAccessException"/> (MoveFileEx with
+    /// MOVEFILE_REPLACE_EXISTING while another handle still holds the file). The store retries
+    /// that replace; the previous verdict stays on disk until a retry lands. A crash or a
+    /// persistent ACL denial still leaves the previous verdict intact or absent, never forged,
+    /// which is the property that matters here.</para>
     /// </summary>
     public void Save(CertificationRecord record)
     {
@@ -65,7 +67,7 @@ public sealed class FileCertificationRecordStore : ICertificationRecordStore
         try
         {
             File.WriteAllText(tmp, json);
-            File.Move(tmp, path, overwrite: true);
+            AtomicRecordReplace.IntoPlace(tmp, path);
         }
         catch
         {

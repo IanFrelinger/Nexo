@@ -26,4 +26,21 @@ public static class BrickContentHasher
 #endif
         return Convert.ToBase64String(hash);
     }
+
+    /// <summary>
+    /// Computes the Base64 SHA-256 hash of raw bytes (gate-emitted assemblies, compile-option blobs).
+    /// </summary>
+    /// <param name="bytes">Canonical bytes; must not be empty.</param>
+    public static string ComputeSha256(byte[] bytes)
+    {
+        if (bytes is null || bytes.Length == 0)
+            throw new ArgumentException("Canonical bytes are required.", nameof(bytes));
+#if NET5_0_OR_GREATER
+        var hash = SHA256.HashData(bytes);
+#else
+        using var sha = SHA256.Create();
+        var hash = sha.ComputeHash(bytes);
+#endif
+        return Convert.ToBase64String(hash);
+    }
 }

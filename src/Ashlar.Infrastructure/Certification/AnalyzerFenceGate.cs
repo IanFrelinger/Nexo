@@ -6,7 +6,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Ashlar.Analyzers;
-using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks.Ports;
 using Ashlar.Infrastructure.Testing.CodeAnalysis;
 
@@ -30,13 +29,6 @@ public sealed class AnalyzerFenceGate
 
     private const string DiagnosticIdPrefix = "ASHLAR";
     private const string AnalyzerCrashDiagnosticId = "AD0001";
-
-    /// <summary>
-    /// CS0009 — "Metadata file '...' could not be opened -- PE image doesn't contain managed
-    /// metadata". A statement about the REFERENCE SET the harness supplied, never about the
-    /// candidate source, and reported as such.
-    /// </summary>
-    private const string UnmanagedReferenceDiagnosticId = "CS0009";
 
     /// <summary>Feedback is deterministically truncated beyond this many findings (A3.3 permits
     /// deterministic truncation; the truncation itself is recorded in the feedback).</summary>
@@ -64,20 +56,12 @@ public sealed class AnalyzerFenceGate
     /// manifest-derived rules (A2), and, when it carries a declared touch-set, the touch-set
     /// reference rules (autonomy spec R3.2 analyzer leg) — over the candidate and produces
     /// the gate verdict.
-    ///
-    /// <para>The candidate is parsed and compiled under <paramref name="compileOptions"/> — the
-    /// build's own preprocessor symbols, language version, overflow checking, nullable context
-    /// and <c>global using</c> directives — so the fence judges the program the build compiled,
-    /// not a default parse of the same bytes. A <c>#if</c> branch the build compiled is code here
-    /// too; a name the build bound through a project-level alias binds the same way here. Null
-    /// means the candidate has no build to match, and keeps the in-process defaults.</para>
     /// </summary>
     public async Task<AnalyzerGateOutcome> EvaluateAsync(
         string candidateSource,
         IEnumerable<string>? compilationReferences,
         BrickConstraintManifest? constraintManifest = null,
         Ashlar.Core.Application.Autonomy.TouchSet? touchSet = null,
-        BrickCompileOptions? compileOptions = null,
         CancellationToken cancellationToken = default)
     {
         var floor = ResolveSeverityFloor();
@@ -109,27 +93,18 @@ public sealed class AnalyzerFenceGate
         {
             var wrapped = CandidateSourceWrapper.Wrap(candidateSource);
             var syntaxTree = CSharpSyntaxTree.ParseText(
-                wrapped, BrickCompilation.ParseOptions(compileOptions), cancellationToken: cancellationToken);
+                wrapped, BrickCompileOptions.ParseOptions, cancellationToken: cancellationToken);
 
             var references = RoslynCodeAnalysisService.BuildReferenceSet(compilationReferences);
-            // The autonomy surface is [Experimental]; a candidate that reaches into it would
-            // otherwise fail the compile-error guard below with ASHLAREXP001 and never reach the
-            // analyzers - which is precisely the kernel-smuggling case the fence exists to NAME
-            // (ASHLAR0014). Suppress the opt-in diagnostic here so the fence judges the candidate on
-            // its rules; the certification build outside the fence still enforces it.
-            var fenceOptions = BrickCompilation.CompilationOptions(compileOptions, OutputKind.DynamicallyLinkedLibrary)
-                .WithSpecificDiagnosticOptions(new Dictionary<string, ReportDiagnostic>
-                {
-                    [Ashlar.Core.Application.Autonomy.AutonomyExperimental.DiagnosticId] = ReportDiagnostic.Suppress,
-                });
-            // The build's global usings ride beside the candidate as their own compilation unit,
-            // which is how csc saw them (obj/.../GlobalUsings.g.cs); findings that land in that
-            // unit are not the candidate's lines and map to line 0 below.
+            // Closed-world options plus ASHLAREXP001 suppress: a candidate that reaches the
+            // autonomy surface would otherwise fail the compile-error guard and never reach
+            // the analyzers — which is precisely the kernel-smuggling case the fence exists
+            // to NAME (ASHLAR0014).
             var compilation = CSharpCompilation.Create(
                 "AnalyzerGateCandidate",
-                new[] { syntaxTree }.Concat(BrickCompilation.CompanionTrees(compileOptions, cancellationToken)),
+                new[] { syntaxTree },
                 references,
-                fenceOptions);
+                BrickCompileOptions.ForAnalyzerFence());
 
             // Every brick-scoped rule anchors on the canonical Brick type and silently no-ops
             // without it. In a certification context that silence is fail-open; convert it to an
@@ -149,35 +124,13 @@ public sealed class AnalyzerFenceGate
             // as a pass; fail loudly instead (same argument as the analyzer test harness).
             var compileErrors = compilation.GetDiagnostics(cancellationToken)
                 .Where(d => d.Severity == DiagnosticSeverity.Error)
+                .Take(10)
                 .ToArray();
-
-            // ... but only when the candidate is what broke. CS0009 is never a statement about the
-            // candidate: it means a file in the REFERENCE SET is not a managed assembly, and the
-            // reference set is supplied by the harness (BrickCertificationProjectLoader), not by the
-            // brick author. A brick referencing Ashlar.Authoring used to land here — that package's
-            // transitive graph copies LLamaSharp's unmanaged binaries into runtimes/<rid>/native/,
-            // the loader handed them over as references, and the gate then told the author their
-            // source did not compile. Naming the candidate for the harness's own defect is the worst
-            // kind of refusal: it is confident, specific, and about the wrong thing.
-            if (compileErrors.Length > 0 && compileErrors.All(d => d.Id == UnmanagedReferenceDiagnosticId))
-            {
-                return AnalyzerGateOutcome.Failed(
-                    "certification harness error, NOT a defect in the candidate: the compilation reference set "
-                    + "contains files that are not managed assemblies, so the compiler could not open them "
-                    + $"({UnmanagedReferenceDiagnosticId}). The candidate source was never judged. The reference set "
-                    + "comes from BrickCertificationProjectLoader.CollectReferences, which must pass only the managed "
-                    + "assemblies the compiler itself recorded for the build — native payloads under runtimes/<rid>/native/ "
-                    + "belong to the runtime graph, not the compile graph. Fix the harness, not the brick: "
-                    + string.Join(" | ", compileErrors.Take(10).Select(e => e.ToString())),
-                    floor,
-                    analyzerVersion);
-            }
-
             if (compileErrors.Length > 0)
             {
                 return AnalyzerGateOutcome.Failed(
                     "candidate does not compile, so analyzer silence would be meaningless: "
-                    + string.Join(" | ", compileErrors.Take(10).Select(e => e.ToString())),
+                    + string.Join(" | ", compileErrors.Select(e => e.ToString())),
                     floor,
                     analyzerVersion);
             }
@@ -197,7 +150,7 @@ public sealed class AnalyzerFenceGate
             var findings = diagnostics
                 .Where(d => d.Id.StartsWith(DiagnosticIdPrefix, StringComparison.Ordinal) && d.Severity >= floor)
                 .OrderBy(d => d.Location.SourceSpan.Start)
-                .Select(d => ToFinding(d, candidateSource, syntaxTree))
+                .Select(d => ToFinding(d, candidateSource))
                 // Manifest and touch-set rules apply to every line of the compilation (unlike
                 // the brick-scoped catalog), so they also fire on the wrapper-injected
                 // preamble/audit text — code the proposer did not write and cannot repair.
@@ -254,19 +207,14 @@ public sealed class AnalyzerFenceGate
         }
     }
 
-    private static AnalyzerFinding ToFinding(Diagnostic diagnostic, string candidateSource, SyntaxTree candidateTree)
+    private static AnalyzerFinding ToFinding(Diagnostic diagnostic, string candidateSource)
     {
         var position = diagnostic.Location.GetLineSpan().StartLinePosition;
-        // A location in another tree — the build's global-usings unit — is not a candidate line,
-        // whatever its line number happens to be there.
-        var line = ReferenceEquals(diagnostic.Location.SourceTree, candidateTree)
-            ? CandidateSourceWrapper.MapToCandidateLine(candidateSource, position.Line + 1)
-            : 0;
         return new AnalyzerFinding(
             diagnostic.Id,
             diagnostic.Severity.ToString(),
             diagnostic.GetMessage(),
-            line,
+            CandidateSourceWrapper.MapToCandidateLine(candidateSource, position.Line + 1),
             position.Character + 1);
     }
 }

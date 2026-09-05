@@ -1,13 +1,4 @@
 // CLI tool for brick certification workflows.
-//
-// Exit codes, so a script can tell the outcomes apart without parsing text:
-//   0  ADMIT — a signed PASS record was written
-//   1  REJECT — the gate ran and signed a FAIL verdict (correctness, mutation, dependency, ...)
-//   2  usage
-//   3  refused BEFORE the gate ran — the project could not be loaded into a certification request
-//      (multi-file brick, a compile item outside the brick directory, a build failure, no witness,
-//      ...) or the harness itself failed. Not a verdict about the brick; the message names the fix.
-//   4  an unexpected error the tool has no designed message for
 using System.Text.Json;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Infrastructure.Certification;
@@ -16,7 +7,6 @@ using Ashlar.Infrastructure.Certification.Sdk.Extensions;
 if (args.Length < 2)
 {
     Console.Error.WriteLine("Usage: Ashlar.CertifyBrick <brickProjectDir> <witnessSpec.json> [recordOutputPath]");
-    Console.Error.WriteLine("  Exit codes: 0 admit, 1 reject, 2 usage, 3 refused before the gate ran, 4 unexpected error.");
     return 2;
 }
 
@@ -45,6 +35,12 @@ try
         JsonSerializer.Serialize(decision.Record, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
         .ConfigureAwait(false);
 
+    if (request.EmittedArtifact is { } artifact)
+    {
+        var artifactPath = Path.Combine(recordDir, CertifiedArtifactExporter.ArtifactFileName);
+        await File.WriteAllBytesAsync(artifactPath, artifact.AssemblyBytes).ConfigureAwait(false);
+    }
+
     if (!string.Equals(recordPath, Path.Combine(recordDir, $"{decision.Record.BrickId}.json"), StringComparison.OrdinalIgnoreCase))
     {
         await File.WriteAllTextAsync(
@@ -53,39 +49,50 @@ try
             .ConfigureAwait(false);
     }
 
-    // Three ways a mutant dies, kept apart on the console as on the record: the witness caught it
-    // (mutants_killed), the wall clock stopped it (killed_by_timeout), or running it killed the
-    // process it ran in (killed_by_crash). Only the first says anything about the witness.
-    var record = decision.Record;
-    var mutantSummary =
-        $"mutants={record.TotalMutants} mutants_killed={record.KilledMutants.Count} "
-        + $"killed_by_timeout={record.TimedOutMutants.Count}{IdList(record.TimedOutMutants)} "
-        + $"killed_by_crash={record.CrashedMutants.Count}{IdList(record.CrashedMutants)}";
-
     if (!decision.Admitted)
     {
-        Console.Error.WriteLine($"REJECT ({decision.FailureCheck}): {record.Reason}");
-        Console.Error.WriteLine($"REJECT brick={record.BrickId} {mutantSummary}");
+        Console.Error.WriteLine($"REJECT ({decision.FailureCheck}): {decision.Record.Reason}");
         Console.Error.WriteLine($"Record: {recordPath}");
         return 1;
     }
 
-    Console.WriteLine($"ADMIT brick={record.BrickId} escape_rate={record.EscapeRate} {mutantSummary}");
+    Console.WriteLine($"ADMIT brick={decision.Record.BrickId} escape_rate={decision.Record.EscapeRate} mutants_killed={decision.Record.KilledMutants.Count}");
     Console.WriteLine($"Record: {recordPath}");
     return 0;
 }
-catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException or DirectoryNotFoundException)
-{
-    // Every loader-stage refusal (and every harness failure inside the gate) is one of these,
-    // carrying a designed message that names the fix. It used to share exit code 1 with REJECT, so
-    // a script could not tell "the gate judged this brick and failed it" from "the gate never ran".
-    Console.Error.WriteLine($"Refused before certification: {ex.Message}");
-    return 3;
-}
 catch (Exception ex)
 {
-    Console.Error.WriteLine($"Certification failed unexpectedly: {ex}");
-    return 4;
+    // A load/fence refusal used to print the exception and exit with no file.
+    // "No record" is what Get() returns for an unsigned or missing file, so the
+    // refuse was indistinguishable from "never certified." Persist a signed FAIL.
+    var brickId = TryWitnessBrickId(witnessPath) ?? new DirectoryInfo(brickDir).Name;
+    var refusal = LoadRefusalRecord.Create(signer, brickId, ex.Message);
+    try
+    {
+        store.Save(refusal);
+        File.WriteAllText(
+            recordPath,
+            JsonSerializer.Serialize(refusal, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    }
+    catch
+    {
+        /* still fail closed — the process exit is the refusal */
+    }
+
+    Console.Error.WriteLine($"REJECT (load): {ex.Message}");
+    Console.Error.WriteLine($"Record: {recordPath}");
+    return 1;
 }
 
-static string IdList(IReadOnlyList<string> ids) => ids.Count == 0 ? string.Empty : $"[{string.Join(", ", ids)}]";
+static string? TryWitnessBrickId(string path)
+{
+    try
+    {
+        using var doc = JsonDocument.Parse(File.ReadAllText(path));
+        return doc.RootElement.TryGetProperty("brickId", out var id) ? id.GetString() : null;
+    }
+    catch
+    {
+        return null;
+    }
+}

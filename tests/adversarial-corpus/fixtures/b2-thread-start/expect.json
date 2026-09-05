@@ -1,0 +1,9 @@
+{
+  "id": "b2-thread-start",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.Threading.Thread",
+  "note": "Round-12 attack: Thread.Start outlives the witness return inside the certifier process."
+}

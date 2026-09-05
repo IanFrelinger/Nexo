@@ -1,6 +1,7 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
+using Ashlar.Infrastructure.HostProcess;
 using Ashlar.Infrastructure.Testing.Docker;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -123,7 +124,8 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.UtcNow;
-        
+        string? containerId = null;
+
         try
         {
             var createParams = new CreateContainerParameters
@@ -143,11 +145,13 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
             };
 
             var createResponse = await _dockerClient.Containers.CreateContainerAsync(createParams, cancellationToken);
-            var containerId = createResponse.ID;
+            containerId = createResponse.ID;
 
             await _dockerClient.Containers.StartContainerAsync(containerId, null, cancellationToken);
 
-            var waitResponse = await _dockerClient.Containers.WaitContainerAsync(containerId, cancellationToken);
+            using var waitCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            waitCts.CancelAfter(TimedProcess.DockerWaitTimeout);
+            var waitResponse = await _dockerClient.Containers.WaitContainerAsync(containerId, waitCts.Token);
             var exitCode = (int)waitResponse.StatusCode;
 
             var (stdout, stderr) = await GetContainerLogsAsync(containerId, cancellationToken);
@@ -165,7 +169,24 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         {
             var duration = DateTime.UtcNow - startTime;
             _logger.LogError(ex, "Failed to run Docker container: {ImageTag}", imageTag);
-            return new ExecutionRunResult(false, -1, string.Empty, ex.Message, null, duration);
+            return new ExecutionRunResult(false, -1, string.Empty, ex.Message, containerId, duration);
+        }
+        finally
+        {
+            if (!string.IsNullOrEmpty(containerId))
+            {
+                try
+                {
+                    await _dockerClient.Containers.RemoveContainerAsync(
+                        containerId,
+                        new ContainerRemoveParameters { Force = true },
+                        CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to remove container: {ContainerId}", containerId);
+                }
+            }
         }
     }
 

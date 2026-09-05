@@ -1,0 +1,9 @@
+{
+  "id": "b2-reflect-invoke-exit",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "System.Environment",
+  "note": "Beat the v1 type-denylist fence via typeof(Environment).GetMethod(\"Exit\").Invoke. allowlist-v3 refuses the Environment ldtoken before Type::GetMethod."
+}

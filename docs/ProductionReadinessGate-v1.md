@@ -68,14 +68,16 @@ Those should run as additional gates (v2+). For a **structured program** coverin
 ### C. CLI operational correctness (required)
 
 1. `pipeline validate` succeeds for a valid template.
-2. `pipeline run` succeeds and emits completed run output.
-3. `pipeline run` fallback path works (deterministic failure -> agentic success).
+2. Unconfigured `pipeline run` **fails closed**: `ok=false`, `state=Failed`, ingest error names the default placeholder (`No deterministic pipeline adapter is configured`). A stage that did no work must not be reported as having run.
+3. The same fail-closed outcome holds when `ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1` is set — test hooks inject extra failures, they do not restore fabricated success.
+4. `pipeline diagnostics` emits JSON.
 
 **Fail conditions**
 
 - Validation fails for known-good template.
-- Run command exits non-zero for expected success path.
-- Fallback path does not switch workers as expected.
+- Unconfigured run reports `ok=true` or `state=Completed`.
+- Ingest error does not name the unconfigured placeholder.
+- Diagnostics produces no JSON payload.
 
 ---
 
@@ -83,15 +85,15 @@ Those should run as additional gates (v2+). For a **structured program** coverin
 
 Using `LiteDb` provider:
 
-1. Create a failed run in one process invocation.
+1. Create a failed run in one process invocation (unconfigured placeholder or test-hook failure).
 2. Resume from that run in a second process invocation.
-3. Resumed run completes successfully.
+3. Resume finds the persisted source (does not report a missing prior run). Without a configured adapter the resumed run **stays Failed** — the gate proves durability, not fabricated completion.
 
 **Fail conditions**
 
 - Prior run not persisted/readable.
-- Resume run cannot load source run.
-- Resume path fails to recover and complete.
+- Resume run cannot load source run (`no prior run was found`).
+- Resumed run reports success without a configured adapter.
 
 ---
 
@@ -148,12 +150,12 @@ cat > /tmp/pipeline_gate_demo.json <<'JSON'
 JSON
 ```
 
-Validate and run:
+Validate and run (unconfigured adapter must fail closed):
 
 ```bash
 dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template /tmp/pipeline_gate_demo.json
-dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json
-ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json
+dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-unconfigured --format-json
+ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-hooks --input "fail:hybrid:deterministic=true" --format-json
 dotnet run --project application/src/Ashlar.CLI -- pipeline diagnostics --format-json
 ```
 
@@ -183,8 +185,8 @@ Add a dedicated workflow (recommended name: `production-readiness-gate-v1.yml`) 
 1. Build checks.
 2. Pipeline tests for net8/net9.
 3. Host DI smoke filter.
-4. CLI validate/run/fallback checks.
-5. Durable resume checks (LiteDb).
+4. CLI validate + fail-closed unconfigured run + diagnostics.
+5. Durable resume checks (LiteDb) — source and resume both Failed; resume must find the persisted source.
 
 The workflow should:
 

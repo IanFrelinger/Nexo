@@ -33,13 +33,17 @@ public interface IConsoleRenderer
     /// <summary>Writes an error message with optional code and remediation suggestion.</summary>
     void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null);
 
-    /// <summary>Writes a progress start marker to standard output.</summary>
+    // Progress is diagnostic, so an implementation must keep it OFF standard output: --format-json
+    // promises a parseable document there, and callers emit progress around that write. Promising
+    // standard output here is what made the shipped implementation wrong.
+
+    /// <summary>Writes a progress start marker to standard error.</summary>
     void RenderProgressStart(string message);
 
-    /// <summary>Writes a progress completion marker to standard output.</summary>
+    /// <summary>Writes a progress completion marker to standard error.</summary>
     void RenderProgressComplete(string message);
 
-    /// <summary>Writes a structured progress report to standard output.</summary>
+    /// <summary>Writes a structured progress report to standard error.</summary>
     void RenderProgress(ProgressReport report);
 
     /// <summary>Renders an analysis result as JSON or human-readable text.</summary>

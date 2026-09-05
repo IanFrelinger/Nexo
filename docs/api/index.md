@@ -79,7 +79,7 @@ var result = await validationService.ValidateAsync(filter: null, progress: null,
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `DeploymentProfile` | Module profile (`Full`, `Server`, `Edge`, `AirGapped`, `System`) | `Full` (or `ASHLAR_DEPLOYMENT_PROFILE`) |
+| `DeploymentProfile` | Module profile (`Full`, `Server`, `Edge`, `AirGapped`, `System`, `SecureWorkstation`) | `Full` (or `ASHLAR_DEPLOYMENT_PROFILE`) |
 | `PatternStorePath` | LiteDB pattern store file path; sibling state files are co-located with it | `<state dir>/ashlar-patterns.db` (`ASHLAR_STATE_DIR`, else `<repo root>/.ashlar/state`) |
 | `TrustEnabled` | Enable trust & sanitization | `false` |
 | `RegisterBackgroundAgentHostedService` | Register background agent as hosted service | `false` |

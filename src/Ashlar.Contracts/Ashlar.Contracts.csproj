@@ -11,7 +11,7 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Ashlar.Contracts</PackageId>
     <Title>Ashlar Contracts</Title>
-    <Description>Shared HTTP request/response DTOs for Ashlar API and client.</Description>
+    <Description>Shared HTTP DTOs and distributed execution contracts (envelopes, evidence, native host ports) for Ashlar API, client, and product hosts.</Description>
     <PackageTags>ashlar;ai;contracts;dto</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

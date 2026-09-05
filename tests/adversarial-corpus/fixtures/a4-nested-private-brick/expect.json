@@ -1,0 +1,9 @@
+{
+  "id": "a4-nested-private-brick",
+  "class": "A",
+  "item": "A4",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "no public, non-nested, concrete type",
+  "note": "Discovery reported a bare nested type name that Assembly.GetType could not resolve; a private nested brick is now refused by name at discovery instead of failing confusingly at activation."
+}

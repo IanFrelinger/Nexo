@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Ashlar.Infrastructure.HostProcess;
 
 namespace Ashlar.CLI.Commands;
 
@@ -298,22 +299,42 @@ internal static class BootstrapRuntime
         if (process == null)
             return 1;
 
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+                // already gone
+            }
+
+            throw;
+        }
+
         return process.ExitCode;
     }
 
     private static async Task<(int ExitCode, string StdOut, string StdErr)> RunShellCaptureAsync(string command, CancellationToken ct)
     {
-        using var process = StartShellProcess(command, redirect: true);
-        if (process == null)
-            return (1, string.Empty, "Failed to start process.");
+        var result = await TimedProcess.RunShellAsync(command, TimedProcess.DaemonProbeTimeout, ct)
+            .ConfigureAwait(false);
+        if (result.TimedOut)
+        {
+            var timeoutNote = $"Probe timed out after {TimedProcess.DaemonProbeTimeout.TotalSeconds:0}s.";
+            var stderr = string.IsNullOrWhiteSpace(result.StdErr)
+                ? timeoutNote
+                : timeoutNote + " " + result.StdErr.Trim();
+            return (TimedProcess.TimeoutExitCode, result.StdOut, stderr);
+        }
 
-        var stdOutTask = process.StandardOutput.ReadToEndAsync(ct);
-        var stdErrTask = process.StandardError.ReadToEndAsync(ct);
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-        var stdout = await stdOutTask.ConfigureAwait(false);
-        var stderr = await stdErrTask.ConfigureAwait(false);
-        return (process.ExitCode, stdout, stderr);
+        return (result.ExitCode, result.StdOut, result.StdErr);
     }
 
     private static Process? StartShellProcess(string command, bool redirect)

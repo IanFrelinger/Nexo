@@ -27,11 +27,11 @@ public sealed class ValidateAshlarMcpClientOptions : IValidateOptions<AshlarMcpC
         var failures = new List<string>();
 
         var profile = Environment.GetEnvironmentVariable(DeploymentProfileVariable);
-        if (string.Equals(profile, "airgapped", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(profile, "air-gapped", StringComparison.OrdinalIgnoreCase))
+        if (AshlarDeploymentProfileEnvironment.ForbidsRemoteProtocolEgress(profile))
         {
+            var label = AshlarDeploymentProfileEnvironment.DisplayName(profile);
             failures.Add(
-                $"{nameof(AshlarMcpClientOptions.Enabled)}=true is not permitted under the AirGapped deployment profile " +
+                $"{nameof(AshlarMcpClientOptions.Enabled)}=true is not permitted under the {label} deployment profile " +
                 $"({DeploymentProfileVariable}={profile}). The MCP client dials external servers and stays off.");
         }
 

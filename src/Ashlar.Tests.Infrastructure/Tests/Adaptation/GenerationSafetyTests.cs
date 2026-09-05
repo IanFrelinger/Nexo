@@ -75,6 +75,11 @@ public sealed class GenerationSafetyTests
             $"expected ADMIT, got {result.Decision.FailureCheck}: {result.Decision.Record.Reason}");
         result.Decision.Record.EscapeRate.Should().Be(0);
         result.Decision.Record.Signed.Should().BeTrue();
+        result.Decision.Record.Inputs.Should().Contain(i =>
+            i.Kind == Ashlar.Certification.Contracts.CertificationInputKinds.GateEmittedArtifact);
+        result.Decision.Record.Inputs.Should().Contain(i =>
+            i.Kind == Ashlar.Certification.Contracts.CertificationInputKinds.ExecutionMode
+            && i.Id == "gate-emitted");
         result.Manifest!.GenerationProvenance.Should().StartWith("fixture:");
     }
 

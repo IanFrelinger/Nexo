@@ -107,6 +107,15 @@ public static partial class AshlarServiceCollectionExtensions
         configure?.Invoke(options);
         ResolveStrictMode(options);
         var deploymentProfile = ResolveDeploymentProfile(options);
+        AshlarDeploymentProfileEnvironment.NoteResolved(deploymentProfile switch
+        {
+            AshlarDeploymentProfile.AirGapped => "air-gapped",
+            AshlarDeploymentProfile.SecureWorkstation => "secure-workstation",
+            AshlarDeploymentProfile.System => "system",
+            AshlarDeploymentProfile.Edge => "edge",
+            AshlarDeploymentProfile.Server => "server",
+            _ => "full"
+        });
         var modules = GetModuleSelection(deploymentProfile);
 
         services.AddSingleton(options.StrictMode);

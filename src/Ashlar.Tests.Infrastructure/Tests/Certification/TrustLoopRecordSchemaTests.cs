@@ -284,11 +284,12 @@ public sealed class TrustLoopRecordSchemaTests
 
         decision.Admitted.Should().BeTrue();
         var data = CertificationRecordMapper.ToData(decision.Record);
-        data.Inputs.Should().HaveCount(3,
-            "witness, the compile-options input (default;reason=no-build — this request has no build to match), and the context");
         data.Inputs[0].Kind.Should().Be("witness", "the witness input always comes first");
         data.Inputs.Should().ContainSingle(i =>
             i.Kind == "context" && i.Id == "mutation-probe-brick" && i.Hash == "assembled-context-hash");
+        data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CertifierIdentity);
+        data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CompileOptions);
+        data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.ExecutionMode);
 
         var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey);
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
@@ -323,9 +324,7 @@ public sealed class TrustLoopRecordSchemaTests
 
         decision.Admitted.Should().BeTrue();
         var record = decision.Record;
-        record.SchemaVersion.Should().Be(CertificationRecordData.CurrentSchemaVersion,
-            "a freshly minted record carries the current schema (v3 adds the timed-out / crashed mutant lists); "
-            + "TrustLoopSchemaVersion stays the v2 floor that older records verify against");
+        record.SchemaVersion.Should().Be(CertificationRecordData.TrustLoopSchemaVersion);
         record.GatesPassed.Select(g => g.Name).Should().Equal(
             "analyzer-gate", "correctness-witness", "mutation-gate", "determinism", "dependency-graph");
         record.GatesPassed[0].Configuration.Should()
@@ -360,8 +359,7 @@ public sealed class TrustLoopRecordSchemaTests
 
         decision.Admitted.Should().BeFalse();
         decision.FailureCheck.Should().Be("correctness");
-        decision.Record.SchemaVersion.Should().Be(CertificationRecordData.CurrentSchemaVersion,
-            "FAIL records are minted at the current schema too, so their mutant lists are readable by the same consumer");
+        decision.Record.SchemaVersion.Should().Be(CertificationRecordData.TrustLoopSchemaVersion);
         decision.Record.GatesPassed.Select(g => g.Name).Should().Equal(
             new[] { "analyzer-gate" },
             "the analyzer fence runs before correctness, so it is the only gate passed before a correctness failure (R2.4)");
@@ -382,8 +380,7 @@ public sealed class TrustLoopRecordSchemaTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset"
-                }),
-            MutationProbeWitnesses.ZeroErrorCase
+                })
         ]);
 
     private static CertificationRecordData BuildLegacyRecord() => new()

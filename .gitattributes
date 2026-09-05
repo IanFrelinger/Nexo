@@ -8,6 +8,11 @@ Makefile text eol=lf
 Dockerfile* text eol=lf
 *.sh text eol=lf
 *.py text eol=lf
+# C3: hashed certifier inputs stay LF so content hashes do not flip with autocrlf.
+tests/adversarial-corpus/** text eol=lf
+ci/certifier-boundary-inventory.tsv text eol=lf
+ci/published-version text eol=lf
+ci/nupkg-layout.tsv text eol=lf
 .devcontainer/post-create.sh text eol=lf
 scripts/start-ashlar-api-dev.sh text eol=lf
 scripts/stop-ashlar-api-dev.sh text eol=lf

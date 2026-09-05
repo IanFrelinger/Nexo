@@ -59,7 +59,7 @@ verdict, and writes:
 - A specialist that does not report is `Error`, not a skip.
 - A crashed specialist is recorded as `Error`.
 - Missing `ci/published-version` is a docs-drift blocker. That file is the
-  nuget.org pin (`0.1.1` today). Repo `VERSION` may read ahead of it (`0.1.2`);
+  nuget.org pin (currently `0.1.2`). Repo `VERSION` may read ahead of it;
   docs must not tell consumers to install the unpublished number.
 - Historical mentions of `apps/release-manager/` are allowed when the line
   records the extraction, or when the path is listed in

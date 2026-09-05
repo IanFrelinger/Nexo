@@ -7,9 +7,9 @@ Documentation index for the Ashlar platform. Start here to find what you need.
 1. `docs/TesterQuickstart.md` — **the one lane for a first run**: clone → `dotnet build Ashlar.Kernel.sln` → `ashlar doctor` → run the API on loopback, submit one task, read its audit trail → run the certification gate. No Docker, no API keys, verified paths only.
 2. `README.md` — the front door: what Ashlar is (auditable workflows, certified artifacts, your infrastructure), the trust loop / certification section, and the Try / Develop / Deploy lanes (container-first; native paths are escape hatches).
 3. `docs/GettingStarted.md` — the longer tour after the quickstart: startup lanes, first pipeline, CLI commands, provider setup, testing.
-4. `docs/ProjectTiers.md` — **canonical repo map** by project tier: kernel, hosts, distribution, transport/protocols, applications on the core, commercial satellites, and tests.
-5. `docs/IntegratorGuide.md` — embedding Ashlar in your own host: SDK packages, brick/agent registration, trust configuration, compatibility matrix. It opens with a table that routes you to the right consumption path (packages / checkout / operator CLI).
-6. **`docs/ConsumingFromNuGet.md`** — **package-only getting started**: `0.1.1` from plain nuget.org, which package does what, the composition order, and the project-file settings a consumer outside a checkout actually needs. `consumer-template/CONSUMING.md` is the copy-paste `nuget.config` + `Directory.Packages.props` pair that goes with it.
+4. `docs/ProjectTiers.md` — **canonical repo map** by project tier: kernel, hosts, distribution, transport/protocols, extractable `products/` scaffolds, commercial satellites, and tests. Placement rule: [`docs/architecture/product-split.md`](architecture/product-split.md).
+5. `docs/IntegratorGuide.md` — embedding Ashlar in your own host: SDK packages, brick/agent registration, trust configuration, compatibility matrix.
+6. `consumer-template/CONSUMING.md` — `nuget.config` + `Directory.Packages.props` template. The `Ashlar.*` graph has been on nuget.org since v0.1.1; pin `ci/published-version`. A staging feed remains optional for pre-release testing.
 7. `docs/DistributionModels.md` — how to **consume and ship** Ashlar (NuGet, HTTP, CLI, compose, mesh) and the **distribution-matrix** CI workflow.
 8. `CONTRIBUTING.md` — branching, the recommended **Dev Container** workflow, and the pre-PR checks; `.devcontainer/devcontainer.json` is the default development environment (Cursor / VS Code).
 9. `docs/Architecture.md` — layered architecture and component boundaries; `docs/Conventions.md` — current code conventions as practiced today.
@@ -24,6 +24,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/specs/SPEC-006-keys-and-signing.md` — keys and signing (**ACCEPTED** 2026-08-27); every "signed" claim in every other spec resolves here. `docs/specs/` currently holds this one file.
 - `docs/InstanceLedger.md` — the instance ledger: durable course records and their signing story.
 - `docs/certification-evidence.md` — the **falsifiable proof ledger**: every ADMIT/REJECT with the test or spike and the CI run that proved it; "Known v0 limitations" at the end. Read this before judging any "certified" claim.
+- `docs/certification/since-fences.md` — what the certificate actually binds after the compile-authority fences (gate-emitted artifact, IL fence, certifier identity). Published pin is `ci/published-version`, never `VERSION`.
 - `docs/trust-loop/ashlar-trust-loop-spec.md` — the specification: core invariant, gate legs, proposer/witness separation, tier placement.
 - `docs/trust-loop/trust-loop-integration.md` and `docs/trust-loop/trust-loop-ext-autonomous-self-extension.md` — how the loop lands in the runtime, and the autonomous self-extension extension.
 - `docs/governed-pipeline.md` — the governed MEAI model pipeline every proposal flows through.
@@ -60,7 +61,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/distribution-matrix-gate.yml` — **parallel** gates: NuGet local-pack consumer, CLI image + subcommand help smoke, API image + `curl` `/health` + `/api/status`, `Ashlar.Client` in-process test, pack-graph alignment (plus **weekly** schedule).
-- `docs/CiGateInventory.md` — one-row-per-workflow trigger map (56 files) and the enforced branch-protection state (`cert-gate` is the only required check).
+- `docs/CiGateInventory.md` — one-row-per-workflow trigger map (57 files, including `products-gate`) and the enforced branch-protection state (`cert-gate` is the only required check).
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
 - `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
@@ -108,7 +109,8 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/samples/StableSdkHostSample/Program.cs` — reference host integration that only uses stable SDK extension points.
 - `docs/runtime/ExecutionRouting.md` — NCR-based generation routing (local, peer network, RunPod), preferences, and resilience behavior.
 - `docs/AgentExecutionIsolation.md` — per-agent isolation tiers (in-process through container-per-agent), JSON field, and invocation metadata for transports.
-- `docs/architecture/ProtocolIntegration-MCP-A2A.md` — MCP + A2A protocol adapters: MCP server bridge over `ITool` (allowlists, policy gate, stdio host), MCP client, A2A server core + client transport, and the `Ashlar.API` wiring (`/api/mcp`, `/api/a2a/{agentId}`; all feature-flagged off by default).
+- `docs/architecture/product-split.md` — framework vs extractable product trees; `AirGapped` vs `SecureWorkstation`.
+- `docs/architecture/ProtocolIntegration-MCP-A2A.md` — MCP + A2A protocol adapters: MCP server bridge over `ITool` (allowlists, policy gate, stdio host), MCP client, A2A server core + client transport, and the `Ashlar.API` wiring (`/api/mcp`, `/api/a2a/{agentId}`; all feature-flagged off by default). MCP client and A2A refuse AirGapped **and** SecureWorkstation; local MCP server stays allowed on SecureWorkstation.
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
 - `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-ashlar-api).

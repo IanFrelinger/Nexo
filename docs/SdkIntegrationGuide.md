@@ -43,7 +43,7 @@ services.AddAshlar(options =>
 
 - **Bricks:** Implement `Brick` (domain behavior unit). Register via `sdk.RegisterBrick<T>()`.
 - **Agents:** Implement `IAgent` and provide an `AgentCard`. Register via `sdk.RegisterAgent<T>()` + `sdk.RegisterAgentCard(...)`.
-- **Background agents:** Configure via agent set JSON. In-tree examples: `apps/runtime-studio/config/agent_set.local.json` and the dogfood campaign set `docs/background-agents/examples/dogfood-campaign.json`. The extracted release-manager vertical lives at [github.com/IanFrelinger/ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager).
+- **Background agents:** Configure via agent set JSON. In-tree examples: `apps/runtime-studio/config/agent_set.local.json` and the dogfood campaign set `docs/background-agents/examples/dogfood-campaign.json`. The extracted release-manager vertical lives at [ashlar-release-manager](https://github.com/IanFrelinger/ashlar-release-manager).
 
 ## Reference Integration
 
@@ -84,17 +84,26 @@ services.AddAshlar(opts =>
 });
 ```
 
-### 3. Air-Gapped Deployment
+### 3. Offline and workstation profiles
 
-Run Ashlar with no cloud connectivity:
+Run Ashlar with no cloud connectivity. `AirGapped` is the slim profile (no
+trust, agents, or observation). For an IDE / workstation daemon that still
+needs local trust and agents, use `SecureWorkstation` instead (or
+`products/ashlar-workstation` `AddAshlarWorkstation()`).
 
 ```csharp
 services.AddAshlarProfile(AshlarDeploymentProfile.AirGapped, opts =>
 {
     opts.StrictMode.Enabled = true;
-    opts.TrustEnabled = true;
+    // TrustEnabled=true is a no-op here: AirGapped does not register trust services.
 });
 // Set ASHLAR_ALLOW_MOCK=1 or use Ollama locally
+
+services.AddAshlarProfile(AshlarDeploymentProfile.SecureWorkstation, opts =>
+{
+    opts.TrustEnabled = true; // required: the profile registers trust services but does not enable them
+});
+// Or: services.AddAshlarWorkstation(); // re-asserts SecureWorkstation + TrustEnabled after configure
 ```
 
 ## CI Validation

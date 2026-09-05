@@ -71,7 +71,7 @@ that project directly against an applied extraction fails too.
 
 **Tier 1 is empty.** Every candidate has an inbound reference from code that stays.
 
-`scripts/handoff/extract-game-layer.sh` now runs an inbound-reference check first
+The extract-game-layer handoff script (removed with the game vertical) ran an inbound-reference check first
 and **refuses `--apply`** while any blocker stands. Current output:
 
 ```
@@ -182,7 +182,7 @@ Given the extraction is now blocked pending a refactor, **do the rename first.**
 - **Git**, and **bash** (Git Bash is fine — the scripts are POSIX-ish bash).
 - No provider credentials. The kernel build and cert gate run offline.
 
-### Tests must run in the dev container — `scripts/handoff/devbox.sh`
+### Tests must run in the dev container — the handoff devbox script (removed)
 
 `dotnet build Nexo.Kernel.sln` is **green** on the host — 0 warnings, 0 errors, 80s.
 But `bash scripts/run-cert-gate.sh` **cannot run on the host at all**:

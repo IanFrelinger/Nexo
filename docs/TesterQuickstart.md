@@ -27,9 +27,9 @@ Run from the repository root (the doctor's CLI smoke check re-invokes `dotnet ru
 dotnet run --project application/src/Ashlar.CLI -- doctor
 ```
 
-Look for the `overall: PASS` line (it is followed by a few "recommended next steps"). `container smoke: warn` is normal when Docker is absent; the container lane is optional. Add `--json` for machine-readable output.
+Look for the `overall: PASS` line (it is followed by a few "recommended next steps"). `container smoke: warn` is normal when Docker is absent or the daemon does not answer within eight seconds; the container lane is optional. Add `--json` for machine-readable output.
 
-Known trap: `doctor` probes `docker info` with no timeout (`application/src/Ashlar.CLI/Commands/BootstrapRuntime.cs`, the `docker` dependency probe). If Docker Desktop is installed but its daemon is wedged, `doctor` hangs at that probe; quit Docker Desktop (or run with the Docker CLI off `PATH`) and re-run.
+`doctor` probes the Docker **daemon** with a timed `docker info` (eight seconds, then the process tree is killed). It does **not** pull `ghcr.io/ianfrelinger/nexo-cli:latest` as a blocking smoke. If Docker Desktop is installed but wedged, expect `container smoke: warn` and `docker daemon did not answer within 8s` rather than a hang. The recommended next step still names `docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help` for an operator who wants the published image.
 
 ## 3. The hero: submit a task, read the audit trail
 
@@ -109,7 +109,7 @@ dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -
 
 Watch for the pair that defines the gate: `GoodBrick_StrongWitness_Admits_WithZeroEscapeRate` (ADMIT, `escape_rate=0`) and `WeakWitness_AllowsMutantEscapes_RejectsWithTeeth` (REJECT on `mutation`). The ledger row for each, with the CI run that proved it, is in `docs/certification-evidence.md`.
 
-To author something the gate can judge, start from the reference brick: `samples/hello-brick/README.md` (`dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj`), then `docs/AuthoringBricks.md`. That sample uses a `ProjectReference` into `src/` because it lives in this checkout; a brick you intend to **certify** must instead be its own project referencing only `Ashlar.Brick.Contracts` and/or `Ashlar.Authoring` as packages — `docs/CertificationGate.md` explains why, and how to drive the gate yourself.
+To author something the gate can judge, start from the reference brick: `samples/hello-brick/README.md` (`dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj`), then `docs/AuthoringBricks.md`. The sample uses a `ProjectReference` into `src/` (no feed required). Packages on nuget.org pin `ci/published-version`.
 
 ## 5. What to test, what to report
 
@@ -128,7 +128,7 @@ Report through the issue templates: `.github/ISSUE_TEMPLATE/bug_report.md`, `.gi
 - The certification gate's own limits are listed under **Known v0 limitations** in `docs/certification-evidence.md`, now nine rows: a development HMAC signer rather than PKI, a type-level (not semantic) composition seam check, runtime-derived expected test counts, the exact boundary of session containment — and, added 2026-08-27, two ways a forged record can be made to verify (a signature downgrade, limitation 7, and a schema downgrade that additionally frees the gate name and the list of gates passed from the signed bytes, limitation 8) plus a composition signer that discards an explicitly supplied key (limitation 9). Read 7–9 before judging any certificate.
 - The **autonomy loop is experimental and ships in hold mode**: it certifies fully and admits nothing (`HoldAdmission=true` by default, `src/Ashlar.Infrastructure/Autonomy/AshlarAutonomyOptions.cs`). It needs a container engine and a local model server, and its evidence so far is spike-grade (`docs/certification-evidence.md`, rows P2 through S5). Start from `samples/autonomy-objectives/README.md`; the flight runner `spikes/autonomy-first-flight/run-first-flight.ps1` is a spike, not a supported entry point (`spikes/README.md`).
 - Local defaults are HTTP-only with no auth. That is intentional for this page and wrong for any network.
-- `Ashlar.*` is on nuget.org at `0.1.1`; consume by `PackageReference` (`docs/ConsumingFromNuGet.md`, pins in `consumer-template/CONSUMING.md`) or, inside this checkout, by `ProjectReference` (`samples/hello-brick/`).
+- No packages are on nuget.org yet; consume by `ProjectReference` (`samples/hello-brick/`) or from a feed you supply (`consumer-template/CONSUMING.md`).
 - The mock provider proves the plumbing and the record, not model quality.
 
 Next: `docs/GettingStarted.md` for the pipeline and CLI tour, `docs/CopilotMvpWalkthrough.md` for the portal and trust-control commands, `docs/IntegratorGuide.md` to embed Ashlar in your own host, `docs/DocsIndex.md` for everything else.

@@ -98,6 +98,73 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
+    public Task ReplaceRetriesWindowsSharingDenial_ThenLandsTheStagedRecord()
+    {
+        var dest = Path.Combine(TempDir, "retry-dest.json");
+        var staged = dest + $".{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(dest, "previous-verdict");
+        File.WriteAllText(staged, "new-verdict");
+
+        var attempts = 0;
+        AtomicRecordReplace.IntoPlace(staged, dest, (source, destination) =>
+        {
+            attempts++;
+            if (attempts < 3)
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            File.Move(source, destination, overwrite: true);
+        });
+
+        attempts.Should().Be(3, "two sharing denials must be retried, not surfaced");
+        File.ReadAllText(dest).Should().Be("new-verdict");
+        File.Exists(staged).Should().BeFalse();
+        return Task.CompletedTask;
+    }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
+    public Task ReplaceExhaustsRetries_ThenThrows_LeavingThePreviousVerdict()
+    {
+        var dest = Path.Combine(TempDir, "retry-exhausted.json");
+        var staged = dest + $".{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(dest, "previous-verdict");
+        File.WriteAllText(staged, "new-verdict");
+
+        var attempts = 0;
+        var act = () => AtomicRecordReplace.IntoPlace(staged, dest, (_, _) =>
+        {
+            attempts++;
+            throw new UnauthorizedAccessException("Access to the path is denied.");
+        });
+
+        act.Should().Throw<UnauthorizedAccessException>();
+        attempts.Should().Be(AtomicRecordReplace.MaxAttempts);
+        File.ReadAllText(dest).Should().Be("previous-verdict", "a persistent denial must not shred the live record");
+        File.Exists(staged).Should().BeTrue("the staged file stays for the caller to clean up");
+        return Task.CompletedTask;
+    }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
+    public Task LoadRefusal_PersistsAVerifiableFail_AndNeverAdmits()
+    {
+        var signer = new CertificationRecordSigner();
+        var store = new FileCertificationRecordStore(TempDir, signer);
+        var record = LoadRefusalRecord.Create(
+            signer,
+            BrickId,
+            "il-import fence: P/Invoke to libc!exit");
+
+        store.Save(record);
+
+        var loaded = store.Get(BrickId);
+        loaded.Should().NotBeNull("a load refuse must be evidence, not an absent file");
+        loaded!.Admitted.Should().BeFalse();
+        loaded.Status.Should().Be("FAIL");
+        loaded.Stage.Should().Be(LoadRefusalRecord.Stage);
+        loaded.Reason.Should().Contain("P/Invoke");
+        store.IsAdmitted(BrickId).Should().BeFalse();
+        return Task.CompletedTask;
+    }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
     public Task AStrayStagingFile_IsNotReadAsARecord()
     {
         // A crash between staging and moving leaves a staging file behind. It must be inert:

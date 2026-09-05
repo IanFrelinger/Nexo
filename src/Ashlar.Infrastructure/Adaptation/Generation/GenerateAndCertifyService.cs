@@ -64,7 +64,8 @@ public sealed class GenerateAndCertifyService : IGenerateAndCertifyService
             SourceCode = built.SourceCode,
             ProjectPath = built.ProjectPath,
             CompilationReferences = built.CompilationReferences,
-            BrickTypeName = built.BrickTypeName
+            BrickTypeName = built.BrickTypeName,
+            EmittedArtifact = built.EmittedArtifact
         };
 
         var decision = await _admission.CertifyAndAdmitAsync(request, cancellationToken).ConfigureAwait(false);

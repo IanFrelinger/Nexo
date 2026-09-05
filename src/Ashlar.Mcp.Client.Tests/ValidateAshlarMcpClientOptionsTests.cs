@@ -40,6 +40,27 @@ public sealed class ValidateAshlarMcpClientOptionsTests
         Validator.Validate(null, Enabled(Server())).Succeeded.Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("secure-workstation")]
+    [InlineData("workstation")]
+    [InlineData("SecureWorkstation")]
+    [InlineData("secure_workstation")]
+    public void Enabled_under_secure_workstation_profile_fails(string profile)
+    {
+        Environment.SetEnvironmentVariable(ValidateAshlarMcpClientOptions.DeploymentProfileVariable, profile);
+        try
+        {
+            var result = Validator.Validate(null, Enabled(Server()));
+
+            result.Failed.Should().BeTrue();
+            result.FailureMessage.Should().Contain("SecureWorkstation");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ValidateAshlarMcpClientOptions.DeploymentProfileVariable, null);
+        }
+    }
+
     [Fact]
     public void Enabled_under_airgapped_profile_fails()
     {

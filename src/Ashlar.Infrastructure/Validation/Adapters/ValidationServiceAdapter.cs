@@ -293,6 +293,9 @@ public class ValidationServiceAdapter : IValidationService
             if (segment.Equals("templates", StringComparison.OrdinalIgnoreCase) ||
                 segment.Equals("template", StringComparison.OrdinalIgnoreCase))
                 return false;
+            // Author-shaped fixture projects for the cert-gate corpus, not runnable tests.
+            if (segment.Equals("adversarial-corpus", StringComparison.OrdinalIgnoreCase))
+                return false;
         }
 
         return true;

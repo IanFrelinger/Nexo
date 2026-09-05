@@ -21,6 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
     <ProjectReference Include="..\Ashlar.AI.Pipeline\Ashlar.AI.Pipeline.csproj" />
     <ProjectReference Include="..\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
     <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />

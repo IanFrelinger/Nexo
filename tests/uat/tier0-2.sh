@@ -86,7 +86,7 @@ fi
 # of Docker -- a property of one test environment -- as though it were a product claim, and duly failed
 # on a CI runner that has Docker while doctor was reporting correctly.
 SMOKE=$(grep -ioE 'container smoke: *[a-z]+' "$OUT/doctor.log" | head -1 | sed 's/.*: *//' | tr 'A-Z' 'a-z')
-if docker info >/dev/null 2>&1; then
+if timeout 8 docker info >/dev/null 2>&1; then
   if [ "$SMOKE" = "pass" ]; then
     result 0 doctor-container-truthful PASS "docker reachable and doctor says 'container smoke: pass'"
   else
@@ -132,7 +132,14 @@ echo "doc prints: $DOC_CMD"
 timeout 180 env $DOC_CMD >"$OUT/api-verbatim.log" 2>&1 &
 V_PID=$!
 for _ in $(seq 1 60); do
-  grep -qE 'Now listening on:|Unable to run your project|error' "$OUT/api-verbatim.log" 2>/dev/null && break
+  # Do not match a bare "error" substring. MCP/A2A map-disabled info lines and MSBuild
+  # "0 Error(s)" made the old pattern stop before Kestrel printed "Now listening on:".
+  if grep -q 'Now listening on:' "$OUT/api-verbatim.log" 2>/dev/null; then
+    break
+  fi
+  if grep -qE 'Unable to run your project|Hosting failed to start|Build FAILED' "$OUT/api-verbatim.log" 2>/dev/null; then
+    break
+  fi
   kill -0 $V_PID 2>/dev/null || break
   sleep 2
 done

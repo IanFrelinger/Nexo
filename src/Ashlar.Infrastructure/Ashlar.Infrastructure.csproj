@@ -44,6 +44,7 @@
         <PackageReference Include="Microsoft.Extensions.Options" />
         <PackageReference Include="Docker.DotNet" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+        <PackageReference Include="Mono.Cecil" />
         <PackageReference Include="ICSharpCode.Decompiler" />
     <PackageReference Include="LiteDB" />
     <PackageReference Include="QuestPDF" />

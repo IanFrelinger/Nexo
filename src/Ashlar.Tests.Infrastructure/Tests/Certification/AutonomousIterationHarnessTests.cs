@@ -329,8 +329,7 @@ public sealed class AutonomousIterationHarnessTests
         CompilationReferences =
         [
             typeof(DomainBrick).Assembly.Location,
-            typeof(BrickInput).Assembly.Location,
-            typeof(MutationProbeBrick).Assembly.Location
+            typeof(BrickInput).Assembly.Location
         ],
         BrickTypeName = typeof(MutationProbeBrick).FullName,
     };

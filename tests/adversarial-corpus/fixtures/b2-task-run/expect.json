@@ -1,0 +1,9 @@
+{
+  "id": "b2-task-run",
+  "class": "B",
+  "item": "B2",
+  "phase": "load",
+  "expect": "refuse",
+  "reasonContains": "Task::Run",
+  "note": "Round-13 attack: Task.Run is fire-and-forget on the certifier thread pool."
+}
