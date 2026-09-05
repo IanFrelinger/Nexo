@@ -32,7 +32,10 @@ public sealed class MeshCommand : Command
         var setTrustTierOpt = new Option<string?>("--set-trust-tier", "Update peer trust tier using <peerId>:<trusted|untrusted|unknown> in instances.json");
 
         var syncCmd = new Command("sync", "Pull shared adaptations from trusted peers and adopt after validation (P2.3)");
-        syncCmd.SetHandler(async (InvocationContext ctx) => await ExecuteSyncAsync());
+        syncCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            ctx.ExitCode = await ExecuteSyncAsync();
+        });
 
         var capabilitiesCmd = new Command("capabilities", "Show local instance capabilities for mesh negotiation");
         capabilitiesCmd.SetHandler(ExecuteCapabilities);
@@ -46,7 +49,8 @@ public sealed class MeshCommand : Command
         {
             var componentId = ctx.ParseResult.GetValueForArgument(exportComponentArg);
             var to = ctx.ParseResult.GetValueForOption(exportToOpt)!;
-            await ExecuteExportAsync(to, componentId);
+            // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
+            ctx.ExitCode = await ExecuteExportAsync(to, componentId);
         });
 
         var importPathArg = new Argument<string>("path", "Path to .nxpkg import file");
@@ -55,7 +59,7 @@ public sealed class MeshCommand : Command
         importCmd.SetHandler(async (InvocationContext ctx) =>
         {
             var path = ctx.ParseResult.GetValueForArgument(importPathArg)!;
-            await ExecuteImportAsync(path);
+            ctx.ExitCode = await ExecuteImportAsync(path);
         });
 
         var peersCmd = new Command("peers", "List peers from local instances.json (open mesh primitive; not fleet director nodes)");
@@ -164,7 +168,7 @@ public sealed class MeshCommand : Command
         Environment.ExitCode = 0;
     }
 
-    private static async Task ExecuteSyncAsync()
+    private static async Task<int> ExecuteSyncAsync()
     {
         var sharedPath = Environment.GetEnvironmentVariable("ASHLAR_SHARED_ADAPTATIONS_PATH");
         var services = new ServiceCollection()
@@ -185,10 +189,10 @@ public sealed class MeshCommand : Command
             if (ok) adopted++;
         }
         Console.WriteLine($"Adopted {adopted}/{entries.Count}.");
-        Environment.ExitCode = 0;
+        return 0;
     }
 
-    private static async Task ExecuteExportAsync(string outputPath, string? componentId = null)
+    private static async Task<int> ExecuteExportAsync(string outputPath, string? componentId = null)
     {
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
@@ -200,11 +204,17 @@ public sealed class MeshCommand : Command
         var transport = services.GetRequiredService<ISneakernetTransport>();
         await transport.ExportAsync(outputPath, componentId).ConfigureAwait(false);
         Console.WriteLine($"Exported to {outputPath}");
-        Environment.ExitCode = 0;
+        return 0;
     }
 
-    private static async Task ExecuteImportAsync(string inputPath)
+    private static async Task<int> ExecuteImportAsync(string inputPath)
     {
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Import file not found: {inputPath}");
+            return 1;
+        }
+
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
             .AddCodeAnalyzers()
@@ -215,7 +225,7 @@ public sealed class MeshCommand : Command
         var transport = services.GetRequiredService<ISneakernetTransport>();
         var adopted = await transport.ImportAsync(inputPath).ConfigureAwait(false);
         Console.WriteLine($"Imported {adopted} adaptation(s) from {inputPath}");
-        Environment.ExitCode = 0;
+        return 0;
     }
 
     private static async Task<int> ExecuteAsync(bool discover, bool advertise, string? capability, string? setTrustTier)

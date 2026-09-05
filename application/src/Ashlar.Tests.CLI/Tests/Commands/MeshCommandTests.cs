@@ -20,6 +20,7 @@ public sealed class MeshCommandTests : UnitTestBase
             await TestHealthRefusedConnectionExitsNonZeroAsync().ConfigureAwait(false);
             await TestSetTrustTierInvalidValueExitsNonZeroAsync().ConfigureAwait(false);
             await TestSetTrustTierMissingPeerExitsNonZeroAsync().ConfigureAwait(false);
+            await TestImportMissingFileExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(MeshCommandTests),
@@ -262,6 +263,30 @@ public sealed class MeshCommandTests : UnitTestBase
             Environment.SetEnvironmentVariable("ASHLAR_MESH_INSTANCES_PATH", previousPath);
             if (Directory.Exists(tempRoot))
                 Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    // #455: a missing sneakernet file used to log a warning, print "Imported 0", and exit 0.
+    private async Task TestImportMissingFileExitsNonZeroAsync()
+    {
+        var missing = Path.Combine(Path.GetTempPath(), $"ashlar-no-such-{Guid.NewGuid():N}.nxpkg");
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var exitCode = await root.InvokeAsync($"mesh import {missing}").ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "mesh import of a missing file must exit non-zero, not 0.");
+            var output = writer.ToString();
+            AssertTrue(output.Contains("not found", StringComparison.OrdinalIgnoreCase),
+                "A missing import file must be refused legibly.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 }
