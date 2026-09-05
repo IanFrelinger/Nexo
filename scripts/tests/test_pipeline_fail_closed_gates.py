@@ -166,7 +166,7 @@ class SecurityTierBCountedNet10Tests(unittest.TestCase):
         text = (ROOT / "scripts" / "security-gate-tier-b.sh").read_text(encoding="utf-8")
         self.assertIn("run-dotnet-test-counted.py", text)
         self.assertIn("-f net10.0", text)
-        self.assertIn("--min-tests", text)
+        self.assertIn("--min-tests 44", text)
         self.assertNotIn('dotnet test "$INFRA" -f net8.0', text)
         self.assertNotIn('dotnet build "$INFRA" -f net8.0', text)
 

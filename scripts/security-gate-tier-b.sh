@@ -13,7 +13,7 @@ echo "== Security Tier B: API security middleware (net10.0, counted) =="
 ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
   --project "$INFRA" \
   --expected-prefix "Ashlar.Tests.Infrastructure." \
-  --min-tests 40 \
+  --min-tests 44 \
   -- \
   -f net10.0 \
   --filter "FullyQualifiedName~AshlarApiKeyAuthMiddlewareTests|FullyQualifiedName~MeshSecurityMiddlewareTests|FullyQualifiedName~AshlarApiOpenInternetReadinessTests|FullyQualifiedName~SecurityAdvisoryEndpointTests|FullyQualifiedName~SecurityAnalysisRuleTests" \
