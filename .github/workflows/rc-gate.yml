@@ -72,6 +72,12 @@ jobs:
           ASHLAR_ALLOW_MOCK: "1"
         run: dotnet run --project application/src/Ashlar.CLI -- ci release-bundle --profile quick
 
+      - name: Produce supply-chain evidence
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c' || inputs.tier == 'full'
+        run: make security-gate-tier-d
+        env:
+          SECURITY_GATE_STRICT_SUPPLY_CHAIN: "1"
+
       - name: Tier C (evidence)
         if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c' || inputs.tier == 'full'
         run: make rc-gate-tier-c

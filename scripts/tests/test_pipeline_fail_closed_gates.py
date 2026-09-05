@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 82", text)
+        self.assertIn("--min-tests 83", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -532,6 +532,14 @@ class RcGateWorkflowTests(unittest.TestCase):
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'e'",
             text,
         )
+
+    def test_rc_gate_workflow_produces_supply_chain_evidence(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "rc-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("make security-gate-tier-d", text)
+        self.assertIn("SECURITY_GATE_STRICT_SUPPLY_CHAIN", text)
+        self.assertIn("make rc-gate-tier-c", text)
 
 
 class ApplicationTierCCountedApiTests(unittest.TestCase):
@@ -1119,10 +1127,18 @@ class RcTierDFailClosedTests(unittest.TestCase):
 
 
 class RcTierCFailClosedTests(unittest.TestCase):
-    def _run_c(self, bundle: Path | None) -> subprocess.CompletedProcess[str]:
+    def _run_c(
+        self,
+        bundle: Path | None,
+        *,
+        vuln: Path | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
         env["RC_GATE_BUNDLE_JSON"] = (
             str(bundle) if bundle is not None else "/nonexistent/release-bundle-report.json"
+        )
+        env["RC_GATE_VULN_REPORT"] = (
+            str(vuln) if vuln is not None else "/nonexistent/vulnerable-packages.txt"
         )
         return subprocess.run(
             ["bash", str(ROOT / "scripts" / "rc-gate-tier-c.sh")],
@@ -1134,8 +1150,14 @@ class RcTierCFailClosedTests(unittest.TestCase):
             check=False,
         )
 
+    def _clean_vuln(self, directory: Path) -> Path:
+        path = directory / "vulnerable-packages.txt"
+        path.write_text("--- application/Ashlar.Application.sln ---\n", encoding="utf-8")
+        return path
+
     def test_rc_tier_c_fails_when_bundle_missing(self) -> None:
-        run = self._run_c(None)
+        with tempfile.TemporaryDirectory() as tmp:
+            run = self._run_c(None, vuln=self._clean_vuln(Path(tmp)))
         self.assertEqual(1, run.returncode)
         self.assertIn("release-bundle: missing", run.stdout)
         self.assertIn("rc-gate-tier-c: FAIL", run.stdout)
@@ -1145,7 +1167,7 @@ class RcTierCFailClosedTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             bundle = Path(tmp) / "release-bundle-report.json"
             bundle.write_text('{"verdict": "FAIL"}\n', encoding="utf-8")
-            run = self._run_c(bundle)
+            run = self._run_c(bundle, vuln=self._clean_vuln(Path(tmp)))
         self.assertEqual(1, run.returncode)
         self.assertIn("release-bundle: FAIL", run.stdout)
         self.assertIn("rc-gate-tier-c: FAIL", run.stdout)
@@ -1155,10 +1177,42 @@ class RcTierCFailClosedTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             bundle = Path(tmp) / "release-bundle-report.json"
             bundle.write_text('{"verdict": "PASS"}\n', encoding="utf-8")
-            run = self._run_c(bundle)
+            run = self._run_c(bundle, vuln=self._clean_vuln(Path(tmp)))
         self.assertEqual(0, run.returncode)
         self.assertIn("release-bundle: PASS", run.stdout)
         self.assertIn("rc-gate-tier-c: PASS", run.stdout)
+
+    def test_rc_tier_c_script_fails_closed_on_security_evidence(self) -> None:
+        text = (ROOT / "scripts" / "rc-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("security: no vulnerable-packages report", text)
+        self.assertIn("security: High/Critical CVEs detected", text)
+        self.assertNotIn("RC_GATE_STRICT_SECURITY", text)
+        plan = (ROOT / "docs" / "production-readiness" / "RCHardeningPlan-v1.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("RC_GATE_STRICT_SECURITY", plan)
+
+    def test_rc_tier_c_fails_when_vuln_report_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp) / "release-bundle-report.json"
+            bundle.write_text('{"verdict": "PASS"}\n', encoding="utf-8")
+            run = self._run_c(bundle, vuln=None)
+        self.assertEqual(1, run.returncode)
+        self.assertIn("security: no vulnerable-packages report", run.stdout)
+        self.assertIn("rc-gate-tier-c: FAIL", run.stdout)
+        self.assertNotIn("rc-gate-tier-c: PASS", run.stdout)
+
+    def test_rc_tier_c_fails_when_high_critical_cves_present(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp) / "release-bundle-report.json"
+            bundle.write_text('{"verdict": "PASS"}\n', encoding="utf-8")
+            vuln = Path(tmp) / "vulnerable-packages.txt"
+            vuln.write_text("Severity: High\n", encoding="utf-8")
+            run = self._run_c(bundle, vuln=vuln)
+        self.assertEqual(1, run.returncode)
+        self.assertIn("security: High/Critical CVEs detected", run.stdout)
+        self.assertIn("rc-gate-tier-c: FAIL", run.stdout)
+        self.assertNotIn("rc-gate-tier-c: PASS", run.stdout)
 
 
 class RcTierEFailClosedTests(unittest.TestCase):

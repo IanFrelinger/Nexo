@@ -29,19 +29,15 @@ else
 fi
 
 echo "== RC Tier C: security supply-chain reports =="
-if [ -f ".ashlar/security-gate/vulnerable-packages.txt" ]; then
-  if grep -qiE 'Severity:\s*(High|Critical)|critical|high severity' ".ashlar/security-gate/vulnerable-packages.txt"; then
-    if [ "${RC_GATE_STRICT_SECURITY:-0}" = "1" ]; then
-      note "security: High/Critical CVEs detected (strict)"
-      fail=1
-    else
-      warn "security: High/Critical CVEs detected — review .ashlar/security-gate/"
-    fi
-  else
-    note "security: no High/Critical in vulnerable-packages.txt"
-  fi
+VULN_REPORT="${RC_GATE_VULN_REPORT:-.ashlar/security-gate/vulnerable-packages.txt}"
+if [ ! -f "$VULN_REPORT" ]; then
+  note "security: no vulnerable-packages report ($VULN_REPORT)"
+  fail=1
+elif grep -qiE 'Severity:\s*(High|Critical)|critical|high severity' "$VULN_REPORT"; then
+  note "security: High/Critical CVEs detected ($VULN_REPORT)"
+  fail=1
 else
-  warn "security: no vulnerable-packages report (run make security-gate-tier-d)"
+  note "security: no High/Critical in $VULN_REPORT"
 fi
 
 echo "== RC Tier C: runtime SLO evidence =="

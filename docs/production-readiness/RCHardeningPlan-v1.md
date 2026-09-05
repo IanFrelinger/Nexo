@@ -2,7 +2,7 @@
 
 Moves from **security gate green** to **release-ready with evidence** — mirrors [Release candidate checklist v1](../ReleaseCandidateChecklist-v1.md).
 
-**Automation:** `make rc-gate-full`. PRs that touch RC docs, `docs/exceptions.yaml`, or `scripts/rc-gate*.sh` produce a `ci release-bundle` then run Tier C and Tier E. A/B/D stay dispatch-only.
+**Automation:** `make rc-gate-full`. PRs that touch RC docs, `docs/exceptions.yaml`, or `scripts/rc-gate*.sh` produce a `ci release-bundle` and Security D supply-chain evidence, then run Tier C and Tier E. A/B/D stay dispatch-only.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ make security-gate-full
 | `RC_GATE_SKIP_DOCKER=1` | Tier A: `ASHLAR_READY_SKIP_DOCKER=1` |
 | `RC_GATE_RELEASE_BUNDLE_FULL=1` | Tier B: also `ci release-bundle --profile full` |
 | `RC_GATE_BUNDLE_JSON` | Tier C: override path to `release-bundle-report.json` |
-| `RC_GATE_STRICT_SECURITY=1` | Tier C fails on High/Critical CVEs |
+| `RC_GATE_VULN_REPORT` | Tier C: override path to `vulnerable-packages.txt` (missing or High/Critical fails) |
 | `RC_GATE_TRIGGER_GH=1` | Tier D: dispatch + watch on workflow miss |
 | `RC_GATE_GH_BRANCH=master` | Branch for `gh run list` |
 | `RC_GATE_RUN_PUBLISH=1` | Tier D: require `container-image-publish` green |

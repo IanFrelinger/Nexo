@@ -13,6 +13,7 @@ else
 fi
 
 bash scripts/rc-gate-tier-b.sh
+SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 bash scripts/security-gate-tier-d.sh
 bash scripts/rc-gate-tier-c.sh
 bash scripts/rc-gate-tier-d.sh
 

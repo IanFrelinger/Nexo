@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 82");
+        text.Should().Contain("--min-tests 83");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -373,6 +373,22 @@ public sealed class EnrolledSuiteConventionTests
         var workflow = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             ".github/workflows/rc-gate.yml"));
         workflow.Should().Contain("ci release-bundle --profile quick");
+        workflow.Should().Contain("make rc-gate-tier-c");
+    }
+
+    [Fact]
+    public void RcTierC_FailsClosedOnSecurityEvidence()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/rc-gate-tier-c.sh"));
+        text.Should().Contain("security: no vulnerable-packages report");
+        text.Should().Contain("security: High/Critical CVEs detected");
+        text.Should().Contain("rc-gate-tier-c: FAIL");
+        text.Should().NotContain("RC_GATE_STRICT_SECURITY");
+        var workflow = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/rc-gate.yml"));
+        workflow.Should().Contain("make security-gate-tier-d");
+        workflow.Should().Contain("SECURITY_GATE_STRICT_SUPPLY_CHAIN");
         workflow.Should().Contain("make rc-gate-tier-c");
     }
 
