@@ -75,6 +75,10 @@ if ! command -v docker >/dev/null 2>&1; then
   echo "prod-dry-run requires Docker (docker compose). Install Docker Engine and the Compose plugin, then retry." >&2
   exit 2
 fi
+if ! docker info >/dev/null 2>&1; then
+  echo "prod-dry-run requires a working Docker daemon (docker info failed)." >&2
+  exit 2
+fi
 
 echo "=== Prod-shaped dry run ==="
 echo "Compose: $COMPOSE_FILE"

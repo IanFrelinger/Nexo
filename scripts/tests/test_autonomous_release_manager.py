@@ -843,6 +843,33 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
         self.assertIn("does not match VERSION file", run.stdout)
         self.assertNotIn("Pack graph vs MSBuild", run.stdout)
 
+    def test_prod_dry_run_refuses_dead_daemon(self) -> None:
+        repo = SCRIPT.parents[1]
+        with tempfile.TemporaryDirectory() as temp:
+            fake_bin = Path(temp)
+            docker_log = fake_bin / "docker.log"
+            docker = fake_bin / "docker"
+            docker.write_text(
+                f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> {str(docker_log)!r}\n"
+                "if [ \"$1\" = info ]; then exit 1; fi\nexit 0\n",
+                encoding="utf-8",
+            )
+            docker.chmod(0o755)
+            environment = os.environ.copy()
+            environment["PATH"] = f"{fake_bin}{os.pathsep}{environment['PATH']}"
+            run = subprocess.run(
+                ["bash", "scripts/prod-dry-run.sh", "--portal", "--no-build"],
+                cwd=repo,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        self.assertEqual(2, run.returncode)
+        self.assertIn("working Docker daemon", run.stdout)
+        self.assertNotIn("compose ", docker_log.read_text(encoding="utf-8"))
+
     def test_prod_dry_run_cleans_stack_on_failure(self) -> None:
         repo = SCRIPT.parents[1]
         with tempfile.TemporaryDirectory() as temp:
