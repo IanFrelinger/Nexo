@@ -156,7 +156,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/cert-gate-config.sh"));
         var guard = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             "scripts/cert-gate-zero-test-guard.sh"));
-        config.Should().Contain("readonly CERT_GATE_MIN_TESTS=400");
+        config.Should().Contain("readonly CERT_GATE_MIN_TESTS=447");
         guard.Should().Contain("CERT_GATE_MIN_TESTS");
         guard.Should().Contain("discovery collapsed");
     }

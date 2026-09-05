@@ -13,9 +13,11 @@ readonly CERT_GATE_FILTER='(FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests
 # enumeration summed to 99 while the gate actually ran 178.
 #
 # CERT_GATE_MIN_TESTS is a collapse floor, not the live total. Product-suite listed
-# count was 447 after excluding EnrolledSuiteConventionTests. Raise the floor when
-# the suite earns it. Do not lower it to turn a red build green.
-readonly CERT_GATE_MIN_TESTS=400
+# count (wc -l of --list-tests after excluding EnrolledSuiteConventionTests) is 447.
+# The previous floor of 400 let 47 listed rows vanish before the required check
+# failed. Raise the floor when the suite grows. Do not lower it to turn a red
+# build green.
+readonly CERT_GATE_MIN_TESTS=447
 #
 # Excluded from cert-gate filter: LocalFixtures.CompositionAcceptanceRateBatchFixtureGeneratorTests (local fixture regen only)
 
