@@ -268,6 +268,38 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual("blocked", verdict)
             self.assertIn("**BLOCKED**", markdown.read_text(encoding="utf-8"))
 
+    def test_intentional_skip_does_not_add_incomplete_lanes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            json_path, _, verdict = arm.write_reports(
+                output_directory=Path(temp),
+                run_id="run",
+                started_at="2026-09-05T00:00:00+00:00",
+                completed_at="2026-09-05T00:00:01+00:00",
+                sha="a" * 40,
+                version="0.1.2",
+                plan_sha256="1" * 64,
+                coordinator_sha256="2" * 64,
+                findings=[
+                    {
+                        "id": "candidate-version-not-advanced",
+                        "severity": "blocker",
+                        "message": "VERSION is not a candidate.",
+                    },
+                    {
+                        "id": "commands-not-started",
+                        "severity": "info",
+                        "message": "Repository state is unsafe; audit commands were not started.",
+                    },
+                ],
+                lane_results=[],
+            )
+            report = json.loads(json_path.read_text(encoding="utf-8"))
+        self.assertEqual("blocked", verdict)
+        self.assertNotIn(
+            "incomplete-lane-results",
+            {finding["id"] for finding in report["repositoryFindings"]},
+        )
+
     def test_duplicate_lane_results_cannot_produce_ready(self) -> None:
         results = [
             arm.LaneResult(

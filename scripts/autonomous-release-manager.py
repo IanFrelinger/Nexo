@@ -1332,7 +1332,16 @@ def write_reports(
     lane_results: list[LaneResult],
 ) -> tuple[Path, Path, str]:
     result_ids = [result.lane_id for result in lane_results]
-    if len(result_ids) != len(CANONICAL_LANES) or set(result_ids) != CANONICAL_LANES:
+    intentionally_skipped = any(
+        finding.get("id") == "commands-not-started" for finding in findings
+    )
+    if (
+        not intentionally_skipped
+        and (
+            len(result_ids) != len(CANONICAL_LANES)
+            or set(result_ids) != CANONICAL_LANES
+        )
+    ):
         findings = [
             *findings,
             {
