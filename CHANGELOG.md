@@ -38,6 +38,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Security Tier E fail-closed** — `SECURITY_GATE_AIRGAPPED_CONTAINER=1` requires a working Docker daemon instead of warning-and-passing. Post-publish NuGet consumer verify pins Actions to commit SHAs.
 - **Release preflight integrity** — Bash and PowerShell preflights now require the requested version to match root `VERSION`; autonomous audit mode refuses external workflow dispatch.
 - **Ship Tier C uses the canonical `VERSION` file.** Fail-closed preflight rejects dummy prereleases such as `0.0.0-ship-gate-local`, so `ship-gate-tier-c` no longer defaults to one.
+- **Security Tier B runs the net10.0 API suite with a counted floor.** The previous `dotnet test -f net8.0` matched zero `Tests/API` cases (those files compile only on net10.0) and still exited 0.
 - **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
 - **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.
 - **Distributed contracts** factories reject undefined enums, malformed digests, non-positive duration, and succeeded evidence without a hash.

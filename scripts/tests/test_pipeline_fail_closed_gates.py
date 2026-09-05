@@ -161,6 +161,16 @@ class ShipGateTierCCanonicalVersionTests(unittest.TestCase):
         self.assertIn("not valid semver", run.stdout)
 
 
+class SecurityTierBCountedNet10Tests(unittest.TestCase):
+    def test_security_gate_tier_b_runs_counted_api_suite_on_net10(self) -> None:
+        text = (ROOT / "scripts" / "security-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("-f net10.0", text)
+        self.assertIn("--min-tests", text)
+        self.assertNotIn('dotnet test "$INFRA" -f net8.0', text)
+        self.assertNotIn('dotnet build "$INFRA" -f net8.0', text)
+
+
 class SecurityTierEFailClosedTests(unittest.TestCase):
     def test_airgapped_container_refuses_missing_docker(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

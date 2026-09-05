@@ -15,7 +15,7 @@ make ship-gate-full
 | Tier | Focus | Command |
 |------|--------|---------|
 | A | Trust core (policy packs, peer trust, audit, access boundary) | `make security-gate-tier-a` |
-| B | API security middleware (key/bearer/basic, mesh, open-internet readiness) | `make security-gate-tier-b` |
+| B | API security middleware on **net10.0** (key/bearer/basic, mesh, open-internet readiness; counted, fail-closed on zero tests) | `make security-gate-tier-b` |
 | C | Trust CLI (`trust boundary`, `trust dashboard`, `trust audit`) | `make security-gate-tier-c` |
 | D | Supply chain (vulnerable + deprecated packages) | `make security-gate-tier-d` |
 | E | Air-gapped + safety probes | `make security-gate-tier-e` |
