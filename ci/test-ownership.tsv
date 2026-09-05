@@ -47,8 +47,8 @@ samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj
 src/Ashlar.Analyzers.Tests/Ashlar.Analyzers.Tests.csproj	cert-gate	-	counted net8.0 floor (56) appended to the required cert-gate check [was UNOWNED until 2027-03-31]
 src/Ashlar.Ingress.AwsSns.Tests/Ashlar.Ingress.AwsSns.Tests.csproj	ingress-unit-gate	-	counted net8.0 floor (11) in ingress-unit-gate (ashlar-ready) [was UNOWNED until 2027-03-31]
 src/Ashlar.Ingress.DynamoDb.Tests/Ashlar.Ingress.DynamoDb.Tests.csproj	ingress-unit-gate	-	counted net8.0 floor (2) in ingress-unit-gate (ashlar-ready) [was UNOWNED until 2027-03-31]
-src/Ashlar.Mcp.Client.Tests/Ashlar.Mcp.Client.Tests.csproj	mcp-a2a-gate	-	MCP client
-src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj	mcp-a2a-gate	-	MCP server
+src/Ashlar.Mcp.Client.Tests/Ashlar.Mcp.Client.Tests.csproj	mcp-a2a-gate	-	counted net8.0 floor (33) in scripts/mcp-a2a-gate.sh
+src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj	mcp-a2a-gate	-	counted net8.0 floor (40) in scripts/mcp-a2a-gate.sh
 src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj	make-test	-	in Kernel and Runtime solutions
 src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj	kernel-coverage-gate	-	application layer
 src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj	perf-gate-tier-a	-	background agents
@@ -58,6 +58,6 @@ src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj	cert-gate	-	c
 src/Ashlar.Tests.Kernel/Ashlar.Tests.Kernel.csproj	kernel-gate	-	kernel
 src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj	perf-gate-tier-a	-	orchestration
 src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj	kernel-gate-tier-c	-	transport
-src/Ashlar.Transport.A2A.Server.Tests/Ashlar.Transport.A2A.Server.Tests.csproj	mcp-a2a-gate	-	A2A server
-src/Ashlar.Transport.A2A.Tests/Ashlar.Transport.A2A.Tests.csproj	mcp-a2a-gate	-	A2A client
+src/Ashlar.Transport.A2A.Server.Tests/Ashlar.Transport.A2A.Server.Tests.csproj	mcp-a2a-gate	-	counted net10.0 floor (19) in scripts/mcp-a2a-gate.sh
+src/Ashlar.Transport.A2A.Tests/Ashlar.Transport.A2A.Tests.csproj	mcp-a2a-gate	-	counted net8.0 floor (39) in scripts/mcp-a2a-gate.sh
 products/tests/Ashlar.Tests.Products/Ashlar.Tests.Products.csproj	products-gate	-	extractable product scaffolds; products/Ashlar.Products.sln

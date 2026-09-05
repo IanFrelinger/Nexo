@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mcp-a2a-gate.yml"
+      - "scripts/mcp-a2a-gate.sh"
+      - "scripts/run-dotnet-test-counted.py"
       - "src/Ashlar.Mcp.Server/**"
       - "src/Ashlar.Mcp.Server.Host/**"
       - "src/Ashlar.Mcp.Server.Tests/**"
@@ -24,6 +26,8 @@ on:
       - "application/**"   # branch-name pattern (application-tier work branches such as application/mcp-a2a), not a path
     paths:
       - ".github/workflows/mcp-a2a-gate.yml"
+      - "scripts/mcp-a2a-gate.sh"
+      - "scripts/run-dotnet-test-counted.py"
       - "src/Ashlar.Mcp.Server/**"
       - "src/Ashlar.Mcp.Server.Host/**"
       - "src/Ashlar.Mcp.Server.Tests/**"
@@ -57,33 +61,11 @@ jobs:
             8.0.x
             10.0.x
 
-      - name: MCP server bridge tests
+      - name: MCP + A2A adapter suites (counted)
         shell: bash
-        run: |
-          set -euo pipefail
-          dotnet test src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj \
-            --blame-hang-timeout 120s
-
-      - name: MCP client tests (incl. client<->server protocol round trips)
-        shell: bash
-        run: |
-          set -euo pipefail
-          dotnet test src/Ashlar.Mcp.Client.Tests/Ashlar.Mcp.Client.Tests.csproj \
-            --blame-hang-timeout 120s
-
-      - name: A2A transport tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          dotnet test src/Ashlar.Transport.A2A.Tests/Ashlar.Transport.A2A.Tests.csproj \
-            --blame-hang-timeout 120s
-
-      - name: A2A server tests (incl. full-wire TestServer round trips)
-        shell: bash
-        run: |
-          set -euo pipefail
-          dotnet test src/Ashlar.Transport.A2A.Server.Tests/Ashlar.Transport.A2A.Server.Tests.csproj \
-            --blame-hang-timeout 120s
+        run: bash scripts/mcp-a2a-gate.sh adapters
+        env:
+          ASHLAR_ALLOW_MOCK: "1"
 
   protocol-prodstyle:
     name: Ashlar.API protocol endpoints (ProdStyle)
@@ -100,11 +82,8 @@ jobs:
             8.0.x
             10.0.x
 
-      - name: ProdStyle protocol ingress tests
+      - name: ProdStyle protocol ingress tests (counted)
         shell: bash
-        run: |
-          set -euo pipefail
-          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
-            -f net10.0 \
-            --filter "FullyQualifiedName~McpA2AProtocolIngress|FullyQualifiedName~AirGappedProfileApiHostProdStyleTests" \
-            --blame-hang-timeout 120s
+        run: bash scripts/mcp-a2a-gate.sh prodstyle
+        env:
+          ASHLAR_ALLOW_MOCK: "1"

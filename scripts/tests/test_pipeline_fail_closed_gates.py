@@ -216,6 +216,36 @@ class CertGateAnalyzerCountedTests(unittest.TestCase):
         self.assertIn('--expected-prefix "Ashlar.Tests.Contracts."', text)
 
 
+class McpA2AGateCountedTests(unittest.TestCase):
+    def test_script_runs_counted_adapter_and_prodstyle_suites(self) -> None:
+        text = (ROOT / "scripts" / "mcp-a2a-gate.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 40", text)
+        self.assertIn("--min-tests 33", text)
+        self.assertIn("--min-tests 39", text)
+        self.assertIn("--min-tests 19", text)
+        self.assertIn("--min-tests 7", text)
+        self.assertIn("Ashlar.Mcp.Server.Tests.", text)
+        self.assertIn("Ashlar.Mcp.Client.Tests.", text)
+        self.assertIn("Ashlar.Transport.A2A.Tests.", text)
+        self.assertIn("Ashlar.Transport.A2A.Server.Tests.", text)
+        self.assertIn("McpA2AProtocolIngress", text)
+        self.assertNotIn("dotnet test src/Ashlar.Mcp.Server.Tests", text)
+
+    def test_workflow_invokes_counted_script(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "mcp-a2a-gate.yml").read_text(encoding="utf-8")
+        self.assertIn("scripts/mcp-a2a-gate.sh adapters", text)
+        self.assertIn("scripts/mcp-a2a-gate.sh prodstyle", text)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj",
+            text,
+        )
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
+            text,
+        )
+
+
 class IngressUnitGateCountedTests(unittest.TestCase):
     def test_ingress_unit_gate_runs_counted_sns_and_dynamodb_suites(self) -> None:
         text = (ROOT / "scripts" / "ingress-unit-gate.sh").read_text(encoding="utf-8")

@@ -264,6 +264,48 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void McpA2AGate_RunsCountedAdapterAndProdStyleSuites()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/mcp-a2a-gate.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 40");
+        text.Should().Contain("--min-tests 33");
+        text.Should().Contain("--min-tests 39");
+        text.Should().Contain("--min-tests 19");
+        text.Should().Contain("--min-tests 7");
+        text.Should().Contain("McpA2AProtocolIngress");
+        text.Should().NotContain("dotnet test src/Ashlar.Mcp.Server.Tests");
+    }
+
+    [Fact]
+    public void McpA2AGateWorkflow_InvokesCountedScript()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/mcp-a2a-gate.yml"));
+        text.Should().Contain("scripts/mcp-a2a-gate.sh adapters");
+        text.Should().Contain("scripts/mcp-a2a-gate.sh prodstyle");
+        text.Should().NotContain("dotnet test src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj");
+    }
+
+    [Fact]
+    public void OwnershipRegistry_NamesMcpA2AGate_ForProtocolTests()
+    {
+        foreach (var leaf in new[]
+        {
+            "Ashlar.Mcp.Server.Tests.csproj",
+            "Ashlar.Mcp.Client.Tests.csproj",
+            "Ashlar.Transport.A2A.Tests.csproj",
+            "Ashlar.Transport.A2A.Server.Tests.csproj",
+        })
+        {
+            var columns = OwnershipRow(leaf);
+            columns[1].Should().Be("mcp-a2a-gate");
+            columns[2].Should().Be("-");
+        }
+    }
+
+    [Fact]
     public void IngressUnitGate_RunsCountedAwsSnsAndDynamoDbSuites()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

@@ -73,7 +73,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 | `docs-link-check.yml` | Docs Link Check / `lychee (README + docs)` | paths: `docs/**`, `README.md`, `.lycheeignore` | push, dispatch |
 | `kernel-coverage-gate.yml` | Kernel coverage gate / `kernel-coverage` | paths: kernel src + tests, `scripts/ci/kernel-coverage-gate.sh`, `scripts/ci/pr-testing-strategy-gate.sh` | push |
 | `kernel-gate.yml` | Kernel Gate / `kernel-gate` | paths: `src/Ashlar.Hosting/**`, Infrastructure, Orchestration, Runtime, Core.Application, kernel tests, `docs/production-readiness/**`, `Makefile` | push (narrower paths), dispatch |
-| `mcp-a2a-gate.yml` | MCP + A2A protocol gate | paths: `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, `Ashlar.API` | push `master`/`main`/`cursor/**`, dispatch |
+| `mcp-a2a-gate.yml` | MCP + A2A protocol gate / `scripts/mcp-a2a-gate.sh` | paths: `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, `Ashlar.API`, `scripts/mcp-a2a-gate.sh` | push `master`/`main`/`cursor/**`, dispatch — counted floors 40 / 33 / 39 / 19 / 7 |
 | `security-gate.yml` | Security Gate / `security-gate` | paths: Trust/Security sources and tests, `scripts/security-gate*.sh`, `Makefile` | PR: Tiers A–C only; D/E dispatch-only (release-manager `security` lane runs full A–E) |
 | `shell-lint.yml` | Shell lint / `shell-lint` | paths: `scripts/**` | dispatch |
 | `testing-strategy-gate.yml` | Testing strategy gate / `testing-strategy` | paths: `src/**`, `application/**`, `scripts/**`, `.github/**`, `Makefile`, `docs/architecture/TestingStrategy*.md` | — |
