@@ -9,10 +9,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-# shellcheck source=scripts/lib/gate-output.sh
-source "$ROOT/scripts/lib/gate-output.sh"
-gate_init "${GATE_NAME:-ops-gate-tier-a}"
-
 INFRA="$ROOT/src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 MIN_TESTS="${OPS_GATE_MIN_DOGFOOD_TESTS:-6}"
 FILTER="FullyQualifiedName~DogfoodBlock1Tests|\
@@ -32,4 +28,5 @@ python3 "$ROOT/scripts/run-dotnet-test-counted.py" \
   -f net8.0 \
   --verbosity minimal
 
-gate_pass "ops-gate-tier-a: PASS (verified: counted-dogfood-1-6)"
+echo ""
+echo "ops-gate-tier-a: PASS (verified: counted-dogfood-1-6)"
