@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 96", text)
+        self.assertIn("--min-tests 97", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -556,6 +556,35 @@ class ValidationServiceAdapterFailClosedTests(unittest.TestCase):
         self.assertIn("No test projects found", text)
         self.assertNotIn("validation skipped", text)
         self.assertNotIn("even if no tests were run", text)
+
+
+class DotnetTestToolFailClosedTests(unittest.TestCase):
+    def test_dotnet_test_tool_fails_closed_on_zero_tests(self) -> None:
+        tool = (
+            ROOT / "src" / "Ashlar.Tools.Dev" / "DotnetTestTool.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("HasExecutedTests", tool)
+        self.assertIn("No test is available", tool)
+        self.assertIn("No test matches", tool)
+        self.assertIn(r"Passed:\s*(\d+)", tool)
+        self.assertNotIn("ok = code == 0", tool)
+
+        forge = (
+            ROOT / "src" / "Ashlar.Tools.Dev" / "ForgeTestTool.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("DotnetTestTool.Succeeded", forge)
+        self.assertNotIn("ok = code == 0", forge)
+
+        proposals = (
+            ROOT
+            / "application"
+            / "src"
+            / "Ashlar.CLI"
+            / "Commands"
+            / "BackgroundAgent"
+            / "ProposalsBackgroundAgentCommand.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("DotnetTestTool.Succeeded", proposals)
 
 
 class WorkflowRegressionGateFailClosedTests(unittest.TestCase):

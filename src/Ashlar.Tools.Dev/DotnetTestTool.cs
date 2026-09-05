@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Ashlar.Abstractions;
 using Ashlar.Tools.Dev.Deltas;
 
@@ -46,6 +48,27 @@ public sealed class DotnetTestTool : ITool
         delta.AddLog($"test:exit={code}");
         if (timedOut) delta.AddLog("test:timeout");
         if (!string.IsNullOrWhiteSpace(stderr)) delta.AddLog("test:stderr");
-        return new ToolResult(delta, new { ok = code == 0, stdout, stderr });
+        return new ToolResult(delta, new { ok = Succeeded(code, timedOut, stdout, stderr), stdout, stderr });
+    }
+
+    /// <summary>
+    /// Same class as <c>ashlar test local</c>: <c>dotnet test</c> exits 0 when no
+    /// tests are available or a filter matches nothing.
+    /// </summary>
+    public static bool Succeeded(int exitCode, bool timedOut, string? stdout, string? stderr)
+        => !timedOut && exitCode == 0 && HasExecutedTests(stdout, stderr);
+
+    public static bool HasExecutedTests(string? stdout, string? stderr)
+    {
+        var output = string.Concat(stdout, "\n", stderr);
+        if (output.Contains("No test is available", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (output.Contains("No test matches", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var passed = Regex.Match(output, @"Passed:\s*(\d+)");
+        if (!passed.Success)
+            return false;
+        return int.Parse(passed.Groups[1].Value, CultureInfo.InvariantCulture) >= 1;
     }
 }

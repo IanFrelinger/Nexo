@@ -36,6 +36,6 @@ public sealed class ForgeTestTool : ITool
         delta.AddLog($"forge.test:exit={code}");
         if (timedOut) delta.AddLog("forge.test:timeout");
         if (!string.IsNullOrWhiteSpace(stderr)) delta.AddLog("forge.test:stderr");
-        return new ToolResult(delta, new { ok = code == 0, stdout, stderr });
+        return new ToolResult(delta, new { ok = DotnetTestTool.Succeeded(code, timedOut, stdout, stderr), stdout, stderr });
     }
 }

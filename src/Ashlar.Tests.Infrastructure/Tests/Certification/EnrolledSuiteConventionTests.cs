@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 96");
+        text.Should().Contain("--min-tests 97");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1113,6 +1113,27 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("No test projects found");
         text.Should().NotContain("validation skipped");
         text.Should().NotContain("even if no tests were run");
+    }
+
+    [Fact]
+    public void DotnetTestTool_FailsClosedOnZeroTests()
+    {
+        var tool = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Tools.Dev/DotnetTestTool.cs"));
+        tool.Should().Contain("HasExecutedTests");
+        tool.Should().Contain("No test is available");
+        tool.Should().Contain("No test matches");
+        tool.Should().Contain("Passed:\\s*(\\d+)");
+        tool.Should().NotContain("ok = code == 0");
+
+        var forge = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Tools.Dev/ForgeTestTool.cs"));
+        forge.Should().Contain("DotnetTestTool.Succeeded");
+        forge.Should().NotContain("ok = code == 0");
+
+        var proposals = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "application/src/Ashlar.CLI/Commands/BackgroundAgent/ProposalsBackgroundAgentCommand.cs"));
+        proposals.Should().Contain("DotnetTestTool.Succeeded");
     }
 
     [Fact]

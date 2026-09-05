@@ -329,11 +329,28 @@ public class ToolsDevTests
                 WorldSnapshot.ForRepo(root, tick: 1),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("test:exit="));
+            PayloadOk(result).Should().BeFalse("a class library with no tests is skip-and-pass");
         }
         finally
         {
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
+    }
+
+    [Theory]
+    [InlineData("No test is available in Foo.dll.", "", false)]
+    [InlineData("No test matches the given testcase filter `FullyQualifiedName~Missing`", "", false)]
+    [InlineData("Passed!  - Failed:     0, Passed:     0, Skipped:     0, Total:     0", "", false)]
+    [InlineData("Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3", "", true)]
+    [InlineData("", "", false)]
+    public void DotnetTestTool_Succeeded_fails_closed_on_empty_runs(
+        string stdout,
+        string stderr,
+        bool expected)
+    {
+        DotnetTestTool.Succeeded(0, timedOut: false, stdout, stderr).Should().Be(expected);
+        DotnetTestTool.Succeeded(1, timedOut: false, stdout, stderr).Should().BeFalse();
+        DotnetTestTool.Succeeded(0, timedOut: true, stdout, stderr).Should().BeFalse();
     }
 
     [Fact]
@@ -468,6 +485,7 @@ public class ToolsDevTests
                 WorldSnapshot.ForRepo(root, tick: 1),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("forge.test:exit="));
+            PayloadOk(result).Should().BeFalse("a class library with no tests is skip-and-pass");
         }
         finally
         {
@@ -1211,6 +1229,13 @@ public class ToolsDevTests
         {
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static bool PayloadOk(ToolResult result)
+    {
+        var json = JsonSerializer.Serialize(result.Payload);
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.GetProperty("ok").GetBoolean();
     }
 
     private static async Task RunDotnetAsync(string workingDirectory, string arguments)

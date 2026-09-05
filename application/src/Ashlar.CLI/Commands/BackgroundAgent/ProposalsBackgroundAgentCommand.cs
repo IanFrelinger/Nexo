@@ -276,7 +276,7 @@ public class ProposalsBackgroundAgentCommand
 
             var (testCode, testOut, testErr, testTimedOut) = await DotnetTestTool.RunTrxTestsNoBuildAsync(repoRoot, ct)
                 .ConfigureAwait(false);
-            var testOk = testCode == 0 && !testTimedOut;
+            var testOk = DotnetTestTool.Succeeded(testCode, testTimedOut, testOut, testErr);
             object testObj = new
             {
                 ok = testOk,
