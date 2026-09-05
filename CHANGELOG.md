@@ -13,7 +13,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **Product split scaffolds** under `products/` (workstation, cluster, cloud, native) and framework distributed contracts (`ExecutionEnvelope`, `ResultEvidence`, `ITaskScheduler`, `INativeExecutionHost`).
 - **`AshlarDeploymentProfile.SecureWorkstation`** — local trust, agents, RAG, and observation without runtime transport. `AirGapped` remains the slim offline profile. Under AirGapped, MCP client, A2A, and MCP server are all refused. Under SecureWorkstation, MCP client and A2A refuse enablement; local MCP server remains allowed.
 - **`products-gate`** runs extractable product scaffolds plus `DistributedContractTests`.
-- **Autonomous Release Manager** — six immutable, release-blocking audit sub-agents (code, tests, security, packaging, documentation, operations) run against one SHA in isolated worktrees and emit a hashed READY/BLOCKED evidence report. The weekly/manual workflow never publishes or tags.
+- **Autonomous Release Manager** — six immutable, release-blocking audit sub-agents (code, tests, security, packaging, documentation, operations) run against one SHA in isolated worktrees and emit a hashed READY/BLOCKED evidence report. The weekly/manual workflow never publishes or tags. Cursor entry points are the `release-manager` skill/Custom Mode, six named specialist subagents, `AGENTS.md`, and `make release-manager-validate`.
 
 ### Changed
 

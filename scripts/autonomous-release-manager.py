@@ -446,6 +446,9 @@ def _frontmatter(path: Path) -> tuple[dict[str, str], str]:
     raw, body = text[4:].split("\n---\n", 1)
     metadata: dict[str, str] = {}
     for line in raw.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped.startswith("- "):
+            continue
         if ":" not in line:
             raise PlanError(f"Malformed Cursor frontmatter in {path}: {line!r}")
         key, value = line.split(":", 1)

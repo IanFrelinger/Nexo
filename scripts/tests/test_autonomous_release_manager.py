@@ -133,6 +133,13 @@ class PlanValidationTests(unittest.TestCase):
     def test_committed_semantic_agents_and_skill_are_complete(self) -> None:
         arm.validate_cursor_assets(SCRIPT.parents[1])
 
+    def test_skill_frontmatter_allows_path_lists(self) -> None:
+        skill = SCRIPT.parents[1] / ".cursor" / "skills" / "release-manager" / "SKILL.md"
+        metadata, body = arm._frontmatter(skill)
+        self.assertEqual("release-manager", metadata["name"])
+        self.assertIn("code-auditor", body)
+        self.assertIn("paths", metadata)
+
     def test_canonical_plan_is_bound_to_head_and_code_digest(self) -> None:
         repo = SCRIPT.parents[1]
         sha = subprocess.check_output(

@@ -42,7 +42,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
 - `docs/RELEASE.md` — **release hub** (preflight, dispatch, tag, deep links).
 - `docs/RELEASE_RUNBOOK.md` — release **decision table** (tag vs NuGet-only vs branch images); **`scripts/release-preflight-local.sh`** / **`make release-preflight`** / **`dotnet run … release preflight`** for one-command local preflight.
-- `docs/AutonomousReleaseManager.md` — six mandatory audit sub-agents, isolated-worktree execution, structured evidence, and the fail-closed READY/BLOCKED policy.
+- `docs/AutonomousReleaseManager.md` — six mandatory audit sub-agents, isolated-worktree execution, structured evidence, and the fail-closed READY/BLOCKED policy. Cursor entry points: `AGENTS.md`, `.cursor/skills/release-manager/SKILL.md`, `.cursor/agents/release-manager.md`.
 - `docs/GitHubRepoVariables.md` — **Actions variables** for NuGet publish mode, post-push verify, SBOM, cross-verify.
 - `docs/GitHubBranchProtection.md` — **branch protection** guidance (merge gates vs tag releases).
 - `.github/ISSUE_TEMPLATE/release_checklist.yml` — **GitHub issue form** for a release ticket.

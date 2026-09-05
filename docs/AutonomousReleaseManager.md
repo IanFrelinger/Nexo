@@ -11,6 +11,7 @@ It is currently a nuget.org/lifecycle reference and does **not** consume this
 report yet; wiring its next package update to `latest.json` is a separate
 product-repository change. The repo-local manager here is the release authority
 for Ashlar itself.
+
 This repository owns the reusable audit engine and the checks it executes:
 
 - `.cursor/agents/release-manager.md` — mutable coordinator persona
@@ -60,12 +61,17 @@ publication succeeds.
 # Validate that all mandatory lanes and safety constraints are present.
 make release-manager-validate
 
-# Run the complete campaign on the current commit.
+# Run the complete campaign on the current commit (uses the VERSION file).
 make release-manager-audit
 
-# Equivalent explicit form; this refuses unless VERSION is exactly 0.2.0.
-python3 scripts/autonomous-release-manager.py --version 0.2.0
+# Equivalent explicit form; the requested version must match VERSION.
+python3 scripts/autonomous-release-manager.py --version "$(cat VERSION)"
 ```
+
+To invoke the Cursor coordinator rather than only the deterministic script,
+use `/release-manager` (skill / Custom Mode) or tell a Cloud Agent to follow
+`.cursor/skills/release-manager/SKILL.md` and fan out to the six named
+specialists. See `AGENTS.md`.
 
 Reports are written under:
 

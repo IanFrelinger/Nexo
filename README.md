@@ -417,6 +417,7 @@ dotnet test src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj \
 # fail-closed six-lane release audit (isolated worktrees; never publishes)
 make release-manager-validate
 make release-manager-audit
+# Cursor: /release-manager  or follow AGENTS.md / .cursor/skills/release-manager/SKILL.md
 ```
 
 Testing strategy and guard rails:

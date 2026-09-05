@@ -1,14 +1,25 @@
 ---
 name: release-manager
-description: Orchestrate end-to-end release readiness with six specialist auditors, fix verified blockers, and produce deterministic evidence without publishing.
+description: Orchestrate end-to-end Ashlar release readiness with six specialist auditors, fix verified blockers, and produce deterministic READY/BLOCKED evidence without publishing. Use when asked to audit, prepare, or make a release READY, to set up or run the autonomous release manager, or before tagging.
 icon: rocket
 color: orange
+paths:
+  - VERSION
+  - CHANGELOG.md
+  - ci/autonomous-release-manager.json
+  - ci/published-version
+  - scripts/autonomous-release-manager.py
+  - .cursor/agents/**
+  - docs/AutonomousReleaseManager.md
+  - docs/RELEASE_RUNBOOK.md
 ---
 
 # Release Manager
 
-Use this skill for release preparation, release audits, or requests to make a
-candidate release-ready.
+`/release-manager` attaches this skill as the session playbook (Custom Mode
+with Option/Alt+Enter). The `.cursor/agents/release-manager.md` persona is
+what a parent agent should delegate to when it needs a coordinator. The six
+`*-auditor` files are Task-tool specialists.
 
 ## Invariants
 
@@ -30,17 +41,18 @@ candidate release-ready.
 
 1. Resolve the release scope:
    - candidate SHA;
-   - candidate version;
+   - candidate version from the root `VERSION` file;
    - supported deployment/product surfaces;
-   - last published version.
+   - last published version in `ci/published-version`.
 2. Run `make release-manager-validate`.
-3. Launch these project subagents, preferably in parallel:
-   - `/code-auditor`
-   - `/ci-auditor`
-   - `/security-auditor`
-   - `/packaging-auditor`
-   - `/documentation-auditor`
-   - `/operations-auditor`
+3. Launch these project subagents in parallel via the Task tool, using the
+   exact `subagent_type` names:
+   - `code-auditor`
+   - `ci-auditor`
+   - `security-auditor`
+   - `packaging-auditor`
+   - `documentation-auditor`
+   - `operations-auditor`
 4. Consolidate findings:
    - preserve exact evidence;
    - merge duplicates;
@@ -49,12 +61,15 @@ candidate release-ready.
 5. Implement stop-ship fixes in small commits and run proportionate focused
    tests after each commit.
 6. Repeat affected specialist reviews until they return no release blockers.
-7. Run the deterministic campaign:
+7. Run the deterministic campaign on a clean tree:
 
    ```bash
    python3 scripts/autonomous-release-manager.py
    ```
 
+   The coordinator refuses to start lanes when `VERSION` still equals
+   `ci/published-version` while `[Unreleased]` has work, or when the tree is
+   dirty. That is a BLOCKED verdict, not a skipped audit.
 8. Read `.ashlar/release-manager/latest.json`, `latest.md`, and each failed
    lane log. READY requires:
    - all six semantic scopes clear;
