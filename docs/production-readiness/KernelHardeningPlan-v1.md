@@ -56,7 +56,7 @@ Pre-application validation for the Ashlar execution kernel (`src/`, `Ashlar.Host
 | E2 | Perf budgets | `Ashlar.Tests.Orchestration.Performance` in tier-e | `make kernel-gate-tier-e` |
 | E3 | Chaos / game day | [KernelChaosDrill-v1.md](KernelChaosDrill-v1.md) | Quarterly manual + optional `KERNEL_GATE_CHAOS_LITE=1` |
 
-**Tier E status:** `make kernel-gate-tier-e` / `scripts/kernel-gate-tier-e.sh` — OpenTelemetry, orchestration performance tests, `prod-dry-run.sh --portal`.
+**Tier E status:** `make kernel-gate-tier-e` / `scripts/kernel-gate-tier-e.sh` — OpenTelemetry, orchestration performance tests, `prod-dry-run.sh --portal`. Exits 2 when Docker is missing (`KERNEL_GATE_SKIP_TIER_E=1` skips the whole tier on `kernel-gate-full`).
 
 ---
 
