@@ -197,7 +197,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 120");
+        text.Should().Contain("--min-tests 121");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -857,6 +857,18 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("--results-directory /test-results");
         text.Should().NotContain(
             "dotnet test '$Project' --framework '$Framework' --filter '$Filter' --nologo -v minimal\"");
+    }
+
+    [Fact]
+    public void ComposeGateWorkflow_AssertsHostTrxFloor()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/compose-gate.yml"));
+        text.Should().Contain("assert-trx-min-executed.py");
+        text.Should().Contain("--min-executed 9");
+        text.Should().Contain("ubuntu-baseframework.trx");
+        text.Should().Contain("workflow_dispatch:");
+        text.Should().NotContain("pull_request:");
     }
 
     [Fact]

@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 120", text)
+        self.assertIn("--min-tests 121", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1172,6 +1172,18 @@ class TestInContainerTrxFloorTests(unittest.TestCase):
             "dotnet test '$Project' --framework '$Framework' --filter '$Filter' --nologo -v minimal\"",
             text,
         )
+
+
+class ComposeGateTrxFloorTests(unittest.TestCase):
+    def test_compose_gate_asserts_host_trx_floor(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "compose-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("assert-trx-min-executed.py", text)
+        self.assertIn("--min-executed 9", text)
+        self.assertIn("ubuntu-baseframework.trx", text)
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("pull_request:", text)
 
 
 class MakefileSlnfMinFloorTests(unittest.TestCase):

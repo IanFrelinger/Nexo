@@ -41,6 +41,11 @@ jobs:
           docker compose -f deploy/compose/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-ubuntu test-ubuntu
           test -f test-results/ubuntu-results.json
           test -f test-results/ubuntu-logs.txt
+          # Images may lack Python. The compose service already writes TRX onto
+          # the host mount; refuse a silent empty match (BaseFrameworkSmokeTests).
+          python3 scripts/assert-trx-min-executed.py \
+            --trx test-results/ubuntu-baseframework.trx \
+            --min-executed 9
 
       - name: Emit compose test summary
         if: always()
@@ -77,6 +82,7 @@ jobs:
           path: |
             test-results/ubuntu-results.json
             test-results/ubuntu-logs.txt
+            test-results/ubuntu-baseframework.trx
             ${{ runner.temp }}/compose-test-summary.txt
           retention-days: 14
 
