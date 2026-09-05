@@ -58,6 +58,7 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 - **`mcp-a2a-gate` is counted.** The PR protocol gate used raw `dotnet test` on four adapter projects plus a net10 ProdStyle filter; all five now use `run-dotnet-test-counted.py` (40 / 33 / 39 / 19 / 7).
 - **Production Readiness Gate v1 test slices are counted.** The canonical workflow's `FullyQualifiedName~Pipelines` (68 on net8 and net10) and host-DI smoke (2) used raw `dotnet test` that still exits 0 on a silent empty match.
 - **Kernel Gate Tier B runs on pull requests.** The counted fail-closed CLI + LiteDB resume + pipeline slice (14) used `github.event_name == 'workflow_dispatch' && inputs.tier == 'b'`, which is false on every automatic trigger.
+- **Security Tier E floor is 53.** The net10.0 AirGapped|Safety suite listed 53 unique identities; the previous floor of 52 could lose one test and still pass.
 - **Docs** — `Ashlar.API` is `net10.0` only (not a `net8.0;net10.0` library). `Ashlar.sln` documentation lists Fleet.Api/Host. Prime-time docs drop the removed GameDomain assembly. The agent-server env example no longer advertises `ollama/ollama:latest`.
 - **Test ownership** registers `products/tests/Ashlar.Tests.Products` (cert-gate convention test) and records `products-gate` as the runner for the `DistributedContractTests` subset of `Ashlar.Tests.Contracts`. Product tests themselves execute in **`products-gate`**, not cert-gate.
 - **UAT tier 9** experimental-not-promised no longer treats English phrases such as "the class name" as a type called `name`.

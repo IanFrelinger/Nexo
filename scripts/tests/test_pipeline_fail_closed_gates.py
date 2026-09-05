@@ -380,7 +380,7 @@ class SecurityTierECountedTests(unittest.TestCase):
     def test_security_gate_tier_e_runs_counted_airgapped_suite_on_net10(self) -> None:
         text = (ROOT / "scripts" / "security-gate-tier-e.sh").read_text(encoding="utf-8")
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 52", text)
+        self.assertIn("--min-tests 53", text)
         self.assertIn("-f net10.0", text)
         self.assertNotIn("-f net8.0", text)
 

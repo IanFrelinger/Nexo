@@ -16,11 +16,11 @@ fi
 
 echo "== Security Tier E: air-gapped + safety (net10.0, counted) =="
 # net8.0 omits AirGappedProfileApiHostProdStyleTests (API host is net10.0 only)
-# and still exited 0 on a stale empty filter. Listed 52 identities on net10.0.
+# and still exited 0 on a stale empty filter. Listed 53 identities on net10.0.
 ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
   --project "$INFRA" \
   --expected-prefix "Ashlar.Tests.Infrastructure." \
-  --min-tests 52 \
+  --min-tests 53 \
   -- \
   -f net10.0 \
   --filter "FullyQualifiedName~AirGapped|FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Safety" \
