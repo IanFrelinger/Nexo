@@ -109,6 +109,13 @@ class PlanValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(arm.PlanError, "inline shell code"):
                 arm.load_plan(self.write_plan(Path(temp), document))
 
+    def test_reserved_step_environment_is_rejected(self) -> None:
+        document = plan_document()
+        document["lanes"][0]["steps"][0]["environment"] = {"PATH": "/tmp/evil"}
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(arm.PlanError, "reserved variable PATH"):
+                arm.load_plan(self.write_plan(Path(temp), document))
+
     def test_parallelism_cannot_exceed_lane_count(self) -> None:
         document = plan_document()
         document["maxParallel"] = 7
@@ -136,6 +143,14 @@ class PlanValidationTests(unittest.TestCase):
         )
         self.assertEqual(arm.TRUSTED_PLAN_SHA256, digest)
         self.assertEqual(64, len(arm.validate_coordinator_binding(repo, sha)))
+
+    def test_untrusted_absolute_executable_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            fake = Path(temp) / "evil-python"
+            fake.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
+            fake.chmod(0o755)
+            with self.assertRaisesRegex(arm.PlanError, "outside the trusted PATH"):
+                arm._trusted_executable(str(fake))
 
     def test_coordinator_git_ignores_inherited_path(self) -> None:
         repo = SCRIPT.parents[1]
@@ -445,6 +460,92 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual("passed", result.status)
             self.assertFalse(sentinel.exists())
 
+    def test_step_environment_cannot_override_trusted_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sentinel = root / "fake-bash-ran"
+            fake_bin = root / "evil"
+            fake_bin.mkdir()
+            fake_bash = fake_bin / "bash"
+            fake_bash.write_text(
+                f"#!/usr/bin/env sh\ntouch {str(sentinel)!r}\nexit 0\n",
+                encoding="utf-8",
+            )
+            fake_bash.chmod(0o755)
+            probe = root / "probe.sh"
+            probe.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            probe.chmod(0o755)
+            lane = arm.LaneSpec(
+                lane_id="security",
+                title="Reserved env",
+                objective="Reject plan PATH overrides.",
+                required=True,
+                timeout_seconds=5,
+                exclusive_resources=(),
+                steps=(
+                    arm.StepSpec(
+                        "probe",
+                        ("bash", "probe.sh"),
+                        2,
+                        {"PATH": str(fake_bin)},
+                        ".",
+                    ),
+                ),
+            )
+            result = arm.run_lane(
+                lane,
+                root,
+                {"version": "0.2.0", "sha": "a" * 40, "workspace": str(root)},
+                root / "output",
+            )
+            self.assertEqual("failed", result.status)
+            self.assertEqual("error", result.steps[0].status)
+            self.assertIn("reserved variable PATH", result.steps[0].error or "")
+            self.assertFalse(sentinel.exists())
+
+    def test_tokenless_detached_child_in_worktree_fails_step(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sentinel = root / "tokenless-survived"
+            child_code = (
+                "import pathlib,time;"
+                "time.sleep(3);"
+                f"pathlib.Path({str(sentinel)!r}).write_text('survived')"
+            )
+            parent_code = (
+                "import subprocess,sys;"
+                f"subprocess.Popen([{sys.executable!r}, '-c', {child_code!r}], "
+                "start_new_session=True, env={})"
+            )
+            lane = arm.LaneSpec(
+                lane_id="tests",
+                title="Tokenless child",
+                objective="Contain descendants that drop the audit token.",
+                required=True,
+                timeout_seconds=8,
+                exclusive_resources=(),
+                steps=(
+                    arm.StepSpec(
+                        "spawn",
+                        (sys.executable, "-c", parent_code),
+                        3,
+                        {},
+                        ".",
+                    ),
+                ),
+            )
+            result = arm.run_lane(
+                lane,
+                root,
+                {"version": "0.2.0", "sha": "a" * 40, "workspace": str(root)},
+                root / "output",
+            )
+            time.sleep(3.2)
+            self.assertEqual("failed", result.status)
+            self.assertEqual("failed", result.steps[0].status)
+            self.assertIn("descendant processes", result.steps[0].error or "")
+            self.assertFalse(sentinel.exists())
+
 
 class RepositoryStateTests(unittest.TestCase):
     @staticmethod
@@ -529,6 +630,23 @@ class RepositoryStateTests(unittest.TestCase):
         self.assertIsNone(arm.SEMVER_RE.fullmatch("1.2.3-01"))
         self.assertIsNotNone(arm.SEMVER_RE.fullmatch("1.2.3-rc.1+build.5"))
 
+    def test_any_blocker_prevents_lane_execution(self) -> None:
+        self.assertFalse(
+            arm.should_execute_lanes(
+                [{"id": "uncut-unreleased-changelog", "severity": "blocker"}]
+            )
+        )
+        self.assertFalse(
+            arm.should_execute_lanes(
+                [{"id": "candidate-version-downgrade", "severity": "blocker"}]
+            )
+        )
+        self.assertTrue(
+            arm.should_execute_lanes(
+                [{"id": "audited-commit", "severity": "info"}]
+            )
+        )
+
 
 class EvidenceParserTests(unittest.TestCase):
     def test_discovery_count_requires_expected_test_prefix(self) -> None:
@@ -542,6 +660,17 @@ The following Tests are available:
             ["Ashlar.Tests.CLI.One", "Ashlar.Tests.CLI.Two(value: 1)"],
             counted.discovered_tests(output, "Ashlar.Tests.CLI."),
         )
+
+    def test_duplicate_discovery_lines_do_not_inflate_unique_floor(self) -> None:
+        output = """
+The following Tests are available:
+    Ashlar.Tests.CLI.One
+    Ashlar.Tests.CLI.One
+    Ashlar.Tests.CLI.One
+"""
+        discovered = counted.discovered_tests(output, "Ashlar.Tests.CLI.")
+        self.assertEqual(3, len(discovered))
+        self.assertEqual(1, len(set(discovered)))
 
     def test_trx_execution_count_is_summed(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -619,6 +748,19 @@ The following Tests are available:
         }
         problems = vulnerabilities.validate_report(report, {project})
         self.assertTrue(any("duplicate project paths" in problem for problem in problems))
+
+    def test_vulnerability_report_rejects_untrusted_advisory_source(self) -> None:
+        project = str(Path("/repo/project.csproj").resolve())
+        report = {
+            "version": 1,
+            "parameters": "--vulnerable --include-transitive",
+            "sources": ["https://example.invalid/advisories"],
+            "projects": [{"path": project}],
+        }
+        problems = vulnerabilities.validate_report(report, {project})
+        self.assertTrue(
+            any("trusted nuget.org advisory source" in problem for problem in problems)
+        )
 
 
 class ReleaseScriptSafetyTests(unittest.TestCase):

@@ -76,7 +76,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-manager-validation-${{ github.sha }}
+          name: release-manager-validation-${{ github.sha }}-${{ github.run_id }}
           path: .ashlar/release-manager/validation/
           if-no-files-found: error
           retention-days: 30
@@ -156,7 +156,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-manager-${{ github.sha }}
+          name: release-manager-${{ github.sha }}-${{ github.run_id }}
           path: |
             .ashlar/release-manager/current/
             .ashlar/release-manager/latest.json
@@ -201,7 +201,7 @@ jobs:
       - name: Upload terminal failure evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-manager-terminal-${{ github.sha }}
+          name: release-manager-terminal-${{ github.sha }}-${{ github.run_id }}
           path: release-manager-terminal/
           if-no-files-found: error
           retention-days: 30

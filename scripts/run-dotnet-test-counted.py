@@ -118,10 +118,12 @@ def main(argv: list[str] | None = None) -> int:
 
     discovered = discovered_tests(listed.stdout, args.expected_prefix)
     expected = len(discovered)
-    if expected < args.min_tests:
+    unique = len(set(discovered))
+    if unique < args.min_tests:
         print(
-            f"counted-test: discovered {expected} matching tests; "
-            f"required >= {args.min_tests} with prefix {args.expected_prefix!r}.",
+            f"counted-test: discovered {unique} unique matching tests "
+            f"({expected} listed); required >= {args.min_tests} with prefix "
+            f"{args.expected_prefix!r}.",
             file=sys.stderr,
         )
         return 1

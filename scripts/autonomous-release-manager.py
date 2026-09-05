@@ -106,10 +106,73 @@ TRUSTED_PATH_DIRECTORIES = (
     "/usr/sbin",
     "/sbin",
 )
+RESERVED_STEP_ENVIRONMENT_KEYS = frozenset(
+    {
+        "ASHLAR_AUDIT_STEP_TOKEN",
+        "ASHLAR_RELEASE_AUDIT",
+        "BASH_ENV",
+        "BASHOPTS",
+        "CI",
+        "CLASSPATH",
+        "ENV",
+        "HOME",
+        "JAVA_TOOL_OPTIONS",
+        "LD_AUDIT",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "MSBUILDDISABLENODEREUSE",
+        "NODE_OPTIONS",
+        "NUGET_PACKAGES",
+        "PATH",
+        "PERL5LIB",
+        "PYTHONHOME",
+        "PYTHONINSPECT",
+        "PYTHONPATH",
+        "PYTHONSTARTUP",
+        "PYTHONUSERBASE",
+        "RUBYLIB",
+        "SHELLOPTS",
+        "SHELL",
+        "SSLKEYLOGFILE",
+        "UseSharedCompilation",
+    }
+)
+RESERVED_STEP_ENVIRONMENT_PREFIXES = (
+    "ASHLAR_AUDIT_",
+    "BASH_",
+    "DOTNET_",
+    "GIT_",
+    "JAVA_",
+    "LD_",
+    "MSBUILD",
+    "NODE_",
+    "NUGET_",
+    "PERL",
+    "PYTHON",
+    "RUBY",
+)
 
 
 class PlanError(ValueError):
     """Raised when an audit plan could weaken the release gate."""
+
+
+def _reserved_environment_key(name: str) -> bool:
+    folded = name.lower()
+    if folded in {key.lower() for key in RESERVED_STEP_ENVIRONMENT_KEYS}:
+        return True
+    return any(folded.startswith(prefix.lower()) for prefix in RESERVED_STEP_ENVIRONMENT_PREFIXES)
+
+
+def _path_is_trusted(path: Path) -> bool:
+    resolved = path.resolve()
+    for directory in TRUSTED_PATH_DIRECTORIES:
+        try:
+            resolved.relative_to(Path(directory).resolve())
+            return True
+        except ValueError:
+            continue
+    return False
 
 
 @dataclasses.dataclass(frozen=True)
@@ -283,11 +346,19 @@ def load_plan(path: Path) -> AuditPlan:
             environment_obj = _expect_object(
                 environment_raw, f"lane {lane_id} step {step_name}.environment"
             )
-            environment = {
-                _expect_string(key, f"lane {lane_id} step {step_name} environment key"):
-                _expect_string(value, f"lane {lane_id} step {step_name} environment value")
-                for key, value in environment_obj.items()
-            }
+            environment = {}
+            for raw_key, raw_value in environment_obj.items():
+                key = _expect_string(
+                    raw_key, f"lane {lane_id} step {step_name} environment key"
+                )
+                if _reserved_environment_key(key):
+                    raise PlanError(
+                        f"lane {lane_id} step {step_name} environment cannot set "
+                        f"reserved variable {key}."
+                    )
+                environment[key] = _expect_string(
+                    raw_value, f"lane {lane_id} step {step_name} environment value"
+                )
             working_directory = _validate_relative_directory(
                 str(step_raw.get("workingDirectory", ".")),
                 f"lane {lane_id} step {step_name}.workingDirectory",
@@ -482,7 +553,10 @@ def _trusted_executable(name: str) -> str:
     if Path(name).name != name:
         candidate = Path(name)
         if candidate.is_file() and os.access(candidate, os.X_OK):
-            return str(candidate.resolve())
+            resolved = candidate.resolve()
+            if _path_is_trusted(resolved):
+                return str(resolved)
+            raise PlanError(f"Executable is outside the trusted PATH: {name}")
         raise PlanError(f"Executable is unavailable: {name}")
     for directory in TRUSTED_PATH_DIRECTORIES:
         candidate = Path(directory) / name
@@ -523,6 +597,13 @@ def _terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
             pass
 
 
+def _process_cwd(pid: int) -> Path | None:
+    try:
+        return Path(os.readlink(f"/proc/{pid}/cwd"))
+    except (FileNotFoundError, PermissionError, ProcessLookupError, OSError):
+        return None
+
+
 def _token_processes(token: str) -> list[int]:
     proc = Path("/proc")
     if not proc.is_dir():
@@ -544,21 +625,141 @@ def _token_processes(token: str) -> list[int]:
     return matches
 
 
+def _related_step_pids(token: str, worktree: Path, primary_pid: int) -> list[int]:
+    related = set(_token_processes(token))
+    worktree_resolved = worktree.resolve()
+    try:
+        primary_pgid = os.getpgid(primary_pid)
+    except (ProcessLookupError, PermissionError, OSError):
+        primary_pgid = None
+    proc = Path("/proc")
+    if not proc.is_dir():
+        return sorted(related)
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid in {os.getpid(), primary_pid}:
+            continue
+        if primary_pgid is not None:
+            try:
+                if os.getpgid(pid) == primary_pgid:
+                    related.add(pid)
+                    continue
+            except (ProcessLookupError, PermissionError, OSError):
+                pass
+        cwd = _process_cwd(pid)
+        if cwd is None:
+            continue
+        try:
+            cwd.resolve().relative_to(worktree_resolved)
+        except ValueError:
+            continue
+        related.add(pid)
+    return sorted(related)
+
+
+def _enter_step_cgroup(token: str, pid: int) -> Path | None:
+    controllers = Path("/sys/fs/cgroup/cgroup.controllers")
+    if not controllers.is_file():
+        return None
+    try:
+        current = Path("/proc/self/cgroup").read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    relative = current.split("::", 1)[-1].lstrip("/")
+    parent = Path("/sys/fs/cgroup") / relative if relative else Path("/sys/fs/cgroup")
+    path = parent / f"ashlar-audit-{token}"
+    try:
+        path.mkdir(exist_ok=False)
+        (path / "cgroup.procs").write_text(str(pid), encoding="utf-8")
+        return path
+    except OSError:
+        try:
+            if path.is_dir():
+                path.rmdir()
+        except OSError:
+            pass
+        return None
+
+
+def _cgroup_pids(cgroup: Path) -> list[int]:
+    try:
+        return [
+            int(line)
+            for line in (cgroup / "cgroup.procs").read_text(encoding="utf-8").split()
+            if line.strip().isdigit()
+        ]
+    except OSError:
+        return []
+
+
+def _remove_step_cgroup(cgroup: Path | None) -> None:
+    if cgroup is None:
+        return
+    try:
+        cgroup.rmdir()
+    except OSError:
+        pass
+
+
+def _kill_pids(pids: list[int]) -> None:
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def _living_pids(pids: list[int]) -> list[int]:
+    living: list[int] = []
+    for pid in pids:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            continue
+        except PermissionError:
+            living.append(pid)
+            continue
+        living.append(pid)
+    return living
+
+
 def _kill_token_processes(token: str) -> list[int]:
+    return _contain_related_processes(token, worktree=None, primary_pid=None)
+
+
+def _contain_related_processes(
+    token: str,
+    worktree: Path | None,
+    primary_pid: int | None,
+    extra_pids: list[int] | None = None,
+) -> list[int]:
     found: set[int] = set()
     deadline = time.monotonic() + PROCESS_TERMINATION_GRACE_SECONDS
     while True:
-        pids = _token_processes(token)
+        if worktree is not None and primary_pid is not None:
+            pids = set(_related_step_pids(token, worktree, primary_pid))
+        else:
+            pids = set(_token_processes(token))
+        pids.update(_living_pids(extra_pids or []))
+        pids.discard(os.getpid())
+        if primary_pid is not None:
+            pids.discard(primary_pid)
         found.update(pids)
         if not pids:
             return sorted(found)
-        for pid in pids:
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+        _kill_pids(sorted(pids))
         if time.monotonic() >= deadline:
-            remaining = _token_processes(token)
+            remaining = (
+                set(_related_step_pids(token, worktree, primary_pid))
+                if worktree is not None and primary_pid is not None
+                else set(_token_processes(token))
+            )
+            remaining.update(_living_pids(extra_pids or []))
+            remaining.discard(os.getpid())
+            if primary_pid is not None:
+                remaining.discard(primary_pid)
             if remaining:
                 raise RuntimeError(
                     f"Could not contain descendant processes: {sorted(remaining)}"
@@ -639,10 +840,22 @@ def run_step(
         )
 
     step_token = uuid.uuid4().hex
-    environment = _sanitized_environment(worktree, step_token)
-    environment.update(
-        {_render(key, context): _render(value, context) for key, value in step.environment.items()}
-    )
+    owned_environment = _sanitized_environment(worktree, step_token)
+    environment = dict(owned_environment)
+    for raw_key, raw_value in step.environment.items():
+        key = _render(raw_key, context)
+        if _reserved_environment_key(key):
+            return StepResult(
+                name=step.name,
+                command=command,
+                status="error",
+                exit_code=None,
+                duration_seconds=0,
+                timeout_seconds=timeout_seconds,
+                error=f"Step environment cannot override reserved variable {key}.",
+            )
+        environment[key] = _render(raw_value, context)
+    environment.update(owned_environment)
     try:
         resolved_executable = _trusted_executable(command[0])
     except PlanError as exc:
@@ -668,6 +881,7 @@ def run_step(
     log_handle.flush()
 
     started = time.monotonic()
+    step_cgroup: Path | None = None
     try:
         process = subprocess.Popen(
             command,
@@ -691,6 +905,7 @@ def run_step(
             error=str(exc),
         )
 
+    step_cgroup = _enter_step_cgroup(step_token, process.pid)
     try:
         exit_code = process.wait(timeout=timeout_seconds)
         status = "passed" if exit_code == 0 else "failed"
@@ -702,11 +917,18 @@ def run_step(
         status = "timeout"
         error = f"Exceeded {timeout_seconds} seconds."
     try:
-        escaped_descendants = _kill_token_processes(step_token)
+        escaped_descendants = _contain_related_processes(
+            step_token,
+            worktree,
+            process.pid,
+            extra_pids=_cgroup_pids(step_cgroup) if step_cgroup is not None else None,
+        )
     except RuntimeError as exc:
         escaped_descendants = []
         status = "error"
         error = str(exc)
+    finally:
+        _remove_step_cgroup(step_cgroup)
     if escaped_descendants and status == "passed":
         status = "failed"
         error = (
@@ -995,6 +1217,10 @@ def repository_findings(repo_root: Path, version: str, sha: str) -> list[dict[st
     return findings
 
 
+def should_execute_lanes(findings: list[dict[str, str]]) -> bool:
+    return not any(finding.get("severity") == "blocker" for finding in findings)
+
+
 def _git(repo_root: Path, *args: str) -> str:
     result = subprocess.run(
         [_trusted_executable("git"), *args],
@@ -1263,18 +1489,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     output_directory.mkdir(parents=True, exist_ok=True)
     findings = repository_findings(repo_root, version, sha)
-    pre_execution_blockers = {
-        "dirty-release-sha",
-        "invalid-published-version",
-        "invalid-unreleased-changelog",
-        "invalid-version",
-        "release-state-files-missing",
-        "version-mismatch",
-    }
-    may_execute = not any(
-        finding["severity"] == "blocker" and finding["id"] in pre_execution_blockers
-        for finding in findings
-    )
+    may_execute = should_execute_lanes(findings)
 
     lane_results: list[LaneResult] = []
     worktrees: dict[str, Path] = {}
@@ -1409,6 +1624,8 @@ def main(argv: list[str] | None = None) -> int:
         "runId": run_id,
         "headSha": sha,
         "version": version,
+        "planSha256": plan_sha256,
+        "coordinatorSha256": coordinator_sha256,
         "verdict": verdict,
         "reportPath": json_reference,
         "markdownPath": markdown_reference,
@@ -1425,6 +1642,8 @@ def main(argv: list[str] | None = None) -> int:
                 "# Latest autonomous release-manager run\n\n"
                 f"- Verdict: **{verdict.upper()}**\n"
                 f"- Commit: `{_markdown_inline(sha)}`\n"
+                f"- Plan: `sha256:{plan_sha256}`\n"
+                f"- Coordinator: `sha256:{coordinator_sha256}`\n"
                 f"- Report: `{_markdown_inline(markdown_reference)}`\n"
             ),
         )

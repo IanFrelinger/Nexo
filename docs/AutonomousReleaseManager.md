@@ -118,14 +118,20 @@ code and publishing commands (`git push`, `git tag`, `gh release`,
 NuGet/Docker publish commands, and equivalents) are rejected during plan
 validation. The exact tracked plan is SHA-256-bound to the coordinator, loaded
 from the audited commit, and runs with inherited Ashlar controls and credential
-environment variables removed. Repository scripts are allowed because they are
+environment variables removed. Step `environment` maps cannot override
+coordinator-owned variables (`PATH`, `HOME`, `DOTNET_*`, `GIT_*`, shell hooks,
+and the audit token). Repository scripts are allowed because they are
 reviewable and versioned; this policy complements OS/credential isolation and
 is not presented as a sandbox for arbitrary scripts.
 
-The manager deliberately reports **BLOCKED** when `VERSION` still equals
-`ci/published-version` while `[Unreleased]` contains work. Preparing a release
-means first creating a release commit with the intended version and changelog;
-auditing an arbitrary future version and tagging afterward is not accepted.
+Any repository blocker — dirty tree, SemVer/changelog inconsistency, downgrade,
+or a missing dated release section — skips lane execution. The report is still
+written as **BLOCKED**. Preparing a release means first creating a release
+commit with the intended version and changelog; auditing an arbitrary future
+version and tagging afterward is not accepted.
+
+`latest.json` records the run id, commit, version, verdict, and the plan and
+coordinator SHA-256 values from that report.
 
 ## Promotion remains manual
 

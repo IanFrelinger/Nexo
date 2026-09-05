@@ -41,6 +41,10 @@ def validate_report(report: Any, expected_projects: set[str]) -> list[str]:
         or any(not isinstance(source, str) or not source.strip() for source in sources)
     ):
         problems.append("report has no advisory sources")
+    elif not any(
+        isinstance(source, str) and "nuget.org" in source.lower() for source in sources
+    ):
+        problems.append("report has no trusted nuget.org advisory source")
     nuget_problems = report.get("problems")
     if nuget_problems:
         problems.append(f"NuGet reported problems: {nuget_problems!r}")
