@@ -33,8 +33,7 @@ public sealed class AnalyzerGateAdversarialCampaignTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset"
-                }),
-            MutationProbeWitnesses.ZeroErrorCase
+                })
         ]);
 
     private static CertificationGate CreateGate() => new(new CertificationRecordSigner());

@@ -14,20 +14,6 @@ public enum WitnessFindingKind
 
     /// <summary>The execution backend returned no observation for this case.</summary>
     NoObservation,
-
-    /// <summary>
-    /// The candidate did not finish this case inside the execution budget. Distinct from
-    /// <see cref="Threw"/>: nothing was observed about what the candidate WOULD have produced, so
-    /// no output can be shown back to it — only the fact that the wall clock ran out.
-    /// </summary>
-    TimedOut,
-
-    /// <summary>
-    /// Executing this case killed the process running the candidate (stack overflow,
-    /// <c>Environment.Exit</c>, <c>FailFast</c>, an unhandled background-thread exception, an
-    /// out-of-memory abort). Recorded from the exit code and stderr, not from the candidate.
-    /// </summary>
-    Crashed,
 }
 
 /// <summary>

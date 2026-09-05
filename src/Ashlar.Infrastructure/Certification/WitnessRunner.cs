@@ -1,25 +1,18 @@
 using System.Text.Json;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
-using Ashlar.Infrastructure.Certification.HotSwap;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
 namespace Ashlar.Infrastructure.Certification;
 
-/// <summary>
-/// Judges witness observations for the certification gate. Nothing here EXECUTES a brick: every
-/// execution of candidate or mutant code happens in an execution backend (by default the
-/// child-process replay in <see cref="LocalProcessExecutionBackend"/>) and comes back as raw
-/// observations, which these judges score with the gate's own comparers. The in-process
-/// <c>RunAsync</c> that used to live here ran author code on the certifier's threads, where an
-/// infinite loop hung the gate and a stack overflow killed it.
-/// </summary>
+/// <summary>Executes witness specifications against certified brick implementations.</summary>
 internal static class WitnessRunner
 {
     /// <summary>
-    /// Judges one unit's raw backend observations — the gate decides, the backend only ran.
-    /// Only repeat 0 is judged (later repeats exist for determinism comparison). A case the wall
-    /// clock stopped or that killed its process is reported as exactly that, not as a throw: the
-    /// candidate produced nothing the repair loop could be shown.
+    /// Judges one unit's raw backend observations with EXACTLY the semantics and failure
+    /// strings of <see cref="RunAsync"/> — the gate decides, the backend only ran. Only
+    /// repeat 0 is judged (later repeats exist for determinism comparison).
     /// </summary>
     public static WitnessRunResult JudgeObservations(
         WitnessSpec witness,
@@ -40,21 +33,6 @@ internal static class WitnessRunner
 
             if (observation.Threw)
             {
-                var error = observation.Error ?? string.Empty;
-                if (error.StartsWith(ExecutionRunnerMarkers.RunnerCrashPrefix, StringComparison.Ordinal))
-                {
-                    failures.Add($"case {caseIndex}: {error}");
-                    findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.Crashed, Detail: error));
-                    continue;
-                }
-
-                if (error.StartsWith(ExecutionRunnerMarkers.ExecutionTimeoutPrefix, StringComparison.Ordinal))
-                {
-                    failures.Add($"case {caseIndex}: {error}");
-                    findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.TimedOut, Detail: error));
-                    continue;
-                }
-
                 failures.Add($"case {caseIndex}: execution threw {observation.Error}");
                 findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.Threw, Detail: observation.Error));
                 continue;
@@ -99,12 +77,11 @@ internal static class WitnessRunner
     }
 
     /// <summary>
-    /// Judges a MUTANT unit's observations: any throw, missing key, or mismatch kills. Actual
+    /// Judges a MUTANT unit's observations with exactly the in-process mutant semantics
+    /// (<c>MutantWitnessExecutor</c>): any throw, missing key, or mismatch kills. Actual
     /// values are unwrapped from their JSON transport shape before the comparer so a
     /// transport artifact can never masquerade as a kill — a vacuous kill is the exact
-    /// failure mode the mutation gate exists to prevent. WHY a mutant died (witness, wall
-    /// clock, process death) is the engine's to classify from the observation markers; this
-    /// only says whether it lived.
+    /// failure mode the mutation gate exists to prevent.
     /// </summary>
     public static bool JudgeMutantObservations(
         WitnessSpec witness,
@@ -152,6 +129,88 @@ internal static class WitnessRunner
     /// <summary>Unwraps a JSON transport value to its CLR shape; non-JSON values pass through.</summary>
     public static object UnwrapJson(object value) =>
         value is JsonElement el ? FromJsonElement(el) : value;
+
+    /// <summary>Run asynchronously.</summary>
+    public static async Task<WitnessRunResult> RunAsync(
+        DomainBrick brick,
+        WitnessSpec witness,
+        IExecutionContext context,
+        CancellationToken cancellationToken)
+    {
+        var failures = new List<string>();
+        var findings = new List<WitnessFinding>();
+
+        foreach (var (caseIndex, witnessCase) in witness.Cases.Select((c, i) => (i, c)))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var input = new BrickInput(witnessCase.Input);
+            BrickOutput output;
+            try
+            {
+                output = await brick.ExecuteAsync(
+                    input,
+                    ImplementationType.Deterministic,
+                    context,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"case {caseIndex}: execution threw {ex.Message}");
+                findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.Threw, Detail: ex.Message));
+                continue;
+            }
+
+            var observable = WitnessObservableOutput.Project(output.ToDictionary(), output.Summary);
+            foreach (var (key, expected) in witnessCase.ExpectedOutput)
+            {
+                if (!observable.TryGetValue(key, out var actual))
+                {
+                    failures.Add($"case {caseIndex}: missing output key '{key}'");
+                    findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.MissingKey, key, FormatValue(expected)));
+                    continue;
+                }
+
+                if (!ValuesEqual(expected, actual))
+                {
+                    failures.Add(
+                        $"case {caseIndex}: output['{key}'] expected {FormatValue(expected)} got {FormatValue(actual)}");
+                    findings.Add(new WitnessFinding(
+                        caseIndex, WitnessFindingKind.Mismatch, key, FormatValue(expected), FormatValue(actual)));
+                }
+            }
+        }
+
+        return new WitnessRunResult(failures.Count == 0, failures, findings);
+    }
+
+    /// <summary>Runs the witness twice and compares serialized outputs for determinism.</summary>
+    public static async Task<(bool Identical, string? First, string? Second)> CheckDeterminismAsync(
+        DomainBrick brick,
+        WitnessSpec witness,
+        CancellationToken cancellationToken)
+    {
+        if (witness.Cases.Count == 0)
+            return (true, null, null);
+
+        var auditContext = new AuditExecutionContext();
+        var probe = witness.Cases[0];
+        var input = new BrickInput(probe.Input);
+
+        var first = await brick.ExecuteAsync(
+            input,
+            ImplementationType.Deterministic,
+            auditContext,
+            cancellationToken).ConfigureAwait(false);
+        var second = await brick.ExecuteAsync(
+            input,
+            ImplementationType.Deterministic,
+            auditContext,
+            cancellationToken).ConfigureAwait(false);
+
+        var firstJson = BrickOutputSerializer.ToCanonicalJson(first);
+        var secondJson = BrickOutputSerializer.ToCanonicalJson(second);
+        return (firstJson == secondJson, firstJson, secondJson);
+    }
 
     private static bool ValuesEqual(object expected, object actual)
     {

@@ -103,8 +103,7 @@ public sealed class DiagnosticProbeTests
                     {
                         ["errorCount"] = 2,
                         ["firstErrorMessage"] = "First failure: connection reset"
-                    }),
-                MutationProbeWitnesses.ZeroErrorCase
+                    })
             ]);
         var gate = new CertificationGate(new CertificationRecordSigner());
 

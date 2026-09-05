@@ -33,8 +33,7 @@ public sealed class CertificationGateSessionExecutionTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset"
-                }),
-            MutationProbeWitnesses.ZeroErrorCase
+                })
         ]);
 
     [Fact]

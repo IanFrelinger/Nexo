@@ -235,9 +235,7 @@ public sealed class SessionExecutionBackend : ICandidateExecutionBackend
 </Project>
 """;
 
-    /// <summary>The runner program uploaded into the session. Internal so tests can pin the
-    /// markers the gate parses out of its observations.</summary>
-    internal const string RunnerSource = """
+    private const string RunnerSource = """
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;

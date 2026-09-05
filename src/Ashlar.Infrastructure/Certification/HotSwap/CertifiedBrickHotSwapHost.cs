@@ -27,14 +27,15 @@ namespace Ashlar.Infrastructure.Certification.HotSwap;
 /// instantiation failure refuses the <em>entire</em> swap and leaves the previous
 /// generation serving. There is no partial swap.</description></item>
 /// <item><description><b>Serialized transitions.</b> Generation load/unload/collection runs
-/// under <see cref="CollectibleLoadContextGate"/>, so collectible <c>LoaderAllocator</c>s
-/// are never finalized concurrently (<c>0x80131506</c>).</description></item>
+/// under <see cref="CollectibleLoadContextGate"/>, shared with the mutation engine, so
+/// collectible <c>LoaderAllocator</c>s are never finalized concurrently
+/// (<c>0x80131506</c>).</description></item>
 /// <item><description><b>Provenance.</b> Every swap — committed or refused — and every
 /// generation lifecycle transition emits a <see cref="BrickSwapProvenanceEvent"/>.</description></item>
 /// </list>
 /// Swap sequence: verify all → load generation N+1 → route new invocations to it →
 /// drain generation N → unload → drive collection and report leak suspicion by context
-/// name (the named-context attribution trick).
+/// name (the <see cref="MutantAssemblyLoadContext"/> attribution trick).
 /// </remarks>
 [Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class CertifiedBrickHotSwapHost : IDisposable

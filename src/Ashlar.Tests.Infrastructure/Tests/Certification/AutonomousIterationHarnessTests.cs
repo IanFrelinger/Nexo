@@ -34,8 +34,7 @@ public sealed class AutonomousIterationHarnessTests
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "First failure: connection reset"
-                }),
-            MutationProbeWitnesses.ZeroErrorCase
+                })
         ]);
 
     private static readonly TouchSet LeafTouch = new()

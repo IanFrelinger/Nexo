@@ -21,8 +21,6 @@ public static class CertificationRecordMapper
         SurvivingMutants = record.SurvivingMutants,
         KilledMutants = record.KilledMutants,
         SurvivingMutantIds = record.SurvivingMutantIds,
-        TimedOutMutants = record.TimedOutMutants,
-        CrashedMutants = record.CrashedMutants,
         Signature = record.Signature,
         Reason = record.Reason,
         Gate = record.Gate,

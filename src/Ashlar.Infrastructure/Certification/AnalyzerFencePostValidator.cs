@@ -48,7 +48,7 @@ public sealed class AnalyzerFencePostValidator : IPostValidator<GeneratedArtifac
         if (string.IsNullOrWhiteSpace(source))
             return (false, "Candidate artifact is empty — produce the artifact content.");
 
-        var outcome = await _gate.EvaluateAsync(source, _compilationReferences, _manifest, _touchSet, cancellationToken: ct)
+        var outcome = await _gate.EvaluateAsync(source, _compilationReferences, _manifest, _touchSet, ct)
             .ConfigureAwait(false);
 
         return outcome.Passed

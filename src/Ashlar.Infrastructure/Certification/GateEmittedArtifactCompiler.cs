@@ -26,7 +26,7 @@ public static class GateEmittedArtifactCompiler
             throw new InvalidOperationException("gate-emitted compile refused: source is empty");
 
         var wrapped = CandidateSourceWrapper.Wrap(sourceCode);
-        var tree = CSharpSyntaxTree.ParseText(wrapped, Ashlar.Infrastructure.Certification.BrickCompileOptions.ParseOptions);
+        var tree = CSharpSyntaxTree.ParseText(wrapped, BrickCompileOptions.ParseOptions);
         var references = RoslynCodeAnalysisService.BuildReferenceSet(compilationReferences);
         references.Add(MetadataReference.CreateFromFile(typeof(DomainBrick).Assembly.Location));
 
@@ -34,7 +34,7 @@ public static class GateEmittedArtifactCompiler
             AssemblyName,
             new[] { tree },
             references,
-            Ashlar.Infrastructure.Certification.BrickCompileOptions.CompilationOptions);
+            BrickCompileOptions.CompilationOptions);
 
         using var peStream = new MemoryStream();
         var emit = compilation.Emit(peStream);
@@ -57,7 +57,7 @@ public static class GateEmittedArtifactCompiler
             AssemblySha256 = BrickContentHasher.ComputeSha256(bytes),
             SourceSha256 = BrickContentHasher.ComputeSha256(sourceCode),
             BrickTypeName = typeName,
-            CompileOptionsBlob = Ashlar.Infrastructure.Certification.BrickCompileOptions.CanonicalBlob,
+            CompileOptionsBlob = BrickCompileOptions.CanonicalBlob,
             CompilerVersion = typeof(CSharpCompilation).Assembly.GetName().Version?.ToString() ?? "unknown"
         };
     }

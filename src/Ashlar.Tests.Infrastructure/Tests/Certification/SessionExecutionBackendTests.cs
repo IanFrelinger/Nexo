@@ -28,18 +28,6 @@ public sealed class SessionExecutionBackendTests
         ]);
 
     [Fact]
-    public void TheRunner_MarksAUnitItCouldNotLoad_WithThePrefixTheGateParses()
-    {
-        // A unit that fails to LOAD reports every case as thrown, which is shape-identical to a
-        // mutant that throws on every case — and a judge reading only Threw scores both as killed.
-        // BrickMutationEngine tells them apart by this prefix and refuses the load failure rather
-        // than counting it, so if the runner literal drifts, the mutation leg silently goes back to
-        // scoring harness failures as kills. Nothing else would notice; this does.
-        SessionExecutionBackend.RunnerSource
-            .Should().Contain(ExecutionRunnerMarkers.UnitLoadFailurePrefix);
-    }
-
-    [Fact]
     public async Task ExecutesTheRunner_AndParsesRawObservations()
     {
         const string reportJson = """

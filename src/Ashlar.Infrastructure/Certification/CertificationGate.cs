@@ -1,13 +1,10 @@
 #pragma warning disable ASHLAREXP001 // The gate enforces the experimental autonomy contract (touch-set, lineage) by design; see docs/SdkCompatibilityPolicy.md.
-using System.Globalization;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
-using BrickBuildCompileOptions = Ashlar.Core.Application.Certification.Models.BrickCompileOptions;
 
 namespace Ashlar.Infrastructure.Certification;
 
@@ -23,70 +20,17 @@ public sealed class CertificationGate : ICertificationGate
 
     private static readonly JsonSerializerOptions WitnessHashOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    /// <summary>
-    /// Who produced the record: the gate assembly, its informational version, the source revision
-    /// when the build stamped one (SourceLink writes it after the <c>+</c>; <c>unstamped</c> when it
-    /// did not), and the module version id — which, under this repository's <c>Deterministic</c>
-    /// builds, identifies the exact binary even when nothing else was stamped (a dev build carries
-    /// the SDK default <c>1.0.0</c>). Appended to every execution pass's configuration, so it is
-    /// under the signature without a schema change, and a record re-attributed to another certifier
-    /// does not verify. The mutation pass also names <see cref="AstMutationCatalog.CatalogVersion"/>,
-    /// because "every mutant was killed" says nothing without knowing which mutants a catalog of
-    /// that vintage could produce.
-    /// </summary>
-    internal static string CertifierIdentity { get; } = DescribeCertifier();
-
-    /// <summary>
-    /// The <c>compile-options</c> input recorded when the request carries no build to match
-    /// (<see cref="CertificationRequest.CompileOptions"/> null: a hot-swap generation, a generated
-    /// candidate). Stated rather than omitted, because an absent input reads as "not recorded" and
-    /// "compiled under the defaults, since there was no build" is a fact about the program judged.
-    /// </summary>
-    internal const string NoBuildCompileOptionsId = "default;reason=no-build";
-
-    private static readonly CertificationInput NoBuildCompileOptionsInput = new()
-    {
-        Kind = BrickBuildCompileOptions.InputKind,
-        Id = NoBuildCompileOptionsId,
-        Hash = BrickContentHasher.ComputeSha256(NoBuildCompileOptionsId),
-    };
-
-    private static string DescribeCertifier()
-    {
-        var assembly = typeof(CertificationGate).Assembly;
-        var name = assembly.GetName();
-        var informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        var version = string.IsNullOrWhiteSpace(informational) ? name.Version?.ToString() ?? "unknown" : informational;
-        var plus = version.IndexOf('+');
-        var revision = plus >= 0 && plus + 1 < version.Length ? version[(plus + 1)..] : "unstamped";
-        if (plus >= 0)
-            version = version[..plus];
-        var mvid = typeof(CertificationGate).Module.ModuleVersionId.ToString("N", CultureInfo.InvariantCulture);
-        return $"certifier={name.Name}/{version};sourceRevision={revision};certifierMvid={mvid}";
-    }
-
     private readonly BrickMutationEngine _mutationEngine = new();
     private readonly CertificationRecordSigner _signer;
     private readonly AnalyzerFenceGate _analyzerGate;
     private readonly ILogger<CertificationGate>? _logger;
-    private readonly CandidateExecutionLimits _executionLimits;
 
     /// <summary>Initializes a new certification gate.</summary>
-    /// <param name="signer">Signs admitted records.</param>
-    /// <param name="logger">Optional logger.</param>
-    /// <param name="analyzerGate">The analyzer fence; defaults on, never off.</param>
-    /// <param name="probes">Diagnostic probes attached to rejections.</param>
-    /// <param name="executionLimits">
-    /// The wall-clock and memory bounds on every execution of candidate or mutant code when the
-    /// request names no execution backend (see <see cref="CandidateExecutionLimits"/>). Recorded
-    /// on the certificate's gate passes. Null uses <see cref="CandidateExecutionLimits.Default"/>.
-    /// </param>
     public CertificationGate(
         CertificationRecordSigner signer,
         ILogger<CertificationGate>? logger = null,
         AnalyzerFenceGate? analyzerGate = null,
-        IEnumerable<IDiagnosticProbe>? probes = null,
-        CandidateExecutionLimits? executionLimits = null)
+        IEnumerable<IDiagnosticProbe>? probes = null)
     {
         _signer = signer ?? throw new ArgumentNullException(nameof(signer));
         _logger = logger;
@@ -94,8 +38,6 @@ public sealed class CertificationGate : ICertificationGate
         // no construction path exists that certifies without the analyzer fence.
         _analyzerGate = analyzerGate ?? new AnalyzerFenceGate();
         _probes = probes?.ToArray() ?? Probes.CertificationProbeCatalog.Default;
-        _executionLimits = executionLimits ?? CandidateExecutionLimits.Default;
-        _executionLimits.Validate();
     }
 
     private readonly IReadOnlyList<IDiagnosticProbe> _probes;
@@ -171,23 +113,20 @@ public sealed class CertificationGate : ICertificationGate
         // (GatesPassedBefore("recursion") is the empty prefix).
         var analyzerGatePass = new CertificationGatePass { Name = "analyzer-gate", Version = GateVersion };
 
-        // Execution routing: every EXECUTION of candidate/mutant code goes through an
-        // execution backend and the gate judges raw observations. A request may name its own
-        // (the attested session); otherwise the gate replays in a bounded child process on this
-        // machine. Nothing the author wrote ever runs on the certifier's own threads. The per-run
-        // gate passes record where execution happened and under what budget — and, on every one
-        // of them, who the certifier was (CertifierIdentity); the mutation pass adds which catalog
-        // produced the mutants it killed. Declared here for the same closure reason as the analyzer
-        // pass above.
-        var executionConfiguration = request.ExecutionBackend is { } namedBackend
-            ? $"execution={namedBackend.Describe()};{CertifierIdentity}"
-            : $"execution={LocalProcessExecutionBackend.Identity};{_executionLimits.Describe()};{CertifierIdentity}";
-        var correctnessPass = CorrectnessGatePass with { Configuration = executionConfiguration };
-        var mutationPass = MutationGatePass with
-        {
-            Configuration = $"escapeRateThreshold=0;mutationCatalog={AstMutationCatalog.CatalogVersion};{executionConfiguration}",
-        };
-        var determinismPass = DeterminismGatePass with { Configuration = executionConfiguration };
+        // Execution-backend routing: when the request names one, every EXECUTION of
+        // candidate/mutant code goes through it and the gate judges raw observations.
+        // The per-run gate passes record where execution actually happened. Declared here
+        // for the same closure reason as the analyzer pass above.
+        var backend = request.ExecutionBackend;
+        var correctnessPass = backend is null
+            ? CorrectnessGatePass
+            : CorrectnessGatePass with { Configuration = $"execution={backend.Describe()}" };
+        var mutationPass = backend is null
+            ? MutationGatePass
+            : MutationGatePass with { Configuration = $"escapeRateThreshold=0;execution={backend.Describe()}" };
+        var determinismPass = backend is null
+            ? DeterminismGatePass
+            : DeterminismGatePass with { Configuration = $"execution={backend.Describe()}" };
 
         // Autonomy spec R4.1/R4.2: the recursion check runs before EVERYTHING — an
         // incoherent depth claim (laundering) or a candidate past the ceiling must not
@@ -215,7 +154,6 @@ public sealed class CertificationGate : ICertificationGate
             request.CompilationReferences,
             request.ConstraintManifest,
             request.TouchSet,
-            request.CompileOptions,
             cancellationToken).ConfigureAwait(false);
         analyzerGatePass = new CertificationGatePass
         {
@@ -262,29 +200,30 @@ public sealed class CertificationGate : ICertificationGate
 
         var brickTypeName = request.BrickTypeName ?? request.Brick.GetType().FullName ?? request.Brick.GetType().Name;
 
-        // The local backend owns a scratch directory (runner, mutant images) for exactly one
-        // certification; nothing in it outlives the verdict.
-        using var localBackend = request.ExecutionBackend is null
-            ? await LocalProcessExecutionBackend.CreateAsync(request, brickTypeName, _executionLimits, cancellationToken)
-                .ConfigureAwait(false)
-            : null;
-        ICandidateExecutionBackend backend = request.ExecutionBackend ?? localBackend!;
+        // With a backend: one batched candidate execution (repeats=2) serves BOTH the
+        // witness leg (repeat 0) and the determinism leg (repeat 0 vs 1 of case 0) —
+        // observed before mutation so a mutant run can never poison the candidate's own
+        // evidence. Backend infrastructure failures THROW (they are not candidate
+        // evidence and must never become a signed verdict either way).
+        IReadOnlyList<Ashlar.Core.Application.Certification.Ports.CandidateCaseObservation>? candidateObservations = null;
+        if (backend is not null)
+        {
+            var report = await backend.ExecuteAsync(
+                new Ashlar.Core.Application.Certification.Ports.CandidateExecutionJob(
+                    new[] { new Ashlar.Core.Application.Certification.Ports.CandidateExecutionUnit("candidate", null, brickTypeName) },
+                    request.Witness,
+                    Repeats: 2),
+                cancellationToken).ConfigureAwait(false);
+            candidateObservations = report.Observations.Where(o => o.UnitId == "candidate").ToArray();
+        }
 
-        // One batched candidate execution (repeats=2) serves BOTH the witness leg (repeat 0)
-        // and the determinism leg (repeat 0 vs 1 of case 0) — observed before mutation so a
-        // mutant run can never poison the candidate's own evidence. Backend infrastructure
-        // failures THROW (they are not candidate evidence and must never become a signed
-        // verdict either way).
-        var report = await backend.ExecuteAsync(
-            new CandidateExecutionJob(
-                new[] { new CandidateExecutionUnit("candidate", null, brickTypeName) },
+        var witnessResult = backend is null
+            ? await WitnessRunner.RunAsync(
+                request.Brick,
                 request.Witness,
-                Repeats: 2),
-            cancellationToken).ConfigureAwait(false);
-        var candidateObservations = report.Observations.Where(o => o.UnitId == "candidate").ToArray();
-        ThrowIfCandidateNeverRan(brickId, candidateObservations);
-
-        var witnessResult = WitnessRunner.JudgeObservations(request.Witness, candidateObservations);
+                new AuditExecutionContext(),
+                cancellationToken).ConfigureAwait(false)
+            : WitnessRunner.JudgeObservations(request.Witness, candidateObservations!);
 
         if (!witnessResult.Passed)
         {
@@ -306,8 +245,7 @@ public sealed class CertificationGate : ICertificationGate
             request.CompilationReferences,
             cancellationToken,
             backend,
-            _analyzerGate,
-            request.CompileOptions).ConfigureAwait(false);
+            _analyzerGate).ConfigureAwait(false);
 
         if (mutationResult.TotalMutants == 0)
         {
@@ -324,8 +262,7 @@ public sealed class CertificationGate : ICertificationGate
         {
             var reason =
                 $"Mutation escape check failed: escape_rate={mutationResult.EscapeRate:F2}, survivors=[{string.Join(", ", mutationResult.SurvivingMutantIds)}]"
-                + DescribeSurvivors(mutationResult)
-                + DescribeWallClockKills(mutationResult);
+                + DescribeSurvivors(mutationResult);
             _logger?.LogWarning("Certification REJECT {BrickId}: {Reason}", brickId, reason);
             return new CertificationDecision
             {
@@ -335,7 +272,12 @@ public sealed class CertificationGate : ICertificationGate
             };
         }
 
-        var determinism = JudgeObservationDeterminism(candidateObservations);
+        var determinism = backend is null
+            ? await WitnessRunner.CheckDeterminismAsync(
+                request.Brick,
+                request.Witness,
+                cancellationToken).ConfigureAwait(false)
+            : JudgeObservationDeterminism(candidateObservations!);
 
         if (!determinism.Identical)
         {
@@ -378,38 +320,12 @@ public sealed class CertificationGate : ICertificationGate
             inputs: inputs);
         admittedRecord = _signer.SignRecord(admittedRecord);
 
-        _logger?.LogInformation(
-            "Certification ADMIT {BrickId} escape_rate=0 mutants={Total} mutants_killed={Killed} killed_by_timeout={TimedOut} killed_by_crash={Crashed}",
-            brickId, mutationResult.TotalMutants, mutationResult.KilledMutantIds.Count,
-            mutationResult.TimedOutMutantIds.Count, mutationResult.CrashedMutantIds.Count);
+        _logger?.LogInformation("Certification ADMIT {BrickId} escape_rate=0", brickId);
         return new CertificationDecision
         {
             Admitted = true,
             Record = admittedRecord
         };
-    }
-
-    /// <summary>
-    /// Refuses a candidate the backend could not LOAD. Its cases come back as throws, which the
-    /// judge would score as a correctness FAIL — a signed verdict blaming the brick for the
-    /// harness's own failure to run it. The runner marks the difference
-    /// (<see cref="HotSwap.ExecutionRunnerMarkers.UnitLoadFailurePrefix"/>); honour it.
-    /// </summary>
-    private static void ThrowIfCandidateNeverRan(string brickId, IReadOnlyList<CandidateCaseObservation> observations)
-    {
-        var loadFailure = observations.FirstOrDefault(o =>
-            o.Threw
-            && o.Error is not null
-            && o.Error.StartsWith(HotSwap.ExecutionRunnerMarkers.UnitLoadFailurePrefix, StringComparison.Ordinal));
-        if (loadFailure is null)
-            return;
-
-        throw new CertificationHarnessException(
-            $"Execution harness: the candidate '{brickId}' never ran — the execution backend could not load it "
-            + $"({loadFailure.Error}). Its cases threw because the harness broke, not because the witness caught "
-            + "anything, so a correctness verdict here would blame the brick for the certifier's own fault. Fix: the "
-            + "candidate assembly and the request's CompilationReferences must load in the replay runner. Refusing "
-            + "rather than signing a FAIL over code that was never executed.");
     }
 
     /// <summary>
@@ -438,27 +354,12 @@ public sealed class CertificationGate : ICertificationGate
     }
 
     /// <summary>
-    /// Names the mutants the wall clock or a process death stopped, so a rejection's reason
-    /// carries the same three-way split as the record: what the witness killed, what timed out,
-    /// what crashed. Empty when there were none — most rejections.
-    /// </summary>
-    private static string DescribeWallClockKills(MutationTestResult mutation)
-    {
-        var sb = new StringBuilder();
-        if (mutation.TimedOutMutantIds.Count > 0)
-            sb.Append("; killed_by_timeout=[").Append(string.Join(", ", mutation.TimedOutMutantIds)).Append(']');
-        if (mutation.CrashedMutantIds.Count > 0)
-            sb.Append("; killed_by_crash=[").Append(string.Join(", ", mutation.CrashedMutantIds)).Append(']');
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Determinism verdict over backend observations: case 0's two repeats must canonicalize
-    /// identically. A missing repeat is nondeterminism-by-absence — fail-closed, never
-    /// vacuously identical.
+    /// Determinism verdict over backend observations: case 0's two repeats must
+    /// canonicalize identically (mirror of <see cref="WitnessRunner.CheckDeterminismAsync"/>).
+    /// A missing repeat is nondeterminism-by-absence — fail-closed, never vacuously identical.
     /// </summary>
     private static (bool Identical, string? First, string? Second) JudgeObservationDeterminism(
-        IReadOnlyList<CandidateCaseObservation> observations)
+        IReadOnlyList<Ashlar.Core.Application.Certification.Ports.CandidateCaseObservation> observations)
     {
         var first = observations.FirstOrDefault(o => o.CaseIndex == 0 && o.Repeat == 0);
         var second = observations.FirstOrDefault(o => o.CaseIndex == 0 && o.Repeat == 1);
@@ -486,14 +387,6 @@ public sealed class CertificationGate : ICertificationGate
                     Hash = BrickContentHasher.ComputeSha256(witnessJson)
                 }
             };
-            // The program the legs judged is the source text PLUS the options it was compiled
-            // under; the content hash binds the first and this input binds the second, on PASS
-            // and FAIL alike, so a reader can see which program the verdict is about. A request
-            // with no build behind it says so in the same slot (NoBuildCompileOptionsInput)
-            // instead of leaving it empty.
-            inputs.Add(request.CompileOptions is { } compileOptions
-                ? compileOptions.ToCertificationInput()
-                : NoBuildCompileOptionsInput);
             inputs.AddRange(request.AdditionalInputs);
             RecordCompileAuthority(request, inputs);
             // Where execution happened is certificate-relevant on PASS and FAIL alike:
@@ -558,8 +451,8 @@ public sealed class CertificationGate : ICertificationGate
         inputs.Add(new CertificationInput
         {
             Kind = CertificationInputKinds.CompileOptions,
-            Id = Ashlar.Infrastructure.Certification.BrickCompileOptions.LanguageVersionName,
-            Hash = BrickContentHasher.ComputeSha256(Ashlar.Infrastructure.Certification.BrickCompileOptions.CanonicalBlob)
+            Id = BrickCompileOptions.LanguageVersionName,
+            Hash = BrickContentHasher.ComputeSha256(BrickCompileOptions.CanonicalBlob)
         });
 
         if (request.EmittedArtifact is { } artifact)
@@ -615,11 +508,9 @@ public sealed class CertificationGate : ICertificationGate
             SurvivingMutants = mutation?.SurvivingMutantIds.Count ?? 0,
             KilledMutants = mutation?.KilledMutantIds ?? Array.Empty<string>(),
             SurvivingMutantIds = mutation?.SurvivingMutantIds ?? Array.Empty<string>(),
-            TimedOutMutants = mutation?.TimedOutMutantIds ?? Array.Empty<string>(),
-            CrashedMutants = mutation?.CrashedMutantIds ?? Array.Empty<string>(),
             Reason = reason,
             Gate = "Ashlar.Infrastructure.Certification.CertificationGate",
-            SchemaVersion = CertificationRecordData.CurrentSchemaVersion,
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
             GatesPassed = gatesPassed,
             Inputs = inputs
         };

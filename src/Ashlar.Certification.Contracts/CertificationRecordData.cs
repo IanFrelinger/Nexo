@@ -13,18 +13,6 @@ public sealed record CertificationRecordData
     /// </summary>
     public const int TrustLoopSchemaVersion = 2;
 
-    /// <summary>
-    /// Schema version stamped on records minted since the gate replays candidate and mutant
-    /// code in a bounded child process. Adds <see cref="TimedOutMutants"/> and
-    /// <see cref="CrashedMutants"/> to the signed payload, so a mutant the wall clock or a
-    /// process death stopped is recorded as exactly that and never as a witness kill. Records at
-    /// <see cref="TrustLoopSchemaVersion"/> keep signing the v2 payload and stay valid.
-    /// </summary>
-    public const int BoundedExecutionSchemaVersion = 3;
-
-    /// <summary>The schema version the gate stamps on every record it mints today.</summary>
-    public const int CurrentSchemaVersion = BoundedExecutionSchemaVersion;
-
     /// <summary>Overall certification outcome (e.g. <c>PASS</c>, <c>FAIL</c>).</summary>
     public required string Status { get; init; }
 
@@ -60,20 +48,6 @@ public sealed record CertificationRecordData
 
     /// <summary>Identifiers of mutants that survived certification.</summary>
     public IReadOnlyList<string> SurvivingMutantIds { get; init; } = Array.Empty<string>();
-
-    /// <summary>
-    /// Identifiers of mutants the wall clock stopped before they finished a witness case. Dead,
-    /// but not caught by the witness — so not in <see cref="KilledMutants"/>. Covered by the
-    /// signature from <see cref="BoundedExecutionSchemaVersion"/> on.
-    /// </summary>
-    public IReadOnlyList<string> TimedOutMutants { get; init; } = Array.Empty<string>();
-
-    /// <summary>
-    /// Identifiers of mutants whose execution killed the process running them. Dead, but not
-    /// caught by the witness — so not in <see cref="KilledMutants"/>. Covered by the signature
-    /// from <see cref="BoundedExecutionSchemaVersion"/> on.
-    /// </summary>
-    public IReadOnlyList<string> CrashedMutants { get; init; } = Array.Empty<string>();
 
     /// <summary>Base64 HMAC-SHA256 signature over the canonical payload.</summary>
     public string? Signature { get; init; }
