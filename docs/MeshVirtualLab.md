@@ -180,7 +180,7 @@ Pre-production gaps that Docker bridge alone cannot cover are automated in **Pha
 | Check | Local | CI |
 |-------|-------|-----|
 | HTTPS director (Caddy → peer-a) | `make mesh-lab-e2e-tls` | `mesh-lab-tls-gate.yml` (weekly) |
-| gRPC transport (Kestrel round-trip) | `dotnet test … --filter Category=ProdStyle` | `grpc-transport-gate.yml` |
+| gRPC transport (Kestrel round-trip) | `make grpc-transport-gate` (counted ProdStyle, 81) | `grpc-transport-gate.yml` |
 | Two-host / tailnet | `scripts/mesh-lab-verify-remote.sh` + env | none — the `mesh-lab-remote-gate.yml` wrapper was deleted 2026-08-16 (never dispatched); run the script from a host on the tailnet |
 
 ## CI

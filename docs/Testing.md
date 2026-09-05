@@ -183,6 +183,7 @@ bash scripts/run-cert-gate.sh             # cert-gate.yml — Certification + Ge
 make ingress-unit-gate                    # counted AwsSns (11) + DynamoDb (2) ingress units; also from ashlar-ready-gate
 make mcp-a2a-gate                         # counted MCP/A2A adapters (40+33+39+19) + net10 ProdStyle ingress (7)
 make production-readiness-gate-v1-tests   # counted Pipelines 68 (net8 + net10) + host-DI smoke 2
+make grpc-transport-gate                  # counted Transport ProdStyle (81, net8); also from kernel-gate-tier-c
 make kernel-gate                          # kernel-gate.yml — tier A on PR; tier B now also on PR (fail-closed CLI + counted pipeline 14)
 make application-gate-tier-a              # application-gate.yml — tier-c = in-process Ashlar.API WebApplicationFactory tests
 make testing-strategy-gate                # testing-strategy-gate.yml — PR diff rules (gap freeze, ProdStyle wiring)

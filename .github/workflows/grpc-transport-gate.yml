@@ -1,6 +1,14 @@
 name: gRPC transport gate
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/grpc-transport-gate.yml"
+      - "scripts/grpc-transport-gate.sh"
+      - "scripts/run-dotnet-test-counted.py"
+      - "src/Ashlar.Tests.Transport/**"
+      - "src/Ashlar.Transport.Grpc/**"
+      - "src/Ashlar.Abstractions/**"
   push:
     branches:
       - master
@@ -8,6 +16,8 @@ on:
       - "cursor/**"
     paths:
       - ".github/workflows/grpc-transport-gate.yml"
+      - "scripts/grpc-transport-gate.sh"
+      - "scripts/run-dotnet-test-counted.py"
       - "src/Ashlar.Tests.Transport/**"
       - "src/Ashlar.Transport.Grpc/**"
       - "src/Ashlar.Abstractions/**"
@@ -25,14 +35,10 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: |
-            10.0.x
-            8.0.x
+          global-json-file: global.json
 
-      - name: Test Transport (ProdStyle)
+      - name: Test Transport (ProdStyle, counted)
         shell: bash
-        run: |
-          set -euo pipefail
-          dotnet test src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj \
-            --filter "Category=ProdStyle" \
-            --blame-hang-timeout 120s
+        run: bash scripts/grpc-transport-gate.sh
+        env:
+          ASHLAR_ALLOW_MOCK: "1"

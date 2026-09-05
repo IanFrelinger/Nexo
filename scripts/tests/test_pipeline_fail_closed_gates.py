@@ -111,6 +111,35 @@ class FailClosedHelperTests(unittest.TestCase):
         self.assertIn("must not report ok=true", result.stderr + result.stdout)
 
 
+class GrpcTransportGateCountedTests(unittest.TestCase):
+    def test_script_runs_counted_prodstyle_suite(self) -> None:
+        text = (ROOT / "scripts" / "grpc-transport-gate.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 81", text)
+        self.assertIn("Category=ProdStyle", text)
+        self.assertIn("Ashlar.Tests.Transport.", text)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj",
+            text,
+        )
+
+    def test_workflow_invokes_counted_script_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "grpc-transport-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pull_request:", text)
+        self.assertIn("scripts/grpc-transport-gate.sh", text)
+        self.assertNotIn(
+            "dotnet test src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj",
+            text,
+        )
+
+    def test_kernel_tier_c_invokes_counted_grpc_script(self) -> None:
+        text = (ROOT / "scripts" / "kernel-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("scripts/grpc-transport-gate.sh", text)
+        self.assertNotIn('dotnet test "$TRANSPORT"', text)
+
+
 class ProductionReadinessGateCountedTests(unittest.TestCase):
     def test_script_runs_counted_pipeline_and_host_di_suites(self) -> None:
         text = (ROOT / "scripts" / "production-readiness-gate-v1-tests.sh").read_text(

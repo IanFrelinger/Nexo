@@ -57,7 +57,7 @@ src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj	kernel-coverage-gate	-	domain
 src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj	cert-gate	-	carries the required check
 src/Ashlar.Tests.Kernel/Ashlar.Tests.Kernel.csproj	kernel-gate	-	kernel
 src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj	perf-gate-tier-a	-	orchestration
-src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj	kernel-gate-tier-c	-	transport
+src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj	grpc-transport-gate	-	counted ProdStyle floor (81) in scripts/grpc-transport-gate.sh; kernel-gate-tier-c calls the same script
 src/Ashlar.Transport.A2A.Server.Tests/Ashlar.Transport.A2A.Server.Tests.csproj	mcp-a2a-gate	-	counted net10.0 floor (19) in scripts/mcp-a2a-gate.sh
 src/Ashlar.Transport.A2A.Tests/Ashlar.Transport.A2A.Tests.csproj	mcp-a2a-gate	-	counted net8.0 floor (39) in scripts/mcp-a2a-gate.sh
 products/tests/Ashlar.Tests.Products/Ashlar.Tests.Products.csproj	products-gate	-	extractable product scaffolds; products/Ashlar.Products.sln

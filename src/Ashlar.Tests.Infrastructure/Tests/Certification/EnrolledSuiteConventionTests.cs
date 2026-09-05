@@ -284,6 +284,29 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void GrpcTransportGate_RunsCountedProdStyleSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/grpc-transport-gate.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 81");
+        text.Should().Contain("Category=ProdStyle");
+        text.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj");
+    }
+
+    [Fact]
+    public void GrpcTransportGateWorkflow_RunsOnPullRequest()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/grpc-transport-gate.yml"));
+        text.Should().Contain("pull_request:");
+        text.Should().Contain("scripts/grpc-transport-gate.sh");
+        text.Should().NotContain(
+            "dotnet test src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj");
+    }
+
+    [Fact]
     public void ProductionReadinessGate_RunsCountedPipelineAndHostDiSuites()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

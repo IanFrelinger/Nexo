@@ -99,7 +99,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `environment-setup-gate-v1.yml` | Environment Setup Gate v1 | `master`/`main`; `scripts/setup/**`, CLI |
 | `friend-mesh-prefab-gate.yml` | Friend mesh prefab gate | friend-mesh compose, `.docker/Dockerfile.api`, `Ashlar.API` |
 | `full-platform-readiness-gate.yml` | Full Platform Readiness Gate | Dockerfiles, setup/install scripts, spine sources, StableSdkHostSample; **weekly schedule** |
-| `grpc-transport-gate.yml` | gRPC transport gate | `src/Ashlar.Transport.Grpc/**`, `src/Ashlar.Tests.Transport/**` |
+| `grpc-transport-gate.yml` | gRPC transport gate / `scripts/grpc-transport-gate.sh` | `src/Ashlar.Transport.Grpc/**`, `src/Ashlar.Tests.Transport/**` — PR + push; counted ProdStyle floor 81 |
 | `onboarding-docs-guard.yml` | Onboarding Docs Guard | README, `docs/**/*.md`, `scripts/*.sh`, `scripts/*.ps1`, `Makefile`, `**/*.csproj` (ProjectTiers guard) |
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate | README, GettingStarted, setup/install scripts, CLI; **weekly schedule** |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |

@@ -7,7 +7,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
-TRANSPORT="src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj"
 
 echo "== Tier C: ProdStyle Infrastructure (net8, FluentAssertions-safe filter) =="
 make test-prod-style
@@ -18,15 +17,8 @@ ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
   --filter "FullyQualifiedName~WorkflowExecutorIntegrationTests" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 
-echo "== Tier C: gRPC transport ProdStyle =="
-if [ -f "$TRANSPORT" ]; then
-  dotnet build "$TRANSPORT" -v minimal
-  dotnet test "$TRANSPORT" -f net8.0 --no-build \
-    --filter "Category=ProdStyle" \
-    --blame-hang-timeout 120s --blame-hang-dump-type none
-else
-  echo "Skip: $TRANSPORT not found"
-fi
+echo "== Tier C: gRPC transport ProdStyle (counted) =="
+bash scripts/grpc-transport-gate.sh
 
 echo "== Tier C: air-gapped profile smoke (in-process) =="
 ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
