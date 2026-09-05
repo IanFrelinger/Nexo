@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 94");
+        text.Should().Contain("--min-tests 95");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1092,6 +1092,15 @@ public sealed class EnrolledSuiteConventionTests
         var registry = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
             "src/Ashlar.BackgroundAgents/Registry/BackgroundAgentRegistry.cs"));
         registry.Should().Contain("result.FailedTests > 0 || result.TotalTests < 1");
+    }
+
+    [Fact]
+    public void DotNetRegressionTestRunner_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Infrastructure/Analysis/BrickAnalyzer/DotNetRegressionTestRunner.cs"));
+        text.Should().Contain("failed == 0 && passed >= 1");
+        text.Should().Contain("No tests matched the filter");
     }
 
     [Fact]

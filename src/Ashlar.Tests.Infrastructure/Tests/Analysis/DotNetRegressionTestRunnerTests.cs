@@ -41,4 +41,20 @@ public sealed class DotNetRegressionTestRunnerTests
         result.FailedCount.Should().BeGreaterThanOrEqualTo(0);
         result.Summary.Should().NotBeNullOrEmpty();
     }
+
+    [Fact]
+    public async Task RunAsync_WithEmptyFilter_ReturnsFailed()
+    {
+        var repoRoot = TestPaths.FindRepoRoot();
+        var csproj = Path.Combine(repoRoot, "src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj");
+        File.Exists(csproj).Should().BeTrue();
+
+        var runner = new DotNetRegressionTestRunner(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<DotNetRegressionTestRunner>.Instance);
+        var result = await runner.RunAsync(csproj, filter: "FullyQualifiedName~DoesNotExistRegressionTests");
+
+        result.AllPassed.Should().BeFalse();
+        result.PassedCount.Should().Be(0);
+        result.Summary.Should().Contain("No tests matched the filter");
+    }
 }

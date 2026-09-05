@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 94", text)
+        self.assertIn("--min-tests 95", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -525,6 +525,20 @@ class TestRunRunnerAdapterFailClosedTests(unittest.TestCase):
             ROOT / "src" / "Ashlar.BackgroundAgents" / "Registry" / "BackgroundAgentRegistry.cs"
         ).read_text(encoding="utf-8")
         self.assertIn("result.FailedTests > 0 || result.TotalTests < 1", registry)
+
+
+class DotNetRegressionTestRunnerFailClosedTests(unittest.TestCase):
+    def test_regression_runner_fails_closed_on_zero_tests(self) -> None:
+        text = (
+            ROOT
+            / "src"
+            / "Ashlar.Infrastructure"
+            / "Analysis"
+            / "BrickAnalyzer"
+            / "DotNetRegressionTestRunner.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("failed == 0 && passed >= 1", text)
+        self.assertIn("No tests matched the filter", text)
 
 
 class WorkflowRegressionGateFailClosedTests(unittest.TestCase):

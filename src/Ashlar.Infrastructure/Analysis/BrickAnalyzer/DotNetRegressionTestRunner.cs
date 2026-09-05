@@ -62,13 +62,19 @@ public sealed class DotNetRegressionTestRunner : IRegressionTestRunner
 
             var output = stdout + stderr;
             var (passed, failed) = ParseDotnetTestOutput(output);
+            // Same class as `ashlar test local` / tester agents: `dotnet test --filter`
+            // exits 0 when discovery matches nothing, so AllPassed used to be true.
+            var success = proc.ExitCode == 0 && failed == 0 && passed >= 1;
+            var summary = !success && passed < 1 && failed == 0 && proc.ExitCode == 0
+                ? "No tests matched the filter"
+                : $"Passed: {passed}, Failed: {failed}";
 
             return new RegressionTestResult
             {
-                AllPassed = proc.ExitCode == 0 && failed == 0,
+                AllPassed = success,
                 PassedCount = passed,
                 FailedCount = failed,
-                Summary = $"Passed: {passed}, Failed: {failed}",
+                Summary = summary,
             };
         }
         catch (Exception ex)
