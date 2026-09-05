@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 91");
+        text.Should().Contain("--min-tests 92");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1069,6 +1069,15 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("scripts/install/bruteforce-matrix.sh");
         text.Should().Contain("scripts/setup/**");
         text.Should().Contain("scripts/install/**");
+    }
+
+    [Fact]
+    public void TestRunnerAdapter_LooksForCliTestsUnderApplicationSrc()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Infrastructure/Testing/TestRunnerAdapter.cs"));
+        text.Should().Contain("\"Ashlar.Tests.CLI\"");
+        text.Should().Contain("\"application\", \"src\"");
     }
 
     [Fact]

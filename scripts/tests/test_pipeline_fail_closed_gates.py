@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 91", text)
+        self.assertIn("--min-tests 92", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -504,6 +504,13 @@ class InstallerBruteforceGateWorkflowTests(unittest.TestCase):
 
 
 class WorkflowRegressionGateFailClosedTests(unittest.TestCase):
+    def test_test_runner_adapter_looks_for_cli_tests_under_application_src(self) -> None:
+        text = (
+            ROOT / "src" / "Ashlar.Infrastructure" / "Testing" / "TestRunnerAdapter.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"Ashlar.Tests.CLI"', text)
+        self.assertIn('"application", "src"', text)
+
     def test_workflow_regression_gate_fails_closed_on_empty_test_local(self) -> None:
         text = (ROOT / "scripts" / "workflow-regression-gate.sh").read_text(
             encoding="utf-8"
