@@ -8,34 +8,45 @@ using Ashlar.Core.Application.Certification.Models;
 namespace Ashlar.Infrastructure.Certification.Composition;
 
 /// <summary>
-/// HMAC signer for composition certification records. Resolves its key exactly as
-/// <see cref="CertificationRecordSigner"/> does (<c>ASHLAR_CERT_DEV_HMAC_KEY</c>, else the
-/// committed dev key) and warns the same way while the dev key is in effect.
+/// HMAC signer for composition certification records. Resolves its key from an explicit
+/// parameter, then <c>ASHLAR_CERT_DEV_HMAC_KEY</c>, then the committed dev key. Warns when
+/// the dev key is in effect. This fixes limitation 9 from certification-evidence.md by
+/// honoring explicit keys.
 /// </summary>
 public sealed class CompositionCertificationRecordSigner
 {
     private readonly byte[] _keyBytes;
 
     /// <summary>Initializes a new composition certification record signer.</summary>
-    /// <param name="brickSigner">Unused; kept so existing composition wiring compiles unchanged.</param>
+    /// <param name="brickSigner">Unused; kept for API compatibility.</param>
     /// <param name="logger">Optional logger; receives the dev-key warning when the committed key is in effect.</param>
+    /// <param name="hmacKey">
+    /// Optional explicit HMAC key. When provided, composition records are signed with this key
+    /// instead of reading from the environment. This allows hosts to pass a real key and have
+    /// it honored (limitation 9 fix).
+    /// </param>
     public CompositionCertificationRecordSigner(
         CertificationRecordSigner? brickSigner = null,
-        ILogger<CompositionCertificationRecordSigner>? logger = null)
+        ILogger<CompositionCertificationRecordSigner>? logger = null,
+        string? hmacKey = null)
     {
-        _ = brickSigner;
-        var key = Environment.GetEnvironmentVariable(CertificationRecordSigning.HmacKeyEnvVar)
-            ?? CertificationRecordSigner.DefaultDevKey;
+        _ = brickSigner; // Kept for API compatibility but not used for key resolution
+        
+        var key = string.IsNullOrWhiteSpace(hmacKey)
+            ? Environment.GetEnvironmentVariable(CertificationRecordSigning.HmacKeyEnvVar)
+              ?? CertificationRecordSigner.DefaultDevKey
+            : hmacKey;
+        
         _keyBytes = Encoding.UTF8.GetBytes(key);
-        UsesDevKey = CertificationRecordSigning.UsesDevKey();
+        UsesDevKey = CertificationRecordSigning.UsesDevKey(hmacKey);
         if (UsesDevKey)
             CertificationRecordSigner.WarnDevKey(logger, nameof(CompositionCertificationRecordSigner));
     }
 
     /// <summary>
     /// True when composition records are signed with the committed development key
-    /// (<c>ASHLAR_CERT_DEV_HMAC_KEY</c> unset): every signature this instance mints or accepts is
-    /// forgeable by anyone with the source.
+    /// (no explicit key, <c>ASHLAR_CERT_DEV_HMAC_KEY</c> unset): every signature this instance
+    /// mints or accepts is forgeable by anyone with the source.
     /// </summary>
     public bool UsesDevKey { get; }
 
