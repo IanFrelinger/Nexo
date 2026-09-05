@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Ashlar.CLI.Commands.BackgroundAgent;
 
@@ -159,31 +160,32 @@ static partial class Program
 
         // ashlar background-agent logs
         var logsBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var logsTailOpt = new Option<int>("--tail", () => 100, "Show last N lines");
+        var logsLevelOpt = new Option<string?>("--level", "Filter by level (Debug, Info, Warning, Error)");
+        var logsSinceOpt = new Option<string?>("--since", "Show logs since duration (e.g. 1h, 30m)");
         var logsBgCmd = new Command("logs", "Show agent execution logs")
         {
-            logsBgIdOpt,
-            new Option<int>("--tail", () => 100, "Show last N lines"),
-            new Option<string?>("--level", "Filter by level (Debug, Info, Warning, Error)"),
-            new Option<string?>("--since", "Show logs since duration (e.g. 1h, 30m)")
+            logsBgIdOpt, logsTailOpt, logsLevelOpt, logsSinceOpt
         };
-        logsBgCmd.SetHandler(
-            /// <summary>Async.</summary>
-            /// <param name="id">Id.</param>
-            /// <param name="tail">Tail.</param>
-            /// <param name="level">Level.</param>
-            /// <param name="since">Since.</param>
-            /// <param name="formatJson">Format json.</param>
-            async (string id, int tail, string? level, string? since, bool formatJson) =>
+        logsBgCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var since = ctx.ParseResult.GetValueForOption(logsSinceOpt);
+            if (!TryParseSince(since, out var sinceTs))
             {
-                var cmd = ServiceProvider.GetRequiredService<Ashlar.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
-                TimeSpan? sinceTs = ParseSince(since);
-                Environment.Exit(await cmd.ExecuteAsync(id, tail, level, sinceTs, formatJson));
-            },
-            logsBgIdOpt,
-            logsBgCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
-            logsBgCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
-            logsBgCmd.Options[3] as Option<string?> ?? throw new InvalidOperationException(),
-            jsonOpt);
+                Console.Error.WriteLine("Invalid --since. Use a duration such as 1h or 30m.");
+                // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            var cmd = ServiceProvider.GetRequiredService<LogsBackgroundAgentCommand>();
+            ctx.ExitCode = await cmd.ExecuteAsync(
+                ctx.ParseResult.GetValueForOption(logsBgIdOpt) ?? string.Empty,
+                ctx.ParseResult.GetValueForOption(logsTailOpt),
+                ctx.ParseResult.GetValueForOption(logsLevelOpt),
+                sinceTs,
+                ctx.ParseResult.GetValueForOption(jsonOpt));
+        });
         backgroundAgentCmd.AddCommand(logsBgCmd);
 
         // ashlar background-agent metrics

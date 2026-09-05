@@ -27,6 +27,7 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestChangelogInvalidSinceExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             await TestObserveInvalidDurationExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             await TestTrustAuditInvalidSinceExitsNonZeroWithoutQueryingLogAsync().ConfigureAwait(false);
+            await TestBackgroundAgentLogsInvalidSinceExitsNonZeroWithoutListingAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -343,6 +344,29 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "An invalid --since must be refused legibly.");
             AssertTrue(!output.Contains("Data Decision Audit", StringComparison.Ordinal),
                 "An invalid --since must be refused before listing audit entries.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestBackgroundAgentLogsInvalidSinceExitsNonZeroWithoutListingAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("background-agent logs --id any-agent --since xyz").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "background-agent logs --since xyz must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --since", StringComparison.Ordinal),
+                "An invalid --since must be refused legibly.");
+            AssertTrue(!output.Contains("No logs for agent", StringComparison.Ordinal),
+                "An invalid --since must be refused before listing logs.");
         }
         finally
         {

@@ -143,24 +143,29 @@ static partial class Program
         services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();
     }
 
-    private static TimeSpan? ParseSince(string? since)
+    private static bool TryParseSince(string? since, out TimeSpan? value)
     {
+        value = null;
         if (string.IsNullOrWhiteSpace(since))
-            return null;
+            return true;
+
         since = since.Trim();
         if (since.Length < 2)
-            return null;
+            return false;
+
         var unit = since[^1];
-        if (!int.TryParse(since[..^1], out var value) || value <= 0)
-            return null;
-        return unit switch
+        if (!int.TryParse(since[..^1], out var n) || n <= 0)
+            return false;
+
+        value = unit switch
         {
-            'h' or 'H' => TimeSpan.FromHours(value),
-            'm' or 'M' => TimeSpan.FromMinutes(value),
-            's' or 'S' => TimeSpan.FromSeconds(value),
-            'd' or 'D' => TimeSpan.FromDays(value),
+            'h' or 'H' => TimeSpan.FromHours(n),
+            'm' or 'M' => TimeSpan.FromMinutes(n),
+            's' or 'S' => TimeSpan.FromSeconds(n),
+            'd' or 'D' => TimeSpan.FromDays(n),
             _ => null
         };
+        return value.HasValue;
     }
 
     private static IReadOnlyDictionary<string, string> ParseHeaders(IReadOnlyList<string> rawHeaders)
