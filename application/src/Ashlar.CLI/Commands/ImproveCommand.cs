@@ -76,23 +76,43 @@ public sealed class ImproveCommand : Command
             var intervalMinutes = ctx.ParseResult.GetValueForOption(intervalMinutesOpt);
             var observeMinutes = ctx.ParseResult.GetValueForOption(observeMinutesOpt);
 
+            // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
             if (continuous)
             {
-                await ExecuteContinuousAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, observationDays, intervalMinutes, observeMinutes);
+                ctx.ExitCode = await ExecuteContinuousAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, observationDays, intervalMinutes, observeMinutes);
             }
             else
             {
-                await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, fromObservation, observationDays);
+                ctx.ExitCode = await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, fromObservation, observationDays);
             }
         });
     }
 
-    private static async Task ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false, string? holdoutFilter = null, bool fromObservation = false, int observationDays = 7)
+    private static string? TryResolveImproveStorePath(string repoRoot, string? storePathOverride)
+    {
+        if (string.IsNullOrWhiteSpace(storePathOverride))
+            return Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "ashlar-patterns.db");
+
+        var stateDir = Path.GetFullPath(storePathOverride);
+        try
+        {
+            Directory.CreateDirectory(stateDir);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"Cannot create store directory '{stateDir}': {ex.Message}");
+            return null;
+        }
+
+        return Path.Combine(stateDir, "ashlar-patterns.db");
+    }
+
+    private static async Task<int> ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false, string? holdoutFilter = null, bool fromObservation = false, int observationDays = 7)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
-        var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
-            ? Path.Combine(Path.GetFullPath(storePathOverride), "ashlar-patterns.db")
-            : Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "ashlar-patterns.db");
+        var storePath = TryResolveImproveStorePath(repoRoot, storePathOverride);
+        if (storePath == null)
+            return 1;
         var targetPath = path ?? RepoPathResolver.FindBlock1ObservationPath(repoRoot);
 
         var trustEnabled = string.Equals(
@@ -201,8 +221,7 @@ public sealed class ImproveCommand : Command
             {
                 Console.WriteLine($"Self-improvement: {report.FailuresProcessed} processed, {report.FixesPromoted} promoted, {report.FixesRejected} rejected");
             }
-            Environment.ExitCode = 0;
-            return;
+            return 0;
         }
 
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger<ImproveCommand>();
@@ -238,8 +257,7 @@ public sealed class ImproveCommand : Command
         if (analysisResult.Passed)
         {
             Console.WriteLine("No violations found.");
-            Environment.ExitCode = 0;
-            return;
+            return 0;
         }
 
         var violationsByBrick = new Dictionary<string, List<(string Rule, string FilePath, int? Line)>>(StringComparer.OrdinalIgnoreCase);
@@ -431,8 +449,7 @@ public sealed class ImproveCommand : Command
             {
                 Console.WriteLine($"Applied {sourceFixes} source-level fix(s).");
                 await executionTracer.TraceAsync("improve.end", null, targetPath, "source_fixes").ConfigureAwait(false);
-                Environment.ExitCode = 0;
-                return;
+                return 0;
             }
         }
 
@@ -441,15 +458,13 @@ public sealed class ImproveCommand : Command
             Console.WriteLine(dryRun
                 ? "(dry-run: skip source fixes)"
                 : "No violations in known bricks. Add brick mapping in ViolationToBrickMapper to enable brick adaptation.");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         if (dryRun)
         {
             Console.WriteLine("(dry-run: skip brick adaptation)");
-            Environment.ExitCode = 1;
-            return;
+            return 1;
         }
 
         var brickRegistry = services.GetRequiredService<IBrickRegistry>();
@@ -507,18 +522,18 @@ public sealed class ImproveCommand : Command
 
         var outcome = analysisResult.Passed ? "passed" : "violations";
         await executionTracer.TraceAsync("improve.end", null, targetPath, outcome).ConfigureAwait(false);
-        Environment.ExitCode = analysisResult.Passed ? 0 : 1;
+        return analysisResult.Passed ? 0 : 1;
     }
 
-    private static async Task ExecuteContinuousAsync(
+    private static async Task<int> ExecuteContinuousAsync(
         string? path, bool dryRun, string autonomy, bool yes, bool skipRegression,
         string? storePathOverride, bool self, string? holdoutFilter,
         int observationDays, int intervalMinutes, int observeMinutes)
     {
         var repoRoot = path ?? RepoPathResolver.FindRepoRoot();
-        var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
-            ? Path.Combine(Path.GetFullPath(storePathOverride), "ashlar-patterns.db")
-            : Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "ashlar-patterns.db");
+        var storePath = TryResolveImproveStorePath(repoRoot, storePathOverride);
+        if (storePath == null)
+            return 1;
 
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>
@@ -572,7 +587,7 @@ public sealed class ImproveCommand : Command
 
         Console.WriteLine();
         Console.WriteLine($"Continuous mode stopped after {iteration} iteration(s).");
-        Environment.ExitCode = 0;
+        return 0;
     }
 
     private static async Task RunObservationPhaseAsync(string repoRoot, string storePath, TimeSpan duration, CancellationToken ct)

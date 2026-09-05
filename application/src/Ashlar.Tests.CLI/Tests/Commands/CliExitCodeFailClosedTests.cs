@@ -21,6 +21,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestIngestFailuresMissingTrxExitsNonZeroAsync().ConfigureAwait(false);
             await TestAdaptUnknownBrickExitsNonZeroAsync().ConfigureAwait(false);
             await TestAnalyzeBricksViolationExitsNonZeroAsync().ConfigureAwait(false);
+            await TestImproveDryRunViolationExitsNonZeroAsync().ConfigureAwait(false);
+            await TestImproveMissingStoreCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -172,6 +174,63 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             root.AddCommand(new AnalyzeBricksCommand());
             var exitCode = await root.InvokeAsync($"bricks --path {source}").ConfigureAwait(false);
             AssertTrue(exitCode != 0, "analyze bricks with a violation must exit non-zero, not 0.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    private async Task TestImproveDryRunViolationExitsNonZeroAsync()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ashlar-improve-dryrun-{Guid.NewGuid():N}");
+        var stateDir = Path.Combine(tempRoot, "state");
+        Directory.CreateDirectory(stateDir);
+        var source = Path.Combine(tempRoot, "Bad.cs");
+        await File.WriteAllTextAsync(source, "class Bad { void M() { try { } catch { } } }").ConfigureAwait(false);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ImproveCommand());
+            var exitCode = await root.InvokeAsync($"improve --dry-run --path {source} --store-path {stateDir} --yes").ConfigureAwait(false);
+            AssertTrue(exitCode != 0, "improve --dry-run with a violation must exit non-zero, not 0.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    private async Task TestImproveMissingStoreCreatesDirectoryWithoutStackTraceAsync()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ashlar-improve-store-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        var stateDir = Path.Combine(tempRoot, "state");
+        var source = Path.Combine(tempRoot, "Empty.cs");
+        await File.WriteAllTextAsync(source, "class C {}").ConfigureAwait(false);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ImproveCommand());
+            var exitCode = await root.InvokeAsync($"improve --dry-run --path {source} --store-path {stateDir} --yes").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode == 0, "improve --dry-run on clean source must exit 0 after creating --store-path.");
+            AssertTrue(Directory.Exists(stateDir), "--store-path must be created instead of crashing.");
+            AssertTrue(!output.Contains("DirectoryNotFoundException", StringComparison.Ordinal)
+                && !output.Contains("   at ", StringComparison.Ordinal),
+                "A missing --store-path must not print a stack trace.");
         }
         finally
         {
