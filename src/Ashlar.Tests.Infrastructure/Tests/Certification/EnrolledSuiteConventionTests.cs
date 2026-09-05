@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 103");
+        text.Should().Contain("--min-tests 105");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -655,6 +655,24 @@ public sealed class EnrolledSuiteConventionTests
         workflow.Should().Contain("scripts/distribution-matrix-iashlar-client.sh");
         workflow.Should().NotContain(
             "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj");
+    }
+
+    [Fact]
+    public void UatTier4_FailsClosedOnEmptyHelloBrick()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "tests/uat/tier4.sh"));
+        text.Should().Contain("assert-dotnet-test-executed.sh");
+        text.Should().Contain("HelloBrick.Tests");
+    }
+
+    [Fact]
+    public void UatTier02_FailsClosedOnEmptyTeethRun()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "tests/uat/tier0-2.sh"));
+        text.Should().Contain("assert-dotnet-test-executed.sh");
+        text.Should().Contain("CertificationGateTeethTests");
     }
 
     [Fact]

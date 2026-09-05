@@ -28,11 +28,12 @@ cd "$SRC" || exit 1
 # ---------------------------------------------------------------- Tier 4: authoring
 say "4.1 the reference brick, via the command TesterQuickstart section 4 prints"
 t0=$(date +%s)
-if dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj >"$OUT/hello-brick.log" 2>&1; then
+if dotnet test samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj >"$OUT/hello-brick.log" 2>&1 \
+  && bash "$SRC/scripts/lib/assert-dotnet-test-executed.sh" "$OUT/hello-brick.log"; then
   TOTAL=$(grep -oE 'Passed: +[0-9]+' "$OUT/hello-brick.log" | tail -1 | grep -oE '[0-9]+')
   result 4 hello-brick PASS "$(( $(date +%s) - t0 ))s, ${TOTAL:-?} passed"
 else
-  result 4 hello-brick FAIL "$(grep -m3 -E 'error|Failed ' "$OUT/hello-brick.log" | tr '\n' ' ')"
+  result 4 hello-brick FAIL "$(grep -m3 -E 'error|Failed |empty match|Passed=' "$OUT/hello-brick.log" | tr '\n' ' ')"
 fi
 
 say "4.2 the sample builds by ProjectReference into src/, as the page says (nothing on nuget.org yet)"

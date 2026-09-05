@@ -285,10 +285,10 @@ dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -
 TEETH_RC=$?
 TEETH_S=$(( $(now) - t0 ))
 
-if [ $TEETH_RC -eq 0 ]; then
+if [ $TEETH_RC -eq 0 ] && bash "$SRC/scripts/lib/assert-dotnet-test-executed.sh" "$OUT/teeth.log"; then
   result 2 teeth-run PASS "${TEETH_S}s, exit 0"
 else
-  result 2 teeth-run FAIL "${TEETH_S}s, exit $TEETH_RC: $(grep -m3 -E 'error|Failed ' "$OUT/teeth.log" | tr '\n' ' ')"
+  result 2 teeth-run FAIL "${TEETH_S}s, exit $TEETH_RC: $(grep -m3 -E 'error|Failed |empty match|Passed=' "$OUT/teeth.log" | tr '\n' ' ')"
 fi
 
 # The quickstart names these two as the pair that defines the gate. `dotnet test` prints names only for
