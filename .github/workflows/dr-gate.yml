@@ -2,10 +2,21 @@ name: dr-gate
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/dr-gate.yml"
+      - "scripts/dr-gate*.sh"
+      - "scripts/run-dotnet-test-counted.py"
+      - "src/Ashlar.Tests.Infrastructure/Tests/Trust/LiteDbUserKnowledgeLogStoreTests.cs"
+      - "src/Ashlar.Infrastructure/Trust/LiteDbUserKnowledgeLogStore.cs"
   push:
     branches: [master]
     paths:
-      - 'scripts/dr-gate*.sh'
+      - ".github/workflows/dr-gate.yml"
+      - "scripts/dr-gate*.sh"
+      - "scripts/run-dotnet-test-counted.py"
+      - "src/Ashlar.Tests.Infrastructure/Tests/Trust/LiteDbUserKnowledgeLogStoreTests.cs"
+      - "src/Ashlar.Infrastructure/Trust/LiteDbUserKnowledgeLogStore.cs"
 
 jobs:
   dr-gate:
@@ -14,9 +25,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: |
-            10.0.x
-            8.0.x
+          global-json-file: global.json
       - name: Run DR gate
         run: DR_GATE_SKIP_PRIOR=1 bash scripts/dr-gate.sh
       - uses: actions/upload-artifact@v4
@@ -24,3 +33,4 @@ jobs:
         with:
           name: dr-gate-${{ github.run_id }}
           path: .ashlar/dr-gate/
+          if-no-files-found: warn

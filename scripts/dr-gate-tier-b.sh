@@ -6,9 +6,13 @@ cd "$ROOT"
 
 INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 
-echo "== DR Tier B: LiteDB user knowledge log store =="
-dotnet build "$INFRA" -v minimal
-dotnet test "$INFRA" -f net8.0 --no-build \
+echo "== DR Tier B: LiteDB user knowledge log store (net8.0, counted) =="
+python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 8 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~LiteDbUserKnowledgeLogStoreTests" \
   --blame-hang-timeout 60s --blame-hang-dump-type none
 
