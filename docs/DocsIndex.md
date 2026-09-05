@@ -60,7 +60,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/distribution-matrix-gate.yml` — **parallel** gates: NuGet local-pack consumer, CLI image + subcommand help smoke, API image + `curl` `/health` + `/api/status`, `Ashlar.Client` in-process test, pack-graph alignment (plus **weekly** schedule).
-- `docs/CiGateInventory.md` — one-row-per-workflow trigger map (58 files, including `products-gate` and the Autonomous Release Manager) and the enforced branch-protection state (`cert-gate` is the only required check).
+- `docs/CiGateInventory.md` — one-row-per-workflow trigger map (59 files, including `products-gate` and the Autonomous Release Manager) and the enforced branch-protection state (`cert-gate` is the only required check).
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR `:latest` on **manual dispatch only** (tags use `release.yml` + READY).
 - `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).

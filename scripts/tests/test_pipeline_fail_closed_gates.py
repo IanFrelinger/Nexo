@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -349,7 +350,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 122", text)
+        self.assertIn("--min-tests 123", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -1196,6 +1197,26 @@ class ComposeGateTrxFloorTests(unittest.TestCase):
         self.assertIn("ubuntu-baseframework.trx", text)
         self.assertIn("workflow_dispatch:", text)
         self.assertNotIn("pull_request:", text)
+
+
+class WorkflowTriggerInventoryTests(unittest.TestCase):
+    def test_inventory_pr_count_matches_workflow_files(self) -> None:
+        workflows = list((ROOT / ".github" / "workflows").glob("*.yml"))
+        pr = sum(
+            1
+            for path in workflows
+            if re.search(r"(?m)^  pull_request:", path.read_text(encoding="utf-8"))
+        )
+        self.assertEqual(35, pr)
+        inventory = (ROOT / "docs" / "CiGateInventory.md").read_text(encoding="utf-8")
+        self.assertIn("| Runs on `pull_request` | 35 |", inventory)
+        self.assertIn("| `workflow_dispatch` only | 13 |", inventory)
+        readme = (ROOT / ".github" / "workflows" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("**35 run on `pull_request`**", readme)
+        self.assertIn("**13 are `workflow_dispatch` only**", readme)
+        manual = inventory.split("### Manual-only workflows")[1].split("### Scheduled-only")[0]
+        self.assertNotIn("`composition-mesh-gate`", manual)
+        self.assertIn("`grpc-transport-gate.yml`", inventory.split("### PR-triggered workflows")[1].split("### Push-only")[0])
 
 
 class MakefileSlnfMinFloorTests(unittest.TestCase):

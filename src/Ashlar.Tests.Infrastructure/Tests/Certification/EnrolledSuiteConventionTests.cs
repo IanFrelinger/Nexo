@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Ashlar.Core.Application.Paths;
 using Xunit;
@@ -197,7 +198,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 122");
+        text.Should().Contain("--min-tests 123");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -869,6 +870,21 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("ubuntu-baseframework.trx");
         text.Should().Contain("workflow_dispatch:");
         text.Should().NotContain("pull_request:");
+    }
+
+    [Fact]
+    public void CiGateInventory_MatchesLivePullRequestCount()
+    {
+        var root = RepoPathResolver.FindRepoRoot();
+        var pr = Directory.GetFiles(Path.Combine(root, ".github/workflows"), "*.yml")
+            .Count(path => Regex.IsMatch(File.ReadAllText(path), @"(?m)^  pull_request:"));
+        pr.Should().Be(35);
+        var inventory = File.ReadAllText(Path.Combine(root, "docs/CiGateInventory.md"));
+        inventory.Should().Contain("| Runs on `pull_request` | 35 |");
+        inventory.Should().Contain("| `workflow_dispatch` only | 13 |");
+        var readme = File.ReadAllText(Path.Combine(root, ".github/workflows/README.md"));
+        readme.Should().Contain("**35 run on `pull_request`**");
+        readme.Should().Contain("**13 are `workflow_dispatch` only**");
     }
 
     [Fact]

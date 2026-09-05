@@ -3,15 +3,16 @@
 Workflows in this directory are **manual-first** to reduce duplicate CI load, surprise
 minute costs, and branch-noise on `cursor/**` and other integration branches. The full,
 per-file trigger map lives in [`docs/CiGateInventory.md`](../../docs/CiGateInventory.md);
-the summary of the 58 files is:
+the summary of the 59 files is:
 
-- **18 run on `pull_request`** — only `cert-gate`, `layer-boundary`, and `uat-gate` on every PR, the
-  rest path-filtered (kernel/application/security/coverage/docs/testing-strategy/shell-lint/
-  Release Manager validation/other path-scoped gates) plus unfiltered `composition-mesh-gate`
-  (Tier A–C) and the label-driven `release-staging-on-label`.
-- **18 are push- and/or schedule-driven**, with `workflow_dispatch` as well — post-merge
-  signals such as `mcp-a2a-gate`, `grpc-transport-gate`, `onboarding-docs-guard`.
-- **16 are `workflow_dispatch` only**, including `container-image-publish`, `cross-platform-tests` and `prod-dry-run-pr`
+- **35 run on `pull_request`** — `cert-gate`, `layer-boundary`, `uat-gate`, and `composition-mesh-gate`
+  on every PR (`layer-boundary` uses `paths: "**"`); the rest are path-filtered plus the
+  label-driven `release-staging-on-label`. Authoritative per-file map:
+  [`docs/CiGateInventory.md`](../../docs/CiGateInventory.md).
+- **6 are push- and/or schedule-driven with no PR trigger**, plus `workflow_dispatch` —
+  `compose-gate`, `container-image-gate`, `devcontainer-gate`, `friend-mesh-prefab-gate`,
+  `full-platform-readiness-gate`, `mesh-lab-tls-gate`.
+- **13 are `workflow_dispatch` only**, including `container-image-publish`, `cross-platform-tests` and `prod-dry-run-pr`
   despite their names: run them from the Actions tab or with
   `gh workflow run "<Workflow name>" --ref <branch>`.
 - **Tag-driven releases** stay automatic where required (`release.yml` on `v*.*.*` tags,
