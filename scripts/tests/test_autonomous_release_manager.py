@@ -866,9 +866,9 @@ class ReleaseScriptSafetyTests(unittest.TestCase):
                 stderr=subprocess.STDOUT,
                 check=False,
             )
-        self.assertEqual(2, run.returncode)
-        self.assertIn("working Docker daemon", run.stdout)
-        self.assertNotIn("compose ", docker_log.read_text(encoding="utf-8"))
+            self.assertEqual(2, run.returncode)
+            self.assertIn("working Docker daemon", run.stdout)
+            self.assertNotIn("compose ", docker_log.read_text(encoding="utf-8"))
 
     def test_prod_dry_run_cleans_stack_on_failure(self) -> None:
         repo = SCRIPT.parents[1]
