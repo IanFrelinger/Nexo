@@ -112,6 +112,10 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidMinScoreMessage = "Invalid --min-score. Use a number in [0,1].";
 
+    internal const string InvalidCountMessage = "Invalid --count. Use a positive integer.";
+
+    internal const string InvalidTailMessage = "Invalid --tail. Use a positive integer.";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;
@@ -131,6 +135,9 @@ internal static class RuntimeCommandUtilities
 
     internal static bool TryValidateOptionalPositiveDuration(double? value)
         => !value.HasValue || TryValidatePositiveDuration(value.Value);
+
+    internal static bool TryValidateOptionalPositiveCount(int? value)
+        => !value.HasValue || TryValidatePositiveCount(value.Value);
 
 
 }

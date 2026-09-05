@@ -12,7 +12,7 @@ static partial class Program
     {
         // ashlar trust - Audit and access boundary (Phase 4)
         var trustCmd = new Command("trust", "Trust & Information Architecture: audit log and access boundary");
-        var auditCountOpt = new Option<int>("--count", () => 50, "Max entries to show");
+        var auditCountOpt = new Option<int>("--count", () => 50, "Max entries to show (must be > 0)");
         var auditSinceOpt = new Option<string?>("--since", "Filter by time (e.g. 1h, 30m, or ISO date)");
         var auditUntilOpt = new Option<string?>("--until", "Filter until time (e.g. 1h, 30m, or ISO date)");
         var auditTypeOpt = new Option<string?>("--type", "Filter by event type (Sanitization, BoundaryChange, Classification)");
@@ -115,7 +115,7 @@ static partial class Program
             jsonOpt);
         trustCmd.AddCommand(trustBoundaryCmd);
         var trustDashboardCmd = new Command("dashboard", "Compliance dashboard: boundary status + audit summary");
-        trustDashboardCmd.AddOption(new Option<int>("--count", () => 50, "Max audit entries to include"));
+        trustDashboardCmd.AddOption(new Option<int>("--count", () => 50, "Max audit entries to include (must be > 0)"));
         trustDashboardCmd.AddOption(jsonOpt);
         trustDashboardCmd.SetHandler(
             /// <summary>Async.</summary>

@@ -160,7 +160,7 @@ static partial class Program
 
         // ashlar background-agent logs
         var logsBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
-        var logsTailOpt = new Option<int>("--tail", () => 100, "Show last N lines");
+        var logsTailOpt = new Option<int>("--tail", () => 100, "Show last N lines (must be > 0)");
         var logsLevelOpt = new Option<string?>("--level", "Filter by level (Debug, Info, Warning, Error)");
         var logsSinceOpt = new Option<string?>("--since", "Show logs since duration (e.g. 1h, 30m)");
         var logsBgCmd = new Command("logs", "Show agent execution logs")
@@ -254,7 +254,7 @@ static partial class Program
         var obsSourceOpt = new Option<string?>("--source", () => null, "Filter to a specific source (typically the agent id)");
         var obsKindOpt = new Option<string?>("--kind", () => null, "Filter by kind (Build, Test, Analysis, AgentAction, UserSignal)");
         var obsSinceOpt = new Option<double?>("--since-hours", () => null, "Only observations newer than now-N hours (must be > 0)");
-        var obsTailOpt = new Option<int?>("--tail", () => null, "Show only the most recent N rows after filtering");
+        var obsTailOpt = new Option<int?>("--tail", () => null, "Show only the most recent N rows after filtering (must be > 0)");
         var obsSummaryOpt = new Option<bool>("--summary", () => false, "Group counts by source/kind/severity instead of listing rows");
         var observationsBgCmd = new Command("observations", "Inspect the structured observations log (observations.jsonl)")
         {

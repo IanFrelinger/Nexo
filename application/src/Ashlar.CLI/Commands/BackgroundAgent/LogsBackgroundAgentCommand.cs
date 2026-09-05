@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.Logging;
+using Ashlar.CLI.Commands.Runtime;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
 
@@ -28,6 +29,15 @@ public class LogsBackgroundAgentCommand
     {
         try
         {
+            if (!RuntimeCommandUtilities.TryValidatePositiveCount(tail))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --tail" }));
+                else
+                    Console.Error.WriteLine(RuntimeCommandUtilities.InvalidTailMessage);
+                return Task.FromResult(1);
+            }
+
             DateTimeOffset? sinceUtc = since.HasValue ? DateTimeOffset.UtcNow - since.Value : null;
             var entries = _logStore?.GetRecent(id, tail, level, sinceUtc) ?? Array.Empty<AgentLogEntry>();
             if (formatJson)

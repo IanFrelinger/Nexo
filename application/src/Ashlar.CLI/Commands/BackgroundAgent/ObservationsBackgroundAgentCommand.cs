@@ -69,6 +69,15 @@ public class ObservationsBackgroundAgentCommand
                 return Task.FromResult(1);
             }
 
+            if (!RuntimeCommandUtilities.TryValidateOptionalPositiveCount(tail))
+            {
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, error = "Invalid --tail" }));
+                else
+                    stderr.WriteLine(RuntimeCommandUtilities.InvalidTailMessage);
+                return Task.FromResult(1);
+            }
+
             var cutoff = sinceHours is > 0
                 ? DateTimeOffset.UtcNow - TimeSpan.FromHours(sinceHours.Value)
                 : (DateTimeOffset?)null;

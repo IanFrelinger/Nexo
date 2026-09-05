@@ -161,6 +161,21 @@ public class ObservationsBackgroundAgentCommandTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task ZeroOrNegativeTail_isRefusedInsteadOfReturningAllRows()
+    {
+        Seed("tester", ObservationKind.Test, ObservationSeverity.Info, "must-not-be-returned");
+        var cmd = new ObservationsBackgroundAgentCommand(_store, NullLogger<ObservationsBackgroundAgentCommand>.Instance);
+        foreach (var tail in new int?[] { 0, -1 })
+        {
+            var (rc, stdout) = await CaptureAsync(() => Run(
+                cmd, source: null, kind: null, sinceHours: null, tail: tail, summary: false, formatJson: true));
+            rc.Should().Be(1);
+            stdout.Should().Contain("Invalid --tail");
+            stdout.Should().NotContain("must-not-be-returned");
+        }
+    }
+
     private Task<int> Run(
         ObservationsBackgroundAgentCommand cmd,
         string? source,

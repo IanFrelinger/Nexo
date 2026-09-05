@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Extensions.Logging;
+using Ashlar.CLI.Commands.Runtime;
 using Ashlar.Core.Application.Trust.Models;
 using Ashlar.Core.Application.Trust.Ports;
 
@@ -35,6 +36,15 @@ public class TrustCommand
     {
         try
         {
+            if (!RuntimeCommandUtilities.TryValidatePositiveCount(count))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Invalid --count\"}");
+                else
+                    Console.Error.WriteLine(RuntimeCommandUtilities.InvalidCountMessage);
+                return Task.FromResult(1);
+            }
+
             if (!TryParseTimeFilter(since, out var sinceDt))
             {
                 if (formatJson)
@@ -107,6 +117,15 @@ public class TrustCommand
     {
         try
         {
+            if (!RuntimeCommandUtilities.TryValidatePositiveCount(auditCount))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Invalid --count\"}");
+                else
+                    Console.Error.WriteLine(RuntimeCommandUtilities.InvalidCountMessage);
+                return Task.FromResult(1);
+            }
+
             if (formatJson)
             {
                 var dashboard = new Dictionary<string, object>();

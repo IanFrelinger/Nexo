@@ -18,6 +18,8 @@ public class LogsBackgroundAgentCommandTests : UnitTestBase
             await TestLogsEmptyWhenNoStore();
             /// <summary>Test logs from store.</summary>
             await TestLogsFromStore();
+            /// <summary>Test invalid tail limit.</summary>
+            await TestLogsRejectInvalidTailWithoutReadingStore();
             return new TestResult { Name = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = true, Message = "All LogsBackgroundAgentCommand tests passed" };
         }
         catch (AssertionException ex)
@@ -48,5 +50,18 @@ public class LogsBackgroundAgentCommandTests : UnitTestBase
         var exitCode = await command.ExecuteAsync("agent1", 100, null, null, false);
         /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
+    }
+
+    private async Task TestLogsRejectInvalidTailWithoutReadingStore()
+    {
+        var store = new Mock<IBackgroundAgentLogStore>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<LogsBackgroundAgentCommand>>();
+        var command = new LogsBackgroundAgentCommand(logger.Object, store.Object);
+        foreach (var tail in new[] { 0, -1 })
+        {
+            var exitCode = await command.ExecuteAsync("agent1", tail, null, null, true);
+            AssertEqual(1, exitCode);
+        }
+        store.VerifyNoOtherCalls();
     }
 }

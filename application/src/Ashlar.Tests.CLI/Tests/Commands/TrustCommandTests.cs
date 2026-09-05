@@ -22,6 +22,8 @@ public class TrustCommandTests : UnitTestBase
             await TestAuditAsync_InvalidSince_ReturnsOneWithoutQueryingLog();
             await TestAuditAsync_InvalidUntil_ReturnsOneWithoutQueryingLog();
             await TestAuditAsync_DurationSince_PassesFilterToLog();
+            await TestAuditAsync_InvalidCount_ReturnsOneWithoutQueryingLog();
+            await TestDashboardAsync_InvalidCount_ReturnsOneWithoutQueryingLog();
             /// <summary>Test pause async_with boundary_returns zero.</summary>
             await TestPauseAsync_WithBoundary_ReturnsZero();
             /// <summary>Test resume async_with boundary_returns zero.</summary>
@@ -152,6 +154,60 @@ public class TrustCommandTests : UnitTestBase
             mockLog.Verify(
                 x => x.GetRecent(10, It.Is<DateTimeOffset?>(s => s.HasValue), null, null),
                 Times.Once);
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestAuditAsync_InvalidCount_ReturnsOneWithoutQueryingLog()
+    {
+        var mockLog = new Mock<IDataDecisionAuditLog>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<TrustCommand>>();
+        var command = new TrustCommand(mockLog.Object, null, null, logger.Object);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            foreach (var count in new[] { 0, -1 })
+            {
+                writer.GetStringBuilder().Clear();
+                var exitCode = await command.AuditAsync(count, null, null, null, true, false, false);
+                AssertEqual(1, exitCode);
+                AssertTrue(writer.ToString().Contains("Invalid --count", StringComparison.Ordinal),
+                    "A non-positive audit --count must be refused legibly.");
+            }
+            mockLog.VerifyNoOtherCalls();
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestDashboardAsync_InvalidCount_ReturnsOneWithoutQueryingLog()
+    {
+        var mockLog = new Mock<IDataDecisionAuditLog>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<TrustCommand>>();
+        var command = new TrustCommand(mockLog.Object, null, null, logger.Object);
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            foreach (var count in new[] { 0, -1 })
+            {
+                writer.GetStringBuilder().Clear();
+                var exitCode = await command.DashboardAsync(count, true);
+                AssertEqual(1, exitCode);
+                AssertTrue(writer.ToString().Contains("Invalid --count", StringComparison.Ordinal),
+                    "A non-positive dashboard --count must be refused legibly.");
+            }
+            mockLog.VerifyNoOtherCalls();
         }
         finally
         {
