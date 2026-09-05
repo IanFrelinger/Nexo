@@ -593,14 +593,17 @@ def _sanitized_environment(worktree: Path, step_token: str) -> dict[str, str]:
             "ASHLAR_AUDIT_STEP_TOKEN": step_token,
             "CI": "true",
             "DOTNET_CLI_HOME": str(audit_home),
+            "DOTNET_CLI_USE_MSBUILD_SERVER": "0",
             "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
             "DOTNET_NOLOGO": "true",
             "GIT_CONFIG_GLOBAL": os.devnull,
             "GIT_CONFIG_NOSYSTEM": "1",
             "HOME": str(audit_home),
+            "MSBUILDDISABLENODEREUSE": "1",
             "NUGET_PACKAGES": str(nuget_cache),
             "PATH": os.pathsep.join(trusted_paths),
             "ASHLAR_RELEASE_AUDIT": "1",
+            "UseSharedCompilation": "false",
         }
     )
     return environment
