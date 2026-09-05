@@ -57,24 +57,29 @@ def executed_count(results_directory: Path) -> int:
     return executed_evidence(results_directory)[0]
 
 
+def _covers(discovered_name: str, executed_names: collections.Counter[str]) -> bool:
+    """Exact TRX name, or xUnit theory rows listed as Method(data)."""
+    if executed_names[discovered_name]:
+        return True
+    prefix = discovered_name + "("
+    return any(name.startswith(prefix) for name in executed_names)
+
+
 def identity_problems(
     discovered: list[str],
     all_outcomes: collections.Counter[str],
     passed: collections.Counter[str],
 ) -> list[str]:
-    expected = collections.Counter(discovered)
     problems: list[str] = []
-    missing = expected - all_outcomes
-    not_passed = expected - passed
+    missing = [name for name in discovered if not _covers(name, all_outcomes)]
+    not_passed = [name for name in discovered if not _covers(name, passed)]
     if missing:
         problems.append(
-            "discovered identities did not execute: "
-            + ", ".join(sorted(missing.elements()))
+            "discovered identities did not execute: " + ", ".join(sorted(set(missing)))
         )
     if not_passed:
         problems.append(
-            "mandatory identities were not passed: "
-            + ", ".join(sorted(not_passed.elements()))
+            "mandatory identities were not passed: " + ", ".join(sorted(set(not_passed)))
         )
     return problems
 

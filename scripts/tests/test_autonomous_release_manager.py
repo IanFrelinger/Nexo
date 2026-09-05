@@ -742,6 +742,32 @@ The following Tests are available:
         )
         self.assertTrue(any("did not execute" in problem for problem in problems))
 
+    def test_theory_rows_satisfy_listed_method_identity(self) -> None:
+        problems = counted.identity_problems(
+            ["Ashlar.Tests.Hosting.KernelPhaseResolutionTests.Profile_ResolvesExpectedKernelServices"],
+            collections.Counter(
+                [
+                    "Ashlar.Tests.Hosting.KernelPhaseResolutionTests.Profile_ResolvesExpectedKernelServices(profile: Full)",
+                    "Ashlar.Tests.Hosting.KernelPhaseResolutionTests.Profile_ResolvesExpectedKernelServices(profile: Edge)",
+                ]
+            ),
+            collections.Counter(
+                [
+                    "Ashlar.Tests.Hosting.KernelPhaseResolutionTests.Profile_ResolvesExpectedKernelServices(profile: Full)",
+                    "Ashlar.Tests.Hosting.KernelPhaseResolutionTests.Profile_ResolvesExpectedKernelServices(profile: Edge)",
+                ]
+            ),
+        )
+        self.assertEqual([], problems)
+
+    def test_prefix_without_theory_paren_does_not_satisfy_discovery(self) -> None:
+        problems = counted.identity_problems(
+            ["Ashlar.Tests.Foo"],
+            collections.Counter(["Ashlar.Tests.FooBar"]),
+            collections.Counter(["Ashlar.Tests.FooBar"]),
+        )
+        self.assertTrue(any("did not execute" in problem for problem in problems))
+
     def test_vulnerability_records_find_nested_packages(self) -> None:
         report = {
             "projects": [
