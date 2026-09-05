@@ -27,12 +27,20 @@ public sealed class SelfContextCommand : Command
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var lookbackStr = ctx.ParseResult.GetValueForOption(lookbackOpt);
-            await ExecuteAsync(lookbackStr);
+            // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
+            ctx.ExitCode = await ExecuteAsync(lookbackStr);
         });
     }
 
-    private static async Task ExecuteAsync(string? lookbackStr)
+    private static async Task<int> ExecuteAsync(string? lookbackStr)
     {
+        var lookbackText = string.IsNullOrWhiteSpace(lookbackStr) ? "24h" : lookbackStr;
+        if (!TryParseLookback(lookbackText, out var lookback))
+        {
+            Console.Error.WriteLine("Invalid --lookback. Use a duration such as 24h, 1d, or 30m.");
+            return 1;
+        }
+
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "ashlar-patterns.db");
 
@@ -43,31 +51,30 @@ public sealed class SelfContextCommand : Command
             .BuildServiceProvider();
 
         var assembler = services.GetRequiredService<ISelfContextAssembler>();
-
-        var lookback = ParseLookback(lookbackStr ?? "24h");
         var selfContext = await assembler.AssembleAsync(lookback).ConfigureAwait(false);
 
         Console.WriteLine(selfContext.Summary);
+        return 0;
     }
 
-    private static TimeSpan ParseLookback(string s)
+    private static bool TryParseLookback(string s, out TimeSpan lookback)
     {
+        lookback = default;
         s = s.Trim().ToLowerInvariant();
-        if (s.EndsWith("h"))
+        if (s.Length < 2)
+            return false;
+
+        var unit = s[^1];
+        if (!int.TryParse(s[..^1], out var n) || n < 0)
+            return false;
+
+        lookback = unit switch
         {
-            var n = int.Parse(s.TrimEnd('h'));
-            return TimeSpan.FromHours(n);
-        }
-        if (s.EndsWith("d"))
-        {
-            var n = int.Parse(s.TrimEnd('d'));
-            return TimeSpan.FromDays(n);
-        }
-        if (s.EndsWith("m"))
-        {
-            var n = int.Parse(s.TrimEnd('m'));
-            return TimeSpan.FromMinutes(n);
-        }
-        return TimeSpan.FromHours(24);
+            'h' => TimeSpan.FromHours(n),
+            'd' => TimeSpan.FromDays(n),
+            'm' => TimeSpan.FromMinutes(n),
+            _ => default
+        };
+        return unit is 'h' or 'd' or 'm';
     }
 }

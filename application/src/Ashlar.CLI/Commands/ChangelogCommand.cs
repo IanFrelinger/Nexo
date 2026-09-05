@@ -31,12 +31,26 @@ public sealed class ChangelogCommand : Command
             var sinceStr = ctx.ParseResult.GetValueForOption(sinceOpt);
             var untilStr = ctx.ParseResult.GetValueForOption(untilOpt);
             var output = ctx.ParseResult.GetValueForOption(outputOpt);
-            await ExecuteAsync(sinceStr, untilStr, output);
+            // #455: Environment.ExitCode is overwritten back to 0 after the handler returns.
+            ctx.ExitCode = await ExecuteAsync(sinceStr, untilStr, output);
         });
     }
 
-    private static async Task ExecuteAsync(string? sinceStr, string? untilStr, FileInfo? output)
+    private static async Task<int> ExecuteAsync(string? sinceStr, string? untilStr, FileInfo? output)
     {
+        var sinceText = string.IsNullOrWhiteSpace(sinceStr) ? "7d" : sinceStr;
+        if (!TryParseSince(sinceText, out var since))
+        {
+            Console.Error.WriteLine("Invalid --since. Use a duration such as 7d or 30h, or a date (yyyy-MM-dd).");
+            return 1;
+        }
+
+        if (!string.IsNullOrWhiteSpace(untilStr) && !DateTimeOffset.TryParse(untilStr, out _))
+        {
+            Console.Error.WriteLine("Invalid --until. Use a date (yyyy-MM-dd).");
+            return 1;
+        }
+
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "ashlar-patterns.db");
 
@@ -47,8 +61,6 @@ public sealed class ChangelogCommand : Command
             .BuildServiceProvider();
 
         var generator = services.GetRequiredService<IChangelogGenerator>();
-
-        var since = ParseSince(sinceStr ?? "7d");
         var until = ParseUntil(untilStr);
 
         var changelog = await generator.GenerateAsync(since, until).ConfigureAwait(false);
@@ -63,25 +75,25 @@ public sealed class ChangelogCommand : Command
             Console.WriteLine(changelog);
         }
 
-        Environment.ExitCode = 0;
+        return 0;
     }
 
-    private static DateTimeOffset ParseSince(string s)
+    private static bool TryParseSince(string s, out DateTimeOffset since)
     {
         s = s.Trim().ToLowerInvariant();
-        if (s.EndsWith("d"))
+        if (s.EndsWith("d") && int.TryParse(s[..^1], out var days) && days >= 0)
         {
-            var n = int.Parse(s.TrimEnd('d'));
-            return DateTimeOffset.UtcNow.AddDays(-n);
+            since = DateTimeOffset.UtcNow.AddDays(-days);
+            return true;
         }
-        if (s.EndsWith("h"))
+
+        if (s.EndsWith("h") && int.TryParse(s[..^1], out var hours) && hours >= 0)
         {
-            var n = int.Parse(s.TrimEnd('h'));
-            return DateTimeOffset.UtcNow.AddHours(-n);
+            since = DateTimeOffset.UtcNow.AddHours(-hours);
+            return true;
         }
-        if (DateTimeOffset.TryParse(s, out var parsed))
-            return parsed;
-        return DateTimeOffset.UtcNow.AddDays(-7);
+
+        return DateTimeOffset.TryParse(s, out since);
     }
 
     private static DateTimeOffset? ParseUntil(string? s)

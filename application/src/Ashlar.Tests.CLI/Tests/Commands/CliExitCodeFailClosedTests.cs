@@ -23,6 +23,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestAnalyzeBricksViolationExitsNonZeroAsync().ConfigureAwait(false);
             await TestImproveDryRunViolationExitsNonZeroAsync().ConfigureAwait(false);
             await TestImproveMissingStoreCreatesDirectoryWithoutStackTraceAsync().ConfigureAwait(false);
+            await TestSelfContextInvalidLookbackExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
+            await TestChangelogInvalidSinceExitsNonZeroWithoutStackTraceAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -238,6 +240,56 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             Console.SetError(ConsoleCapture.Error);
             if (Directory.Exists(tempRoot))
                 Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    private async Task TestSelfContextInvalidLookbackExitsNonZeroWithoutStackTraceAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new SelfContextCommand());
+            var exitCode = await root.InvokeAsync("self-context --lookback xh").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "self-context --lookback xh must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --lookback", StringComparison.Ordinal),
+                "An invalid --lookback must be refused legibly.");
+            AssertTrue(!output.Contains("FormatException", StringComparison.Ordinal)
+                && !output.Contains("   at ", StringComparison.Ordinal),
+                "An invalid --lookback must not print a stack trace.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestChangelogInvalidSinceExitsNonZeroWithoutStackTraceAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new ChangelogCommand());
+            var exitCode = await root.InvokeAsync("changelog --since xh").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "changelog --since xh must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --since", StringComparison.Ordinal),
+                "An invalid --since must be refused legibly.");
+            AssertTrue(!output.Contains("FormatException", StringComparison.Ordinal)
+                && !output.Contains("   at ", StringComparison.Ordinal),
+                "An invalid --since must not print a stack trace.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 }
