@@ -1184,6 +1184,8 @@ internal static class WorkflowCommandUtilities
     internal const string InvalidSearchStrategyMessage =
         "Invalid --search-strategy. Use successive-halving, objective-first, or exhaustive.";
 
+    internal const string InvalidIterationsMessage = "Invalid --iterations. Use a positive integer.";
+
     internal static bool TryNormalizeSearchStrategy(string? searchStrategy, out string normalized)
     {
         if (string.IsNullOrWhiteSpace(searchStrategy))

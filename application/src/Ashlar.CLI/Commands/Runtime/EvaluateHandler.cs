@@ -43,6 +43,12 @@ internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
             return 1;
         }
 
+        if (!RuntimeCommandUtilities.TryValidateMaxIterationsOverride(maxIterationsOverride))
+        {
+            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, RuntimeCommandUtilities.InvalidMaxIterationsMessage), json);
+            return 1;
+        }
+
         if (!TryResolvePolicies(policiesCsv, out var policies, out var policyError))
         {
             RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, policyError), json);

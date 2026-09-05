@@ -184,7 +184,7 @@ public sealed partial class RuntimeCommand : Command
         }
 
         var plan = AdaptiveRuntimePlanResolver.Resolve(goal, manifest, bootstrapProfile, effectiveQaPolicy);
-        if (maxIterationsOverride.HasValue && maxIterationsOverride.Value > 0)
+        if (maxIterationsOverride.HasValue)
             plan = plan with { MaxIterations = maxIterationsOverride.Value };
         if (!string.IsNullOrWhiteSpace(adaptivePolicyReason))
             plan = plan with { Reasons = plan.Reasons.Concat([$"adaptive-policy: {adaptivePolicyReason}"]).ToArray() };

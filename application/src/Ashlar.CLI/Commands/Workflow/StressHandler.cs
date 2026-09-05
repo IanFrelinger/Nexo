@@ -75,6 +75,12 @@ internal sealed class StressHandler(
             return 1;
         }
 
+        if (iterationsOverride.HasValue && iterationsOverride.Value <= 0)
+        {
+            WriteResult(new WorkflowStressResult(false, WorkflowCommandUtilities.InvalidIterationsMessage), json);
+            return 1;
+        }
+
         var repoRoot = Environment.CurrentDirectory;
         var requests = normalizeRequests(spec.Requests);
         var compositions = normalizeCompositions(spec.Compositions);
@@ -89,7 +95,12 @@ internal sealed class StressHandler(
 
         var benchmarkSet = normalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
         var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
-        var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
+        var iterations = iterationsOverride ?? spec.Execution.Iterations;
+        if (iterations <= 0)
+        {
+            WriteResult(new WorkflowStressResult(false, WorkflowCommandUtilities.InvalidIterationsMessage), json);
+            return 1;
+        }
         var sharedRequest = string.IsNullOrWhiteSpace(requestOverride) ? null : requestOverride.Trim();
         var runId = buildRunId();
         var specHash = computeSpecHash(JsonSerializer.Serialize(spec));

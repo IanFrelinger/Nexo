@@ -94,6 +94,9 @@ internal sealed partial class ExecuteHandler
         if (!RuntimeCommandUtilities.TryNormalizeBootstrapProfile(bootstrapProfile, out _))
             return Finalize(new RuntimeExecuteResult(false, "Invalid --bootstrap-profile. Use auto, self-extend-functional, self-extend-aesthetic, or self-extend-visual.", FailureStage: "input"));
 
+        if (!RuntimeCommandUtilities.TryValidateMaxIterationsOverride(maxIterationsOverride))
+            return Finalize(new RuntimeExecuteResult(false, RuntimeCommandUtilities.InvalidMaxIterationsMessage, FailureStage: "input"));
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
             return Finalize(new RuntimeExecuteResult(false, $"Repo root not found: {fullRepoRoot}", RepoRoot: fullRepoRoot, FailureStage: "input"));

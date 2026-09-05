@@ -64,4 +64,11 @@ internal static class RuntimeCommandUtilities
     }
 
 
+    internal const string InvalidMaxIterationsMessage = "Invalid --max-iterations. Use a positive integer.";
+
+
+    internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
+        => !maxIterations.HasValue || maxIterations.Value > 0;
+
+
 }

@@ -60,6 +60,12 @@ internal sealed partial class OptimizeHandler(
 
         searchStrategy = normalizedSearchStrategy;
 
+        if (iterationsOverride.HasValue && iterationsOverride.Value <= 0)
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidIterationsMessage), json);
+            return 1;
+        }
+
         var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try
@@ -100,7 +106,12 @@ internal sealed partial class OptimizeHandler(
         }
         var benchmarkSet = WorkflowCommandUtilities.NormalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
         var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
-        var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
+        var iterations = iterationsOverride ?? spec.Execution.Iterations;
+        if (iterations <= 0)
+        {
+            WriteResult(new WorkflowOptimizeResult(false, WorkflowCommandUtilities.InvalidIterationsMessage), json);
+            return 1;
+        }
         var warmupRuns = Math.Max(0, warmupRunsOverride ?? spec.Execution.WarmupRuns);
         var cooldownMs = Math.Max(0, cooldownMsOverride ?? spec.Execution.CooldownMs);
         var shuffleScenarios = shuffleScenariosOverride ?? spec.Execution.ShuffleScenarioOrder;

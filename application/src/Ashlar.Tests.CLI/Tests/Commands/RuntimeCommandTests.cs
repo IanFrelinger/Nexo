@@ -23,6 +23,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestPlanRejectsInvalidBootstrapProfileAsync().ConfigureAwait(false);
             await TestGateRejectsInvalidPolicyAsync().ConfigureAwait(false);
             await TestPlanRejectsInvalidManifestQaPolicyAsync().ConfigureAwait(false);
+            await TestPlanRejectsInvalidMaxIterationsAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -244,6 +245,25 @@ public sealed class RuntimeCommandTests : UnitTestBase
             if (File.Exists(manifestPath))
                 File.Delete(manifestPath);
         }
+    }
+
+    private async Task TestPlanRejectsInvalidMaxIterationsAsync()
+    {
+        var (zeroExit, zeroOutput) = await InvokeRuntimeAsync("plan --goal test --max-iterations 0 --use-history false --json").ConfigureAwait(false);
+        AssertEqual(1, zeroExit);
+        AssertTrue(zeroOutput.Contains("Invalid --max-iterations", StringComparison.Ordinal),
+            "A non-positive --max-iterations must be refused legibly.");
+        AssertTrue(!zeroOutput.Contains("Plan computed successfully", StringComparison.Ordinal),
+            "A non-positive --max-iterations must be refused before computing a plan.");
+        AssertTrue(!zeroOutput.Contains("\"maxIterations\": 2", StringComparison.Ordinal),
+            "A --max-iterations of 0 must not be dropped so the demo policy default of 2 is planned.");
+
+        var (negExit, negOutput) = await InvokeRuntimeAsync("plan --goal test --max-iterations -3 --use-history false --json").ConfigureAwait(false);
+        AssertEqual(1, negExit);
+        AssertTrue(negOutput.Contains("Invalid --max-iterations", StringComparison.Ordinal),
+            "A negative --max-iterations must be refused legibly.");
+        AssertTrue(!negOutput.Contains("Plan computed successfully", StringComparison.Ordinal),
+            "A negative --max-iterations must be refused before computing a plan.");
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()

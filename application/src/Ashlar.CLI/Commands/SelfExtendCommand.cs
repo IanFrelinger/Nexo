@@ -152,6 +152,12 @@ public sealed class SelfExtendCommand : Command
             return 1;
         }
 
+        if (maxIterationsOverride.HasValue && maxIterationsOverride.Value <= 0)
+        {
+            WriteResult(false, InvalidMaxIterationsMessage, fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null, testFilter: null, testSummary: null, focus: focusOverride?.Trim() ?? "balanced", maxIterations: 0, iterations: Array.Empty<object>());
+            return 1;
+        }
+
         var previousAllowMock = Environment.GetEnvironmentVariable("ASHLAR_ALLOW_MOCK");
         var previousProvider = Environment.GetEnvironmentVariable("ASHLAR_MODEL_PROVIDER");
         try
@@ -172,6 +178,12 @@ public sealed class SelfExtendCommand : Command
             if (!TryNormalizeVisualQaFallbackPolicy(runtimeSpec.Workflow.VisualQaFallbackPolicy, out _))
             {
                 WriteResult(false, InvalidVisualQaFallbackPolicyMessage, fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null, testFilter: null, testSummary: null, focus: runtimeSpec.Workflow.Focus ?? "balanced", maxIterations: 0, iterations: Array.Empty<object>());
+                return 1;
+            }
+
+            if (!maxIterationsOverride.HasValue && runtimeSpec.Workflow.MaxIterations <= 0)
+            {
+                WriteResult(false, InvalidSpecMaxIterationsMessage, fullRepoRoot, provider, executed: 0, denied: 0, json, testsRun: false, testsPassed: null, testFilter: null, testSummary: null, focus: runtimeSpec.Workflow.Focus ?? "balanced", maxIterations: 0, iterations: Array.Empty<object>());
                 return 1;
             }
 
@@ -372,6 +384,12 @@ public sealed class SelfExtendCommand : Command
             return 1;
         }
 
+        if (maxIterationsOverride.HasValue && maxIterationsOverride.Value <= 0)
+        {
+            WritePreflightResult(new PreflightResult(false, InvalidMaxIterationsMessage, Array.Empty<PreflightCheck>()), json);
+            return 1;
+        }
+
         var previousAllowMock = Environment.GetEnvironmentVariable("ASHLAR_ALLOW_MOCK");
         var previousProvider = Environment.GetEnvironmentVariable("ASHLAR_MODEL_PROVIDER");
         try
@@ -392,6 +410,12 @@ public sealed class SelfExtendCommand : Command
             if (!TryNormalizeVisualQaFallbackPolicy(runtimeSpec.Workflow.VisualQaFallbackPolicy, out _))
             {
                 WritePreflightResult(new PreflightResult(false, InvalidVisualQaFallbackPolicyMessage, Array.Empty<PreflightCheck>()), json);
+                return 1;
+            }
+
+            if (!maxIterationsOverride.HasValue && runtimeSpec.Workflow.MaxIterations <= 0)
+            {
+                WritePreflightResult(new PreflightResult(false, InvalidSpecMaxIterationsMessage, Array.Empty<PreflightCheck>()), json);
                 return 1;
             }
 
@@ -425,7 +449,7 @@ public sealed class SelfExtendCommand : Command
     {
         var iterations = maxIterationsOverride ?? source.MaxIterations;
         if (iterations <= 0)
-            iterations = 1;
+            throw new ArgumentException(maxIterationsOverride.HasValue ? InvalidMaxIterationsMessage : InvalidSpecMaxIterationsMessage);
 
         var focus = string.IsNullOrWhiteSpace(focusOverride)
             ? source.Focus
@@ -459,6 +483,10 @@ public sealed class SelfExtendCommand : Command
     }
 
     internal const string InvalidVisualQaFallbackPolicyMessage = "Invalid visualQaFallbackPolicy. Use strict or degrade.";
+
+    internal const string InvalidMaxIterationsMessage = "Invalid --max-iterations. Use a positive integer.";
+
+    internal const string InvalidSpecMaxIterationsMessage = "Invalid maxIterations in runtime spec. Use a positive integer.";
 
     internal static bool TryNormalizeVisualQaFallbackPolicy(string? policy, out string normalized)
     {

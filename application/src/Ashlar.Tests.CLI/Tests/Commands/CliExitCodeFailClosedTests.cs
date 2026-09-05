@@ -44,6 +44,9 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestMultiEnvInvalidSuiteExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowOptimizeInvalidSpecPreferExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowStressInvalidSpecPreferExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimePlanInvalidMaxIterationsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestSelfExtendPreflightInvalidMaxIterationsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowOptimizeInvalidIterationsExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -838,6 +841,77 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             Console.SetError(ConsoleCapture.Error);
             if (File.Exists(specPath))
                 File.Delete(specPath);
+        }
+    }
+
+    private async Task TestRuntimePlanInvalidMaxIterationsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime plan --goal hello --max-iterations 0 --use-history false --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime plan --max-iterations 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --max-iterations", StringComparison.Ordinal),
+                "A non-positive --max-iterations must be refused legibly.");
+            AssertTrue(!output.Contains("Plan computed successfully", StringComparison.Ordinal),
+                "A non-positive --max-iterations must be refused before computing a plan as the policy default.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestSelfExtendPreflightInvalidMaxIterationsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("self-extend preflight --max-iterations 0 --json --allow-mock").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "self-extend preflight --max-iterations 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --max-iterations", StringComparison.Ordinal),
+                "A non-positive --max-iterations must be refused legibly.");
+            AssertTrue(!output.Contains("Preflight passed", StringComparison.Ordinal),
+                "A non-positive --max-iterations must be refused before remapping to 1 and running preflight.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowOptimizeInvalidIterationsExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow optimize --iterations 0 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow optimize --iterations 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --iterations", StringComparison.Ordinal),
+                "A non-positive --iterations must be refused legibly.");
+            AssertTrue(!output.Contains("evaluated candidate", StringComparison.Ordinal),
+                "A non-positive --iterations must be refused before remapping to 1 and evaluating candidates.");
+            AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
+                "A non-positive --iterations must be refused before starting optimize orchestration.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 }
