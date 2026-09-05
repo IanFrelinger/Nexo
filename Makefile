@@ -203,7 +203,7 @@ kernel-gate:
 	@if [ "$${KERNEL_GATE_PRODSTYLE:-0}" = "1" ]; then $(MAKE) test-prod-style; fi
 	@if [ "$${KERNEL_GATE_MESH:-0}" = "1" ]; then $(MAKE) mesh-lab-verify; fi
 
-# Tier B: CLI pipeline ops + cross-process LiteDB resume (see scripts/kernel-gate-tier-b.sh).
+# Tier B: fail-closed CLI pipeline ops + durable LiteDB resume (see scripts/kernel-gate-tier-b.sh).
 kernel-gate-tier-b:
 	bash scripts/kernel-gate-tier-b.sh
 

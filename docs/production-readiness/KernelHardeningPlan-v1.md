@@ -19,7 +19,7 @@ Pre-application validation for the Ashlar execution kernel (`src/`, `Ashlar.Host
 
 **Tier A status (2026-05-19):** implemented; see [Kernel Readiness v1](KernelReadiness-v1.md).
 
-**Tier B status (2026-05-19):** `make kernel-gate-tier-b` / `scripts/kernel-gate-tier-b.sh` — build, pipeline lifecycle, CLI ops, cross-process LiteDB resume.
+**Tier B status (2026-05-19):** `make kernel-gate-tier-b` / `scripts/kernel-gate-tier-b.sh` — build, pipeline lifecycle, fail-closed CLI ops, cross-process LiteDB resume (resume stays Failed without a configured adapter).
 
 **Tier C status (2026-05-19):** `make kernel-gate-tier-c` / `scripts/kernel-gate-tier-c.sh` — ProdStyle Infrastructure, workflow executor, gRPC transport, air-gapped profile; mesh when `.env.mesh-lab` exists (`make bootstrap-mesh-lab-env`).
 

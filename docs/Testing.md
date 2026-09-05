@@ -45,7 +45,7 @@ Run before building product features on top of the kernel. Builds `Ashlar.Runtim
 
 ```bash
 make kernel-gate              # Tier A: runtime build + hosting matrix + pipeline lifecycle
-make kernel-gate-tier-b       # Tier B: CLI validate/run/fallback + LiteDB cross-process resume
+make kernel-gate-tier-b       # Tier B: CLI validate + fail-closed unconfigured run + LiteDB durable resume
 make kernel-gate-tier-c       # Tier C: ProdStyle + workflow + gRPC transport + air-gapped profile
 make kernel-gate-tier-d       # Tier D: pack graph alignment + NuGet consumer sample
 make kernel-gate-full         # Tier A + B + C + D

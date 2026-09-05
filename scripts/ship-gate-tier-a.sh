@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ship Tier A: Production Readiness Gate v1 (build + pipeline CLI + LiteDB resume).
+# Ship Tier A: Production Readiness Gate v1 (build + fail-closed CLI + LiteDB resume).
 # Mirrors .github/workflows/production-readiness-gate-v1.yml operational steps.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -7,11 +7,25 @@ cd "$ROOT"
 
 CLI="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
 INFRA_TESTS="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
+HELPER="$ROOT/scripts/lib/assert-pipeline-fail-closed.py"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 is required for JSON assertions in ship-gate-tier-a" >&2
   exit 1
 fi
+
+run_expecting_failure() {
+  local log="$1"
+  shift
+  set +e
+  "$@" | tee "$log"
+  local exit_code=${PIPESTATUS[0]}
+  set -e
+  if [ "$exit_code" -eq 0 ]; then
+    echo "expected non-zero from: $*" >&2
+    exit 1
+  fi
+}
 
 echo "== Ship Tier A: build checks =="
 dotnet build src/Ashlar.Core.Application/Ashlar.Core.Application.csproj -f netstandard2.0 -v minimal
@@ -42,71 +56,38 @@ cat > "$TEMPLATE_PATH" <<'JSON'
 }
 JSON
 
-echo "== Ship Tier A: CLI pipeline validate / run / fallback =="
+echo "== Ship Tier A: CLI pipeline validate / fail-closed run / diagnostics =="
+UNCONFIGURED_LOG="$TMP/gate-run-unconfigured.log"
+HOOKS_LOG="$TMP/gate-run-hooks.log"
 ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- \
   pipeline validate --template "$TEMPLATE_PATH"
-
-SUCCESS_LOG="$TMP/gate-run-success.log"
-FALLBACK_LOG="$TMP/gate-run-fallback.log"
-ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- \
-  pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-success --format-json | tee "$SUCCESS_LOG"
-ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
+ASHLAR_ALLOW_MOCK=1 \
+  run_expecting_failure "$UNCONFIGURED_LOG" \
   dotnet run --project "$CLI" --no-build -- \
-  pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee "$FALLBACK_LOG"
+  pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-unconfigured --format-json
+ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
+  run_expecting_failure "$HOOKS_LOG" \
+  dotnet run --project "$CLI" --no-build -- \
+  pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-hooks --input "fail:hybrid:deterministic=true" --format-json
 ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- pipeline diagnostics --format-json >/dev/null
 
-python3 - <<PY
-import json, os, sys
-tmp = os.environ["TMP"]
-def parse_final_json(path):
-    with open(path, encoding="utf-8") as fh:
-        lines = [line.strip() for line in fh if line.strip()]
-    json_lines = [l for l in lines if l.startswith("{") and l.endswith("}")]
-    if not json_lines:
-        sys.exit(f"No JSON in {path}")
-    return json.loads(json_lines[-1])
-success = parse_final_json(os.path.join(tmp, "gate-run-success.log"))
-fallback = parse_final_json(os.path.join(tmp, "gate-run-fallback.log"))
-if not success.get("ok") or success.get("data", {}).get("state") != "Completed":
-    sys.exit("Success pipeline run did not complete")
-hybrid = next((s for s in fallback.get("data", {}).get("stages", []) if s.get("stageId") == "hybrid"), None)
-if hybrid is None or hybrid.get("workerType") != "Agentic":
-    sys.exit(f"Fallback did not use Agentic worker: {hybrid}")
-PY
+python3 "$HELPER" fail-closed "$UNCONFIGURED_LOG" unconfigured
+python3 "$HELPER" fail-closed "$HOOKS_LOG" test-hooks
 
 echo "== Ship Tier A: LiteDB cross-process resume =="
 RESUME_DB="$TMP/ashlar_pipeline_gate_resume.db"
 RESUME_SOURCE_LOG="$TMP/gate-resume-source.log"
 RESUME_TARGET_LOG="$TMP/gate-resume-target.log"
-set +e
 ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
+  run_expecting_failure "$RESUME_SOURCE_LOG" \
   dotnet run --project "$CLI" --no-build -- \
-  pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee "$RESUME_SOURCE_LOG"
-source_exit=$?
-set -e
-if [ "$source_exit" -eq 0 ]; then
-  echo "Expected source run to fail for resume scenario" >&2
-  exit 1
-fi
+  pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json
 ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" \
+  run_expecting_failure "$RESUME_TARGET_LOG" \
   dotnet run --project "$CLI" --no-build -- \
-  pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee "$RESUME_TARGET_LOG"
+  pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json
 
-python3 - <<PY
-import json, os, sys
-tmp = os.environ["TMP"]
-def parse_final_json(path):
-    with open(path, encoding="utf-8") as fh:
-        lines = [line.strip() for line in fh if line.strip()]
-    json_lines = [l for l in lines if l.startswith("{") and l.endswith("}")]
-    return json.loads(json_lines[-1])
-source = parse_final_json(os.path.join(tmp, "gate-resume-source.log"))
-target = parse_final_json(os.path.join(tmp, "gate-resume-target.log"))
-if source.get("data", {}).get("state") != "Failed":
-    sys.exit("Source run should be Failed")
-if not target.get("ok") or target.get("data", {}).get("state") != "Completed":
-    sys.exit("Resume target did not complete")
-PY
+python3 "$HELPER" resume "$RESUME_SOURCE_LOG" "$RESUME_TARGET_LOG"
 
 echo ""
 echo "ship-gate-tier-a: PASS"

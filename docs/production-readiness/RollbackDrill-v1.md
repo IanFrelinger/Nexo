@@ -23,7 +23,7 @@
 
 ### Evidence
 
-- **Pipeline LiteDB:** `dr-gate-tier-a` — backup → wipe → restore → `resume-run-id` completed successfully.
+- **Pipeline LiteDB:** `dr-gate-tier-a` — backup → wipe → restore → resume finds the persisted source and stays Failed (fail-closed without a configured adapter).
 - **User knowledge store:** `dr-gate-tier-b` — `LiteDbUserKnowledgeLogStoreTests` passed.
 - **Mesh director:** `dr-gate-tier-c` — fleet node and task `20260522001559314-7ab02c300811416c8669755002ae77f7` survived peer-a container restart.
 

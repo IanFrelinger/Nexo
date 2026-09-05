@@ -20,8 +20,8 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 - [ ] Confirm uploaded artifacts include:
   - [ ] test TRX files
   - [ ] `gate-validate.log`
-  - [ ] `gate-run-success.log`
-  - [ ] `gate-run-fallback.log`
+  - [ ] `gate-run-unconfigured.log`
+  - [ ] `gate-run-hooks.log`
   - [ ] `gate-diagnostics.log`
   - [ ] `gate-resume-source.log`
   - [ ] `gate-resume-target.log`
@@ -37,9 +37,10 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 
 ## 2) Runtime correctness review
 
-- [ ] Verify `gate-run-fallback.log` shows `hybrid` stage worker type as `Agentic`.
+- [ ] Verify `gate-run-unconfigured.log` is fail-closed (`ok=false`, `state=Failed`, ingest names the unconfigured placeholder).
+- [ ] Verify `gate-run-hooks.log` stays fail-closed (test hooks must not fabricate success).
 - [ ] Verify `gate-resume-source.log` has run state `Failed` (intentional source failure).
-- [ ] Verify `gate-resume-target.log` has run state `Completed`.
+- [ ] Verify `gate-resume-target.log` stays `Failed` and does not report `no prior run was found`.
 - [ ] Verify `gate-diagnostics.log` reports known persistence provider and resolved adapter keys.
 
 ## 3) Exceptions policy (mandatory)

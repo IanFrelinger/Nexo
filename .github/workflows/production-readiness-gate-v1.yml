@@ -15,6 +15,10 @@ on:
       - "application/src/Ashlar.CLI/**"
       - "src/Ashlar.Tests.Infrastructure/Tests/Pipelines/**"
       - "application/src/Ashlar.Tests.CLI/**"
+      - "scripts/lib/assert-pipeline-fail-closed.py"
+      - "scripts/kernel-gate-tier-b.sh"
+      - "scripts/ship-gate-tier-a.sh"
+      - "scripts/dr-gate-tier-a.sh"
   workflow_dispatch:
 jobs:
   gate-v1:
@@ -128,35 +132,8 @@ jobs:
             dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-hooks --input "fail:hybrid:deterministic=true" --format-json
           dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline diagnostics --format-json | tee "$DIAGNOSTICS_LOG"
 
-          python - <<'PY'
-          import os
-          import json
-
-          def parse_final_json(path: str) -> dict:
-              with open(path, "r", encoding="utf-8") as fh:
-                  lines = [line.strip() for line in fh.readlines()]
-              json_lines = [line for line in lines if line.startswith("{") and line.endswith("}")]
-              if not json_lines:
-                  raise SystemExit(f"No JSON payload found in {path}")
-              return json.loads(json_lines[-1])
-
-          def assert_fail_closed(payload: dict, label: str) -> None:
-              if payload.get("ok"):
-                  raise SystemExit(f"{label}: unconfigured pipeline run must not report ok=true")
-              data = payload.get("data") or {}
-              if data.get("state") != "Failed":
-                  raise SystemExit(f"{label}: expected state Failed, got {data.get('state')}")
-              ingest = next((s for s in data.get("stages", []) if s.get("stageId") == "ingest"), None)
-              if ingest is None:
-                  raise SystemExit(f"{label}: missing ingest stage")
-              error = ingest.get("error") or ""
-              if "No deterministic pipeline adapter is configured" not in error:
-                  raise SystemExit(f"{label}: ingest did not fail closed on the placeholder adapter: {error!r}")
-
-          tmp_root = os.environ["RUNNER_TEMP"]
-          assert_fail_closed(parse_final_json(os.path.join(tmp_root, "gate-run-unconfigured.log")), "unconfigured")
-          assert_fail_closed(parse_final_json(os.path.join(tmp_root, "gate-run-hooks.log")), "test-hooks")
-          PY
+          python scripts/lib/assert-pipeline-fail-closed.py fail-closed "$UNCONFIGURED_LOG" unconfigured
+          python scripts/lib/assert-pipeline-fail-closed.py fail-closed "$HOOKS_LOG" test-hooks
 
       - name: Durable resume checks (LiteDb)
         shell: bash
@@ -188,32 +165,7 @@ jobs:
             run_expecting_failure "$RESUME_TARGET_LOG" \
             dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json
 
-          python - <<'PY'
-          import os
-          import json
-
-          def parse_final_json(path: str) -> dict:
-              with open(path, "r", encoding="utf-8") as fh:
-                  lines = [line.strip() for line in fh.readlines()]
-              json_lines = [line for line in lines if line.startswith("{") and line.endswith("}")]
-              if not json_lines:
-                  raise SystemExit(f"No JSON payload found in {path}")
-              return json.loads(json_lines[-1])
-
-          tmp_root = os.environ["RUNNER_TEMP"]
-          source = parse_final_json(os.path.join(tmp_root, "gate-resume-source.log"))
-          target = parse_final_json(os.path.join(tmp_root, "gate-resume-target.log"))
-
-          if source.get("data", {}).get("state") != "Failed":
-              raise SystemExit("Source run is expected to fail for durable resume check")
-          if target.get("ok"):
-              raise SystemExit("Resumed target must not report ok=true without a configured adapter")
-          if target.get("data", {}).get("state") != "Failed":
-              raise SystemExit(f"Resumed target must stay Failed, got {target.get('data', {}).get('state')}")
-          err = json.dumps(target)
-          if "no prior run was found" in err:
-              raise SystemExit("Resume did not find the persisted source run")
-          PY
+          python scripts/lib/assert-pipeline-fail-closed.py resume "$RESUME_SOURCE_LOG" "$RESUME_TARGET_LOG"
 
       - name: Cleanup temp artifacts
         if: always()

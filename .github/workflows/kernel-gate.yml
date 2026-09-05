@@ -17,6 +17,7 @@ on:
       - "docs/architecture/KernelPhaseMatrix.md"
       - "docs/production-readiness/**"
       - "scripts/kernel-gate*.sh"
+      - "scripts/lib/assert-pipeline-fail-closed.py"
       - "Makefile"
       - ".github/workflows/kernel-gate.yml"
   push:
