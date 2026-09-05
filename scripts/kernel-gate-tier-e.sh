@@ -10,15 +10,27 @@ cd "$ROOT"
 INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 ORCH="src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj"
 
-echo "== Tier E: OpenTelemetry registration =="
+echo "== Tier E: OpenTelemetry registration (net8.0, counted) =="
 dotnet build "$INFRA" -v minimal
-dotnet test "$INFRA" -f net8.0 --no-build \
+# Counted wrapper: an empty OpenTelemetryTests filter used to exit 0.
+python3 scripts/run-dotnet-test-counted.py \
+  --project "$INFRA" \
+  --expected-prefix "Ashlar.Tests.Infrastructure." \
+  --min-tests 1 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~OpenTelemetryTests" \
   --blame-hang-timeout 60s --blame-hang-dump-type none
 
-echo "== Tier E: orchestration performance-scoped tests =="
+echo "== Tier E: orchestration performance-scoped tests (net8.0, counted) =="
 dotnet build "$ORCH" -v minimal
-dotnet test "$ORCH" -f net8.0 --no-build \
+# Counted wrapper: an empty Performance namespace filter used to exit 0.
+python3 scripts/run-dotnet-test-counted.py \
+  --project "$ORCH" \
+  --expected-prefix "Ashlar.Tests.Orchestration." \
+  --min-tests 3 \
+  -- \
+  -f net8.0 \
   --filter "FullyQualifiedName~Ashlar.Tests.Orchestration.Performance" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 

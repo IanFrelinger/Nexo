@@ -218,6 +218,20 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void KernelTierE_RunsCountedOpenTelemetryAndPerformanceSlices()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/kernel-gate-tier-e.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 1");
+        text.Should().Contain("--min-tests 3");
+        text.Should().Contain("OpenTelemetryTests");
+        text.Should().Contain("Ashlar.Tests.Orchestration.Performance");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+        text.Should().NotContain("dotnet test \"$ORCH\"");
+    }
+
+    [Fact]
     public void KernelGateWorkflow_RunsTierCOnPullRequest()
     {
         var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),

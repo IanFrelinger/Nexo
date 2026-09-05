@@ -400,6 +400,18 @@ class KernelTierCCountedTests(unittest.TestCase):
         )
 
 
+class KernelTierECountedTests(unittest.TestCase):
+    def test_kernel_gate_tier_e_runs_counted_otel_and_performance_slices(self) -> None:
+        text = (ROOT / "scripts" / "kernel-gate-tier-e.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 1", text)
+        self.assertIn("--min-tests 3", text)
+        self.assertIn("OpenTelemetryTests", text)
+        self.assertIn("Ashlar.Tests.Orchestration.Performance", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+        self.assertNotIn('dotnet test "$ORCH"', text)
+
+
 class TestProdStyleCountedTests(unittest.TestCase):
     def test_makefile_runs_counted_prod_style_suite(self) -> None:
         text = (ROOT / "Makefile").read_text(encoding="utf-8")
