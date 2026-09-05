@@ -907,6 +907,10 @@ class DockerTierFailClosedTests(unittest.TestCase):
         text = (ROOT / "scripts" / "ops-gate-tier-a.sh").read_text(encoding="utf-8")
         self.assertIn("run-dotnet-test-counted.py", text)
         self.assertIn("OPS_GATE_MIN_DOGFOOD_TESTS", text)
+        self.assertIn(
+            '--expected-prefix "Ashlar.Tests.Infrastructure.Tests.Dogfood.DogfoodBlock"',
+            text,
+        )
         self.assertIn("DogfoodBlock1Tests", text)
         self.assertIn("DogfoodBlock6Tests", text)
         self.assertIn("-f net8.0", text)

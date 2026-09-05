@@ -406,6 +406,8 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("run-dotnet-test-counted.py");
         text.Should().Contain("--min-tests");
         text.Should().Contain("OPS_GATE_MIN_DOGFOOD_TESTS");
+        text.Should().Contain(
+            "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Dogfood.DogfoodBlock\"");
         text.Should().Contain("DogfoodBlock1Tests");
         text.Should().Contain("DogfoodBlock6Tests");
         text.Should().Contain("-f net8.0");

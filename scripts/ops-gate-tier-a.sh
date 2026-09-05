@@ -21,11 +21,12 @@ FullyQualifiedName~DogfoodBlock6Tests"
 echo "==> ops-gate-tier-a: counted dogfood Blocks 1–6 (min ${MIN_TESTS})"
 python3 "$ROOT/scripts/run-dotnet-test-counted.py" \
   --project "$INFRA" \
-  --filter "$FILTER" \
+  --expected-prefix "Ashlar.Tests.Infrastructure.Tests.Dogfood.DogfoodBlock" \
   --min-tests "$MIN_TESTS" \
   -- \
   -c Release \
   -f net8.0 \
+  --filter "$FILTER" \
   --verbosity minimal
 
 echo ""
