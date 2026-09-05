@@ -2,7 +2,7 @@
 
 Validates the **trust boundary** (policy packs, audit log, access boundary), **API auth & mesh security middleware**, **CLI trust surfaces**, **supply chain**, and **air-gapped operation** — the production "waterproofing" layer before exposing Ashlar to the internet.
 
-**Automation:** `make security-gate-full`
+**Automation:** `make security-gate-full`. PRs that touch the security-gate paths run A–D plus the E host suite. D fails when the supply-chain scan cannot run, and the workflow sets `SECURITY_GATE_STRICT_SUPPLY_CHAIN=1`. The E `--network none` container stays dispatch-only.
 
 ## Prerequisites
 

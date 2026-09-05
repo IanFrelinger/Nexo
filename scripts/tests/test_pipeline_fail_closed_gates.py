@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 69", text)
+        self.assertIn("--min-tests 70", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -981,6 +981,54 @@ class RcTierCFailClosedTests(unittest.TestCase):
         self.assertEqual(0, run.returncode)
         self.assertIn("release-bundle: PASS", run.stdout)
         self.assertIn("rc-gate-tier-c: PASS", run.stdout)
+
+
+class SecurityTierDFailClosedTests(unittest.TestCase):
+    def test_security_tier_d_fails_when_scan_cannot_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_bin = Path(tmp) / "bin"
+            fake_bin.mkdir()
+            dotnet = fake_bin / "dotnet"
+            dotnet.write_text(
+                "#!/usr/bin/env bash\n"
+                "if [[ \"$*\" == *list* ]]; then\n"
+                "  echo 'error: simulated list failure' >&2\n"
+                "  exit 1\n"
+                "fi\n"
+                "exit 0\n",
+                encoding="utf-8",
+            )
+            dotnet.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+            env.pop("SECURITY_GATE_STRICT_SUPPLY_CHAIN", None)
+            run = subprocess.run(
+                ["bash", str(ROOT / "scripts" / "security-gate-tier-d.sh")],
+                cwd=ROOT,
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        self.assertEqual(1, run.returncode)
+        self.assertIn("supply-chain scan could not run", run.stdout)
+        self.assertIn("security-gate-tier-d: FAIL", run.stdout)
+        self.assertNotIn("security-gate-tier-d: PASS", run.stdout)
+
+    def test_security_gate_workflow_runs_tier_d_on_pull_request(self) -> None:
+        text = (ROOT / ".github" / "workflows" / "security-gate.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "github.event_name != 'workflow_dispatch' || inputs.tier == 'd'",
+            text,
+        )
+        self.assertIn('SECURITY_GATE_STRICT_SUPPLY_CHAIN: "1"', text)
+        self.assertNotIn(
+            "github.event_name == 'workflow_dispatch' && inputs.tier == 'd'",
+            text,
+        )
 
 
 class SecurityTierEFailClosedTests(unittest.TestCase):

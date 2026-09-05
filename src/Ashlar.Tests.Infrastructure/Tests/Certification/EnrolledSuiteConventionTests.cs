@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 69");
+        text.Should().Contain("--min-tests 70");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -546,6 +546,21 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("github.event_name != 'workflow_dispatch'");
         text.Should().NotContain(
             "github.event_name == 'workflow_dispatch' && inputs.tier == 'd'");
+    }
+
+    [Fact]
+    public void SecurityTierD_FailsWhenScanCannotRun()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/security-gate-tier-d.sh"));
+        text.Should().Contain("security-gate-tier-d: FAIL");
+        text.Should().Contain("supply-chain scan could not run");
+        text.Should().Contain("security-gate-tier-d: PASS");
+        text.Should().NotContain("Some scans failed — see reports");
+        var workflow = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/security-gate.yml"));
+        workflow.Should().Contain("github.event_name != 'workflow_dispatch' || inputs.tier == 'd'");
+        workflow.Should().Contain("SECURITY_GATE_STRICT_SUPPLY_CHAIN: \"1\"");
     }
 
     [Fact]

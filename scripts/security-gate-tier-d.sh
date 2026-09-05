@@ -65,6 +65,11 @@ scan_deprecated application/Ashlar.Application.sln
 scan_deprecated src/Ashlar.Hosting/Ashlar.Hosting.csproj
 scan_deprecated src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj
 
+if [ "$SCAN_FAIL" -eq 1 ]; then
+  echo "security-gate-tier-d: FAIL (supply-chain scan could not run; see $REPORT_DIR)" >&2
+  exit 1
+fi
+
 if [ "$VULN_FOUND" -eq 1 ]; then
   if [ "${SECURITY_GATE_STRICT_SUPPLY_CHAIN:-0}" = "1" ]; then
     echo "Vulnerable packages detected (SECURITY_GATE_STRICT_SUPPLY_CHAIN=1)" >&2
@@ -72,15 +77,6 @@ if [ "$VULN_FOUND" -eq 1 ]; then
   else
     echo "::warning::Vulnerable packages detected — see $VULN_REPORT (set SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 to fail)"
   fi
-fi
-
-if [ "$SCAN_FAIL" -eq 1 ] && [ "${SECURITY_GATE_STRICT_SUPPLY_CHAIN:-0}" = "1" ]; then
-  echo "One or more supply-chain scans failed (SECURITY_GATE_STRICT_SUPPLY_CHAIN=1)" >&2
-  exit 1
-fi
-
-if [ "$SCAN_FAIL" -eq 1 ]; then
-  echo "::warning::Some scans failed — see reports in $REPORT_DIR (Ashlar.Core/YamlDotNet may need manual audit)"
 fi
 
 echo ""
