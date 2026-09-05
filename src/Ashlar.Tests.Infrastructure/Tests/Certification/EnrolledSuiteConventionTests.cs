@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 105");
+        text.Should().Contain("--min-tests 106");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1260,6 +1260,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("scripts/workflow-regression-gate.sh");
         text.Should().Contain("scripts/lib/assert-test-local-floor.py");
         text.Should().Contain("application/src/Ashlar.CLI/**");
+    }
+
+    [Fact]
+    public void DogfoodTestCommand_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "application/src/Ashlar.CLI/Commands/DogfoodTestCommand.cs"));
+        text.Should().Contain("DotnetTestTool.HasExecutedTests");
+        text.Should().Contain("No tests matched the filter");
+        text.Should().Contain("ExitCode.ValidationFailed");
+        text.Should().NotContain("var passed = testResult == 0;");
     }
 
     [Fact]

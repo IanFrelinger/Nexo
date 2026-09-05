@@ -349,7 +349,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 105", text)
+        self.assertIn("--min-tests 106", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -555,6 +555,17 @@ class TestPortableCommandFailClosedTests(unittest.TestCase):
         self.assertIn("No tests matched the filter", text)
         self.assertIn("ExitCode.ValidationFailed", text)
         self.assertNotIn("passed = process.ExitCode == 0", text)
+
+
+class DogfoodTestCommandFailClosedTests(unittest.TestCase):
+    def test_dogfood_test_command_fails_closed_on_zero_tests(self) -> None:
+        text = (
+            ROOT / "application" / "src" / "Ashlar.CLI" / "Commands" / "DogfoodTestCommand.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("DotnetTestTool.HasExecutedTests", text)
+        self.assertIn("No tests matched the filter", text)
+        self.assertIn("ExitCode.ValidationFailed", text)
+        self.assertNotIn("var passed = testResult == 0;", text)
 
 
 class TestCommandFailClosedTests(unittest.TestCase):
