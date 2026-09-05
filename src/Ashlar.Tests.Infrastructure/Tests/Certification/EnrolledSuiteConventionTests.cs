@@ -28,6 +28,14 @@ public sealed class EnrolledSuiteConventionTests
     }
 
     [Fact]
+    public void OwnershipRegistry_NamesCertGate_ForContractsTests()
+    {
+        var columns = OwnershipRow("Ashlar.Tests.Contracts.csproj");
+        columns[1].Should().Be("cert-gate");
+        columns[2].Should().Be("-");
+    }
+
+    [Fact]
     public void OwnershipRegistry_NamesIngressUnitGate_ForAwsSnsAndDynamoDbTests()
     {
         var sns = OwnershipRow("Ashlar.Ingress.AwsSns.Tests.csproj");
@@ -57,6 +65,60 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("Ashlar.Analyzers.Tests");
         text.Should().Contain("run-dotnet-test-counted.py");
         text.Should().Contain("--min-tests 56");
+    }
+
+    [Fact]
+    public void CertGate_RunsCountedContractsSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/run-cert-gate.sh"));
+        text.Should().Contain("Ashlar.Tests.Contracts");
+        text.Should().Contain("--min-tests 18");
+        text.Should().Contain("--expected-prefix \"Ashlar.Tests.Contracts.\"");
+    }
+
+    [Fact]
+    public void MeshTierA_RunsCountedPipelineSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/composition-mesh-gate-tier-a.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 64");
+        text.Should().Contain("Ashlar.Tests.Infrastructure.Tests.Pipelines");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void MeshTierB_RunsCountedCliBridgeRows()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/composition-mesh-gate-tier-b.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 3");
+        text.Should().Contain("DisplayName~PipelineCommand");
+        text.Should().NotContain("dotnet test \"$CLI\"");
+    }
+
+    [Fact]
+    public void SecurityTierA_RunsCountedTrustSuite()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/security-gate-tier-a.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 97");
+        text.Should().Contain("Ashlar.Tests.Infrastructure.Tests.Trust");
+        text.Should().NotContain("dotnet test \"$INFRA\"");
+    }
+
+    [Fact]
+    public void SecurityTierC_RunsCountedCliTrustSurface()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/security-gate-tier-c.sh"));
+        text.Should().Contain("run-dotnet-test-counted.py");
+        text.Should().Contain("--min-tests 61");
+        text.Should().Contain("SafePackageReadTests");
+        text.Should().NotContain("dotnet test \"$CLI_TESTS\"");
     }
 
     [Fact]

@@ -58,3 +58,17 @@ python3 scripts/run-dotnet-test-counted.py \
   -f net8.0 \
   --blame-hang-timeout 180s \
   --blame-hang-dump-type none
+
+# HTTP + distributed contract records used to ride products-gate's 5-test
+# Distributed subset only. The tests lane requires 18 unique identities;
+# cert-gate is the required PR check, so the same floor runs here.
+echo "== cert-gate: contracts suite (net8.0, counted) =="
+python3 scripts/run-dotnet-test-counted.py \
+  --project src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj \
+  --expected-prefix "Ashlar.Tests.Contracts." \
+  --min-tests 18 \
+  -- \
+  -c Release \
+  -f net8.0 \
+  --blame-hang-timeout 180s \
+  --blame-hang-dump-type none

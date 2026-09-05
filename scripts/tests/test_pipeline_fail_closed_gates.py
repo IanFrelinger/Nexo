@@ -161,6 +161,22 @@ class ShipGateTierCCanonicalVersionTests(unittest.TestCase):
         self.assertIn("not valid semver", run.stdout)
 
 
+class CompositionMeshTierABCountedTests(unittest.TestCase):
+    def test_tier_a_runs_counted_pipeline_suite(self) -> None:
+        text = (ROOT / "scripts" / "composition-mesh-gate-tier-a.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 64", text)
+        self.assertIn("Ashlar.Tests.Infrastructure.Tests.Pipelines", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+    def test_tier_b_runs_counted_cli_bridge_rows(self) -> None:
+        text = (ROOT / "scripts" / "composition-mesh-gate-tier-b.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 3", text)
+        self.assertIn("DisplayName~PipelineCommand", text)
+        self.assertNotIn('dotnet test "$CLI"', text)
+
+
 class CompositionMeshTierCFleetHostTests(unittest.TestCase):
     def test_tier_c_runs_counted_fleet_host_suite_on_net10(self) -> None:
         text = (ROOT / "scripts" / "composition-mesh-gate-tier-c.sh").read_text(encoding="utf-8")
@@ -183,6 +199,12 @@ class CertGateAnalyzerCountedTests(unittest.TestCase):
         self.assertIn("run-dotnet-test-counted.py", text)
         self.assertIn("--min-tests 56", text)
         self.assertIn("-f net8.0", text)
+
+    def test_cert_gate_runs_counted_contracts_suite(self) -> None:
+        text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
+        self.assertIn("Ashlar.Tests.Contracts", text)
+        self.assertIn("--min-tests 18", text)
+        self.assertIn('--expected-prefix "Ashlar.Tests.Contracts."', text)
 
 
 class IngressUnitGateCountedTests(unittest.TestCase):
@@ -208,6 +230,24 @@ class ApplicationTierBCountedCliTests(unittest.TestCase):
         self.assertIn("--min-tests 200", text)
         self.assertIn("FullyQualifiedName!~UnitTestBridgeTests", text)
         self.assertIn("-f net10.0", text)
+        self.assertNotIn('dotnet test "$CLI_TESTS"', text)
+
+
+class SecurityTierACountedTests(unittest.TestCase):
+    def test_security_gate_tier_a_runs_counted_trust_suite(self) -> None:
+        text = (ROOT / "scripts" / "security-gate-tier-a.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 97", text)
+        self.assertIn("Ashlar.Tests.Infrastructure.Tests.Trust", text)
+        self.assertNotIn('dotnet test "$INFRA"', text)
+
+
+class SecurityTierCCountedTests(unittest.TestCase):
+    def test_security_gate_tier_c_runs_counted_cli_trust_surface(self) -> None:
+        text = (ROOT / "scripts" / "security-gate-tier-c.sh").read_text(encoding="utf-8")
+        self.assertIn("run-dotnet-test-counted.py", text)
+        self.assertIn("--min-tests 61", text)
+        self.assertIn("SafePackageReadTests", text)
         self.assertNotIn('dotnet test "$CLI_TESTS"', text)
 
 

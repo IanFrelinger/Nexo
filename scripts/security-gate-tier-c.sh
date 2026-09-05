@@ -30,9 +30,16 @@ dotnet build "$CLI_TESTS" -v minimal
 #
 # This step runs on every pull_request: security-gate.yml's Tier C `if:` is the `!=` form, and the
 # workflow's `paths:` select the CLI directories these suites cover.
-ASHLAR_ALLOW_MOCK=1 dotnet test "$CLI_TESTS" -f net10.0 --no-build \
+# Listed 61 identities. The counted wrapper refuses a silent empty match.
+ASHLAR_ALLOW_MOCK=1 python3 scripts/run-dotnet-test-counted.py \
+  --project "$CLI_TESTS" \
+  --expected-prefix "Ashlar.Tests.CLI." \
+  --min-tests 61 \
+  -- \
+  -f net10.0 \
   --filter "FullyQualifiedName~SafePackageReadTests|FullyQualifiedName~PkgCommandTests|FullyQualifiedName~UntrustedTextTests|FullyQualifiedName~MeshLanPartyTests|(FullyQualifiedName~UnitTestBridgeTests&DisplayName~TrustCommandTests)" \
-  --blame-hang-timeout 120s --blame-hang-dump-type none
+  --blame-hang-timeout 120s \
+  --blame-hang-dump-type none
 
 echo "== Security Tier C: trust boundary + dashboard JSON smoke =="
 dotnet build "$CLI" -v minimal
