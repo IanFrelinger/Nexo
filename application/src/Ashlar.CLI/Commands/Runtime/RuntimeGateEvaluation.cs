@@ -17,7 +17,7 @@ internal static class RuntimeGateEvaluation
     {
         minPassRate = Math.Clamp(minPassRate, 0d, 1d);
         minTotal = Math.Max(1, minTotal);
-        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(repoRoot, Math.Max(1, historyWindow));
+        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(repoRoot, historyWindow);
 
         if (!string.IsNullOrWhiteSpace(goal))
         {

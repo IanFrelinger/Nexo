@@ -17,6 +17,12 @@ internal sealed class RecommendHandler
             return Task.FromResult(1);
         }
 
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(historyWindow))
+        {
+            RuntimeOutputWriter.WriteRecommendResult(new RuntimeRecommendResult(false, RuntimeCommandUtilities.InvalidHistoryWindowMessage), json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
@@ -24,7 +30,7 @@ internal sealed class RecommendHandler
             return Task.FromResult(1);
         }
 
-        var history = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, historyWindow));
+        var history = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, historyWindow);
         var recommendation = AdaptiveRuntimePolicyAdvisor.RecommendQaPolicy(goal, history);
         var result = recommendation == null
             ? new RuntimeRecommendResult(true, "No recommendation from history.", Policy: null, Reason: null)

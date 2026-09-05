@@ -8,6 +8,12 @@ internal sealed class HistoryHandler
     /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(string repoRoot, int limit, string? benchmarkSet, bool json)
     {
+        if (limit <= 0)
+        {
+            WriteResult(new WorkflowHistoryResult(false, WorkflowCommandUtilities.InvalidLimitMessage), json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
@@ -15,7 +21,7 @@ internal sealed class HistoryHandler
             return Task.FromResult(1);
         }
 
-        var rows = WorkflowLabHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, limit));
+        var rows = WorkflowLabHistoryStore.ReadRecent(fullRepoRoot, limit);
         if (!string.IsNullOrWhiteSpace(benchmarkSet))
         {
             var normalized = benchmarkSet.Trim().ToLowerInvariant();

@@ -47,6 +47,8 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
             await TestRuntimePlanInvalidMaxIterationsExitsNonZeroAsync().ConfigureAwait(false);
             await TestSelfExtendPreflightInvalidMaxIterationsExitsNonZeroAsync().ConfigureAwait(false);
             await TestWorkflowOptimizeInvalidIterationsExitsNonZeroAsync().ConfigureAwait(false);
+            await TestRuntimeHistoryInvalidLimitExitsNonZeroAsync().ConfigureAwait(false);
+            await TestWorkflowHistoryInvalidLimitExitsNonZeroAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(CliExitCodeFailClosedTests),
@@ -907,6 +909,52 @@ public sealed class CliExitCodeFailClosedTests : UnitTestBase
                 "A non-positive --iterations must be refused before remapping to 1 and evaluating candidates.");
             AssertTrue(!output.Contains("Starting orchestration", StringComparison.Ordinal),
                 "A non-positive --iterations must be refused before starting optimize orchestration.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestRuntimeHistoryInvalidLimitExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("runtime history --limit 0 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "runtime history --limit 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --limit", StringComparison.Ordinal),
+                "A non-positive --limit must be refused legibly.");
+            AssertTrue(!output.Contains("Loaded 1 history entries", StringComparison.Ordinal),
+                "A --limit of 0 must not be remapped to 1 before reading runtime history.");
+        }
+        finally
+        {
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
+        }
+    }
+
+    private async Task TestWorkflowHistoryInvalidLimitExitsNonZeroAsync()
+    {
+        var writer = new StringWriter();
+        Console.SetOut(writer);
+        Console.SetError(writer);
+        try
+        {
+            var root = Ashlar.CLI.Program.BuildRootCommand();
+            var exitCode = await root.InvokeAsync("workflow history --limit 0 --json").ConfigureAwait(false);
+            var output = writer.ToString();
+            AssertTrue(exitCode != 0, "workflow history --limit 0 must exit non-zero, not 0.");
+            AssertTrue(output.Contains("Invalid --limit", StringComparison.Ordinal),
+                "A non-positive --limit must be refused legibly.");
+            AssertTrue(!output.Contains("Loaded 1 workflow stress history entries", StringComparison.Ordinal),
+                "A --limit of 0 must not be remapped to 1 before reading workflow history.");
         }
         finally
         {

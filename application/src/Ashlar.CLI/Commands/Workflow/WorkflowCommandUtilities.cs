@@ -1186,6 +1186,8 @@ internal static class WorkflowCommandUtilities
 
     internal const string InvalidIterationsMessage = "Invalid --iterations. Use a positive integer.";
 
+    internal const string InvalidLimitMessage = "Invalid --limit. Use a positive integer.";
+
     internal static bool TryNormalizeSearchStrategy(string? searchStrategy, out string normalized)
     {
         if (string.IsNullOrWhiteSpace(searchStrategy))

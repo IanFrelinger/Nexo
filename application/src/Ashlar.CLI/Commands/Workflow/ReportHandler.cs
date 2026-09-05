@@ -20,6 +20,20 @@ internal sealed class ReportHandler(
         string? outputPath,
         bool json)
     {
+        if (limit <= 0)
+        {
+            if (json)
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new { ok = false, error = WorkflowCommandUtilities.InvalidLimitMessage }));
+            }
+            else
+            {
+                Console.Error.WriteLine(WorkflowCommandUtilities.InvalidLimitMessage);
+            }
+
+            return Task.FromResult(1);
+        }
+
         if (!string.IsNullOrWhiteSpace(since) && !DateTimeOffset.TryParse(since, out _))
         {
             if (json)
@@ -69,7 +83,7 @@ internal sealed class ReportHandler(
             return Task.FromResult(1);
         }
 
-        var rows = WorkflowLabHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, limit));
+        var rows = WorkflowLabHistoryStore.ReadRecent(fullRepoRoot, limit);
         if (!string.IsNullOrWhiteSpace(benchmarkSet))
         {
             var normalized = benchmarkSet.Trim().ToLowerInvariant();

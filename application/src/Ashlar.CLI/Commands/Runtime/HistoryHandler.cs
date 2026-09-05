@@ -13,6 +13,12 @@ internal sealed class RuntimeHistoryHandler
         string? benchmarkSet,
         bool json)
     {
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(limit))
+        {
+            RuntimeOutputWriter.WriteHistoryResult(new RuntimeHistoryResult(false, RuntimeCommandUtilities.InvalidLimitMessage), json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
@@ -20,7 +26,7 @@ internal sealed class RuntimeHistoryHandler
             return Task.FromResult(1);
         }
 
-        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, limit));
+        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, limit);
         if (!string.IsNullOrWhiteSpace(goal))
         {
             var fp = AdaptiveRuntimeExecutionReport.ComputeGoalFingerprint(goal);

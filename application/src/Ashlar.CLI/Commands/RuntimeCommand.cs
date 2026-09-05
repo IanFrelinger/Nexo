@@ -174,7 +174,7 @@ public sealed partial class RuntimeCommand : Command
 
         if (useHistory && string.Equals(requestedQaPolicy, "auto", StringComparison.OrdinalIgnoreCase))
         {
-            var history = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(repoRoot, Math.Max(1, historyWindow));
+            var history = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(repoRoot, historyWindow);
             var recommendation = AdaptiveRuntimePolicyAdvisor.RecommendQaPolicy(goal, history);
             if (recommendation != null)
             {

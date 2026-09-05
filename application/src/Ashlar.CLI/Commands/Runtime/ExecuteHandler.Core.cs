@@ -97,6 +97,9 @@ internal sealed partial class ExecuteHandler
         if (!RuntimeCommandUtilities.TryValidateMaxIterationsOverride(maxIterationsOverride))
             return Finalize(new RuntimeExecuteResult(false, RuntimeCommandUtilities.InvalidMaxIterationsMessage, FailureStage: "input"));
 
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(historyWindow))
+            return Finalize(new RuntimeExecuteResult(false, RuntimeCommandUtilities.InvalidHistoryWindowMessage, FailureStage: "input"));
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
             return Finalize(new RuntimeExecuteResult(false, $"Repo root not found: {fullRepoRoot}", RepoRoot: fullRepoRoot, FailureStage: "input"));

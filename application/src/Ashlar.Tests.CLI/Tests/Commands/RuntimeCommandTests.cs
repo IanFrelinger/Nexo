@@ -24,6 +24,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestGateRejectsInvalidPolicyAsync().ConfigureAwait(false);
             await TestPlanRejectsInvalidManifestQaPolicyAsync().ConfigureAwait(false);
             await TestPlanRejectsInvalidMaxIterationsAsync().ConfigureAwait(false);
+            await TestPlanRejectsInvalidHistoryWindowAsync().ConfigureAwait(false);
+            await TestHistoryRejectsInvalidLimitAsync().ConfigureAwait(false);
             /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -264,6 +266,40 @@ public sealed class RuntimeCommandTests : UnitTestBase
             "A negative --max-iterations must be refused legibly.");
         AssertTrue(!negOutput.Contains("Plan computed successfully", StringComparison.Ordinal),
             "A negative --max-iterations must be refused before computing a plan.");
+    }
+
+    private async Task TestPlanRejectsInvalidHistoryWindowAsync()
+    {
+        var (zeroExit, zeroOutput) = await InvokeRuntimeAsync("plan --goal test --history-window 0 --json").ConfigureAwait(false);
+        AssertEqual(1, zeroExit);
+        AssertTrue(zeroOutput.Contains("Invalid --history-window", StringComparison.Ordinal),
+            "A non-positive --history-window must be refused legibly.");
+        AssertTrue(!zeroOutput.Contains("Plan computed successfully", StringComparison.Ordinal),
+            "A non-positive --history-window must be refused before computing a plan.");
+
+        var (negExit, negOutput) = await InvokeRuntimeAsync("plan --goal test --history-window -2 --json").ConfigureAwait(false);
+        AssertEqual(1, negExit);
+        AssertTrue(negOutput.Contains("Invalid --history-window", StringComparison.Ordinal),
+            "A negative --history-window must be refused legibly.");
+        AssertTrue(!negOutput.Contains("Plan computed successfully", StringComparison.Ordinal),
+            "A negative --history-window must be refused before computing a plan.");
+    }
+
+    private async Task TestHistoryRejectsInvalidLimitAsync()
+    {
+        var (zeroExit, zeroOutput) = await InvokeRuntimeAsync("history --limit 0 --json").ConfigureAwait(false);
+        AssertEqual(1, zeroExit);
+        AssertTrue(zeroOutput.Contains("Invalid --limit", StringComparison.Ordinal),
+            "A non-positive --limit must be refused legibly.");
+        AssertTrue(!zeroOutput.Contains("Loaded 1 history entries", StringComparison.Ordinal),
+            "A --limit of 0 must not be remapped to 1 before reading history.");
+
+        var (negExit, negOutput) = await InvokeRuntimeAsync("history --limit -2 --json").ConfigureAwait(false);
+        AssertEqual(1, negExit);
+        AssertTrue(negOutput.Contains("Invalid --limit", StringComparison.Ordinal),
+            "A negative --limit must be refused legibly.");
+        AssertTrue(!negOutput.Contains("Loaded 1 history entries", StringComparison.Ordinal),
+            "A negative --limit must not be remapped to 1 before reading history.");
     }
 
     private async Task TestGateRejectsInvalidPolicyAsync()

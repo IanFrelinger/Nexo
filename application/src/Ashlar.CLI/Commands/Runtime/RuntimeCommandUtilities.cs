@@ -66,9 +66,17 @@ internal static class RuntimeCommandUtilities
 
     internal const string InvalidMaxIterationsMessage = "Invalid --max-iterations. Use a positive integer.";
 
+    internal const string InvalidLimitMessage = "Invalid --limit. Use a positive integer.";
+
+    internal const string InvalidHistoryWindowMessage = "Invalid --history-window. Use a positive integer.";
+
 
     internal static bool TryValidateMaxIterationsOverride(int? maxIterations)
         => !maxIterations.HasValue || maxIterations.Value > 0;
+
+
+    internal static bool TryValidatePositiveCount(int value)
+        => value > 0;
 
 
 }

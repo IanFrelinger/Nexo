@@ -40,6 +40,12 @@ internal sealed class PlanHandler(Func<string, string, string, string, string, s
             return Task.FromResult(1);
         }
 
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(historyWindow))
+        {
+            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, RuntimeCommandUtilities.InvalidHistoryWindowMessage), json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {

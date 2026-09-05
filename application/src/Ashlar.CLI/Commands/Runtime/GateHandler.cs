@@ -23,6 +23,14 @@ internal sealed class RuntimeGateHandler
             return Task.FromResult(1);
         }
 
+        if (!RuntimeCommandUtilities.TryValidatePositiveCount(historyWindow))
+        {
+            RuntimeOutputWriter.WriteGateResult(
+                new RuntimeGateResult(false, RuntimeCommandUtilities.InvalidHistoryWindowMessage),
+                json);
+            return Task.FromResult(1);
+        }
+
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
