@@ -20,7 +20,7 @@ public sealed class MeshDirectorCommandExitTests
         {
             var root = new RootCommand();
             root.AddCommand(new MeshDirectorCommand());
-            var exitCode = await root.InvokeAsync("director health").ConfigureAwait(false);
+            var exitCode = await root.InvokeAsync("director health");
             Assert.NotEqual(0, exitCode);
         }
         finally
@@ -38,9 +38,7 @@ public sealed class MeshDirectorCommandExitTests
         {
             var root = new RootCommand();
             root.AddCommand(new MeshDirectorCommand());
-            var exitCode = await root
-                .InvokeAsync("director health --timeout-seconds 5")
-                .ConfigureAwait(false);
+            var exitCode = await root.InvokeAsync("director health --timeout-seconds 5");
             Assert.NotEqual(0, exitCode);
         }
         finally
