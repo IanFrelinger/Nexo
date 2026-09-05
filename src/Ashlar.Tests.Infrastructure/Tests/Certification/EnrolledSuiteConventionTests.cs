@@ -176,7 +176,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 63");
+        text.Should().Contain("--min-tests 64");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -332,6 +332,19 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("refusing to skip mesh resilience");
         text.Should().Contain("exit 2");
         text.Should().NotContain("Tier D: skipped");
+    }
+
+    [Fact]
+    public void RcTierD_RefusesMissingGitHubCli()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "scripts/rc-gate-tier-d.sh"));
+        text.Should().Contain("requires the GitHub CLI");
+        text.Should().Contain("requires an authenticated GitHub CLI");
+        text.Should().Contain("exit 2");
+        var workflow = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            ".github/workflows/rc-gate.yml"));
+        workflow.Should().Contain("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}");
     }
 
     [Fact]

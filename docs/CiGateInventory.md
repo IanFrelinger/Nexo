@@ -65,7 +65,7 @@ Six workflows carry a `schedule`: `autonomous-release-manager` (Mon 05:00 UTC), 
 
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
-| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 63 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
+| `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) — analyzer 56 + contracts 18 + enrolled conventions 64 counted; main Infra filter excludes convention tests and uses list-tests plus collapse floor **447** | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
@@ -110,7 +110,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `friend-mesh-prefab-gate.yml` | Friend mesh prefab gate | friend-mesh compose, `.docker/Dockerfile.api`, `Ashlar.API` |
 | `full-platform-readiness-gate.yml` | Full Platform Readiness Gate | Dockerfiles, setup/install scripts, spine sources, StableSdkHostSample; **weekly schedule** |
 | `grpc-transport-gate.yml` | gRPC transport gate / `scripts/grpc-transport-gate.sh` | `src/Ashlar.Transport.Grpc/**`, `src/Ashlar.Tests.Transport/**` — PR + push; counted ProdStyle floor 81 |
-| `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule** |
+| `rc-gate.yml` | RC Gate | `master`/`main`; RC docs + scripts; **monthly schedule**; Tier D refuses missing/unauthenticated `gh` (exit 2) and sets `GH_TOKEN` |
 ### Manual-only workflows (`workflow_dispatch`)
 
 `composition-mesh-gate`, `container-image-publish`, `cross-platform-tests`, `mesh-lab-gate`, `mesh-lab-stress-gate`, `nuget-consumer-verify`, `ops-gate`, `perf-certification`, `prod-dry-run-pr`, `release-nuget`, `runtime-release-promotion`, `setup-smoke-suite`, `test-air-gapped-no-network`, `test-trust-multi-env`, `waterproofing-gate`, `workflow-regression-gate` (16).

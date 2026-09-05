@@ -62,6 +62,7 @@ jobs:
       - name: Tier D (GitHub workflows)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'd' || inputs.tier == 'full')
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RC_GATE_TRIGGER_GH: ${{ github.event_name == 'workflow_dispatch' && inputs.trigger_gh && '1' || '0' }}
           RC_GATE_GH_BRANCH: ${{ github.ref_name }}
         run: make rc-gate-tier-d

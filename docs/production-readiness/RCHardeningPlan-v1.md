@@ -8,7 +8,7 @@ Moves from **security gate green** to **release-ready with evidence** — mirror
 
 ```bash
 make security-gate-full
-# optional: gh auth login
+# Tier D requires `gh` and authentication (`gh auth login` or GH_TOKEN).
 ```
 
 ## Tiers

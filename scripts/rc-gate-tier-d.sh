@@ -26,13 +26,13 @@ OPTIONAL_WORKFLOWS=(
 )
 
 if ! command -v gh >/dev/null 2>&1; then
-  echo "== RC Tier D: skipped (gh CLI not installed) =="
-  exit 0
+  echo "error: rc-gate-tier-d requires the GitHub CLI (gh); refusing to skip workflow verification" >&2
+  exit 2
 fi
 
 if ! gh auth status >/dev/null 2>&1; then
-  echo "== RC Tier D: skipped (gh not authenticated) =="
-  exit 0
+  echo "error: rc-gate-tier-d requires an authenticated GitHub CLI (gh auth login or GH_TOKEN); refusing to skip workflow verification" >&2
+  exit 2
 fi
 
 age_ok() {

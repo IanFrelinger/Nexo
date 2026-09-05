@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -335,7 +336,7 @@ class CertGateCollapseFloorTests(unittest.TestCase):
         text = (ROOT / "scripts" / "run-cert-gate.sh").read_text(encoding="utf-8")
         self.assertIn("EnrolledSuiteConventionTests", text)
         self.assertIn("run-dotnet-test-counted.py", text)
-        self.assertIn("--min-tests 63", text)
+        self.assertIn("--min-tests 64", text)
 
 
 class CertGateAnalyzerCountedTests(unittest.TestCase):
@@ -834,6 +835,58 @@ class DockerTierFailClosedTests(unittest.TestCase):
         self.assertIn("OPS_GATE_MESH_DEEP", block)
         self.assertIn("OPS_GATE_CHAOS_LITE", block)
         self.assertIn("skipping D", block)
+
+
+class RcTierDFailClosedTests(unittest.TestCase):
+    def _run_tier_d(self, fake_bin: Path) -> subprocess.CompletedProcess[str]:
+        for tool in ("mkdir", "dirname"):
+            resolved = shutil.which(tool)
+            self.assertIsNotNone(resolved, tool)
+            (fake_bin / tool).symlink_to(resolved)
+        env = os.environ.copy()
+        env["PATH"] = str(fake_bin)
+        env["RC_GATE_GH_BRANCH"] = "master"
+        env.pop("RC_GATE_GH_ADVISORY_ONLY", None)
+        env.pop("RC_GATE_TRIGGER_GH", None)
+        env.pop("GH_TOKEN", None)
+        env.pop("GH_ENTERPRISE_TOKEN", None)
+        bash = shutil.which("bash")
+        self.assertIsNotNone(bash)
+        return subprocess.run(
+            [bash, str(ROOT / "scripts" / "rc-gate-tier-d.sh")],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+
+    def test_rc_tier_d_refuses_missing_gh(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_bin = Path(tmp) / "bin"
+            fake_bin.mkdir()
+            run = self._run_tier_d(fake_bin)
+        self.assertEqual(2, run.returncode)
+        self.assertIn("requires the GitHub CLI", run.stdout)
+        self.assertNotIn("rc-gate-tier-d: PASS", run.stdout)
+
+    def test_rc_tier_d_refuses_unauthenticated_gh(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_bin = Path(tmp) / "bin"
+            fake_bin.mkdir()
+            gh = fake_bin / "gh"
+            gh.write_text(
+                "#!/usr/bin/env bash\n"
+                "if [[ \"${1:-}\" == \"auth\" ]]; then exit 1; fi\n"
+                "exit 0\n",
+                encoding="utf-8",
+            )
+            gh.chmod(0o755)
+            run = self._run_tier_d(fake_bin)
+        self.assertEqual(2, run.returncode)
+        self.assertIn("requires an authenticated GitHub CLI", run.stdout)
+        self.assertNotIn("rc-gate-tier-d: PASS", run.stdout)
 
 
 class SecurityTierEFailClosedTests(unittest.TestCase):
