@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 106");
+        text.Should().Contain("--min-tests 107");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1271,6 +1271,17 @@ public sealed class EnrolledSuiteConventionTests
         text.Should().Contain("No tests matched the filter");
         text.Should().Contain("ExitCode.ValidationFailed");
         text.Should().NotContain("var passed = testResult == 0;");
+    }
+
+    [Fact]
+    public void TestMultiEnvCommand_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "application/src/Ashlar.CLI/Commands/TestMultiEnvCommand.cs"));
+        text.Should().Contain("DotnetTestTool.HasExecutedTests");
+        text.Should().Contain("EnvRunPassed");
+        text.Should().NotContain("passed == 0 && total == 0 && runExit != 0");
+        text.Should().NotContain("if (runExit != 0) failed++;");
     }
 
     [Fact]

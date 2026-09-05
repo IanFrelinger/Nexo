@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Ashlar.CLI.Output;
 using Ashlar.Infrastructure.HostProcess;
+using Ashlar.Tools.Dev;
 
 namespace Ashlar.CLI.Commands;
 
@@ -162,6 +163,7 @@ public class TestMultiEnvCommand
 
         var baseOk = true;
         var execOk = true;
+        var phaseFailed = false;
 
         foreach (var (filter, logSuffix) in FrameworkPhases)
         {
@@ -177,9 +179,13 @@ public class TestMultiEnvCommand
                 runCmd = $"run --rm{volMount}{networkOpt} -e DOTNET_VERSION={dotnetVersion} {imageTag} bash -c \"cd /workspace && dotnet {testArgs}\"";
 
             var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
-            var (passed, failed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
-            if (failed > 0 || (passed == 0 && total == 0 && runExit != 0))
+            var output = File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "";
+            var (passed, failed, _) = ParseTestOutput(output);
+            // Same class as ashlar test local: empty filter + exit 0 used to pass.
+            // infrastructure-stress failures were previously ignored entirely.
+            if (!EnvRunPassed(runExit, output))
             {
+                phaseFailed = true;
                 if (logSuffix == "base-framework") baseOk = false;
                 if (logSuffix == "execution-brick") execOk = false;
             }
@@ -187,7 +193,7 @@ public class TestMultiEnvCommand
         }
 
         try { await RunProcessAsync("docker", $"rmi {imageTag}", root, null); } catch { /* best effort */ }
-        return (!baseOk || !execOk, baseOk, execOk);
+        return (phaseFailed, baseOk, execOk);
     }
 
     private static async Task<int> RunAdaptationSuiteAsync(string root, string? envName, bool all, bool ephemeral, bool noNetwork, CliConsole? console, bool json, bool verbose)
@@ -244,9 +250,10 @@ public class TestMultiEnvCommand
                 runCmd = $"run --rm{volMount}{networkOpt} -e DOTNET_VERSION={dotnetVersion} {imageTag} bash -c \"cd /workspace && dotnet {testArgs}\"";
 
             var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
-            var (passed, testFailed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
+            var output = File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "";
+            var (passed, testFailed, _) = ParseTestOutput(output);
 
-            if (runExit != 0 || testFailed > 0)
+            if (!EnvRunPassed(runExit, output))
             {
                 failed++;
                 if (!json) console?.WriteError($"  {env}: {testFailed} failed");
@@ -308,9 +315,10 @@ public class TestMultiEnvCommand
             var runCmd = $"run --rm{volMount}{networkOpt} {tag} bash -c \"cd /workspace && dotnet {testArgsInfra} && dotnet {testArgsBg}\"";
 
             var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
-            var (passed, testFailed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
+            var output = File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "";
+            var (passed, testFailed, _) = ParseTestOutput(output);
 
-            if (runExit != 0 || testFailed > 0)
+            if (!EnvRunPassed(runExit, output))
             {
                 failed++;
                 if (!json) console?.WriteError($"  {env}: {testFailed} failed");
@@ -336,6 +344,7 @@ public class TestMultiEnvCommand
         var filter = "FullyQualifiedName~BaseFrameworkSmokeTests";
         if (suite.Equals("persistence", StringComparison.OrdinalIgnoreCase)) filter = "FullyQualifiedName~InMemoryPersistenceTests";
         var resultsDir = Path.Combine(root, "test-results", "caching");
+        var logBaseDir = ephemeral ? Path.GetTempPath() : resultsDir;
         if (!ephemeral) Directory.CreateDirectory(resultsDir);
         var failed = 0;
         var volMount = ephemeral ? "" : $" -v \"{resultsDir}\":/workspace/test-results";
@@ -351,8 +360,11 @@ public class TestMultiEnvCommand
             if (buildExit != 0) { failed++; continue; }
             var testArgs = $"test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 --filter {filter} --logger 'console;verbosity=minimal'";
             var networkOpt = noNetwork ? " --network none" : "";
-            var runExit = await RunProcessAsync("docker", $"run --rm{volMount}{networkOpt} {tag} bash -c \"cd /workspace && dotnet {testArgs}\"", root);
-            if (runExit != 0) failed++;
+            var logFile = Path.Combine(logBaseDir, $"{env}-{suite}.log");
+            var runExit = await RunProcessAsync("docker", $"run --rm{volMount}{networkOpt} {tag} bash -c \"cd /workspace && dotnet {testArgs}\"", root, null, logFile);
+            var output = File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "";
+            if (!EnvRunPassed(runExit, output))
+                failed++;
         }
         if (json) Console.WriteLine(JsonSerializer.Serialize(new { failed, ok = failed == 0 }));
         return failed > 0 ? 1 : 0;
@@ -374,7 +386,14 @@ public class TestMultiEnvCommand
         return run.ExitCode;
     }
 
-    private static (int passed, int failed, int total) ParseTestOutput(string output)
+    /// <summary>
+    /// Same class as <c>ashlar test local</c>: <c>dotnet test --filter</c> exits 0
+    /// when discovery matches nothing.
+    /// </summary>
+    internal static bool EnvRunPassed(int runExit, string? stdout, string? stderr = null)
+        => runExit == 0 && DotnetTestTool.HasExecutedTests(stdout, stderr);
+
+    internal static (int passed, int failed, int total) ParseTestOutput(string output)
     {
         var passedMatch = Regex.Match(output, @"Passed:\s*(\d+)");
         var failedMatch = Regex.Match(output, @"Failed:\s*(\d+)");
