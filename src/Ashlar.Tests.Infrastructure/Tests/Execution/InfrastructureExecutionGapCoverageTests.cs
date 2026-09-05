@@ -150,7 +150,7 @@ public class InfrastructureExecutionGapCoverageTests
     }
 
     [Fact(Timeout = 10000)]
-    public void CompositeBrickRegistry_catalog_io_does_not_deadlock_on_sync_context()
+    public async Task CompositeBrickRegistry_catalog_io_does_not_deadlock_on_sync_context()
     {
         var remoteEntry = new BrickCatalogEntryDto
         {
@@ -211,7 +211,8 @@ public class InfrastructureExecutionGapCoverageTests
             IsBackground = true,
         };
         thread.Start();
-        done.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("catalog I/O must not deadlock on a captured sync context");
+        var completed = await Task.Run(() => done.Wait(TimeSpan.FromSeconds(5))).ConfigureAwait(false);
+        completed.Should().BeTrue("catalog I/O must not deadlock on a captured sync context");
         error.Should().BeNull();
         brick.Should().BeOfType<RemoteBrick>();
     }
