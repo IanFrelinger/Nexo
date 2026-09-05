@@ -15,7 +15,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Validation;
 public class ValidationServiceAdapterGapCoverageTests
 {
     [Fact]
-    public async Task ValidateAsync_returns_skipped_result_when_no_test_projects()
+    public async Task ValidateAsync_fails_closed_when_no_test_projects()
     {
         var adapter = CreateAdapter();
         var original = Directory.GetCurrentDirectory();
@@ -26,8 +26,9 @@ public class ValidationServiceAdapterGapCoverageTests
         {
             Directory.SetCurrentDirectory(temp);
             var result = await adapter.ValidateAsync("filter", progress: null, CancellationToken.None);
-            result.Passed.Should().BeTrue();
-            result.Message.Should().Contain("skipped");
+            result.Passed.Should().BeFalse();
+            result.Message.Should().Contain("No test projects found");
+            result.TestsRun.Should().Be(0);
         }
         finally
         {
@@ -50,7 +51,7 @@ public class ValidationServiceAdapterGapCoverageTests
             Directory.SetCurrentDirectory(temp);
             await adapter.ValidateAsync(null, new SyncProgress<ProgressReport>(r => reports.Add(r)), CancellationToken.None);
             reports.Should().NotBeEmpty();
-            reports.Should().Contain(r => r.Percentage == 100 || r.Message.Contains("skipped", StringComparison.OrdinalIgnoreCase));
+            reports.Should().Contain(r => r.Percentage == 100 || r.Message.Contains("No test projects", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
@@ -263,7 +264,7 @@ public class ValidationServiceAdapterGapCoverageTests
     }
 
     [Fact]
-    public async Task ValidateAsync_uses_exit_code_when_trx_parser_returns_empty()
+    public async Task ValidateAsync_fails_closed_when_trx_is_empty()
     {
         var parser = new Mock<ITestResultParser>();
         parser.Setup(p => p.ParseAsync(It.IsAny<FileInfo>(), It.IsAny<CancellationToken>()))
@@ -278,7 +279,7 @@ public class ValidationServiceAdapterGapCoverageTests
             Directory.SetCurrentDirectory(temp);
             var result = await adapter.ValidateAsync(null, progress: null, CancellationToken.None);
 
-            result.Passed.Should().BeTrue();
+            result.Passed.Should().BeFalse();
             result.TestsRun.Should().Be(0);
             result.TestsPassed.Should().Be(0);
             parser.Verify(p => p.ParseAsync(It.IsAny<FileInfo>(), It.IsAny<CancellationToken>()), Times.Once);

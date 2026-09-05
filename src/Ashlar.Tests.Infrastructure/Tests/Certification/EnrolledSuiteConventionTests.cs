@@ -189,7 +189,7 @@ public sealed class EnrolledSuiteConventionTests
             "scripts/run-cert-gate.sh"));
         text.Should().Contain("EnrolledSuiteConventionTests");
         text.Should().Contain("run-dotnet-test-counted.py");
-        text.Should().Contain("--min-tests 95");
+        text.Should().Contain("--min-tests 96");
         text.Should().Contain(
             "--expected-prefix \"Ashlar.Tests.Infrastructure.Tests.Certification.EnrolledSuiteConventionTests.\"");
     }
@@ -1101,6 +1101,18 @@ public sealed class EnrolledSuiteConventionTests
             "src/Ashlar.Infrastructure/Analysis/BrickAnalyzer/DotNetRegressionTestRunner.cs"));
         text.Should().Contain("failed == 0 && passed >= 1");
         text.Should().Contain("No tests matched the filter");
+    }
+
+    [Fact]
+    public void ValidationServiceAdapter_FailsClosedOnZeroTests()
+    {
+        var text = File.ReadAllText(Path.Combine(RepoPathResolver.FindRepoRoot(),
+            "src/Ashlar.Infrastructure/Validation/Adapters/ValidationServiceAdapter.cs"));
+        text.Should().Contain("totalTestsFailed == 0 && totalTestsRun >= 1");
+        text.Should().Contain("Passed = false");
+        text.Should().Contain("No test projects found");
+        text.Should().NotContain("validation skipped");
+        text.Should().NotContain("even if no tests were run");
     }
 
     [Fact]

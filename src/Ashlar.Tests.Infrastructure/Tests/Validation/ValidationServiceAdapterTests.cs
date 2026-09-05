@@ -77,10 +77,9 @@ public class ValidationServiceAdapterTests : UnitTestBase
             AssertNotNull(result);
             /// <summary>Assert true.</summary>
             /// <param name="found"">Found".</param>
-            AssertTrue(result.Passed, "Should pass when no test projects found");
+            AssertFalse(result.Passed, "Should fail closed when no test projects found");
             /// <summary>Assert equal.</summary>
-            /// <param name="skipped"">Skipped".</param>
-            AssertEqual("No test projects found - validation skipped", result.Message);
+            AssertEqual("No test projects found", result.Message);
             /// <summary>Assert equal.</summary>
             AssertEqual(0, result.TestsRun);
             /// <summary>Assert equal.</summary>

@@ -60,16 +60,16 @@ public class ValidationServiceAdapter : IValidationService
 
             if (testProjects.Count == 0)
             {
-                _logger.LogInformation("No test projects found - validation skipped");
+                _logger.LogInformation("No test projects found");
                 progress?.Report(new ProgressReport
                 {
                     Percentage = 100,
-                    Message = "No test projects found - validation skipped"
+                    Message = "No test projects found"
                 });
                 return new ValidationResult
                 {
-                    Passed = true,
-                    Message = "No test projects found - validation skipped",
+                    Passed = false,
+                    Message = "No test projects found",
                     TestsRun = 0,
                     TestsPassed = 0,
                     TestsFailed = 0
@@ -185,15 +185,17 @@ public class ValidationServiceAdapter : IValidationService
                     }
                     else
                     {
-                        // Fallback when no TRX: use exit code
+                        // No TRX is the same skip-and-pass as `dotnet test` exit 0 on
+                        // an empty filter: refuse rather than invent a green project.
                         allTestResults.Add(new TestResult
                         {
                             Name = testProject.Name,
-                            Passed = exitCode == 0,
-                            Message = exitCode == 0 ? "Tests passed" : "Test execution failed"
+                            Passed = false,
+                            Message = exitCode == 0
+                                ? "No TRX results; refusing skip-and-pass"
+                                : "Test execution failed"
                         });
-                        if (exitCode == 0) totalTestsPassed++;
-                        else totalTestsFailed++;
+                        totalTestsFailed++;
                         totalTestsRun++;
                     }
                 }
@@ -214,8 +216,9 @@ public class ValidationServiceAdapter : IValidationService
                 }
             }
 
-            // Pass if no tests failed (even if no tests were run)
-            var passed = totalTestsFailed == 0;
+            // Same class as `ashlar test local`: Failed==0 with TestsRun==0 used to
+            // report Passed=true and hide a silent empty validation.
+            var passed = totalTestsFailed == 0 && totalTestsRun >= 1;
 
             progress?.Report(new ProgressReport
             {
