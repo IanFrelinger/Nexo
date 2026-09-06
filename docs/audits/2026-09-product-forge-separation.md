@@ -241,7 +241,7 @@ These directories represent **applications of the framework** rather than the fr
 #### Scripts to KEEP in Core:
 - `scripts/setup/setup.sh` (framework bootstrap)
 - `scripts/verify-open-commercial-dependency-boundary.py` (gate enforcement)
-- `scripts/pack-local-feed.sh` (NuGet packaging)
+- `scripts/<pack-local-feed.sh>` (NuGet packaging)
 - `scripts/verify-nuget-*.sh` (package verification)
 - Gate-related scripts (`cert-gate`, mutation testing)
 
@@ -260,7 +260,7 @@ These directories represent **applications of the framework** rather than the fr
 - `docs/AuthoringBricks.md` (brick SDK docs)
 - `docs/TesterQuickstart.md` (framework testing)
 - `docs/certification-evidence.md` (gate evidence ledger)
-- `docs/CONTRIBUTING.md` (framework contribution guide)
+- `docs/<CONTRIBUTING.md>` (framework contribution guide)
 - Contract documentation
 
 #### Docs to EXTRACT to Forge or REPLICATE:
@@ -601,7 +601,7 @@ For Forge distributions, an **embedded option** is possible:
 3. Create `VerificationRunner` orchestrator
 4. Add CLI command: `forge verify run --phase all`
 5. Write tests for each phase
-6. Document verification phases in `docs/VerifyHarness.md`
+6. Document verification phases in `docs/<VerifyHarness.md>`
 
 **Success criteria:**
 - `forge verify run --phase all` executes all phases
@@ -1092,7 +1092,7 @@ For Forge developers working on both repositories locally:
 
 **Mitigation plan:**
 1. **Deprecation notice:** Ashlar releases a `1.x` final version with deprecation warnings: "Ashlar.API and Ashlar.CLI are now Forge. Install `forge` CLI."
-2. **Migration guide:** `docs/MigratingToForge.md` in Ashlar repository
+2. **Migration guide:** `docs/<MigratingToForge.md>` in Ashlar repository
 3. **Redirect:** `ashlar` CLI checks if `forge` is installed and suggests migration
 4. **Transitional packages:** Publish `Ashlar.CLI` and `Ashlar.API` as thin wrappers that delegate to Forge (temporary, deprecated)
 
@@ -1121,14 +1121,14 @@ For Forge developers working on both repositories locally:
    - Dependency: `Ashlar.Hosting.Bundle` from nuget.org
    - Command: `forge hello` → prints "Forge is connected to Ashlar v{version}"
 4. Add CI workflow:
-   - `.github/workflows/forge-gate.yml`
+   - `.github/workflows/<forge-gate.yml>`
    - Build Forge.Surfaces.CLI
    - Run `forge hello`
    - Verify no `ProjectReference` to Ashlar (only NuGet)
 5. Add documentation:
    - `README.md` — overview, architecture diagram, link to this audit
    - `docs/GettingStarted.md` — how to build and run Forge
-   - `docs/architecture/ForgeOverview.md` — product architecture
+   - `docs/architecture/<ForgeOverview.md>` — product architecture
 
 **Success Criteria:**
 - Repository exists at `IanFrelinger/Ashlar.Forge`
