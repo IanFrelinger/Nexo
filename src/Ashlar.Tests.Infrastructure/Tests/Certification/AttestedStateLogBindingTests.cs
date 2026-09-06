@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Ashlar.Certification.Contracts;
 using Ashlar.Certification.State;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -379,6 +380,8 @@ public sealed class AttestedStateLogBindingTests
             string source,
             string hmacKey)
         {
+            var (privateKey, publicKey) = CreateEd25519Key();
+            
             var record = new CertificationRecordData
             {
                 SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
@@ -399,13 +402,25 @@ public sealed class AttestedStateLogBindingTests
                 {
                     new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Id = brickId, Hash = "sha256:artifact" },
                     new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "test-certifier", Hash = "sha256:certifier" }
-                }
+                },
+                Ed25519PublicKey = publicKey
             };
 
             return record with
             {
-                Signature = CertificationRecordSigning.Sign(record, hmacKey)
+                Signature = CertificationRecordSigning.Sign(record, hmacKey),
+                Ed25519Signature = CertificationRecordEd25519.Sign(record, Convert.FromBase64String(privateKey))
             };
+        }
+
+        private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+        {
+            using var key = NSec.Cryptography.Key.Create(
+                NSec.Cryptography.SignatureAlgorithm.Ed25519,
+                new NSec.Cryptography.KeyCreationParameters { ExportPolicy = NSec.Cryptography.KeyExportPolicies.AllowPlaintextExport });
+            return (
+                Convert.ToBase64String(key.Export(NSec.Cryptography.KeyBlobFormat.RawPrivateKey)),
+                Convert.ToBase64String(key.PublicKey.Export(NSec.Cryptography.KeyBlobFormat.RawPublicKey)));
         }
     }
 

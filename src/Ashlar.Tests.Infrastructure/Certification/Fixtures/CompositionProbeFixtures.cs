@@ -115,7 +115,8 @@ public static class CompositionProbeFixtures
     public static async Task<CertifiedCompositionTestContext> CreateAdmittedContextAsync()
     {
         var brickStore = new InMemoryCertificationRecordStore();
-        var brickSigner = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var brickSigner = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var brickRegistry = new CertifiedBrickRegistry(brickStore, brickSigner);
         var brickGate = new CertificationGate(brickSigner);
         var brickAdmission = new CertifiedBrickAdmission(brickGate, brickRegistry);
@@ -212,9 +213,9 @@ public static class CompositionProbeFixtures
                 new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "composition-test-certifier", Hash = "sha256:certifier" }
             }
         };
-        record = record with { Signature = ctx.BrickSigner.Sign(record) };
-        ctx.BrickStore.Save(record);
-        ctx.BrickRegistry.TryAdmit(brick, record);
+        var signed = ctx.BrickSigner.SignRecord(record);
+        ctx.BrickStore.Save(signed);
+        ctx.BrickRegistry.TryAdmit(brick, signed);
     }
 
     private static async Task AdmitBrickAsync(
@@ -265,5 +266,15 @@ public static class CompositionProbeFixtures
 </Project>
 """);
         return path;
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = NSec.Cryptography.Key.Create(
+            NSec.Cryptography.SignatureAlgorithm.Ed25519,
+            new NSec.Cryptography.KeyCreationParameters { ExportPolicy = NSec.Cryptography.KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(NSec.Cryptography.KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(NSec.Cryptography.KeyBlobFormat.RawPublicKey)));
     }
 }

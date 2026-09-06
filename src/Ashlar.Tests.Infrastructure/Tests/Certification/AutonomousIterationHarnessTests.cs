@@ -8,6 +8,7 @@ using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -68,8 +69,9 @@ public sealed class AutonomousIterationHarnessTests
     {
         // A harness constructed with only its two required collaborators must hold: an
         // unattended swap is the opt-in, never what a caller gets by omitting an argument.
+        var (privateKey, _) = CreateEd25519Key();
         var harness = new AutonomousIterationHarness(
-            new CertificationGate(new CertificationRecordSigner()),
+            new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey)),
             new CertifiedBrickHotSwapHost(
                 hmacKey: null, drainTimeout: TimeSpan.FromSeconds(10),
                 revocations: new InMemoryCertificateRevocationList()));
@@ -293,9 +295,11 @@ public sealed class AutonomousIterationHarnessTests
         ISandboxedSessionRunner? sandbox = null,
         ClusterBudget? budget = null,
         bool holdAdmission = false,
-        bool buildInSession = false) =>
-        new(
-            new CertificationGate(new CertificationRecordSigner()),
+        bool buildInSession = false)
+    {
+        var (privateKey, _) = CreateEd25519Key();
+        return new AutonomousIterationHarness(
+            new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey)),
             new CertifiedBrickHotSwapHost(
                 hmacKey: null, drainTimeout: TimeSpan.FromSeconds(10),
                 revocations: new InMemoryCertificateRevocationList(),
@@ -303,6 +307,7 @@ public sealed class AutonomousIterationHarnessTests
             pause, lineages, sandbox, budget,
             buildCandidateInSession: buildInSession,
             holdAdmission: holdAdmission);
+    }
 
     private static ProposalIterationContext Context(string objectiveId) => new()
     {
@@ -344,5 +349,15 @@ public sealed class AutonomousIterationHarnessTests
 </Project>
 """);
         return path;
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }
