@@ -714,6 +714,13 @@ public class OrchestrationOrchestratorGapCoverageTests
         var agentBus = new AgentBus(provider.GetRequiredService<ILogger<AgentBus>>());
         var loops = new SequentialLoopKernel();
         metrics ??= new OrchestrationMetrics(provider.GetRequiredService<ILogger<OrchestrationMetrics>>());
+        var resilientExecutor = new Ashlar.Infrastructure.Resilience.ResilientExecutor(
+            provider.GetService<ILogger<Ashlar.Infrastructure.Resilience.ResilientExecutor>>());
+        var circuitBreaker = new Ashlar.Orchestration.Resilience.CircuitBreaker(
+            name: "orchestration-agent-transport",
+            failureThreshold: 3,
+            timeout: TimeSpan.FromSeconds(30),
+            logger: provider.GetService<ILogger<Ashlar.Orchestration.Resilience.CircuitBreaker>>());
 
         return new Orchestrator(
             architect,
@@ -734,6 +741,8 @@ public class OrchestrationOrchestratorGapCoverageTests
             barrierContextAccessor: barrierAccessor,
             barrierHierarchy: barrierHierarchy,
             barrierAuditLog: barrierAudit,
-            barrierOptions: barrierOptions != null ? Options.Create(barrierOptions) : null);
+            barrierOptions: barrierOptions != null ? Options.Create(barrierOptions) : null,
+            resilientExecutor: resilientExecutor,
+            circuitBreaker: circuitBreaker);
     }
 }
