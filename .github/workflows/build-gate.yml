@@ -1,0 +1,42 @@
+# Fast build gate: compile core without tests.
+# Catches compilation errors before heavier test gates run.
+# Should be a required check to prevent merge of non-compiling code.
+
+name: Build Gate
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-core:
+    name: build-core
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Ashlar.LocalDevCore.slnf
+
+      - name: Build
+        run: dotnet build Ashlar.LocalDevCore.slnf --no-restore -v minimal
+
+      - name: Job summary
+        if: success()
+        run: |
+          echo "✅ Core build succeeded" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Built: \`Ashlar.LocalDevCore.slnf\`" >> $GITHUB_STEP_SUMMARY
