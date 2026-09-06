@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Ashlar.Abstractions;
 using Ashlar.Abstractions.Routing;
 using Ashlar.AI.Pipeline;
 using Ashlar.BackgroundAgents;
@@ -20,6 +21,7 @@ using Ashlar.Core.Application.Observation.Ports;
 using Ashlar.Core.Application.Paths;
 using Ashlar.Core.Application.Testing.UseCases.RunTests;
 using Ashlar.Core.Application.Trust.Ports;
+using Ashlar.Core.Application.Maintenance.Ports;
 using Ashlar.Infrastructure.Copilot;
 using Ashlar.Infrastructure.Environments;
 using Ashlar.Infrastructure.Execution;
@@ -38,6 +40,8 @@ using Ashlar.Orchestration.Transport;
 using Ashlar.Runtime;
 using Ashlar.Runtime.Routing;
 using Ashlar.Transport.Grpc;
+using Ashlar.Tools.Assembly;
+using Ashlar.Tools.Dev;
 
 namespace Ashlar.Hosting;
 
@@ -771,13 +775,43 @@ internal static partial class AshlarKernelRegistrar
         IServiceCollection services = ctx.Services;
         IConfiguration configuration = ctx.Configuration;
 
+        // ── Tools registration ─────────────────────────────────────────
+        // Tools from Tools.Assembly and Tools.Dev are registered here so
+        // Infrastructure can use them via DI without direct ProjectReference.
+        // This breaks the Infrastructure ↔ Tools circular dependency.
+        services.AddSingleton<ITool, AssemblyAnalyzeTool>();
+        services.AddSingleton<ITool, AssemblyDecompileTool>();
+        services.AddSingleton<ITool, AssemblySecurityScanTool>();
+        services.AddSingleton<ITool, DotnetTestTool>();
+        
+        // CleanArtifactsTool requires IArtifactCleanupService which may not be registered
+        services.AddSingleton<ITool>(sp =>
+        {
+            var cleanupService = sp.GetRequiredService<IArtifactCleanupService>();
+            return new CleanArtifactsTool(cleanupService);
+        });
+
         // ── Analysis rule engine ───────────────────────────────────────
         // Rules are collected via DI multi-registration and fed into
         // the engine.  Add new IAnalysisRule implementations to extend
         // the static analysis suite without touching this file.
+        // Rules now receive their tools via constructor injection.
         services.AddScoped<Ashlar.Infrastructure.Validation.Parsers.ITestResultParser, Ashlar.Infrastructure.Validation.Parsers.TrxTestResultParser>();
-        services.AddScoped<Ashlar.Infrastructure.Analysis.Rules.IAnalysisRule, Ashlar.Infrastructure.Analysis.Rules.SecurityAnalysisRule>();
-        services.AddScoped<Ashlar.Infrastructure.Analysis.Rules.IAnalysisRule, Ashlar.Infrastructure.Analysis.Rules.CodeQualityRule>();
+        
+        services.AddScoped<Ashlar.Infrastructure.Analysis.Rules.IAnalysisRule>(sp =>
+        {
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Ashlar.Infrastructure.Analysis.Rules.SecurityAnalysisRule>>();
+            var securityTool = sp.GetServices<ITool>().First(t => t.Id == "assembly.security_scan");
+            return new Ashlar.Infrastructure.Analysis.Rules.SecurityAnalysisRule(logger, securityTool);
+        });
+        
+        services.AddScoped<Ashlar.Infrastructure.Analysis.Rules.IAnalysisRule>(sp =>
+        {
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Ashlar.Infrastructure.Analysis.Rules.CodeQualityRule>>();
+            var analyzeTool = sp.GetServices<ITool>().First(t => t.Id == "assembly.analyze");
+            return new Ashlar.Infrastructure.Analysis.Rules.CodeQualityRule(logger, analyzeTool);
+        });
+        
         services.AddScoped<Ashlar.Infrastructure.Analysis.Rules.AnalysisRuleEngine>(sp =>
         {
             IEnumerable<Infrastructure.Analysis.Rules.IAnalysisRule> rules = sp.GetServices<Ashlar.Infrastructure.Analysis.Rules.IAnalysisRule>();
