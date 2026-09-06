@@ -288,6 +288,15 @@ internal static partial class AshlarKernelRegistrar
         // ── Background agents & RAG ────────────────────────────────────
         if (modules.IncludeBackgroundAgents)
         {
+            // Register adapters for BackgroundAgents to access Orchestration and Infrastructure
+            // via Application ports (DIP - BackgroundAgents depends on ports, not concrete layers)
+            services.TryAddSingleton<Ashlar.Core.Application.Orchestration.Ports.IAgentCreator>(sp =>
+            {
+                var agentFactory = sp.GetRequiredService<Ashlar.Orchestration.Agents.AgentFactory>();
+                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Ashlar.Orchestration.Adapters.AgentCreatorAdapter>>();
+                return new Ashlar.Orchestration.Adapters.AgentCreatorAdapter(agentFactory, logger);
+            });
+
             services.AddBackgroundAgents(registerHostedService: options.RegisterBackgroundAgentHostedService);
         }
 
@@ -371,7 +380,7 @@ internal static partial class AshlarKernelRegistrar
             }
             else
             {
-                IProviderFactory providerFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.IProviderFactory>();
+                Ashlar.Infrastructure.Execution.IProviderFactory providerFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.IProviderFactory>();
                 agentic = new Ashlar.Infrastructure.Execution.Models.ProviderBackedModel(
                     providerFactory,
                     sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Ashlar.Infrastructure.Execution.Models.ProviderBackedModel>>());
@@ -545,7 +554,7 @@ internal static partial class AshlarKernelRegistrar
             services.TryAddSingleton<ILoadPolicy, PreferenceLoadPolicy>();
         }
 
-        services.AddSingleton<IProviderFactory>(sp =>
+        services.AddSingleton<Ashlar.Infrastructure.Execution.IProviderFactory>(sp =>
         {
             // Innermost: the bare factory. Resolved when it was registered above so
             // wrapper and wrapped share one instance; constructed inline on Path C.
@@ -553,16 +562,7 @@ internal static partial class AshlarKernelRegistrar
                 ? sp.GetRequiredService<ProviderFactory>()
                 : CreateProviderFactory(sp, useAdaptive, sanitize, ephemeralModels);
 
-            // Middle: PII scrubbing before anything leaves the trust boundary.
-            if (sanitize)
-            {
-                chain = new SanitizingProviderFactory(
-                    chain,
-                    sp.GetRequiredService<ICloudSanitizationProxy>(),
-                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>());
-            }
-
-            // Outermost: load-balancing across providers.
+            // Outermost: load-balancing across providers (stays in Infrastructure layer)
             if (useAdaptive)
             {
                 chain = new AdaptiveProviderFactory(
@@ -572,6 +572,24 @@ internal static partial class AshlarKernelRegistrar
             }
 
             return chain;
+        });
+
+        // Register Application port adapter for IProviderFactory (DIP - BackgroundAgents depends on ports)
+        services.AddSingleton<Ashlar.Core.Application.Execution.Ports.IProviderFactory>(sp =>
+        {
+            var infraFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.IProviderFactory>();
+            Ashlar.Core.Application.Execution.Ports.IProviderFactory appChain = new Ashlar.Infrastructure.Adapters.ProviderFactoryAdapter(infraFactory);
+            
+            // Apply PII scrubbing at the Application port level (SanitizingProviderFactory uses Application ports)
+            if (sanitize)
+            {
+                appChain = new SanitizingProviderFactory(
+                    appChain,
+                    sp.GetRequiredService<ICloudSanitizationProxy>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>());
+            }
+            
+            return appChain;
         });
 
     }
