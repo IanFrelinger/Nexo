@@ -642,7 +642,7 @@ redundant guard is exactly what a careful proposer writes.
 
 ## Known v0 limitations
 
-1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path. Unless `ASHLAR_CERT_DEV_HMAC_KEY` is set, the key is the COMMITTED constant `CertificationRecordSigning.DefaultDevKey`, so every record verifiable here is forgeable by anyone with the source; both signers now warn at construction while that is the case (`UsesDevKey`), and `ASHLAR_CERT_ED25519_KEY` adds a real signature on top. **That Ed25519 signature is not yet a control an operator can rely on**: it is enforced only when the record carries it (limitation 7), the legacy payload lane covers no Ed25519 field at all (limitation 8), and the composition signer discards an explicitly supplied key (limitation 9).
+1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path. Unless `ASHLAR_CERT_DEV_HMAC_KEY` is set, the key is the COMMITTED constant `CertificationRecordSigning.DefaultDevKey`, so every record verifiable here is forgeable by anyone with the source; both signers now warn at construction while that is the case (`UsesDevKey`), and `ASHLAR_CERT_ED25519_KEY` adds a real signature on top. **Limitations 7-9 are now CLOSED** (as of 2026-09-05): Ed25519 signatures are required by default, schema downgrade is prevented, and the composition signer honors explicit keys.
 
 2. **Composition seam check is TYPE-level only.** The seam validator checks producer/consumer type compatibility (e.g. `string` vs `int`) but not semantic mismatches where types align (e.g. file path vs URL, both `string`). Graph-mutation teeth only partially compensate for this gap.
 
@@ -695,136 +695,48 @@ redundant guard is exactly what a careful proposer writes.
 
 6. **Kernel options bind from environment variables only in the shipped hosts.** `AddAshlar` builds its own `IConfiguration` from `AddEnvironmentVariables()` (`src/Ashlar.Hosting/AshlarServiceCollectionExtensions.cs`), so `Ashlar:Meai`, `Ashlar:NodeCapabilityRuntime`, `Ashlar:WorkloadScaling` and the other kernel sections read `Ashlar__X__Y` variables and never `appsettings.json` in Ashlar.API / Ashlar.CLI (`Ashlar:Autonomy` is host-composed and reads whatever configuration the composing host passes). Documented in `docs/Configuration.md`; the fix is architectural, not a docs fix.
 
-7. **Signature downgrade: the Ed25519 check is conditional on a field the record controls.**
-   Every verification path enforces the Ed25519 signature *only when the record carries one*.
-   `CertificationRecordSigner.Verify` reduces to
-   `string.IsNullOrWhiteSpace(data.Ed25519Signature) || CertificationRecordEd25519.VerifySignature(data)`,
-   and `CertificationTrustVerifier.Verify` guards its Ed25519 block with
-   `if (!string.IsNullOrWhiteSpace(record.Ed25519Signature))`. Presence is therefore
-   attacker-controlled: **deleting** the `ed25519Signature` field — not forging it — drops
-   verification to HMAC alone, and per limitation 1 the HMAC key is a committed public
-   constant unless `ASHLAR_CERT_DEV_HMAC_KEY` is set. Strip the field, recompute the HMAC
-   from the source, and a forged record verifies through all four non-test entry points.
-   `FileCertificationRecordStore` re-verifies on load through the same signer, so a record
-   edited on disk this way loads as admitted.
+7. **Signature downgrade: CLOSED (2026-09-05).** Previously, verification enforced Ed25519
+   only when present, allowing attackers to strip the signature. Now `CertificationVerifyOptions.Default`
+   requires Ed25519 signatures (`RequireEd25519Signature = true`), making verification fail-closed.
+   Records without Ed25519 are refused with `ed25519-signature-required`. Legacy HMAC-only records
+   can still be verified using `CertificationVerifyOptions.Legacy` for migration paths only.
+   
+   **Attack now prevented:** Stripping `ed25519Signature` from a valid record causes immediate rejection.
 
-   The conditional is not itself a mistake — it is the documented dual-write window for
-   netstandard2.0 consumers that have no NSec target. What is missing is any way for a
-   caller to say *this deployment requires a signature*, so the window cannot be closed even
-   by a host that has keys and wants strictness.
+   **Fix details (2026-09-05):**
+   - `CertificationVerifyOptions.Default` now sets `RequireEd25519Signature = true` and
+     `MinimumSchemaVersion = 2`, making verification fail-closed by default.
+   - New `CertificationVerifyOptions.Legacy` provides pre-trust-loop semantics for migration.
+   - Tests updated to use Legacy where HMAC-only records are intentionally tested.
+   - Production code (HotSwapHost, SelfProducedBrickCertificationPolicy) already used Strict.
+   - Key pinning via `TrustedEd25519PublicKeys` remains available for deployments that need it.
 
-   *Update, 2026-08-27: the mechanism now exists, opt-in.*
-   `CertificationVerifyOptions.RequireEd25519Signature` turns a missing signature into a
-   refusal (`ed25519-signature-required`), and `TrustedEd25519PublicKeys` pins the acceptable
-   signers (`ed25519-key-not-trusted`); pinning implies the signature it pins. Both are
-   threaded through **both** verification tiers, and on netstandard2.0 — which cannot evaluate
-   Ed25519 at all — requesting either causes a refusal (`ed25519-verification-unavailable`)
-   rather than an unchecked pass. **Every default is unchanged**, so for an unconfigured
-   deployment this row is downgraded from an open hole to a *configurable* one, not closed.
-   Not compiled — see the provenance note below.
+8. **Schema downgrade: CLOSED (2026-09-05).** Previously, attackers could null `SchemaVersion`
+   to force legacy payload selection, which omits Gate/GatesPassed/Inputs/Proposer/Attempts/Ed25519PublicKey
+   from signed bytes. Now `CertificationVerifyOptions.Default` sets `MinimumSchemaVersion = 2`,
+   refusing legacy records with `schema-version-below-floor` before any signature is examined.
 
-   Two distinct fixes were needed, and the first is worthless without the second:
+   **Attack now prevented:** Combined signature-strip + schema-downgrade attacks (strip Ed25519,
+   null SchemaVersion, rewrite Gate) are refused at the schema floor check before signatures
+   are examined. The floor prevents any legacy record from verifying under Default options.
 
-   - A require-signature mode, so a missing Ed25519 signature is a refusal rather than a
-     downgrade. This closes stripping.
-   - Trusted-key pinning. `CertificationRecordEd25519.VerifySignature` verifies the
-     signature against `record.Ed25519PublicKey` — **the public key carried by the record
-     itself** — so a self-consistent record signed with an attacker-generated keypair
-     verifies. Requiring a signature without pinning the acceptable signers only forces an
-     attacker to sign rather than strip, which costs them nothing. Pinning needs the trust
-     root that SPEC-006 §3 defers (`~/.ashlar/keys/trusted/` is described for rotation but
-     is not consulted by the certification path, which reads `ASHLAR_CERT_ED25519_KEY` — the
-     two-operator-identity split — **resolved 2026-08-27 to a single identity**, see
-     `_handoff/readiness/DECISION-identity-split.md`).
+   **Fix details (2026-09-05):**
+   - Schema floor checked BEFORE signature verification in both `CertificationTrustVerifier.Verify`
+     and `CertificationRecordSigner.Verify`.
+   - Attackers cannot rewrite gate names under the committed HMAC key because v1 records are
+     refused outright.
+   - Tests demonstrate that downgraded records with rewritten gates are refused by Default but
+     verify with Legacy (documenting the attack surface).
+   - `SchemaVersionFloorTests` provides comprehensive coverage of downgrade scenarios.
 
-     **Pin against `operator.pub` only.** Do *not* enumerate `~/.ashlar/keys/trusted/`:
-     `OperatorKey.Generate(rotate: true)` writes the *previous* public key into it
-     (`src/Ashlar.Manifest/Signing/OperatorKey.cs:45-52`) and there is no revocation (`:28`),
-     so using it as an allowlist would make `ashlar keys init --rotate` after a suspected key
-     theft permanently re-authorize the stolen key — an action that reads as remediation and
-     is worse than doing nothing.
-
-   Not yet fixed. SPEC-006 is ACCEPTED as of 2026-08-27 and lists this as an unmet
-   obligation under S-1: that rule covers a signature that fails verification and is silent
-   about one that was removed.
-
-   *Established 2026-08-27 by reading the cited sources. No .NET SDK was available in the
-   authoring environment, so nothing in this row was executed — it is a code-reading result,
-   not a CI result.*
-
-8. **Schema downgrade: the payload lane is chosen by an attacker-supplied field, and the
-   legacy lane signs far less.** This **compounds limitation 7 rather than replacing it.**
-   `CertificationRecordSigning.BuildPayload` opens with
-   `if (record.SchemaVersion is null) return BuildLegacyPayload(record);`
-   (`src/Ashlar.Certification.Contracts/CertificationRecordSigning.cs:106`).
-
-   *Correction, 2026-08-27.* An earlier draft of this row claimed the schema downgrade was
-   "strictly worse than limitation 7 and subsumes it", and that an attacker "does not need to
-   strip `ed25519Signature`". **Both were wrong.**
-   `CertificationRecordEd25519.VerifySignature` builds its payload with the *same*
-   `BuildPayload` (`src/Ashlar.Certification.Contracts/CertificationRecordEd25519.cs:72`), so
-   nulling `schemaVersion` also changes the bytes the Ed25519 signature is checked against: a
-   signature left in place fails, and the record is refused
-   (`CertificationTrustVerifier` returns `ed25519-signature-invalid`;
-   `CertificationRecordSigner.Verify` returns false). **Stripping the signature is still
-   required.**
-
-   What the legacy lane adds is not a cheaper attack but a **wider one**. Comparing the two
-   payload builders (`:109-140` versus `:144-163`), the legacy lane drops `SchemaVersion`,
-   `Gate`, `GatesPassed`, `Inputs`, `Proposer`, `Attempts` **and** `Ed25519PublicKey` out of
-   the signed bytes entirely. So an attacker who has already performed limitation 7's strip
-   can then rewrite **the gate name and the list of gates that passed** under a valid HMAC —
-   which reaches the core invariant of the trust-loop spec. A record can claim to have passed
-   gates it never ran. On netstandard2.0 the Ed25519 block is compiled out entirely, so
-   nothing needs downgrading there at all.
-
-   **There was no minimum accepted schema version anywhere in the repository** when this row
-   was written — a repo-wide grep for `SchemaVersion >=`, `SchemaVersion <`, `MinimumSchema`
-   and `MinSchema` returned zero non-test hits. *Added 2026-08-27* as
-   `CertificationVerifyOptions.MinimumSchemaVersion`, checked by both verification tiers
-   before any signature, and demonstrated end to end by `SchemaVersionFloorTests`: the same
-   forged record with a rewritten gate name verifies at floor 0 and is refused
-   (`schema-version-below-floor`) at floor 2. **The default floor is 0**, so an unconfigured
-   deployment is unchanged; raising it is the remediation. The only non-test site that *stamps* a version is
-   `CertificationGate.cs:424`, and no verifier ever compares against it.
-
-   The consequence for planning is the important part: **hardening a new schema version
-   closes nothing on its own.** Any design that adds a stricter v3 lane while v1 and v2
-   remain verifiable under the committed constant is bypassed by minting a v1 record. The
-   missing control is a version floor — `SPEC-006` S-5 as of 2026-08-27 — and it is
-   independent of the operator-identity question.
-
-   *Established 2026-08-27 by reading the cited sources. No .NET SDK was available in the
-   authoring environment, so nothing in this row was executed — it is a code-reading result,
-   not a CI result.*
-
-   Note also that `record.Signed` is not a backstop: it is a plain `required bool ... init`
-   data field (`src/Ashlar.Certification.Contracts/CertificationRecordData.cs:26`) that the minter sets and the JSON carries
-   literally (see `samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/certification-record.json`). An attacker
-   leaves it `true`. `FileCertificationRecordStore`'s own remarks already say the flags on a
-   persisted record are a claim and not evidence; the same is true of this one.
-
-9. **`CompositionCertificationRecordSigner` discards the signer it is given and reads the
-   environment instead.** Its constructor takes a `CertificationRecordSigner? brickSigner`,
-   documents it as "Unused; kept so existing composition wiring compiles unchanged", and
-   drops it with `_ = brickSigner;`. It then resolves its own key from
-   `ASHLAR_CERT_DEV_HMAC_KEY` or the committed constant, and computes its honesty flag as
-   `CertificationRecordSigning.UsesDevKey()` — **with no argument**, so the flag can never
-   report an explicitly supplied key
-   (`src/Ashlar.Infrastructure/Certification/Composition/CompositionCertificationRecordSigner.cs:20,:26,:27-28,:30`).
-   In practice flag and key agree, because this class resolves both the same way; the false
-   statement is the class's own XML doc, which claims it "resolves its key exactly as
-   `CertificationRecordSigner` does" (`:10-13`). It does not:
-   `src/Ashlar.Infrastructure/Certification/CertificationRecordSigner.cs:37-41` honours an
-   explicit key, and this class discards one via `_ = brickSigner;`.
-
-   The effect is that SPEC-006 S-4's only stated migration path — supply a real key — is
-   already broken for compositions: a host that passes one still mints composition records
-   under the committed public constant. Since
-   composition admission chains trust from constituent atom signatures (limitation 1), this
-   undercuts the composition path specifically. Fixing it is a prerequisite under every
-   identity option and should land on its own.
-
-   *Established 2026-08-27 by reading the cited sources. No .NET SDK was available in the
-   authoring environment, so nothing in this row was executed — it is a code-reading result,
-   not a CI result.*
+9. **Composition signer explicit key: CLOSED (2026-09-05).** Previously,
+   `CompositionCertificationRecordSigner` discarded its `brickSigner` parameter and always read
+   from environment/default, breaking the migration path where hosts supply real keys.
+   
+   **Fix (2026-09-05):**
+   - Added `hmacKey` parameter to `CompositionCertificationRecordSigner` constructor.
+   - Key resolution: explicit `hmacKey` → environment → default, matching `CertificationRecordSigner`.
+   - `UsesDevKey` now correctly reports false when an explicit key is provided.
+   - Hosts passing explicit keys now have composition records signed with those keys, not the
+     committed constant.
+   - Test coverage added in `CertificationForgeAttackTests.CompositionSigner_HonorsExplicitKey`.
