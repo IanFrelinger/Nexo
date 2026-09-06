@@ -6,6 +6,8 @@ using Ashlar.Abstractions;
 using Ashlar.Infrastructure.Execution;
 using Ashlar.Runtime;
 
+using Ashlar.Abstractions.Exceptions;
+
 namespace Ashlar.BackgroundAgents.Agents;
 
 /// <summary>

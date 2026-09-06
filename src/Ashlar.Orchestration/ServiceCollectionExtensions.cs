@@ -7,7 +7,6 @@ using Ashlar.Abstractions;
 using Ashlar.Core.Application.Common.Ports;
 using Ashlar.Core.Application.Common.Services;
 using Ashlar.Core.Application.Resilience.Ports;
-using Ashlar.Infrastructure.Resilience;
 using Ashlar.Orchestration.Agents;
 using Ashlar.Orchestration.Architect;
 using Ashlar.Orchestration.Architect.Parsers;
@@ -111,8 +110,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SynthesisEngine>();
         services.AddSingleton<NegotiationProtocol>();
 
-        // Resilience (ports from Core.Application, implementations)
-        services.AddSingleton<IResilientExecutor, ResilientExecutor>();
+        // Resilience (ports from Core.Application)
+        // Note: IResilientExecutor is registered by the Hosting layer.
+        // ICircuitBreaker implementation is in Orchestration.Resilience.
         services.AddSingleton<ICircuitBreaker>(sp => new CircuitBreaker(
             name: "orchestration-agent-transport",
             failureThreshold: 3,

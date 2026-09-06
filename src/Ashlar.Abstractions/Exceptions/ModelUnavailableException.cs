@@ -1,4 +1,4 @@
-namespace Ashlar.Infrastructure.Execution;
+namespace Ashlar.Abstractions.Exceptions;
 
 /// <summary>
 /// Thrown when no real LLM model is available (local or server).

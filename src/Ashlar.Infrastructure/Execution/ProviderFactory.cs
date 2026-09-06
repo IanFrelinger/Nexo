@@ -10,6 +10,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
+using Ashlar.Abstractions.Exceptions;
+
 namespace Ashlar.Infrastructure.Execution;
 
 /// <summary>

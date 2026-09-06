@@ -3,6 +3,8 @@ using Ashlar.Infrastructure.Execution;
 using System.Reflection;
 using Xunit;
 
+using Ashlar.Abstractions.Exceptions;
+
 namespace Ashlar.Tests.Infrastructure.Tests.Safety;
 
 [Collection("LocalModelProviderState")]

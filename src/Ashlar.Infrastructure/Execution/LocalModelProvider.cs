@@ -2,6 +2,8 @@ using LLama;
 using LLama.Common;
 using Microsoft.Extensions.Logging;
 
+using Ashlar.Abstractions.Exceptions;
+
 namespace Ashlar.Infrastructure.Execution;
 
 /// <summary>

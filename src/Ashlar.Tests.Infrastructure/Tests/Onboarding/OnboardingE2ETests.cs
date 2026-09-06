@@ -12,6 +12,8 @@ using Ashlar.Tests.Infrastructure.Helpers;
 using System.Text.Json;
 using Xunit;
 
+using Ashlar.Abstractions.Exceptions;
+
 namespace Ashlar.Tests.Infrastructure.Tests.Onboarding;
 
 /// <summary>

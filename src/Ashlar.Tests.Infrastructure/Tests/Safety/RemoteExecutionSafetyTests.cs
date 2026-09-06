@@ -5,6 +5,8 @@ using Ashlar.Infrastructure.Execution.LoadPolicy;
 using Ashlar.Infrastructure.Testing.ExecutionPlatform;
 using Xunit;
 
+using Ashlar.Abstractions.Exceptions;
+
 namespace Ashlar.Tests.Infrastructure.Tests.Safety;
 
 /// <summary>

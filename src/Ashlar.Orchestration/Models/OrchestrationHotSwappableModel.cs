@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Ashlar.Abstractions;
-using Ashlar.Infrastructure.Execution;
+using Ashlar.Abstractions.Exceptions;
 
 namespace Ashlar.Orchestration.Models;
 
