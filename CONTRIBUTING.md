@@ -116,6 +116,7 @@ make application-gate-tier-a              # application-gate.yml: product sln bu
 make testing-strategy-gate                # testing-strategy-gate.yml: gap freeze / ProdStyle wiring rules on your diff
 dotnet run --project application/src/Ashlar.CLI -- ci verify   # `make ci-verify`: build + C#-driven checks
 dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template <template.json>
+bash scripts/check-docs-phantom-paths.sh  # Fast local check: catch phantom backtick paths in docs before onboarding-docs-guard CI
 ```
 
 Pick the lanes that match what you changed (`make testing-strategy-gate` prints the suggested set for your diff). Optional external suites (Docker, Ollama, Mapbox, mesh lab) are opt-in by environment variable and are reported as **Skipped** until enabled — see `docs/Testing.md`, "Opt-in external suites".
