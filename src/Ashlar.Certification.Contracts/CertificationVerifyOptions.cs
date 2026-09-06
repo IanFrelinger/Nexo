@@ -4,9 +4,10 @@ namespace Ashlar.Certification.Contracts;
 /// Strictness a verifier applies to a certification record, per SPEC-006 rules S-1 and S-5.
 /// </summary>
 /// <remarks>
-/// <para><b>Default is now fail-closed.</b> Records must use trust-loop schema (v2+) and
-/// carry valid Ed25519 signatures to close limitations 7-9 from certification-evidence.md.
-/// Use <see cref="Legacy"/> only for testing or migrating pre-trust-loop records.</para>
+/// <para><b>Default and Strict are now fail-closed.</b> Both require trust-loop schema (v2+)
+/// and Ed25519 signatures to close limitations 7-9 from certification-evidence.md.
+/// Use <see cref="Legacy"/> only for testing or migrating pre-trust-loop records. Production
+/// paths should use <see cref="Strict"/>.</para>
 ///
 /// <para>This type deliberately declares no cryptography, so it compiles on netstandard2.0
 /// where NSec is unavailable. For the same reason it must not <c>cref</c> anything inside
@@ -32,18 +33,20 @@ public sealed class CertificationVerifyOptions
     /// <summary>
     /// Pre-trust-loop semantics: no floor, no required signature, no pinning. INSECURE.
     /// Only use for testing legacy behavior or during migration from HMAC-only records.
-    /// Production deployments should use <see cref="Default"/> or stricter.
+    /// Production deployments should use <see cref="Default"/> or <see cref="Strict"/>.
     /// </summary>
     public static CertificationVerifyOptions Legacy { get; } = new();
 
     /// <summary>
-    /// Consumer completeness floor: refuse legacy schema and records that do not name a
-    /// gate-emitted artifact and a certifier identity. Does not require Ed25519 (that is a
-    /// separate trust-root choice) so HMAC-era records that already close class A still verify.
+    /// Production-strength verification: trust-loop schema (v2+), Ed25519 signature required,
+    /// plus gate-emitted artifact and certifier identity. Use this for all admission and load
+    /// paths. Closes signature-stripping and schema-downgrade attacks (limitations 7-8) while
+    /// enforcing consumer completeness.
     /// </summary>
     public static CertificationVerifyOptions Strict { get; } = new()
     {
         MinimumSchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+        RequireEd25519Signature = true,
         RequireGateEmittedArtifact = true,
         RequireCertifierIdentity = true,
     };
@@ -62,7 +65,8 @@ public sealed class CertificationVerifyOptions
     /// recomputed HMAC. Hardening a newer schema version achieves nothing on its own,
     /// because nothing forces a record to use it. Only a floor does.
     /// Set to <see cref="CertificationRecordData.TrustLoopSchemaVersion"/> or higher to
-    /// refuse the legacy lane. Default 0 accepts everything, as before.
+    /// refuse the legacy lane. Defaults to 0 only on <see cref="Legacy"/>; production
+    /// options set this to 2+.
     /// </remarks>
     public int MinimumSchemaVersion { get; init; }
 
@@ -105,7 +109,7 @@ public sealed class CertificationVerifyOptions
     /// </summary>
     public bool RequireCertifierIdentity { get; init; }
 
-    /// <summary>True when any strictness beyond today's behaviour is configured.</summary>
+    /// <summary>True when any strictness beyond legacy behavior is configured.</summary>
     public bool IsStrict =>
         MinimumSchemaVersion > 0
         || RequireEd25519Signature
