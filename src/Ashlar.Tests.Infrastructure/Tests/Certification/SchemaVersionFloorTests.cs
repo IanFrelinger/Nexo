@@ -31,10 +31,10 @@ public sealed class SchemaVersionFloorTests
     public void DowngradedRecord_WithRewrittenGate_VerifiesWhenNoFloorIsSet()
     {
         // The hole, demonstrated rather than asserted about. Not a regression test —
-        // a record of today's behaviour, which the floor below refuses.
+        // a record of legacy behaviour, which the floor below refuses.
         var forged = Downgrade(SignedV2Record(), rewrittenGate: "gate-that-never-ran");
 
-        var trust = CertificationTrustVerifier.Verify(forged, BrickSource, HmacKey);
+        var trust = CertificationTrustVerifier.Verify(forged, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
 
         trust.Trusted.Should().BeTrue(
             "with no floor, a legacy-lane record whose HMAC was recomputed verifies — and the "
