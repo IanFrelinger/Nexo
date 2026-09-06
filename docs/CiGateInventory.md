@@ -14,6 +14,20 @@ Snapshot: **57 workflow files** under `.github/workflows/` (`git ls-files ".gith
 
 Verified with `gh api repos/IanFrelinger/Ashlar/branches/master/protection` (`required_status_checks.contexts == ["cert-gate"]`, `strict: true`, `enforce_admins: true`). Everything else in this document is **advisory**: a red `layer-boundary / verify`, `Kernel Gate / kernel-gate`, or `Docs Link Check / lychee` does not block a merge. Earlier revisions of this file listed 15 required contexts; that was never the repository setting.
 
+### Checks that are safe to require (always report on PRs)
+
+These workflows have **no path filter** on `pull_request:` and will **always** post a check status, so they are safe to add as required contexts without blocking PRs that don't touch their relevant files:
+
+| Check name (exact context for branch protection) | Workflow file | Job name | Notes |
+| --- | --- | --- | --- |
+| `cert-gate` | `cert-gate.yml` | `cert-gate` | **Currently required** — hermetic certification gate |
+| `shell-lint` | `shell-lint.yml` | `shell-lint` | Parse errors + shellcheck -S error; ~5s; safe to require |
+| `lychee (README + docs)` | `docs-link-check.yml` | `lychee (README + docs)` | External link validation; ~30s; safe to require |
+| `verify` | `layer-boundary.yml` | `verify` | Kernel-first layer boundary (paths: "**"); deliberate exemptions exist |
+| `uat` and `uat cross-platform` | `uat-gate.yml` | `uat`, `uat cross-platform` | Always runs (no paths); UAT smoke tests |
+
+**Action for CEO/admins:** To require `shell-lint` or `lychee (README + docs)`, add their exact check names to the `contexts` array in the branch protection snippet below. The workflows already always report — no YAML changes needed.
+
 ### Why the other gates are not required (and cannot simply be added)
 
 Almost every other PR-triggered gate uses `paths:` filters. GitHub only reports a status for a path-filtered workflow when the filter matches; a PR that does not touch those paths gets **no** status at all, and a required context that never reports blocks the merge forever. Promoting a path-filtered gate to "required" therefore needs one of:
@@ -26,19 +40,23 @@ Until one of those lands per gate, only unfiltered checks are safe to require. `
 
 ### Branch protection update snippet
 
-Human runs this; agents cannot change repository settings. The `contexts` array below is the **current** setting. Add contexts only when the workflow behind them always reports on PRs (see above).
+Human runs this; agents cannot change repository settings. The `contexts` array below shows the **current required check** (`cert-gate` only). To also require `shell-lint` and/or `lychee (README + docs)`, add their exact names to the array — both workflows already always report.
 
 ```bash
 OWNER="IanFrelinger"
 REPO="Ashlar"
 BRANCH="master"
 
+# Example: require cert-gate + shell-lint + lychee (COMMENTED OUT — adjust before running)
 cat > /tmp/ashlar-required-checks.json <<'JSON'
 {
   "required_status_checks": {
     "strict": true,
     "contexts": [
       "cert-gate"
+      # Uncomment to also require (both are safe to require):
+      # ,"shell-lint"
+      # ,"lychee (README + docs)"
     ]
   }
 }
@@ -53,7 +71,7 @@ Counts by trigger class (57 files):
 
 | Class | Count | Meaning |
 | --- | --- | --- |
-| Runs on `pull_request` | 15 | 3 unfiltered (`cert-gate`, `layer-boundary`, `uat-gate`), 11 path-filtered (including `products-gate`), 1 label-driven (`release-staging-on-label`) |
+| Runs on `pull_request` | 15 | 5 unfiltered (`cert-gate`, `shell-lint`, `docs-link-check`, `layer-boundary`, `uat-gate`), 9 path-filtered (including `products-gate`), 1 label-driven (`release-staging-on-label`) |
 | Push- and/or schedule-driven (path-filtered on `master`/`main`/`cursor/**`), plus `workflow_dispatch` | 20 | Post-merge / scheduled signal; never blocks a PR |
 | `workflow_dispatch` only | 17 | Manual lanes (mesh labs, multi-env Docker suites, ship/ops/perf, release plumbing) |
 | Tag / release event | 2 | `release.yml` (`v*.*.*` tags), `devlog-ghost-release.yml` (`release: published`) |
@@ -66,18 +84,18 @@ Five workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `
 | Workflow file | Name / job(s) | PR trigger | Also |
 | --- | --- | --- | --- |
 | `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) | push `master`, dispatch — **required** |
+| `shell-lint.yml` | Shell lint / `shell-lint` | **every PR** (no paths) — **safe to require** | dispatch — always reports; cheap parse/lint check |
+| `docs-link-check.yml` | Docs Link Check / `lychee (README + docs)` | **every PR** (no paths) — **safe to require** | push, dispatch — always reports; ~30s lychee run |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
+| `uat-gate.yml` | UAT / `uat`, `uat cross-platform` | **every PR** (no paths — deliberate, see file header) | push `master`, dispatch |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
 | `distribution-matrix-gate.yml` | Distribution Matrix Gate / 7 jobs | paths: same broad list as push (Dockerfiles, pack/verify scripts, Ashlar.API/CLI, Client/Sdk/Hosting.Bundle/Authoring/Brick.Contracts, samples, VirtualProduction tests) | push (broad paths), weekly schedule, dispatch |
-| `docs-link-check.yml` | Docs Link Check / `lychee (README + docs)` | paths: `docs/**`, `README.md`, `.lycheeignore` | push, dispatch |
 | `kernel-coverage-gate.yml` | Kernel coverage gate / `kernel-coverage` | paths: kernel src + tests, `scripts/ci/kernel-coverage-gate.sh`, `scripts/ci/pr-testing-strategy-gate.sh` | push |
 | `kernel-gate.yml` | Kernel Gate / `kernel-gate` | paths: `src/Ashlar.Hosting/**`, Infrastructure, Orchestration, Runtime, Core.Application, kernel tests, `docs/production-readiness/**`, `Makefile` | push (narrower paths), dispatch |
 | `security-gate.yml` | Security Gate / `security-gate` | paths: Trust/Security sources and tests, `scripts/security-gate*.sh`, `Makefile` | dispatch |
-| `shell-lint.yml` | Shell lint / `shell-lint` | paths: `scripts/**` | dispatch |
 | `testing-strategy-gate.yml` | Testing strategy gate / `testing-strategy` | paths: `src/**`, `application/**`, `scripts/**`, `.github/**`, `Makefile`, `docs/architecture/TestingStrategy*.md` | — |
 | `release-staging-on-label.yml` | Release staging on label / `dispatch-staging-release` | `types: [labeled]` only | — |
-| `uat-gate.yml` | UAT / `uat`, `uat cross-platform` | **every PR** (no paths — deliberate, see file header) | push `master`, dispatch |
 | `products-gate.yml` | products-gate / `product scaffolds` | paths: `products/**`, distributed contracts, deployment-profile sources, `ci/test-ownership.tsv` | push `master`/`main`/`cursor/**`, dispatch — **advisory**; runs `products/Ashlar.Products.sln` plus `DistributedContractTests`. Does **not** run the dependency-boundary script (that is `dependency-boundary.yml`). |
 | `portability-gate.yml` | Portability Gate | paths: `application/src/Ashlar.CLI/**`, `src/Ashlar.Manifest/**`, `scripts/e2e-loop.sh` | dispatch |
 
