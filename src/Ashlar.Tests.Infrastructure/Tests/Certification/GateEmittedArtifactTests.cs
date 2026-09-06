@@ -6,6 +6,7 @@ using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;

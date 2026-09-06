@@ -434,7 +434,7 @@ public sealed class HotSwapOtherBrick : DomainBrick
     {
         var (privateKey, _) = CreateEd25519Key();
         var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey, hmacKey: HmacKey);
-        return signer.SignRecord(new CertificationRecordData
+        return signer.SignRecord(new CertificationRecord
         {
             Status = "PASS",
             Stage = "S0-S2",
