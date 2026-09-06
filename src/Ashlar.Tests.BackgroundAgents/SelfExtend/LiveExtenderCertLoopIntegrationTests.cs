@@ -167,6 +167,11 @@ sandbox:
             _proposedChanges.Add((path, content));
         }
 
+        public Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default)
+        {
+            return RunAsync(repoRoot, null, null, null, null, null, cancellationToken);
+        }
+
         public async Task<SelfExtendRunResult> RunAsync(
             string repoRoot,
             string? objective,
