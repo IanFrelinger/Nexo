@@ -7,7 +7,7 @@ using Ashlar.BackgroundAgents.DataSensitivity;
 using Ashlar.BackgroundAgents.Registry;
 using Ashlar.Core.Application.Testing.Abstractions;
 using Ashlar.Core.Application.Testing.Models;
-using Ashlar.Orchestration.Agents;
+using Ashlar.Core.Application.Orchestration.Ports;
 
 namespace Ashlar.Tests.CLI.Tests.Commands;
 
@@ -73,11 +73,10 @@ public class ExecuteBackgroundAgentCommandTests : UnitTestBase
         registry.Setup(r => r.GetAgent("test-agent")).Returns(instance);
         registry.Setup(r => r.ExecuteOnceAsync("test-agent", It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
-        var loggerFactory = new Mock<ILogger<AgentFactory>>();
-        var agentFactory = new AgentFactory(loggerFactory.Object, new Mock<IServiceProvider>().Object);
+        var agentCreator = new Mock<IAgentCreator>();
         var logger = new Mock<ILogger<ExecuteBackgroundAgentCommand>>();
 
-        var command = new ExecuteBackgroundAgentCommand(configLoader, registry.Object, specBuilder, agentFactory, logger.Object);
+        var command = new ExecuteBackgroundAgentCommand(configLoader, registry.Object, specBuilder, agentCreator.Object, logger.Object);
         var exitCode = await command.ExecuteAsync("test-agent", runAsync: false, formatJson: false);
         /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
