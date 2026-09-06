@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Perf Tier B: pipeline throughput (mocked deterministic stages).
+# ASHLAR_ALLOW_MOCK=1 enables CI-only test hook in default adapters (succeeds instead of fail-closed).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
