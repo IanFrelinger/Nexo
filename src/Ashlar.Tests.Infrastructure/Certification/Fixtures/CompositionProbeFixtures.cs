@@ -204,7 +204,13 @@ public static class CompositionProbeFixtures
             Signed = true,
             Timestamp = DateTimeOffset.UtcNow,
             BrickId = brickId,
-            Gate = "CompositionProbeFixtures.SeedSyntheticConstituent"
+            ContentHash = $"sha256:synthetic-{brickId}",
+            Gate = "CompositionProbeFixtures.SeedSyntheticConstituent",
+            Inputs = new[]
+            {
+                new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Hash = $"sha256:artifact-{brickId}" },
+                new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "composition-test-certifier" }
+            }
         };
         record = record with { Signature = ctx.BrickSigner.Sign(record) };
         ctx.BrickStore.Save(record);
