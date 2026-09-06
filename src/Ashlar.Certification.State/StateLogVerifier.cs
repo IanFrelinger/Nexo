@@ -105,7 +105,8 @@ public static class StateLogVerifier
             var trust = Contracts.CertificationTrustVerifier.Verify(
                 resolve.Record,
                 resolve.BrickSource,
-                hmacKey);
+                hmacKey,
+                Contracts.CertificationVerifyOptions.Strict);
 
             if (!trust.Trusted)
             {

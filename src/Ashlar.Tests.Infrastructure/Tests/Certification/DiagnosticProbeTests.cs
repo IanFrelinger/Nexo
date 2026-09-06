@@ -6,6 +6,7 @@ using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.Probes;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -33,7 +34,8 @@ public sealed class DiagnosticProbeTests
     [Fact]
     public async Task MutationFailure_CarriesTheSurvivorProbeFinding()
     {
-        var gate = new CertificationGate(new CertificationRecordSigner());
+        var (privateKey, _) = CreateEd25519Key();
+        var gate = new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey));
         var decision = await gate.CertifyAsync(ProbeRequest(WeakWitness));
 
         decision.Admitted.Should().BeFalse();
@@ -50,7 +52,8 @@ public sealed class DiagnosticProbeTests
     [Fact]
     public async Task AnalyzerFailure_GroupsFindingsByRule_AndNonCompilingNamesTheFirstError()
     {
-        var gate = new CertificationGate(new CertificationRecordSigner());
+        var (privateKey, _) = CreateEd25519Key();
+        var gate = new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey));
 
         var analyzerFail = await gate.CertifyAsync(ProbeRequest(WeakWitness) with
         {
@@ -76,8 +79,9 @@ public sealed class DiagnosticProbeTests
     [Fact]
     public async Task AThrowingProbe_IsSkipped_AndTheVerdictStands()
     {
+        var (privateKey, _) = CreateEd25519Key();
         var gate = new CertificationGate(
-            new CertificationRecordSigner(),
+            new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey),
             probes: new IDiagnosticProbe[] { new SabotageProbe(), new MutationSurvivorProbe() });
 
         var decision = await gate.CertifyAsync(ProbeRequest(WeakWitness));
@@ -105,7 +109,8 @@ public sealed class DiagnosticProbeTests
                         ["firstErrorMessage"] = "First failure: connection reset"
                     })
             ]);
-        var gate = new CertificationGate(new CertificationRecordSigner());
+        var (privateKey, _) = CreateEd25519Key();
+        var gate = new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey));
 
         var decision = await gate.CertifyAsync(ProbeRequest(strongWitness));
 
@@ -148,5 +153,15 @@ public sealed class DiagnosticProbeTests
         public string FailureCheck => "mutation";
         public DiagnosticProbeFinding? Probe(CertificationRequest request, CertificationDecision decision) =>
             throw new InvalidOperationException("probe sabotage");
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }

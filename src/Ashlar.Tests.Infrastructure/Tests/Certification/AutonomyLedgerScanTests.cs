@@ -1,7 +1,9 @@
 using FluentAssertions;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -20,7 +22,8 @@ public sealed class AutonomyLedgerScanTests
     public void FileStore_All_ExcludesTamperedRecords_ExactlyLikePointLookups()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"ashlar-ledger-{Guid.NewGuid():N}");
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var store = new FileCertificationRecordStore(directory, signer);
 
         store.Save(signer.SignRecord(Record("honest-brick", "sha256:honest")));
@@ -99,6 +102,7 @@ public sealed class AutonomyLedgerScanTests
 
     private static CertificationRecord Record(string brickId, string contentHash) => new()
     {
+        SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
         Status = "PASS",
         Stage = "S0-S2",
         Admitted = true,
@@ -108,4 +112,14 @@ public sealed class AutonomyLedgerScanTests
         ContentHash = contentHash,
         Gate = "ledger-scan-test-harness",
     };
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
+    }
 }

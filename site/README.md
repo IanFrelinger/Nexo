@@ -84,7 +84,7 @@ npx http-server .
 The page references only official brand assets:
 - `assets/brand/ashlar-logo-chaos.svg` — Official logo mark
 - `assets/brand/ashlar-terminal-preview.svg` — Terminal session preview
-- `assets/brand/ashlar-og-flat-1200x630.png` — OpenGraph social card (flat, typographic)
+- `assets/brand/ashlar-og-flat-1200x630.png` — OpenGraph social card
 
 No AI-generated marketing PNGs are used on the landing page.
 

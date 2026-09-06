@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Core.Domain.Bricks;
@@ -6,6 +7,7 @@ using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.Sdk.Extensions;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -37,8 +39,12 @@ public sealed class CertificationGateTeethTests
                 new Dictionary<string, object> { ["errorCount"] = 2 })
         ]);
 
-    /// <summary>Creates gate.</summary>
-    private static CertificationGate CreateGate() => new(new CertificationRecordSigner());
+    /// <summary>Creates gate with Ed25519 dual-signing support.</summary>
+    private static CertificationGate CreateGate()
+    {
+        var (privateKey, _) = CreateEd25519Key();
+        return new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey));
+    }
 
     private static List<string> CompilationReferences()
     {
@@ -72,7 +78,7 @@ public sealed class CertificationGateTeethTests
         decision.Record.Signed.Should().BeTrue();
         decision.Record.Signature.Should().NotBeNullOrWhiteSpace();
         decision.Record.ContentHash.Should().NotBeNullOrWhiteSpace();
-        new CertificationRecordSigner().Verify(decision.Record).Should().BeTrue();
+        new CertificationRecordSigner().Verify(decision.Record, CertificationVerifyOptions.Strict).Should().BeTrue();
     }
 
     [Fact]
@@ -308,7 +314,8 @@ public sealed class CertificationGateTeethTests
     public void UngatedBrick_IsRejectedByRegistryAdmissionPath()
     {
         var store = new InMemoryCertificationRecordStore();
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var registry = new CertifiedBrickRegistry(store, signer);
         var brick = new MutationProbeBrick();
 
@@ -331,7 +338,8 @@ public sealed class CertificationGateTeethTests
     public async Task CertifiedAdmission_OnlyExposesAdmittedBricks()
     {
         var store = new InMemoryCertificationRecordStore();
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var registry = new CertifiedBrickRegistry(store, signer);
         var gate = new CertificationGate(signer);
         var admission = new CertifiedBrickAdmission(gate, registry);
@@ -367,5 +375,15 @@ public sealed class CertificationGateTeethTests
 </Project>
 """);
         return path;
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }

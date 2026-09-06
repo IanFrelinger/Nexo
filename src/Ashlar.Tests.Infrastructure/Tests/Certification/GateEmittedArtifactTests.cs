@@ -6,6 +6,7 @@ using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -112,7 +113,8 @@ public sealed class GateEmittedArtifactTests
         request.EmittedArtifact.Should().NotBeNull();
         request.BrickTypeName.Should().Be(request.EmittedArtifact!.BrickTypeName);
 
-        var decision = await new CertificationGate(new CertificationRecordSigner()).CertifyAsync(request);
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey)).CertifyAsync(request);
         decision.Record.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.GateEmittedArtifact
             && i.Hash == request.EmittedArtifact.AssemblySha256);
         decision.Record.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CertifierIdentity);
@@ -174,7 +176,8 @@ public sealed class GateEmittedArtifactTests
 
         var request = await BrickCertificationProjectLoader.LoadAsync(dir, witnessPath);
         var tampered = request.EmittedArtifact! with { AssemblySha256 = "not-the-hash" };
-        var decision = await new CertificationGate(new CertificationRecordSigner())
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey))
             .CertifyAsync(request with { EmittedArtifact = tampered });
 
         decision.Admitted.Should().BeFalse();
@@ -199,7 +202,8 @@ public sealed class GateEmittedArtifactTests
 
         var request = await BrickCertificationProjectLoader.LoadAsync(dir, witnessPath);
         var exploding = new ExplodingProbeBrick();
-        var decision = await new CertificationGate(new CertificationRecordSigner())
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey))
             .CertifyAsync(request with { Brick = exploding });
 
         decision.Record.Reason.Should().NotContain(
@@ -342,5 +346,15 @@ public sealed class GateEmittedArtifactTests
         File.WriteAllText(Path.Combine(dir, "Brick.csproj"), csproj);
         File.WriteAllText(Path.Combine(dir, "Brick.cs"), source);
         return dir;
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }

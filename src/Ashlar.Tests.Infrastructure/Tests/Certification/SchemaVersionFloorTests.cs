@@ -31,10 +31,10 @@ public sealed class SchemaVersionFloorTests
     public void DowngradedRecord_WithRewrittenGate_VerifiesWhenNoFloorIsSet()
     {
         // The hole, demonstrated rather than asserted about. Not a regression test —
-        // a record of today's behaviour, which the floor below refuses.
+        // a record of legacy behaviour, which the floor below refuses.
         var forged = Downgrade(SignedV2Record(), rewrittenGate: "gate-that-never-ran");
 
-        var trust = CertificationTrustVerifier.Verify(forged, BrickSource, HmacKey);
+        var trust = CertificationTrustVerifier.Verify(forged, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
 
         trust.Trusted.Should().BeTrue(
             "with no floor, a legacy-lane record whose HMAC was recomputed verifies — and the "
@@ -63,14 +63,27 @@ public sealed class SchemaVersionFloorTests
     }
 
     [Fact]
-    public void DefaultOptions_ReproduceTodaysBehaviour()
+    public void Legacy_AllowsHmacOnlyRecords()
     {
+        // Legacy option explicitly allows HMAC-only records for migration scenarios.
+        var record = SignedV2Record();
+
+        var trust = CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
+
+        trust.Trusted.Should().BeTrue("Legacy allows HMAC-only records for backward compatibility");
+    }
+
+    [Fact]
+    public void DefaultOptions_AreFailClosed()
+    {
+        // Default is fail-closed, so only v2+ records with Ed25519 verify.
+        // This test uses SignedV2Record which has no Ed25519, so it should fail.
         var record = SignedV2Record();
 
         CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, CertificationVerifyOptions.Default)
-            .Trusted.Should().BeTrue();
+            .Trusted.Should().BeFalse("Default requires Ed25519");
         CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, null)
-            .Trusted.Should().BeTrue("null options must behave exactly as the parameterless call did");
+            .Trusted.Should().BeFalse("null options defaults to fail-closed Default");
     }
 
     [Fact]
@@ -83,6 +96,32 @@ public sealed class SchemaVersionFloorTests
         var trust = CertificationTrustVerifier.Verify(SignedV2Record(), BrickSource, HmacKey, strict);
 
         trust.Trusted.Should().BeFalse();
+        trust.FailureCode.Should().Be("ed25519-signature-required");
+    }
+
+    [Fact]
+    public void Strict_RejectsRecordWithoutEd25519()
+    {
+        // Limitation 7: signature strip → HMAC admit. Strict must close this.
+        var record = SignedV2Record();
+
+        var trust = CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, CertificationVerifyOptions.Strict);
+
+        trust.Trusted.Should().BeFalse(
+            "Strict must require Ed25519 to close signature-strip attacks on production paths");
+        trust.FailureCode.Should().Be("ed25519-signature-required");
+    }
+
+    [Fact]
+    public void Default_RejectsRecordWithoutEd25519()
+    {
+        // Default must also be fail-closed to prevent regression.
+        var record = SignedV2Record();
+
+        var trust = CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, CertificationVerifyOptions.Default);
+
+        trust.Trusted.Should().BeFalse(
+            "Default must require Ed25519 to close signature-strip attacks");
         trust.FailureCode.Should().Be("ed25519-signature-required");
     }
 
@@ -103,9 +142,11 @@ public sealed class SchemaVersionFloorTests
     }
 
     [Fact]
-    public void IsStrict_IsFalseOnlyForTodaysSemantics()
+    public void IsStrict_ReflectsConfiguredStrictness()
     {
-        CertificationVerifyOptions.Default.IsStrict.Should().BeFalse();
+        CertificationVerifyOptions.Default.IsStrict.Should().BeTrue("Default is fail-closed");
+        CertificationVerifyOptions.Strict.IsStrict.Should().BeTrue("Strict is fail-closed");
+        CertificationVerifyOptions.Legacy.IsStrict.Should().BeFalse("Legacy has no strictness");
         Floor.IsStrict.Should().BeTrue();
         new CertificationVerifyOptions { RequireEd25519Signature = true }.IsStrict.Should().BeTrue();
         CertificationVerifyOptions.Default.PinningEnabled.Should().BeFalse();

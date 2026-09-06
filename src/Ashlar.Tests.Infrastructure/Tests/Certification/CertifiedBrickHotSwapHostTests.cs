@@ -6,6 +6,7 @@ using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -313,6 +314,8 @@ public sealed class HotSwapOtherBrick : DomainBrick
         var evilPe = GateEmittedArtifactCompiler.Compile(
             evil, BrickCertificationProjectLoader.DefaultCompilationReferences());
 
+        var (privateKey, publicKey) = CreateEd25519Key();
+        
         var unsigned = new CertificationRecordData
         {
             Status = "PASS",
@@ -333,9 +336,15 @@ public sealed class HotSwapOtherBrick : DomainBrick
                     Hash = honestPe.AssemblySha256
                 },
                 CertifierIdentity.ToInput()
-            ]
+            ],
+            Ed25519PublicKey = publicKey
         };
-        var record = unsigned with { Signature = CertificationRecordSigning.Sign(unsigned, HmacKey) };
+        
+        var record = unsigned with
+        {
+            Signature = CertificationRecordSigning.Sign(unsigned, HmacKey),
+            Ed25519Signature = CertificationRecordEd25519.Sign(unsigned, Convert.FromBase64String(privateKey))
+        };
 
         var result = await host.SwapAsync(
         [
@@ -431,6 +440,8 @@ public sealed class HotSwapOtherBrick : DomainBrick
         string source,
         GateEmittedArtifact? pe = null)
     {
+        var (privateKey, publicKey) = CreateEd25519Key();
+        
         var record = new CertificationRecordData
         {
             Status = "PASS",
@@ -451,9 +462,15 @@ public sealed class HotSwapOtherBrick : DomainBrick
                     Hash = pe?.AssemblySha256 ?? BrickContentHasher.ComputeSha256(source)
                 },
                 CertifierIdentity.ToInput()
-            ]
+            ],
+            Ed25519PublicKey = publicKey
         };
-        return record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
+
+        return record with
+        {
+            Signature = CertificationRecordSigning.Sign(record, HmacKey),
+            Ed25519Signature = CertificationRecordEd25519.Sign(record, Convert.FromBase64String(privateKey))
+        };
     }
 
     private static Task<BrickOutput> Execute(CertifiedBrickHotSwapHost host, string brickId) =>
@@ -498,5 +515,15 @@ public sealed class HotSwapOtherBrick : DomainBrick
                 return _events.ToList();
             }
         }
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }
