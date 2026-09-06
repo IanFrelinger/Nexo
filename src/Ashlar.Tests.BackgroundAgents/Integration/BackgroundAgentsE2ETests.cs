@@ -3,15 +3,22 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Logging;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.RAG;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Scheduling;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Orchestration.Agents;
 using Ashlar.Orchestration.Architect.Models;
 using Xunit;
 using Ashlar.Tests.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 
 namespace Ashlar.Tests.BackgroundAgents.Integration;
 
@@ -58,7 +65,7 @@ public class BackgroundAgentsE2ETests
 
         var spec = specBuilder.BuildSpec(agentConfig);
         var logger = sp.GetRequiredService<ILogger<GenericAgent>>();
-        var agent = new GenericAgent(spec, logger);
+        var agent = new GenericAgent(spec.ToOrchestrationSpec(), logger);
         await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("e2e-agent", default);

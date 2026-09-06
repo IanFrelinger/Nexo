@@ -3,21 +3,31 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Ashlar.Abstractions;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Core.Application.Trust.Ports;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Extending;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Observations;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Optimization;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Scheduling;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Telemetry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Testing;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Core.Application.SelfImprovement.Models;
 using Ashlar.Core.Application.SelfImprovement.Ports;
 using Ashlar.Orchestration.Agents;
 using Ashlar.Orchestration.Architect.Models;
 using Xunit;
 using Ashlar.Tests.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 
 namespace Ashlar.Tests.BackgroundAgents.Registry;
 
@@ -482,7 +492,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
     /// <summary>Creates spec.</summary>
     /// <param name="config">Config.</param>
     private static AgentSpawnSpec BuildSpec(BackgroundAgentConfig config) =>
-        new BackgroundAgentSpecBuilder(new DataSensitivityRegistry(), null).BuildSpec(config);
+        new BackgroundAgentSpecBuilder(new DataSensitivityRegistry(), null).BuildSpec(config).ToOrchestrationSpec();
 
     /// <summary>In memory observation store.</summary>
     private sealed class InMemoryObservationStore : IObservationStore

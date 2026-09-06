@@ -5,9 +5,13 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Ashlar.Abstractions;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Services;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Orchestration.Agents;
 using Xunit;
 
@@ -26,7 +30,7 @@ public sealed class BackgroundAgentServiceTests
         var registry = Mock.Of<IBackgroundAgentRegistry>();
         var logger = Mock.Of<ILogger<BackgroundAgentService>>();
 
-        var act = () => new BackgroundAgentService(null!, builder, factory, registry, sensitivity, logger);
+        var act = () => new BackgroundAgentService(null!, builder, new AgentFactoryAdapter(factory), registry, sensitivity, logger);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -182,7 +186,7 @@ public sealed class BackgroundAgentServiceTests
         return new BackgroundAgentService(
             loader,
             new BackgroundAgentSpecBuilder(sensitivity, null),
-            CreateAgentFactory(),
+            new AgentFactoryAdapter(CreateAgentFactory()),
             registry,
             sensitivity,
             Mock.Of<ILogger<BackgroundAgentService>>());

@@ -6,9 +6,13 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Ashlar.Abstractions;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Tools;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Orchestration.Agents;
 using Xunit;
 
@@ -119,7 +123,7 @@ public sealed class UpdateAgentConfigToolTests
             registry,
             loader,
             new BackgroundAgentSpecBuilder(new DataSensitivityRegistry(), null),
-            agentFactory);
+            new AgentFactoryAdapter(agentFactory));
     }
 
     /// <summary>Creates config loader.</summary>

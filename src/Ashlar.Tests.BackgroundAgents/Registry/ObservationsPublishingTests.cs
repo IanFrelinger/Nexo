@@ -1,16 +1,25 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Extending;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Observations;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Optimization;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Scheduling;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Testing;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Orchestration.Agents;
 using Xunit;
 using Ashlar.Tests.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 
 namespace Ashlar.Tests.BackgroundAgents.Registry;
 
@@ -139,7 +148,7 @@ public sealed class ObservationsPublishingTests
     {
         var sensitivity = new DataSensitivityRegistry();
         var builder = new BackgroundAgentSpecBuilder(sensitivity, null);
-        return builder.BuildSpec(c);
+        return builder.BuildSpec(c).ToOrchestrationSpec();
     }
 
     private sealed class InMemoryObservationStore : IObservationStore

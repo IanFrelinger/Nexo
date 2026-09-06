@@ -2,11 +2,16 @@ using System.Reflection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Ashlar.Abstractions;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Core.Application.Trust.Ports;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Extending;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Scheduling;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
@@ -73,7 +78,7 @@ internal static class SelfExtendAuditTestSupport
     }
 
     internal static AgentSpawnSpec BuildSpec(BackgroundAgentConfig config) =>
-        new BackgroundAgentSpecBuilder(new DataSensitivityRegistry(), null).BuildSpec(config);
+        new BackgroundAgentSpecBuilder(new DataSensitivityRegistry(), null).BuildSpec(config).ToOrchestrationSpec();
 
     internal static BackgroundAgentConfig ExtenderConfig(string id, string repoRoot) => new()
     {

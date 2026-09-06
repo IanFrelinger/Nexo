@@ -2,9 +2,13 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Tools;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Orchestration.Agents;
 using Xunit;
 
@@ -22,7 +26,7 @@ public class AgentManagementToolboxTests
         var registry = new Mock<IBackgroundAgentRegistry>().Object;
         var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
         var agentFactory = new AgentFactory(Mock.Of<Microsoft.Extensions.Logging.ILogger<AgentFactory>>(), Mock.Of<IServiceProvider>());
-        var toolbox = new AgentManagementToolbox(registry, configLoader, specBuilder, agentFactory);
+        var toolbox = new AgentManagementToolbox(registry, configLoader, specBuilder, new AgentFactoryAdapter(agentFactory));
 
         var schemas = toolbox.Schemas().ToList();
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Ashlar.BackgroundAgents.Trust;
 using Ashlar.BackgroundAgents.WebSearch;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Infrastructure.Execution;
 using Xunit;
 
@@ -20,7 +21,7 @@ public sealed class SanitizingProviderFactoryTests
 
         var proxy = new CloudSanitizationProxy(contentFilter: null);
         var factory = new SanitizingProviderFactory(
-            innerMock.Object,
+            new ProviderFactoryAdapter(innerMock.Object),
             proxy,
             NullLogger<SanitizingProviderFactory>.Instance);
 
@@ -37,7 +38,7 @@ public sealed class SanitizingProviderFactoryTests
         var filter = new SensitiveContentFilter();
         var proxy = new CloudSanitizationProxy(filter);
         var factory = new SanitizingProviderFactory(
-            innerMock.Object,
+            new ProviderFactoryAdapter(innerMock.Object),
             proxy,
             NullLogger<SanitizingProviderFactory>.Instance);
 
@@ -56,7 +57,7 @@ public sealed class SanitizingProviderFactoryTests
         proxy.Setup(p => p.SanitizeForCloud(It.IsAny<OutgoingContext>(), It.IsAny<CancellationToken>()))
             .Returns(SanitizationResult.Blocked("blocked"));
 
-        var factory = new SanitizingProviderFactory(inner.Object, proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
+        var factory = new SanitizingProviderFactory(new ProviderFactoryAdapter(inner.Object), proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
 
         var act = () => factory.ExecuteLLMAsync("openai", "sys", "user", new { }, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*blocked*");
@@ -79,7 +80,7 @@ public sealed class SanitizingProviderFactoryTests
                 Provider = "openai",
             }));
 
-        var factory = new SanitizingProviderFactory(inner.Object, proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
+        var factory = new SanitizingProviderFactory(new ProviderFactoryAdapter(inner.Object), proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
         var result = await factory.ExecuteLLMAsync("openai", "dirty-sys", "dirty-user", new { }, CancellationToken.None);
 
         result.Should().Be("ok");
@@ -93,7 +94,7 @@ public sealed class SanitizingProviderFactoryTests
         proxy.Setup(p => p.SanitizeForCloud(It.IsAny<OutgoingContext>(), It.IsAny<CancellationToken>()))
             .Returns(SanitizationResult.Blocked("vision blocked"));
 
-        var factory = new SanitizingProviderFactory(inner.Object, proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
+        var factory = new SanitizingProviderFactory(new ProviderFactoryAdapter(inner.Object), proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
         var act = () => factory.ExecuteVisionAsync("openai", "sys", "user", new byte[] { 1 }, new { }, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*vision blocked*");
     }
@@ -114,7 +115,7 @@ public sealed class SanitizingProviderFactoryTests
                 Provider = "openai",
             }));
 
-        var factory = new SanitizingProviderFactory(inner.Object, proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
+        var factory = new SanitizingProviderFactory(new ProviderFactoryAdapter(inner.Object), proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
         var result = await factory.ExecuteVisionAsync("openai", "sys", "user", new byte[] { 1 }, new { }, CancellationToken.None);
 
         result.Should().Be("vision-ok");
@@ -142,7 +143,7 @@ public sealed class SanitizingProviderFactoryTests
                 Provider = "openai",
             }));
 
-        var factory = new SanitizingProviderFactory(inner.Object, proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
+        var factory = new SanitizingProviderFactory(new ProviderFactoryAdapter(inner.Object), proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
         var result = await factory.ExecuteVisionMultiFrameAsync(
             "openai",
             "sys",
@@ -170,7 +171,7 @@ public sealed class SanitizingProviderFactoryTests
                 Provider = "video",
             }));
 
-        var factory = new SanitizingProviderFactory(inner.Object, proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
+        var factory = new SanitizingProviderFactory(new ProviderFactoryAdapter(inner.Object), proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
         var result = await factory.ExecuteVideoAsync("dirty-sys", "dirty-user", new[] { new byte[] { 1 } }, new { }, CancellationToken.None);
 
         result.Should().Be("video-ok");
@@ -184,7 +185,7 @@ public sealed class SanitizingProviderFactoryTests
         proxy.Setup(p => p.SanitizeForCloud(It.IsAny<OutgoingContext>(), It.IsAny<CancellationToken>()))
             .Returns(SanitizationResult.Blocked("video blocked"));
 
-        var factory = new SanitizingProviderFactory(inner.Object, proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
+        var factory = new SanitizingProviderFactory(new ProviderFactoryAdapter(inner.Object), proxy.Object, NullLogger<SanitizingProviderFactory>.Instance);
         var act = () => factory.ExecuteVideoAsync("sys", "user", new[] { new byte[] { 1 } }, new { }, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*video blocked*");
     }
@@ -197,7 +198,7 @@ public sealed class SanitizingProviderFactoryTests
 
         var proxy = new CloudSanitizationProxy(contentFilter: null);
         var factory = new SanitizingProviderFactory(
-            innerMock.Object,
+            new ProviderFactoryAdapter(innerMock.Object),
             proxy,
             NullLogger<SanitizingProviderFactory>.Instance);
 

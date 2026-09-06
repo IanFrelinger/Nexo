@@ -1,16 +1,24 @@
 using FluentAssertions;
 using Ashlar.Abstractions;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.DataSensitivity;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Extending;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.HostRunners;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Scheduling;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.BackgroundAgents.Testing;
+using Ashlar.BackgroundAgents.Compatibility;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Orchestration.Agents;
 using Ashlar.Tests.BackgroundAgents.Registry;
+using Ashlar.BackgroundAgents.Compatibility;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -284,6 +292,6 @@ sandbox:
     {
         var sensitivity = new DataSensitivityRegistry();
         var builder = new BackgroundAgentSpecBuilder(sensitivity, null);
-        return builder.BuildSpec(c);
+        return builder.BuildSpec(c).ToOrchestrationSpec();
     }
 }
