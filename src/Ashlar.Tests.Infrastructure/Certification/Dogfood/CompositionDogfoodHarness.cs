@@ -40,7 +40,8 @@ public static class CompositionDogfoodHarness
         Environment.SetEnvironmentVariable("ASHLAR_CERT_NUGET_CONFIG", null);
 
         var brickStore = new InMemoryCertificationRecordStore();
-        var brickSigner = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var brickSigner = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var brickRegistry = new CertifiedBrickRegistry(brickStore, brickSigner);
         var brickGate = new CertificationGate(brickSigner);
         var brickAdmission = new CertifiedBrickAdmission(brickGate, brickRegistry);
@@ -158,4 +159,14 @@ public static class CompositionDogfoodHarness
                 },
                 new Dictionary<string, object> { ["newHealth"] = 0 })
         ]);
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = NSec.Cryptography.Key.Create(
+            NSec.Cryptography.SignatureAlgorithm.Ed25519,
+            new NSec.Cryptography.KeyCreationParameters { ExportPolicy = NSec.Cryptography.KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(NSec.Cryptography.KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(NSec.Cryptography.KeyBlobFormat.RawPublicKey)));
+    }
 }

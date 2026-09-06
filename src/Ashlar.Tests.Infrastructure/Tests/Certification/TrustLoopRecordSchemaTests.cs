@@ -44,7 +44,7 @@ public sealed class TrustLoopRecordSchemaTests
         var record = BuildLegacyRecord() with { ContentHash = BrickContentHasher.ComputeSha256(BrickSource) };
         var signed = record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
 
-        var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey);
+        var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
 
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
     }
@@ -127,10 +127,10 @@ public sealed class TrustLoopRecordSchemaTests
         var record = BuildV2Record() with { ContentHash = BrickContentHasher.ComputeSha256(BrickSource) };
         var signed = record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
 
-        var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey);
+        var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
 
         trust.Trusted.Should().BeTrue(
-            $"dual-write is a transition window; HMAC-only v2 records are valid ({trust.FailureCode}: {trust.Reason})");
+            $"dual-write is a transition window; HMAC-only v2 records are valid under Legacy ({trust.FailureCode}: {trust.Reason})");
     }
 
     // ---------- Ed25519 dual-write ----------
@@ -291,7 +291,7 @@ public sealed class TrustLoopRecordSchemaTests
         data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CompileOptions);
         data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.ExecutionMode);
 
-        var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey);
+        var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey, CertificationVerifyOptions.Legacy);
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
 
         var tampered = data with

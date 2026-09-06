@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Helpers;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -38,7 +40,8 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
     [Fact(Timeout = TestTimeouts.Quick)]
     public Task ConcurrentSavesOfOneBrick_LeaveAVerifiableRecord_NeverAShreddedOne()
     {
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var store = new FileCertificationRecordStore(TempDir, signer);
 
         // Dedicated threads behind a barrier, deliberately NOT Parallel.For. Two reasons, and the
@@ -145,7 +148,8 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
     [Fact(Timeout = TestTimeouts.Quick)]
     public Task LoadRefusal_PersistsAVerifiableFail_AndNeverAdmits()
     {
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var store = new FileCertificationRecordStore(TempDir, signer);
         var record = LoadRefusalRecord.Create(
             signer,
@@ -169,7 +173,8 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
     {
         // A crash between staging and moving leaves a staging file behind. It must be inert:
         // All() scans the directory as ledger evidence, and unverified JSON is not evidence.
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var store = new FileCertificationRecordStore(TempDir, signer);
         store.Save(signer.SignRecord(Admitted(0)));
 
@@ -185,6 +190,7 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
 
     private static CertificationRecord Admitted(int seed) => new()
     {
+        SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
         Status = "PASS",
         Stage = "admitted",
         Admitted = true,
@@ -193,5 +199,21 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
         BrickId = BrickId,
         ContentHash = $"hash-{seed}",
         Reason = $"writer {seed}",
+        Gate = "FileCertificationRecordStoreConcurrencyTests",
+        Inputs = new[]
+        {
+            new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Id = BrickId, Hash = $"sha256:artifact-{seed}" },
+            new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "test-certifier", Hash = "sha256:certifier" }
+        }
     };
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
+    }
 }

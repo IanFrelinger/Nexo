@@ -748,6 +748,14 @@ redundant guard is exactly what a careful proposer writes.
    obligation under S-1: that rule covers a signature that fails verification and is silent
    about one that was removed.
 
+   *Update, 2026-09-06: **CLOSED**.* `CertificationVerifyOptions.Default` and
+   `CertificationVerifyOptions.Strict` both now set `RequireEd25519Signature = true` and
+   `MinimumSchemaVersion = 2`, fail-closed by default. Production admission and load paths
+   (FileCertificationRecordStore, CertifiedBrickHotSwapHost, SelfProducedBrickCertificationPolicy,
+   etc.) use `Strict` and reject signature-stripped records with `ed25519-signature-required`.
+   The `Legacy` option remains for backward compatibility during migration. This closes the
+   signature-strip attack on all non-Legacy code paths. CI-verified in SchemaVersionFloorTests.
+
    *Established 2026-08-27 by reading the cited sources. No .NET SDK was available in the
    authoring environment, so nothing in this row was executed — it is a code-reading result,
    not a CI result.*
@@ -787,6 +795,12 @@ redundant guard is exactly what a careful proposer writes.
    (`schema-version-below-floor`) at floor 2. **The default floor is 0**, so an unconfigured
    deployment is unchanged; raising it is the remediation. The only non-test site that *stamps* a version is
    `CertificationGate.cs:424`, and no verifier ever compares against it.
+
+   *Update, 2026-09-06: **CLOSED**.* `CertificationVerifyOptions.Default` and
+   `CertificationVerifyOptions.Strict` now set `MinimumSchemaVersion = 2` (trust-loop schema),
+   fail-closed by default. Production paths reject legacy-schema records with
+   `schema-version-below-floor`. Combined with Ed25519 requirement (limitation 7), this closes
+   the schema-downgrade attack. Only `Legacy` option accepts schema version 0.
 
    The consequence for planning is the important part: **hardening a new schema version
    closes nothing on its own.** Any design that adds a stricter v3 lane while v1 and v2

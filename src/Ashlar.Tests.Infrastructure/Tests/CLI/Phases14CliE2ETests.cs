@@ -1,7 +1,9 @@
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Application.Helpers;
 using Ashlar.Tests.Infrastructure.Helpers;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.CLI;
@@ -46,7 +48,8 @@ public sealed class Phases14CliE2ETests : E2ETestBase
     /// </remarks>
     private void SeedAdmittedObservationContextRecord()
     {
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var record = new CertificationRecord
         {
             Status = "PASS",
@@ -59,14 +62,31 @@ public sealed class Phases14CliE2ETests : E2ETestBase
             EscapeRate = 0d,
             TotalMutants = 0,
             SurvivingMutants = 0,
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+            Gate = "Phases14CliE2ETests",
+            Inputs = new[]
+            {
+                new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Id = "observation.context", Hash = "sha256:artifact" },
+                new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "test-certifier", Hash = "sha256:certifier" }
+            }
         };
 
-        record = record with { Signature = signer.Sign(record) };
+        var signed = signer.SignRecord(record);
 
         var store = new FileCertificationRecordStore(
             Path.Combine(TempDir, "ashlar-certifications"),
             signer);
-        store.Save(record);
+        store.Save(signed);
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 
     [Fact(Timeout = 60000)]

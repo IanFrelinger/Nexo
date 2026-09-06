@@ -6,6 +6,8 @@ Thanks for contributing.
 
 Development is trunk-based: `master` is the only long-lived branch. Branch protection requires **one** status check, `cert-gate` (plus "up to date with base"); every other workflow is advisory — see [`docs/CiGateInventory.md`](docs/CiGateInventory.md) and "Layer boundary and what master actually enforces" below.
 
+**Additional checks safe to require:** `shell-lint` and `lychee (README + docs)` both run on every PR (no path filters) and always report a status. They are deliberately configured this way to be safe as required checks. See [`docs/CiGateInventory.md`](docs/CiGateInventory.md) § "Checks that are safe to require" for the complete list and exact check names for branch protection.
+
 - Branch from the latest `master`, keep branches short-lived (days, not weeks), one concern per branch.
 - Name branches `<type>/<topic>` using the same types as Conventional Commits: `feat/…`, `fix/…`, `docs/…`, `chore/…`, `ci/…`, `refactor/…`, `test/…`. For multi-PR efforts, put the epic name at the front of the topic so related branches sort together: `feat/trust-loop-hot-swap`, `feat/trust-loop-fence-probe`. Do **not** name a head branch `application/*` when it targets `master` (the layer-boundary gate rejects that pairing).
 - Everything lands through a PR into `master`. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) **by convention** — `type(scope): subject`, WHY in the body — there is no commitlint hook or workflow enforcing it; `scripts/changelog-snippet-for-release.sh` relies on the convention to draft release notes. Merged head branches are deleted automatically.
@@ -116,6 +118,7 @@ make application-gate-tier-a              # application-gate.yml: product sln bu
 make testing-strategy-gate                # testing-strategy-gate.yml: gap freeze / ProdStyle wiring rules on your diff
 dotnet run --project application/src/Ashlar.CLI -- ci verify   # `make ci-verify`: build + C#-driven checks
 dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template <template.json>
+bash scripts/check-docs-phantom-paths.sh  # Fast local check: catch phantom backtick paths in docs before onboarding-docs-guard CI
 ```
 
 Pick the lanes that match what you changed (`make testing-strategy-gate` prints the suggested set for your diff). Optional external suites (Docker, Ollama, Mapbox, mesh lab) are opt-in by environment variable and are reported as **Skipped** until enabled — see `docs/Testing.md`, "Opt-in external suites".

@@ -7,6 +7,7 @@ using Ashlar.Core.Domain.Bricks.Ports;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -36,7 +37,11 @@ public sealed class AnalyzerGateAdversarialCampaignTests
                 })
         ]);
 
-    private static CertificationGate CreateGate() => new(new CertificationRecordSigner());
+    private static CertificationGate CreateGate()
+    {
+        var (privateKey, _) = CreateEd25519Key();
+        return new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey));
+    }
 
     private static CertificationRequest RequestFor(string sourceCode, BrickConstraintManifest? manifest = null) => new()
     {
@@ -199,5 +204,15 @@ public sealed class AnalyzerGateAdversarialCampaignTests
 </Project>
 """);
         return path;
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }
