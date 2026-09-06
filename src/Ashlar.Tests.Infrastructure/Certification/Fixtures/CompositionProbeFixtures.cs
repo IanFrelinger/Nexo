@@ -208,8 +208,8 @@ public static class CompositionProbeFixtures
             Gate = "CompositionProbeFixtures.SeedSyntheticConstituent",
             Inputs = new[]
             {
-                new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Hash = $"sha256:artifact-{brickId}" },
-                new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "composition-test-certifier" }
+                new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Id = brickId, Hash = $"sha256:artifact-{brickId}" },
+                new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "composition-test-certifier", Hash = "sha256:certifier" }
             }
         };
         record = record with { Signature = ctx.BrickSigner.Sign(record) };
