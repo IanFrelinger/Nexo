@@ -209,10 +209,11 @@ public static class ServiceCollectionExtensions
             });
             services.AddSingleton<IProviderFactory>(sp =>
             {
-                var inner = sp.GetRequiredService<Ashlar.Infrastructure.Execution.ProviderFactory>();
+                var infraFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.ProviderFactory>();
+                var adapter = new Ashlar.Infrastructure.Adapters.ProviderFactoryAdapter(infraFactory);
                 var proxy = sp.GetRequiredService<ICloudSanitizationProxy>();
                 var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>();
-                return new SanitizingProviderFactory(inner, proxy, logger);
+                return new SanitizingProviderFactory(adapter, proxy, logger);
             });
         }
 

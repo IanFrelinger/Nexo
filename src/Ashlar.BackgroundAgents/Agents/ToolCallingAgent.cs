@@ -6,8 +6,6 @@ using Ashlar.Abstractions;
 using Ashlar.Core.Application.Execution.Ports;
 using Ashlar.Runtime;
 
-using Ashlar.Core.Application.Execution.Ports;
-
 namespace Ashlar.BackgroundAgents.Agents;
 
 /// <summary>

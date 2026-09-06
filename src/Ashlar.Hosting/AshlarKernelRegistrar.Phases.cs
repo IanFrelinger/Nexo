@@ -380,7 +380,7 @@ internal static partial class AshlarKernelRegistrar
             }
             else
             {
-                IProviderFactory providerFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.IProviderFactory>();
+                Ashlar.Infrastructure.Execution.IProviderFactory providerFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.IProviderFactory>();
                 agentic = new Ashlar.Infrastructure.Execution.Models.ProviderBackedModel(
                     providerFactory,
                     sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Ashlar.Infrastructure.Execution.Models.ProviderBackedModel>>());
@@ -562,16 +562,7 @@ internal static partial class AshlarKernelRegistrar
                 ? sp.GetRequiredService<ProviderFactory>()
                 : CreateProviderFactory(sp, useAdaptive, sanitize, ephemeralModels);
 
-            // Middle: PII scrubbing before anything leaves the trust boundary.
-            if (sanitize)
-            {
-                chain = new SanitizingProviderFactory(
-                    chain,
-                    sp.GetRequiredService<ICloudSanitizationProxy>(),
-                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>());
-            }
-
-            // Outermost: load-balancing across providers.
+            // Outermost: load-balancing across providers (stays in Infrastructure layer)
             if (useAdaptive)
             {
                 chain = new AdaptiveProviderFactory(
@@ -587,7 +578,18 @@ internal static partial class AshlarKernelRegistrar
         services.AddSingleton<Ashlar.Core.Application.Execution.Ports.IProviderFactory>(sp =>
         {
             var infraFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.IProviderFactory>();
-            return new Ashlar.Infrastructure.Adapters.ProviderFactoryAdapter(infraFactory);
+            Ashlar.Core.Application.Execution.Ports.IProviderFactory appChain = new Ashlar.Infrastructure.Adapters.ProviderFactoryAdapter(infraFactory);
+            
+            // Apply PII scrubbing at the Application port level (SanitizingProviderFactory uses Application ports)
+            if (sanitize)
+            {
+                appChain = new SanitizingProviderFactory(
+                    appChain,
+                    sp.GetRequiredService<ICloudSanitizationProxy>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>());
+            }
+            
+            return appChain;
         });
 
     }
