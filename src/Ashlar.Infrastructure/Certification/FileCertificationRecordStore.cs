@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 
@@ -107,7 +108,7 @@ public sealed class FileCertificationRecordStore : ICertificationRecordStore
         if (record is null)
             return null;
 
-        return _signer.Verify(record) ? record : null;
+        return _signer.Verify(record, CertificationVerifyOptions.Strict) ? record : null;
     }
 
     /// <summary>Whether admitted.</summary>

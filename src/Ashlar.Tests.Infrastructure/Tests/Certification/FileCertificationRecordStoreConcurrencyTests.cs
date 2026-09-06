@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Helpers;
@@ -185,6 +186,7 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
 
     private static CertificationRecord Admitted(int seed) => new()
     {
+        SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
         Status = "PASS",
         Stage = "admitted",
         Admitted = true,
@@ -193,5 +195,6 @@ public sealed class FileCertificationRecordStoreConcurrencyTests : TempDirTestBa
         BrickId = BrickId,
         ContentHash = $"hash-{seed}",
         Reason = $"writer {seed}",
+        Gate = "FileCertificationRecordStoreConcurrencyTests",
     };
 }
