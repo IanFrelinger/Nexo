@@ -4,10 +4,9 @@ namespace Ashlar.Certification.Contracts;
 /// Strictness a verifier applies to a certification record, per SPEC-006 rules S-1 and S-5.
 /// </summary>
 /// <remarks>
-/// <para><b>Every default reproduces today's behaviour exactly.</b> A verifier that passes
-/// nothing, or passes <see cref="Default"/>, behaves as it did before this type existed —
-/// which is what SPEC-006 S-2 requires, and what keeps records already on disk verifiable.
-/// Strictness is opt-in, and turning it on is the remediation, not the declaration.</para>
+/// <para><b>Default is now fail-closed.</b> Records must use trust-loop schema (v2+) and
+/// carry valid Ed25519 signatures to close limitations 7-9 from certification-evidence.md.
+/// Use <see cref="Legacy"/> only for testing or migrating pre-trust-loop records.</para>
 ///
 /// <para>This type deliberately declares no cryptography, so it compiles on netstandard2.0
 /// where NSec is unavailable. For the same reason it must not <c>cref</c> anything inside
@@ -18,8 +17,24 @@ namespace Ashlar.Certification.Contracts;
 /// </remarks>
 public sealed class CertificationVerifyOptions
 {
-    /// <summary>Today's semantics: no floor, no required signature, no pinning.</summary>
-    public static CertificationVerifyOptions Default { get; } = new();
+    /// <summary>
+    /// Fail-closed default: trust-loop schema required (v2+), Ed25519 signature required.
+    /// This closes signature-stripping (limitation 7) and schema-downgrade (limitation 8)
+    /// attacks documented in certification-evidence.md. Use <see cref="Legacy"/> for
+    /// pre-trust-loop records or migration paths only.
+    /// </summary>
+    public static CertificationVerifyOptions Default { get; } = new()
+    {
+        MinimumSchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+        RequireEd25519Signature = true,
+    };
+
+    /// <summary>
+    /// Pre-trust-loop semantics: no floor, no required signature, no pinning. INSECURE.
+    /// Only use for testing legacy behavior or during migration from HMAC-only records.
+    /// Production deployments should use <see cref="Default"/> or stricter.
+    /// </summary>
+    public static CertificationVerifyOptions Legacy { get; } = new();
 
     /// <summary>
     /// Consumer completeness floor: refuse legacy schema and records that do not name a

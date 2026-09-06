@@ -381,6 +381,7 @@ public sealed class AttestedStateLogBindingTests
         {
             var record = new CertificationRecordData
             {
+                SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
                 Status = "PASS",
                 Stage = "witness",
                 Admitted = true,
@@ -392,7 +393,13 @@ public sealed class AttestedStateLogBindingTests
                 TotalMutants = 1,
                 SurvivingMutants = 0,
                 KilledMutants = new[] { "m1" },
-                SurvivingMutantIds = Array.Empty<string>()
+                SurvivingMutantIds = Array.Empty<string>(),
+                Gate = "Ashlar.Tests.Infrastructure.Tests.Certification.AttestedStateLogBindingTests",
+                Inputs = new[]
+                {
+                    new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Id = brickId, Hash = "sha256:artifact" },
+                    new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "test-certifier", Hash = "sha256:certifier" }
+                }
             };
 
             return record with

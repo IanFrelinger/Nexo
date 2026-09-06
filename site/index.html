@@ -20,7 +20,7 @@
     <meta property="twitter:description" content="Local-first .NET runtime for auditable AI workflows you embed">
     <meta property="twitter:image" content="https://raw.githubusercontent.com/IanFrelinger/Ashlar/master/assets/brand/ashlar-og-flat-1200x630.png">
     
-    <link rel="icon" type="image/svg+xml" href="../assets/brand/ashlar-logo-chaos.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/brand/ashlar-logo-chaos.svg">
     
     <style>
         :root {
@@ -513,7 +513,7 @@
     <header>
         <div class="container">
             <a href="#" class="logo">
-                <img src="../assets/brand/ashlar-logo-chaos.svg" alt="Ashlar">
+                <img src="assets/brand/ashlar-logo-chaos.svg" alt="Ashlar">
                 <span>Ashlar</span>
             </a>
             <nav>
@@ -561,20 +561,18 @@
                         <div class="code-preview">
 <span class="comment"># Submit an audited task</span>
 POST /api/copilot/task
+{ <span class="keyword">"task"</span>: <span class="keyword">"Summarize this repository"</span> }
 
-<span class="comment"># Get the full audit trail</span>
-GET /api/trust/dashboard
-
-<span class="comment"># Response includes:</span>
+<span class="comment"># Response includes task record:</span>
 {
   <span class="keyword">"taskId"</span>: <span class="keyword">"task-a7f9..."</span>,
-  <span class="keyword">"output"</span>: { ... },
-  <span class="keyword">"auditTrail"</span>: {
-    <span class="keyword">"sourceId"</span>: <span class="keyword">"task-a7f9..."</span>,
-    <span class="keyword">"timestamp"</span>: <span class="keyword">"2026-09-05T20:14:00Z"</span>,
-    <span class="keyword">"evidence"</span>: { ... }
-  }
+  <span class="keyword">"success"</span>: <span class="keyword">true</span>,
+  <span class="keyword">"summary"</span>: <span class="keyword">"1 agent(s) executed"</span>
 }
+
+<span class="comment"># Trust log carries the audit entry:</span>
+GET /api/trust/dashboard
+<span class="comment"># sourceId matches the taskId</span>
                         </div>
                     </div>
 
@@ -597,10 +595,10 @@ ashlar doctor
 <span class="comment"># Or embed in your app</span>
 dotnet add package Ashlar.Client
 
-<span class="comment"># Configure for local-first</span>
-services.AddAshlar(options => {
-    options.LocalFirst = <span class="keyword">true</span>;
-});
+<span class="comment"># Configure HTTP client</span>
+services.AddAshlarClient(
+    <span class="keyword">"http://localhost:5000"</span>
+);
                         </div>
                     </div>
 
@@ -609,17 +607,14 @@ services.AddAshlar(options => {
                         <h3>Build on Ashlar</h3>
                         <p>Embed as a NuGet dependency. Integrate via HTTP. Run the CLI. Deploy with Docker. Your choice.</p>
                         <div class="code-preview">
-<span class="comment">// Add to your .NET application</span>
-<span class="keyword">builder</span>.Services.AddAshlar(options => {
-    options.LocalFirst = <span class="keyword">true</span>;
-    options.AuditTrail = AuditLevel.<span class="keyword">Full</span>;
-    options.CertificationRequired = <span class="keyword">true</span>;
-});
+<span class="comment">// Add the Ashlar client</span>
+<span class="keyword">builder</span>.Services.AddAshlarClient(baseUrl: <span class="keyword">"http://localhost:5000"</span>);
 
-<span class="comment">// Execute auditable AI workflows</span>
-<span class="keyword">var</span> result = <span class="keyword">await</span> ashlar.ExecuteTaskAsync(
-    <span class="keyword">"Analyze this dataset"</span>,
-    auditContext: currentUser
+<span class="comment">// Submit a task via HTTP API</span>
+<span class="keyword">var</span> response = <span class="keyword">await</span> client.InvokeAsync(
+    HttpMethod.<span class="keyword">Post</span>,
+    <span class="keyword">"/api/copilot/task"</span>,
+    JsonContent.Create(<span class="keyword">new</span> { task = <span class="keyword">"Analyze this dataset"</span> })
 );
                         </div>
                         <div style="margin-top: 1.5rem;">
@@ -632,7 +627,7 @@ services.AddAshlar(options => {
                         <h3>Local-first operation</h3>
                         <p>Local model routing (Ollama) is the default route. Cloud providers are opt-in targets. Air-gapped and local-only deployments are first-class.</p>
                         <div class="terminal-preview">
-                            <img src="../assets/brand/ashlar-terminal-preview.svg" alt="Ashlar terminal session">
+                            <img src="assets/brand/ashlar-terminal-preview.svg" alt="Ashlar terminal session">
                         </div>
                     </div>
                 </div>
@@ -655,7 +650,7 @@ services.AddAshlar(options => {
                         </div>
                         <div class="pricing-cell">
                             <div class="tier-name">Cloud</div>
-                            <div class="tier-price tier-price gold">Coming soon</div>
+                            <div class="tier-price">Coming soon</div>
                         </div>
                         <div class="pricing-cell">
                             <div class="tier-name">Builder</div>
@@ -768,7 +763,7 @@ services.AddAshlar(options => {
                 <p>Start with the open-source runtime today.<br>Talk to us when you need more.</p>
                 <div class="cta-buttons">
                     <a href="https://github.com/IanFrelinger/Ashlar" class="btn btn-primary">Start on GitHub</a>
-                    <a href="mailto:hello@ashlar.dev" class="btn btn-secondary">Email hello@ashlar.dev</a>
+                    <a href="https://github.com/IanFrelinger/Ashlar/discussions" class="btn btn-secondary">Talk commercial</a>
                 </div>
                 <p style="margin-top: 2rem; color: var(--olive); font-size: 0.95rem;">
                     <a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/TesterQuickstart.md" style="color: var(--olive); text-decoration: underline;">Try the quickstart</a> — clone, build, run the API, submit one task, read its audit trail. About 15 minutes, no Docker, no API keys.
@@ -799,7 +794,6 @@ services.AddAshlar(options => {
             <div>
                 <h4>Community</h4>
                 <ul>
-                    <li><a href="https://github.com/IanFrelinger/Ashlar/discussions">Discussions</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/issues">Issues</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/SECURITY.md">Security</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/CODE_OF_CONDUCT.md">Code of Conduct</a></li>

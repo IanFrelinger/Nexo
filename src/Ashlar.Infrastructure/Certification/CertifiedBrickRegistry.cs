@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Core.Domain.Bricks;
@@ -40,7 +41,7 @@ public sealed class CertifiedBrickRegistry : Ashlar.Core.Domain.Execution.IBrick
 
     internal bool TryAdmit(DomainBrick brick, CertificationRecord record)
     {
-        if (!record.Admitted || !record.Signed || !_signer.Verify(record))
+        if (!record.Admitted || !record.Signed || !_signer.Verify(record, CertificationVerifyOptions.Strict))
         {
             _logger?.LogWarning("Rejected ungated brick admission attempt for {BrickId}", brick.Id);
             return false;
