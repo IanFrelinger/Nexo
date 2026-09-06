@@ -112,7 +112,8 @@ public sealed class GateEmittedArtifactTests
         request.EmittedArtifact.Should().NotBeNull();
         request.BrickTypeName.Should().Be(request.EmittedArtifact!.BrickTypeName);
 
-        var decision = await new CertificationGate(new CertificationRecordSigner()).CertifyAsync(request);
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey)).CertifyAsync(request);
         decision.Record.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.GateEmittedArtifact
             && i.Hash == request.EmittedArtifact.AssemblySha256);
         decision.Record.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CertifierIdentity);
@@ -342,5 +343,15 @@ public sealed class GateEmittedArtifactTests
         File.WriteAllText(Path.Combine(dir, "Brick.csproj"), csproj);
         File.WriteAllText(Path.Combine(dir, "Brick.cs"), source);
         return dir;
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }
