@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Adaptation.Ports;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Core.Application.Observation.Ports;
@@ -97,7 +98,7 @@ public static class AdaptationServiceCollectionExtensions
                 var store = sp.GetRequiredService<ICertificationRecordStore>();
                 var signer = sp.GetRequiredService<CertificationRecordSigner>();
                 var record = store.Get("observation.context");
-                if (record is { Admitted: true, Signed: true } && signer.Verify(record))
+                if (record is { Admitted: true, Signed: true } && signer.Verify(record, CertificationVerifyOptions.Strict))
                 {
                     var contextAssembler = sp.GetRequiredService<IContextAssembler>();
                     bricks.Add(new ObservationContextBrick(contextAssembler));
