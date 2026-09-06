@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
@@ -99,6 +100,7 @@ public sealed class AutonomyLedgerScanTests
 
     private static CertificationRecord Record(string brickId, string contentHash) => new()
     {
+        SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
         Status = "PASS",
         Stage = "S0-S2",
         Admitted = true,
