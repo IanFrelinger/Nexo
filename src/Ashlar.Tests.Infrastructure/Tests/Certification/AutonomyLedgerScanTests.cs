@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
