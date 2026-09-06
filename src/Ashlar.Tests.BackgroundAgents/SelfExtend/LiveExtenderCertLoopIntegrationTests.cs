@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Ashlar.Abstractions;
 using Ashlar.BackgroundAgents.Configuration;
+using Ashlar.BackgroundAgents.DataSensitivity;
 using Ashlar.BackgroundAgents.Extending;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.BackgroundAgents.Registry;
@@ -8,6 +9,8 @@ using Ashlar.BackgroundAgents.Scheduling;
 using Ashlar.BackgroundAgents.Testing;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Core.Application.Certification.Ports;
+using Ashlar.Orchestration.Agents;
+using Ashlar.Tests.BackgroundAgents.Registry;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -47,7 +50,9 @@ sandbox:
         _canary = new TestCanaryVerification();
         _runner = new TestSelfExtendRunner(_repoRoot, _certStore, _canary);
         
-        var scheduler = new ManualAgentScheduler();
+        var scheduler = new AgentScheduler(
+            new ScheduleExecutor(), 
+            NullLogger<AgentScheduler>.Instance);
         _registry = new BackgroundAgentRegistry(
             scheduler,
             logger: NullLogger<BackgroundAgentRegistry>.Instance,
@@ -74,14 +79,15 @@ sandbox:
             Id = "test-extender",
             Role = "extender",
             Enabled = true,
-            Parameters = new Dictionary<string, string>
+            Parameters = new Dictionary<string, object>
             {
                 ["RepoRoot"] = _repoRoot,
                 ["Objective"] = "Add Feature.cs"
             }
         };
 
-        await _registry.RegisterAsync(config);
+        var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
+        await _registry.RegisterAuthoredAsync(agent, config);
         await _registry.StartAllAsync(default);
 
         // Give the cycle time to complete
@@ -108,14 +114,15 @@ sandbox:
             Id = "test-extender",
             Role = "extender",
             Enabled = true,
-            Parameters = new Dictionary<string, string>
+            Parameters = new Dictionary<string, object>
             {
                 ["RepoRoot"] = _repoRoot,
                 ["Objective"] = "Add BadFeature.cs"
             }
         };
 
-        await _registry.RegisterAsync(config);
+        var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
+        await _registry.RegisterAuthoredAsync(agent, config);
         await _registry.StartAllAsync(default);
         await Task.Delay(100);
 
@@ -194,8 +201,16 @@ sandbox:
             var proposalIds = new List<string>();
             foreach (var (path, content) in _proposedChanges)
             {
-                var id = forge.Add(path, content, "test-agent", "test proposal");
-                proposalIds.Add(id);
+                var proposal = forge.Add(new Ashlar.BackgroundAgents.Forge.ChangeProposal
+                {
+                    Id = "forge-" + Guid.NewGuid().ToString("N")[..8],
+                    TargetPath = path,
+                    NewContent = content,
+                    Summary = "test proposal",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    AgentId = "test-agent"
+                });
+                proposalIds.Add(proposal.Id);
             }
 
             // Wire up the compile check (stub that always passes)
@@ -263,5 +278,12 @@ sandbox:
         {
             return Task.FromResult(new ExtensionCompileCheckResult(true, "compiled"));
         }
+    }
+
+    private static Orchestration.Architect.Models.AgentSpawnSpec BuildSpec(BackgroundAgentConfig c)
+    {
+        var sensitivity = new DataSensitivityRegistry();
+        var builder = new BackgroundAgentSpecBuilder(sensitivity, null);
+        return builder.BuildSpec(c);
     }
 }
