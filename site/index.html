@@ -607,15 +607,14 @@ services.AddAshlarClient(
                         <h3>Build on Ashlar</h3>
                         <p>Embed as a NuGet dependency. Integrate via HTTP. Run the CLI. Deploy with Docker. Your choice.</p>
                         <div class="code-preview">
-<span class="comment">// Add to your .NET application</span>
-<span class="keyword">builder</span>.Services.AddAshlarClient(
-    baseUrl: <span class="keyword">"http://localhost:5000"</span>
-);
+<span class="comment">// Add the Ashlar client</span>
+<span class="keyword">builder</span>.Services.AddAshlarClient(baseUrl: <span class="keyword">"http://localhost:5000"</span>);
 
-<span class="comment">// Execute auditable AI workflows</span>
-<span class="keyword">var</span> client = services.GetRequiredService&lt;IAshlarClient&gt;();
-<span class="keyword">var</span> result = <span class="keyword">await</span> client.SubmitTaskAsync(
-    <span class="keyword">"Analyze this dataset"</span>
+<span class="comment">// Submit a task via HTTP API</span>
+<span class="keyword">var</span> response = <span class="keyword">await</span> client.InvokeAsync(
+    HttpMethod.<span class="keyword">Post</span>,
+    <span class="keyword">"/api/copilot/task"</span>,
+    JsonContent.Create(<span class="keyword">new</span> { task = <span class="keyword">"Analyze this dataset"</span> })
 );
                         </div>
                         <div style="margin-top: 1.5rem;">
@@ -795,7 +794,6 @@ services.AddAshlarClient(
             <div>
                 <h4>Community</h4>
                 <ul>
-                    <li><a href="https://github.com/IanFrelinger/Ashlar/discussions">Discussions</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/issues">Issues</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/SECURITY.md">Security</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/CODE_OF_CONDUCT.md">Code of Conduct</a></li>

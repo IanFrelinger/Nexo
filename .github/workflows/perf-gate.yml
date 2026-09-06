@@ -8,6 +8,10 @@ on:
       - 'scripts/perf-gate*.sh'
       - 'src/Ashlar.Tests.Orchestration/**'
       - 'src/Ashlar.Tests.BackgroundAgents/**'
+      - 'src/Ashlar.Infrastructure/**'
+      - 'src/Ashlar.Core.Application/**'
+      - 'src/Ashlar.Core.Domain/**'
+      - 'src/Ashlar.Orchestration/**'
 
 jobs:
   perf-gate:
