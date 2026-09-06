@@ -561,11 +561,11 @@ ledger/
 
 #### M6.1: Technical Readiness
 
-- [x] M1 closed: Core hardened, disarm mechanisms proven
-- [x] M2 closed: Adversarial validation pack green
-- [x] M3 closed: Product separation demonstrated (Forge scaffold)
-- [x] M4 closed: Cursor-shaped harness works (Forge.Verify)
-- [x] M5 closed: Public ledger live with at least 3 release runs
+- [ ] M1 closed: Core hardened, disarm mechanisms proven
+- [ ] M2 closed: Adversarial validation pack green
+- [ ] M3 closed: Product separation demonstrated (Forge scaffold)
+- [ ] M4 closed: Cursor-shaped harness works (Forge.Verify)
+- [ ] M5 closed: Public ledger live with at least 3 release runs
 
 **Acceptance:** All M1–M5 exit criteria met; no open P0 security findings.
 
