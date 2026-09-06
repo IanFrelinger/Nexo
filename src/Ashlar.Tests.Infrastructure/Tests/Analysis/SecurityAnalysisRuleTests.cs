@@ -142,7 +142,7 @@ public class SecurityAnalysisRuleTests : UnitTestBase
         var mock = new Mock<ITool>();
         mock.Setup(t => t.Id).Returns("assembly.security_scan");
         mock.Setup(t => t.InvokeAsync(It.IsAny<ToolCall>(), It.IsAny<WorldSnapshot>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ToolResult("assembly.security_scan", JsonSerializer.SerializeToElement(new { Count = 0 })));
+            .ReturnsAsync(new ToolResult(new ActionDelta(0, 0, Array.Empty<string>()), JsonSerializer.SerializeToElement(new { Count = 0 })));
         return mock;
     }
 
