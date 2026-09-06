@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Ashlar.Infrastructure.Execution;
+using Ashlar.Core.Application.Execution.Ports;
 
 namespace Ashlar.BackgroundAgents.Trust;
 
