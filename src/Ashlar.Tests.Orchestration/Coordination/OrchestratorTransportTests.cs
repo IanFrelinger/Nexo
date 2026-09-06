@@ -399,6 +399,13 @@ public sealed class OrchestratorTransportTests
         var loops = new SequentialLoopKernel();
         var metrics = new OrchestrationMetrics(
             provider.GetRequiredService<ILogger<OrchestrationMetrics>>());
+        var resilientExecutor = new Ashlar.Infrastructure.Resilience.ResilientExecutor(
+            provider.GetService<ILogger<Ashlar.Infrastructure.Resilience.ResilientExecutor>>());
+        var circuitBreaker = new Ashlar.Orchestration.Resilience.CircuitBreaker(
+            name: "orchestration-agent-transport",
+            failureThreshold: 3,
+            timeout: TimeSpan.FromSeconds(30),
+            logger: provider.GetService<ILogger<Ashlar.Orchestration.Resilience.CircuitBreaker>>());
 
         return new Orchestrator(
             architect,
@@ -415,7 +422,9 @@ public sealed class OrchestratorTransportTests
             loops,
             provider.GetRequiredService<ILogger<Orchestrator>>(),
             metrics: metrics,
-            invocationHooks: invocationHooks);
+            invocationHooks: invocationHooks,
+            resilientExecutor: resilientExecutor,
+            circuitBreaker: circuitBreaker);
     }
 
     /// <summary>Metadata append hook.</summary>
