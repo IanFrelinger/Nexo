@@ -5,6 +5,7 @@ using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -106,7 +107,11 @@ public sealed class CertificationGateSessionExecutionTests
 
     // --- helpers -------------------------------------------------------------------------
 
-    private static CertificationGate Gate() => new(new CertificationRecordSigner());
+    private static CertificationGate Gate()
+    {
+        var (privateKey, _) = CreateEd25519Key();
+        return new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey));
+    }
 
     private static CertificationRequest Request(ICandidateExecutionBackend backend) => new()
     {
@@ -232,5 +237,15 @@ public sealed class CertificationGateSessionExecutionTests
             public string Provider => "deterministic";
             public IReadOnlyDictionary<string, object> Variables { get; } = new Dictionary<string, object>();
         }
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }

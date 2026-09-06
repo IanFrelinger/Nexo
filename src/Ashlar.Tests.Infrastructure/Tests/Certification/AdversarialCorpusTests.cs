@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Ashlar.Certification.Contracts;
 using Ashlar.Infrastructure.Certification;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -83,7 +84,8 @@ public sealed class AdversarialCorpusTests
         }
 
         var request = await BrickCertificationProjectLoader.LoadAsync(projectDir, witness);
-        var decision = await new CertificationGate(new CertificationRecordSigner()).CertifyAsync(request);
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey)).CertifyAsync(request);
         if (expect.Expect == "admit")
         {
             decision.Admitted.Should().BeTrue(decision.Record.Reason);
@@ -127,5 +129,15 @@ public sealed class AdversarialCorpusTests
         public string Phase { get; set; } = "";
         public string Expect { get; set; } = "";
         public string ReasonContains { get; set; } = "";
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }

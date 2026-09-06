@@ -14,8 +14,9 @@ public static class CertificationTrustVerifier
     /// <param name="hmacKey">Optional HMAC key override for signature verification.</param>
     /// <param name="options">
     /// Strictness to apply (SPEC-006 S-1 and S-5). Null uses
-    /// <see cref="CertificationVerifyOptions.Default"/>, which reproduces the behaviour this
-    /// method had before the parameter existed.
+    /// <see cref="CertificationVerifyOptions.Default"/>, which is now fail-closed (Ed25519
+    /// required, trust-loop schema floor). Use <see cref="CertificationVerifyOptions.Legacy"/>
+    /// for pre-trust-loop records.
     /// </param>
     public static CertificationTrustResult Verify(
         CertificationRecordData record,
@@ -83,7 +84,7 @@ public static class CertificationTrustVerifier
         }
 #else
         // netstandard2.0 has no NSec target, so the signature cannot be evaluated here.
-        // Under default options this lane behaves as before (HMAC only, which covers the
+        // Under Legacy options this lane behaves as the HMAC-only path (which covers the
         // Ed25519 public key). Under strictness it REFUSES rather than skipping: returning
         // "trusted" for a check that did not run — or stamping a record as pinned when the
         // signature math never executed — would be worse than the silent skip it replaces.

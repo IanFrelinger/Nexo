@@ -7,6 +7,7 @@ using Ashlar.Infrastructure.Adaptation;
 using Ashlar.Infrastructure.Adaptation.Generation;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Tests.Infrastructure.Certification.Dogfood;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -25,7 +26,8 @@ public sealed class DamageResolverDogfoodTests
     {
         Environment.SetEnvironmentVariable("ASHLAR_CERT_NUGET_CONFIG", null);
         var store = new InMemoryCertificationRecordStore();
-        var signer = new CertificationRecordSigner();
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey);
         var registry = new CertifiedBrickRegistry(store, signer);
         var gate = new CertificationGate(signer);
         var admission = new CertifiedBrickAdmission(gate, registry);
@@ -64,4 +66,14 @@ public sealed class DamageResolverDogfoodTests
 
     /// <summary>Require human witness.</summary>
     private static WitnessSpec RequireHumanWitness() => DamageResolverDogfoodWitness.Spec;
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
+    }
 }

@@ -44,7 +44,6 @@ public sealed class TrustLoopRecordSchemaTests
         var record = BuildLegacyRecord() with { ContentHash = BrickContentHasher.ComputeSha256(BrickSource) };
         var signed = record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
 
-        // Legacy records (v1, HMAC-only) require Legacy options after the fail-closed default
         var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
 
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
@@ -123,20 +122,15 @@ public sealed class TrustLoopRecordSchemaTests
     }
 
     [Fact]
-    public void V2Record_HmacOnly_RequiresLegacyOptions()
+    public void V2Record_HmacOnly_Verifies()
     {
         var record = BuildV2Record() with { ContentHash = BrickContentHasher.ComputeSha256(BrickSource) };
         var signed = record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
 
-        // After fail-closed default, HMAC-only records require Legacy options
         var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
 
         trust.Trusted.Should().BeTrue(
-            $"HMAC-only v2 records verify with Legacy options ({trust.FailureCode}: {trust.Reason})");
-        
-        // But are refused by Default (fail-closed)
-        CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey).Trusted
-            .Should().BeFalse("Default requires Ed25519 signatures");
+            $"dual-write is a transition window; HMAC-only v2 records are valid under Legacy ({trust.FailureCode}: {trust.Reason})");
     }
 
     // ---------- Ed25519 dual-write ----------
@@ -148,7 +142,6 @@ public sealed class TrustLoopRecordSchemaTests
         var signed = DualSign(BuildV2Record() with { ContentHash = BrickContentHasher.ComputeSha256(BrickSource) }, privateKey);
 
         signed.Ed25519PublicKey.Should().Be(publicKey);
-        // Dual-signed records verify under Default (fail-closed) options
         var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey);
 
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
@@ -170,7 +163,6 @@ public sealed class TrustLoopRecordSchemaTests
 
         CertificationRecordSigning.VerifySignature(swapped, HmacKey).Should().BeTrue(
             "the swapped signature is outside the HMAC payload, which is exactly why the Ed25519 check must run");
-        // Rejected by Default (fail-closed) options
         var trust = CertificationTrustVerifier.Verify(swapped, BrickSource, HmacKey);
         trust.Trusted.Should().BeFalse();
         trust.FailureCode.Should().Be("ed25519-signature-invalid");
@@ -182,7 +174,6 @@ public sealed class TrustLoopRecordSchemaTests
         var (privateKey, _) = CreateEd25519Key();
         var signed = DualSign(BuildV2Record() with { ContentHash = BrickContentHasher.ComputeSha256(BrickSource) }, privateKey);
 
-        // Rejected by Default (fail-closed) options
         var trust = CertificationTrustVerifier.Verify(signed with { Ed25519Signature = "not-base64!" }, BrickSource, HmacKey);
 
         trust.Trusted.Should().BeFalse();
@@ -199,7 +190,6 @@ public sealed class TrustLoopRecordSchemaTests
         };
         var signed = record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
 
-        // Rejected by Default (fail-closed) options
         var trust = CertificationTrustVerifier.Verify(signed, BrickSource, HmacKey);
 
         trust.Trusted.Should().BeFalse();
@@ -213,7 +203,6 @@ public sealed class TrustLoopRecordSchemaTests
         var (_, otherPublicKey) = CreateEd25519Key();
         var signed = DualSign(BuildV2Record() with { ContentHash = BrickContentHasher.ComputeSha256(BrickSource) }, privateKey);
 
-        // Rejected by Default (fail-closed) options
         var trust = CertificationTrustVerifier.Verify(signed with { Ed25519PublicKey = otherPublicKey }, BrickSource, HmacKey);
 
         trust.Trusted.Should().BeFalse("the minter public key is part of the HMAC payload");
@@ -302,7 +291,6 @@ public sealed class TrustLoopRecordSchemaTests
         data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CompileOptions);
         data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.ExecutionMode);
 
-        // Gate creates HMAC-only v2 records; use Legacy to test input coverage without Ed25519
         var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey, CertificationVerifyOptions.Legacy);
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
 

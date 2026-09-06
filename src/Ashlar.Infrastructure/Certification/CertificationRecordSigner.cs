@@ -79,7 +79,8 @@ public sealed class CertificationRecordSigner
     /// <param name="record">Record to verify.</param>
     /// <param name="options">
     /// Strictness to apply. Null uses <see cref="CertificationVerifyOptions.Default"/>, which
-    /// reproduces the behaviour this method had before the parameter existed.
+    /// is now fail-closed (Ed25519 required, trust-loop schema floor). Use
+    /// <see cref="CertificationVerifyOptions.Legacy"/> for pre-trust-loop records.
     /// </param>
     /// <remarks>
     /// This is the SECOND verification tier, and the busier one: it gates

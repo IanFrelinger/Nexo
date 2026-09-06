@@ -1,10 +1,12 @@
 using FluentAssertions;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Autonomy;
+using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -312,6 +314,8 @@ public sealed class HotSwapProbeBrick : DomainBrick
 
     private static CertificationRecordData CertifyRecord(string brickId, string source)
     {
+        var (privateKey, publicKey) = CreateEd25519Key();
+        
         var record = new CertificationRecordData
         {
             Status = "PASS",
@@ -332,9 +336,15 @@ public sealed class HotSwapProbeBrick : DomainBrick
                     Hash = BrickContentHasher.ComputeSha256(source)
                 },
                 CertifierIdentity.ToInput()
-            ]
+            ],
+            Ed25519PublicKey = publicKey
         };
-        return record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
+
+        return record with
+        {
+            Signature = CertificationRecordSigning.Sign(record, HmacKey),
+            Ed25519Signature = CertificationRecordEd25519.Sign(record, Convert.FromBase64String(privateKey))
+        };
     }
 
     private static CertificationRecordData Record(string brickId, string contentHash, string[] inputHashes) => new()
@@ -389,5 +399,15 @@ public sealed class HotSwapProbeBrick : DomainBrick
                 return _events.ToList();
             }
         }
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }
