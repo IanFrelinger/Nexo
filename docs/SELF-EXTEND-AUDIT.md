@@ -100,7 +100,26 @@ Within-cycle ReAct and build/test budgets exist. Across cycles, `ExtensionCeilin
 
 ## REORDER note (post SX-ENFORCE-D)
 
-Invariants **A, B, C and D** are now enforced on the live path. Unattended multi-cycle self-extension is bounded: an Active extender runs at most `MaxUnattendedCycles` cycles before a human must re-arm it, at most `MaxCyclesPerHour` in any hour, and only within `MaxLineageDepth` of a human-authored root. What remains open is not a ceiling but convergence: the legacy extender path and the certified autonomy loop are two self-extension paths, and the long-term intent is one.
+Invariants **A, B, C and D** are now enforced on the live path. Unattended multi-cycle self-extension is bounded: an Active extender runs at most `MaxUnattendedCycles` cycles before a human must re-arm it, at most `MaxCyclesPerHour` in any hour, and only within `MaxLineageDepth` of a human-authored root.
+
+## Cert-loop integration (in progress, 2026-09-05)
+
+**Status:** The convergence work has begun on branch `cursor/integrate-cert-loop-extender-ea44`.
+
+What was open: the legacy extender path and the certified autonomy loop were two self-extension paths, and the long-term intent is one.
+
+**Integration progress:**
+- ✅ **A2 Compile Check** - Already enforced via `SelfExtendAdmissionBridge` for mediated writes
+- ✅ **A4 Canary Verification** - Post-apply verification with automatic rollback exists and is tested
+- ✅ **Integration Test Coverage** - `LiveExtenderCertLoopIntegrationTests.cs` proves canary pass/fail paths work fail-closed
+- 🚧 **Watch Window Integration** - Post-swap health monitoring (R5.2) tracked in Phase 3
+
+The admission gate (`SelfExtendAdmissionBridge`) now sits in series on the extender path for mediated writes (ashlar projects). Autonomous admissions go through:
+1. Compile check (A2) - refuses non-compiling proposals
+2. Canary verification (A4) - applies, verifies, rolls back on failure
+3. Forge application - transactional write with rollback on mid-batch failure
+
+See `docs/cert-loop-integration-plan.md` for full implementation plan and remaining work.
 
 ## Test index
 
