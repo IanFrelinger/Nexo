@@ -314,6 +314,8 @@ public sealed class HotSwapOtherBrick : DomainBrick
         var evilPe = GateEmittedArtifactCompiler.Compile(
             evil, BrickCertificationProjectLoader.DefaultCompilationReferences());
 
+        var (privateKey, publicKey) = CreateEd25519Key();
+        
         var unsigned = new CertificationRecordData
         {
             Status = "PASS",
@@ -334,9 +336,15 @@ public sealed class HotSwapOtherBrick : DomainBrick
                     Hash = honestPe.AssemblySha256
                 },
                 CertifierIdentity.ToInput()
-            ]
+            ],
+            Ed25519PublicKey = publicKey
         };
-        var record = unsigned with { Signature = CertificationRecordSigning.Sign(unsigned, HmacKey) };
+        
+        var record = unsigned with
+        {
+            Signature = CertificationRecordSigning.Sign(unsigned, HmacKey),
+            Ed25519Signature = CertificationRecordEd25519.Sign(unsigned, Convert.FromBase64String(privateKey))
+        };
 
         var result = await host.SwapAsync(
         [
