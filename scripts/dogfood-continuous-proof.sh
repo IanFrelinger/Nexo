@@ -29,12 +29,15 @@ run_canary_sweep() {
   echo "" | tee -a "${log_file}"
   
   # NOTE: This is a stub implementation. The real implementation depends on:
-  # 1. PR #523 landing (Strict+Ed25519)
-  # 2. Autonomy loop host wiring (requires FirstFlight project or equivalent)
-  # 3. Container engine availability for sandbox sessions
+  # 1. Autonomy loop host wiring (requires FirstFlight project or equivalent)
+  # 2. Container engine availability for sandbox sessions
+  #
+  # PR #523 (Strict+Ed25519) is now on master. Remaining blockers:
+  # - Real autonomy loop wiring (not just spike infrastructure)
+  # - lim-9 status (may still be open)
   #
   # For now, we document the intended flow and mark the workflow as GAP until
-  # the dependencies are resolved.
+  # the autonomy loop host wiring is complete.
   
   echo "⚠️  STUB: Real autonomy loop sweep not yet implemented" | tee -a "${log_file}"
   echo "" | tee -a "${log_file}"
@@ -44,10 +47,10 @@ run_canary_sweep() {
   echo "  3. Capture proposal → certify → admit outcome" | tee -a "${log_file}"
   echo "  4. Return 0 for CertifiedButHeld/CertifiedAndAdmitted, 1 for ExplainedFailure" | tee -a "${log_file}"
   echo "" | tee -a "${log_file}"
-  echo "Dependencies:" | tee -a "${log_file}"
-  echo "  - PR #523 (Strict+Ed25519) must land first" | tee -a "${log_file}"
+  echo "Remaining dependencies:" | tee -a "${log_file}"
   echo "  - Autonomy loop host (FirstFlight or CLI command)" | tee -a "${log_file}"
   echo "  - Docker available for sandbox sessions" | tee -a "${log_file}"
+  echo "  - lim-9 status verification (may be open)" | tee -a "${log_file}"
   echo "" | tee -a "${log_file}"
   
   # TODO: Replace this stub with real sweep logic:

@@ -47,7 +47,7 @@ jobs:
           set -euo pipefail
           
           # Check if CertificationVerifyOptions.Strict requires Ed25519 signatures
-          # This proves PR #523 landed and Strict production paths are closed.
+          # PR #523 merged on master; this verifies the requirement is present.
           
           STRICT_FILE="src/Ashlar.Infrastructure/Certification/CertificationVerifyOptions.cs"
           
@@ -62,11 +62,11 @@ jobs:
              grep -q 'RequireEd25519Signature.*=.*true'; then
             echo "strict_ready=true" >> "$GITHUB_OUTPUT"
             echo "gap_reason=" >> "$GITHUB_OUTPUT"
-            echo "✅ Strict Ed25519 requirement detected - PR #523 landed"
+            echo "✅ Strict Ed25519 requirement detected - PR #523 on master"
           else
             echo "strict_ready=false" >> "$GITHUB_OUTPUT"
-            echo "gap_reason=Strict lacks RequireEd25519Signature=true (PR #523 pending)" >> "$GITHUB_OUTPUT"
-            echo "⚠️  Strict Ed25519 requirement NOT detected - PR #523 not yet landed"
+            echo "gap_reason=Strict lacks RequireEd25519Signature=true (regression check)" >> "$GITHUB_OUTPUT"
+            echo "⚠️  Strict Ed25519 requirement NOT detected - possible regression"
           fi
 
       - name: Run autonomy loop sweep (canary objective)
@@ -163,7 +163,7 @@ Canary: rgb-hex-parse"
           echo "- **Canary:** rgb-hex-parse" >> "$GITHUB_STEP_SUMMARY"
           
           if [[ "${{ steps.check-strict.outputs.strict_ready }}" == "true" ]]; then
-            echo "- **Strict Ready:** ✅ Yes (PR #523 landed)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Strict Ready:** ✅ Yes (Ed25519 on master)" >> "$GITHUB_STEP_SUMMARY"
             echo "- **Sweep Outcome:** ${{ steps.sweep.outputs.sweep_outcome }}" >> "$GITHUB_STEP_SUMMARY"
             
             if [[ -n "${{ steps.sweep.outputs.sweep_gap }}" ]]; then

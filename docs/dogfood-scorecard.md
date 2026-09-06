@@ -47,7 +47,7 @@ A 30% certification rate for a simple parser proves the loop can produce viable 
 
 **Measurement:** Count proposals that reach any `Certified*` state vs. proposals rejected at correctness/mutation/determinism. Parse workflow logs or JSONL output.
 
-**Strict Production Ed25519 Dependency:** This metric is ONLY valid AFTER PR #523 lands. Until then, "Strict" paths lack `RequireEd25519Signature` and do not represent production-grade Strict verification.
+**Note:** PR #523 (Strict+Ed25519) merged to master. Strict production paths now enforce `RequireEd25519Signature=true`.
 
 ### 4. Consecutive Days Hold
 
@@ -65,16 +65,17 @@ A 30% certification rate for a simple parser proves the loop can produce viable 
 Autonomy and design-partner marketing claims (e.g., "Ashlar autonomously proposes and certifies bricks") are **HOLD** until ALL of the following are true:
 
 1. ✅ **Scorecard thresholds met:** Last-N green ≥80%, time-to-admit ≤15min, Strict rejection ≤70%, for 7 consecutive days.
-2. ✅ **Strict production Ed25519 on master:** PR #523 landed and Strict paths enforce `RequireEd25519Signature=true`.
+2. ✅ **Strict production Ed25519 on master:** PR #523 merged; Strict paths enforce `RequireEd25519Signature=true`.
 3. ✅ **Dated Strict passes in ledger:** At least 7 dated ledger rows showing PASS with Strict verification and Ed25519 signatures (Gap column empty or only notes non-blocking issues).
 4. ✅ **Real hygiene PR proof:** A production-quality Ashlar PR (not fixture/sample) created via the Ashlar loop (extend → certify → admit → PR) is documented in the ledger. Fixture E2E is the floor; real dogfood PR is the framework proof.
 
 **Current Status (as of 2026-09-06):**
-- ❌ PR #523 (Strict+Ed25519) still open → Strict production paths not fully closed
-- ❌ No dated Strict passes in ledger yet (infrastructure just created)
+- ✅ PR #523 (Strict+Ed25519) merged to master (merge commit 966e6bf4)
+- ❌ No dated Strict passes in ledger yet (canary sweep script still stub; awaits real autonomy loop wiring)
 - ❌ No real hygiene PR via Ashlar loop yet
+- ⚠️  lim-9 status TBD (may still be open)
 
-**Action:** Keep marketing HOLD. Monitor ledger and PR #523. Revisit unlock criteria after 7+ consecutive green days post-#523.
+**Action:** Keep marketing HOLD. Monitor ledger for dated Strict passes once real autonomy loop wiring completes. Revisit unlock criteria after 7+ consecutive green days with real E2E passes.
 
 ## Self-Apply Bar
 
