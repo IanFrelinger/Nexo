@@ -330,7 +330,7 @@ github.com/IanFrelinger/ashlar-forge/
    ```
 
 3. **Forge CI calls Ashlar cert-gate:**
-   - `forge-gate.yml` includes step: `run: bash scripts/run-forge-cert-gate.sh`
+   - `forge-gate.yml` includes step: `run: bash scripts/run-cert-gate.sh`
    - Script uses Ashlar's `CertificationGate` via `ICertificationGate` DI
 
 **Acceptance:**
