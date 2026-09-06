@@ -432,9 +432,9 @@ public sealed class HotSwapOtherBrick : DomainBrick
         string source,
         GateEmittedArtifact? pe = null)
     {
-        var (privateKey, _) = CreateEd25519Key();
-        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey, hmacKey: HmacKey);
-        return signer.SignRecord(new CertificationRecord
+        var (privateKey, publicKey) = CreateEd25519Key();
+        
+        var record = new CertificationRecordData
         {
             Status = "PASS",
             Stage = "S0-S2",
@@ -454,8 +454,15 @@ public sealed class HotSwapOtherBrick : DomainBrick
                     Hash = pe?.AssemblySha256 ?? BrickContentHasher.ComputeSha256(source)
                 },
                 CertifierIdentity.ToInput()
-            ]
-        });
+            ],
+            Ed25519PublicKey = publicKey
+        };
+
+        return record with
+        {
+            Signature = CertificationRecordSigning.Sign(record, HmacKey),
+            Ed25519Signature = CertificationRecordEd25519.Sign(record, Convert.FromBase64String(privateKey))
+        };
     }
 
     private static Task<BrickOutput> Execute(CertifiedBrickHotSwapHost host, string brickId) =>

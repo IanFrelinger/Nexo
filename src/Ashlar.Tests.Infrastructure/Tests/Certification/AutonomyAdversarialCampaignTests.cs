@@ -393,9 +393,9 @@ public sealed class HotSwapProbeBrick : DomainBrick
 
     private static CertificationRecordData SignData(string brickId, string source)
     {
-        var (privateKey, _) = CreateEd25519Key();
-        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey, hmacKey: HmacKey);
-        return signer.SignRecord(new CertificationRecord
+        var (privateKey, publicKey) = CreateEd25519Key();
+        
+        var record = new CertificationRecordData
         {
             Status = "PASS",
             Stage = "S0-S2",
@@ -415,8 +415,15 @@ public sealed class HotSwapProbeBrick : DomainBrick
                     Hash = BrickContentHasher.ComputeSha256(source)
                 },
                 CertifierIdentity.ToInput()
-            ]
-        });
+            ],
+            Ed25519PublicKey = publicKey
+        };
+
+        return record with
+        {
+            Signature = CertificationRecordSigning.Sign(record, HmacKey),
+            Ed25519Signature = CertificationRecordEd25519.Sign(record, Convert.FromBase64String(privateKey))
+        };
     }
 
     private static CertificationRecordData PassRecord(string brickId, string contentHash, int? depth) => new()

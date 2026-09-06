@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Autonomy;
+using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Domain.Bricks;
 using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
@@ -313,9 +314,9 @@ public sealed class HotSwapProbeBrick : DomainBrick
 
     private static CertificationRecordData CertifyRecord(string brickId, string source)
     {
-        var (privateKey, _) = CreateEd25519Key();
-        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey, hmacKey: HmacKey);
-        return signer.SignRecord(new CertificationRecord
+        var (privateKey, publicKey) = CreateEd25519Key();
+        
+        var record = new CertificationRecordData
         {
             Status = "PASS",
             Stage = "S0-S2",
@@ -335,8 +336,15 @@ public sealed class HotSwapProbeBrick : DomainBrick
                     Hash = BrickContentHasher.ComputeSha256(source)
                 },
                 CertifierIdentity.ToInput()
-            ]
-        });
+            ],
+            Ed25519PublicKey = publicKey
+        };
+
+        return record with
+        {
+            Signature = CertificationRecordSigning.Sign(record, HmacKey),
+            Ed25519Signature = CertificationRecordEd25519.Sign(record, Convert.FromBase64String(privateKey))
+        };
     }
 
     private static CertificationRecordData Record(string brickId, string contentHash, string[] inputHashes) => new()
