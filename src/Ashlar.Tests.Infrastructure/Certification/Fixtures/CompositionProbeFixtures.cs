@@ -1,3 +1,4 @@
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Core.Domain.Bricks;
@@ -196,12 +197,20 @@ public static class CompositionProbeFixtures
     {
         var record = new CertificationRecord
         {
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
             Status = "PASS",
             Stage = "S0-S2",
             Admitted = true,
             Signed = true,
             Timestamp = DateTimeOffset.UtcNow,
-            BrickId = brickId
+            BrickId = brickId,
+            ContentHash = $"sha256:synthetic-{brickId}",
+            Gate = "CompositionProbeFixtures.SeedSyntheticConstituent",
+            Inputs = new[]
+            {
+                new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Id = brickId, Hash = $"sha256:artifact-{brickId}" },
+                new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "composition-test-certifier", Hash = "sha256:certifier" }
+            }
         };
         record = record with { Signature = ctx.BrickSigner.Sign(record) };
         ctx.BrickStore.Save(record);

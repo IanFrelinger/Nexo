@@ -1,3 +1,4 @@
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 
@@ -29,7 +30,7 @@ internal static class CompositionConstituentChecker
                 continue;
             }
 
-            if (!signer.Verify(record))
+            if (!signer.Verify(record, CertificationVerifyOptions.Strict))
             {
                 violations.Add($"Constituent brick '{node.BrickId}' has invalid certification signature");
             }
