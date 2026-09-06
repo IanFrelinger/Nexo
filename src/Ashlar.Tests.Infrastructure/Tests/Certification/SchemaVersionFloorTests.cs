@@ -28,18 +28,30 @@ public sealed class SchemaVersionFloorTests
         new() { MinimumSchemaVersion = CertificationRecordData.TrustLoopSchemaVersion };
 
     [Fact]
-    public void DowngradedRecord_WithRewrittenGate_VerifiesWhenNoFloorIsSet()
+    public void DowngradedRecord_WithRewrittenGate_VerifiesWithLegacyOptions()
     {
-        // The hole, demonstrated rather than asserted about. Not a regression test —
-        // a record of today's behaviour, which the floor below refuses.
+        // Legacy behavior (pre-trust-loop): downgraded records with rewritten gates verify.
+        // This demonstrates the attack that the fail-closed default now prevents.
+        var forged = Downgrade(SignedV2Record(), rewrittenGate: "gate-that-never-ran");
+
+        var trust = CertificationTrustVerifier.Verify(forged, BrickSource, HmacKey, CertificationVerifyOptions.Legacy);
+
+        trust.Trusted.Should().BeTrue(
+            "with Legacy options (no floor, no signature requirement), a downgraded record verifies — "
+            + "this is the attack that Default now prevents");
+        forged.Gate.Should().Be("gate-that-never-ran");
+    }
+
+    [Fact]
+    public void DowngradedRecord_WithRewrittenGate_IsRefused_WithDefaultOptions()
+    {
+        // The fix: Default options now require trust-loop schema, so downgrade attacks fail.
         var forged = Downgrade(SignedV2Record(), rewrittenGate: "gate-that-never-ran");
 
         var trust = CertificationTrustVerifier.Verify(forged, BrickSource, HmacKey);
 
-        trust.Trusted.Should().BeTrue(
-            "with no floor, a legacy-lane record whose HMAC was recomputed verifies — and the "
-            + "rewritten gate name is outside the signed bytes entirely");
-        forged.Gate.Should().Be("gate-that-never-ran");
+        trust.Trusted.Should().BeFalse("Default options require v2+ schema, refusing downgrades");
+        trust.FailureCode.Should().Be("schema-version-below-floor");
     }
 
     [Fact]
@@ -63,14 +75,18 @@ public sealed class SchemaVersionFloorTests
     }
 
     [Fact]
-    public void DefaultOptions_ReproduceTodaysBehaviour()
+    public void DefaultOptions_AreNowFailClosed()
     {
-        var record = SignedV2Record();
+        // Default is now fail-closed: requires v2+ schema and Ed25519 signature.
+        // A v2 record without Ed25519 is refused by Default but accepted by Legacy.
+        var record = SignedV2Record(); // Has HMAC but no Ed25519
 
         CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, CertificationVerifyOptions.Default)
-            .Trusted.Should().BeTrue();
+            .Trusted.Should().BeFalse("Default now requires Ed25519 signatures");
+        CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, CertificationVerifyOptions.Legacy)
+            .Trusted.Should().BeTrue("Legacy accepts HMAC-only records for migration");
         CertificationTrustVerifier.Verify(record, BrickSource, HmacKey, null)
-            .Trusted.Should().BeTrue("null options must behave exactly as the parameterless call did");
+            .Trusted.Should().BeFalse("null options use Default, which is fail-closed");
     }
 
     [Fact]
@@ -103,9 +119,12 @@ public sealed class SchemaVersionFloorTests
     }
 
     [Fact]
-    public void IsStrict_IsFalseOnlyForTodaysSemantics()
+    public void IsStrict_IsTrueForFailClosedDefault()
     {
-        CertificationVerifyOptions.Default.IsStrict.Should().BeFalse();
+        CertificationVerifyOptions.Default.IsStrict.Should().BeTrue(
+            "Default is now fail-closed with Ed25519 + v2+ schema requirements");
+        CertificationVerifyOptions.Legacy.IsStrict.Should().BeFalse(
+            "Legacy has no requirements");
         Floor.IsStrict.Should().BeTrue();
         new CertificationVerifyOptions { RequireEd25519Signature = true }.IsStrict.Should().BeTrue();
         CertificationVerifyOptions.Default.PinningEnabled.Should().BeFalse();

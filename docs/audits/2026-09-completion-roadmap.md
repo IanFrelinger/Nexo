@@ -281,8 +281,8 @@ github.com/IanFrelinger/ashlar-forge/
 └── Ashlar.Forge.sln
 ```
 
-**Key files:**
-- `src/Ashlar.Forge/Ashlar.Forge.csproj`:
+**Key files (planned, in separate ashlar-forge repo):**
+- src/Ashlar.Forge/Ashlar.Forge.csproj (not yet created):
   ```xml
   <PackageReference Include="Ashlar.Hosting" Version="0.1.2" />
   <PackageReference Include="Ashlar.Contracts" Version="0.1.2" />
@@ -450,7 +450,7 @@ $ ashlar-forge verify \
 
 #### M5.1: Dogfood Automation
 
-**CI Job:** `.github/workflows/dogfood-autonomous-loop.yml`
+**CI Job (planned):** .github/workflows/dogfood-autonomous-loop.yml (not yet implemented)
 
 **Trigger:** On every Ashlar release tag (e.g., `v0.1.3`)
 

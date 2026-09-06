@@ -8,9 +8,8 @@ name: Shell lint
 
 on:
   pull_request:
-    paths:
-      - "scripts/**"
-      - ".github/workflows/shell-lint.yml"
+    # Always run on PRs (no path filter) to serve as a fast required check.
+    # Parse/lint errors in scripts/ would break ops; catch them early.
   workflow_dispatch:
 
 jobs:
