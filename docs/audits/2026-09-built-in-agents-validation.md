@@ -582,7 +582,7 @@ Generate fixtures automatically from mutation operators:
 - **Dependency mutations** — inject forbidden dependencies, swap trust roots
 - **Schema mutations** — downgrade record versions, omit required fields
 
-**Implementation:** `scripts/generate-adversarial-fixtures.sh` (new)
+**Implementation:** <planned: scripts/generate-adversarial-fixtures.sh>
 
 #### 4.3.2 Fuzz Testing
 
