@@ -9,6 +9,7 @@ using Ashlar.Core.Domain.Execution;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
 using Ashlar.Tests.Infrastructure.Certification.Fixtures;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -204,7 +205,8 @@ public sealed class AutonomyAdversarialCampaignTests
         // The REAL certification chain mints the certificate: analyzer fence (with the
         // objective's touch-set), witness, mutation, determinism, dependency.
         var lineage = GenerationLineage.Child(GenerationLineage.HumanAuthored, "sig-proposer-ctx");
-        var decision = await new CertificationGate(new CertificationRecordSigner()).CertifyAsync(new CertificationRequest
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey)).CertifyAsync(new CertificationRequest
         {
             Brick = new MutationProbeBrick(),
             Witness = StrongWitness,
@@ -391,7 +393,9 @@ public sealed class HotSwapProbeBrick : DomainBrick
 
     private static CertificationRecordData SignData(string brickId, string source)
     {
-        var record = new CertificationRecordData
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey, hmacKey: HmacKey);
+        return signer.SignRecord(new CertificationRecordData
         {
             Status = "PASS",
             Stage = "S0-S2",
@@ -412,8 +416,7 @@ public sealed class HotSwapProbeBrick : DomainBrick
                 },
                 CertifierIdentity.ToInput()
             ]
-        };
-        return record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
+        });
     }
 
     private static CertificationRecordData PassRecord(string brickId, string contentHash, int? depth) => new()
@@ -486,5 +489,15 @@ public sealed class HotSwapProbeBrick : DomainBrick
                 return _events.ToList();
             }
         }
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 }

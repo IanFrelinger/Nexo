@@ -4,6 +4,7 @@ using Ashlar.Core.Application.Autonomy;
 using Ashlar.Core.Domain.Bricks;
 using Ashlar.Infrastructure.Certification;
 using Ashlar.Infrastructure.Certification.HotSwap;
+using NSec.Cryptography;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -184,7 +185,9 @@ public sealed class HotSwapProbeBrick : DomainBrick
 
     private static CertificationRecordData CertifyRecord(string brickId, string source)
     {
-        var record = new CertificationRecordData
+        var (privateKey, _) = CreateEd25519Key();
+        var signer = new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey, hmacKey: HmacKey);
+        return signer.SignRecord(new CertificationRecordData
         {
             Status = "PASS",
             Stage = "S0-S2",
@@ -205,8 +208,17 @@ public sealed class HotSwapProbeBrick : DomainBrick
                 },
                 CertifierIdentity.ToInput()
             ]
-        };
-        return record with { Signature = CertificationRecordSigning.Sign(record, HmacKey) };
+        });
+    }
+
+    private static (string PrivateKeyBase64, string PublicKeyBase64) CreateEd25519Key()
+    {
+        using var key = Key.Create(
+            SignatureAlgorithm.Ed25519,
+            new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        return (
+            Convert.ToBase64String(key.Export(KeyBlobFormat.RawPrivateKey)),
+            Convert.ToBase64String(key.PublicKey.Export(KeyBlobFormat.RawPublicKey)));
     }
 
     private sealed class MutableClock : TimeProvider
