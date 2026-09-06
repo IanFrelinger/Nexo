@@ -175,7 +175,8 @@ public sealed class GateEmittedArtifactTests
 
         var request = await BrickCertificationProjectLoader.LoadAsync(dir, witnessPath);
         var tampered = request.EmittedArtifact! with { AssemblySha256 = "not-the-hash" };
-        var decision = await new CertificationGate(new CertificationRecordSigner())
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey))
             .CertifyAsync(request with { EmittedArtifact = tampered });
 
         decision.Admitted.Should().BeFalse();
@@ -200,7 +201,8 @@ public sealed class GateEmittedArtifactTests
 
         var request = await BrickCertificationProjectLoader.LoadAsync(dir, witnessPath);
         var exploding = new ExplodingProbeBrick();
-        var decision = await new CertificationGate(new CertificationRecordSigner())
+        var (privateKey, _) = CreateEd25519Key();
+        var decision = await new CertificationGate(new CertificationRecordSigner(ed25519PrivateKeyBase64: privateKey))
             .CertifyAsync(request with { Brick = exploding });
 
         decision.Record.Reason.Should().NotContain(
