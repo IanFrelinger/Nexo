@@ -6,8 +6,11 @@ namespace Ashlar.BackgroundAgents.Trust;
 /// <summary>
 /// Wraps IProviderFactory and sanitizes outgoing context before delegating.
 /// Blocks when classification is uncertain. Logs all redactions.
+/// Implements both Application port and Infrastructure interface for DI compatibility.
 /// </summary>
-public sealed class SanitizingProviderFactory : IProviderFactory
+public sealed class SanitizingProviderFactory : 
+    IProviderFactory,
+    Ashlar.Infrastructure.Execution.IProviderFactory
 {
     private readonly IProviderFactory _inner;
     private readonly ICloudSanitizationProxy _proxy;
@@ -15,6 +18,7 @@ public sealed class SanitizingProviderFactory : IProviderFactory
 
     /// <summary>
     /// Creates a sanitizing wrapper around the inner provider factory.
+    /// Accepts Application port IProviderFactory.
     /// </summary>
     public SanitizingProviderFactory(
         IProviderFactory inner,
@@ -26,12 +30,13 @@ public sealed class SanitizingProviderFactory : IProviderFactory
         _logger = logger;
     }
 
+    // TEMP P1.2 — delete in thin app PR
+    // Constructor accepting Infrastructure.Execution.IProviderFactory for ImproveCommand DI compatibility.
+    // Adapts Infrastructure type to Application port.
     /// <summary>
-    /// [OBSOLETE] Creates a sanitizing wrapper accepting Infrastructure.Execution.IProviderFactory.
+    /// Creates a sanitizing wrapper accepting Infrastructure.Execution.IProviderFactory.
     /// Wraps Infrastructure type as Application port adapter.
-    /// TODO: Remove after thin application layer PR lands (post-P1.2 cleanup).
     /// </summary>
-    [Obsolete("Temporary DIP facade for Infrastructure types. Use Core.Application.Execution.Ports.IProviderFactory constructor. Remove after application layer refactor.")]
     public SanitizingProviderFactory(
         Ashlar.Infrastructure.Execution.IProviderFactory infrastructureInner,
         ICloudSanitizationProxy proxy,
@@ -157,11 +162,11 @@ public sealed class SanitizingProviderFactory : IProviderFactory
     public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default) =>
         _inner.EnsureOllamaReachableAsync(requireVisionModel, cancellationToken);
 
+    // TEMP P1.2 — delete in thin app PR
+    // Adapter that wraps Infrastructure.Execution.IProviderFactory as Application port.
     /// <summary>
-    /// [OBSOLETE] Adapter that wraps Infrastructure.Execution.IProviderFactory as Application port.
-    /// TODO: Remove after thin application layer PR lands (post-P1.2 cleanup).
+    /// Adapter that wraps Infrastructure.Execution.IProviderFactory as Application port.
     /// </summary>
-    [Obsolete("Temporary DIP adapter. Remove after application layer refactor.")]
     private sealed class InfrastructureProviderFactoryAdapter : IProviderFactory
     {
         private readonly Ashlar.Infrastructure.Execution.IProviderFactory _infrastructure;

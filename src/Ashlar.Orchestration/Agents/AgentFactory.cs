@@ -115,12 +115,13 @@ public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
         return agent;
     }
 
+    // TEMP P1.2 — delete in thin app PR
+    // Creates a BaseAgent from AgentSpawnSpecDto (Application layer DTO).
+    // Maps DTO to AgentSpawnSpec and delegates to CreateAgent(AgentSpawnSpec).
     /// <summary>
-    /// [OBSOLETE] Creates a BaseAgent from AgentSpawnSpecDto (Application layer DTO).
+    /// Creates a BaseAgent from AgentSpawnSpecDto (Application layer DTO).
     /// Maps DTO to AgentSpawnSpec and delegates to CreateAgent(AgentSpawnSpec).
-    /// TODO: Remove after thin application layer PR lands (post-P1.2 cleanup).
     /// </summary>
-    [Obsolete("Temporary DIP facade. Use CreateAgent(AgentSpawnSpec) directly. Remove after application layer refactor.")]
     public BaseAgent CreateAgent(AgentSpawnSpecDto dto)
     {
         if (dto == null)
