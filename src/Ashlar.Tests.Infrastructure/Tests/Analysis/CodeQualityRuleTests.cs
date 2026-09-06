@@ -5,6 +5,7 @@ using Ashlar.Core.Application.Testing.Abstractions;
 using Ashlar.Core.Application.Testing.Models;
 using Ashlar.Infrastructure.Analysis.Rules;
 using Ashlar.Tests.Application.Helpers;
+using Ashlar.Abstractions;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Analysis;
 
