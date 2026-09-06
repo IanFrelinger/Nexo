@@ -112,24 +112,16 @@ public sealed class ImproveCommand : Command
         {
             serviceCollection.AddSingleton<Ashlar.BackgroundAgents.Trust.ICloudSanitizationProxy,
                 Ashlar.BackgroundAgents.Trust.CloudSanitizationProxy>();
-            serviceCollection.AddSingleton<Ashlar.Core.Application.Execution.Ports.IProviderFactory>(sp =>
-            {
-                var concreteFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.ProviderFactory>();
-                var adapter = new Ashlar.Infrastructure.Adapters.ProviderFactoryAdapter(concreteFactory);
-                return new Ashlar.BackgroundAgents.Trust.SanitizingProviderFactory(
-                    adapter,
+            serviceCollection.AddSingleton<Ashlar.Infrastructure.Execution.IProviderFactory>(sp =>
+                new Ashlar.BackgroundAgents.Trust.SanitizingProviderFactory(
+                    sp.GetRequiredService<Ashlar.Infrastructure.Execution.ProviderFactory>(),
                     sp.GetRequiredService<Ashlar.BackgroundAgents.Trust.ICloudSanitizationProxy>(),
-                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Ashlar.BackgroundAgents.Trust.SanitizingProviderFactory>>());
-            });
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Ashlar.BackgroundAgents.Trust.SanitizingProviderFactory>>()));
         }
         else
         {
-            serviceCollection.AddSingleton<Ashlar.Core.Application.Execution.Ports.IProviderFactory>(
-                sp =>
-                {
-                    var concreteFactory = sp.GetRequiredService<Ashlar.Infrastructure.Execution.ProviderFactory>();
-                    return new Ashlar.Infrastructure.Adapters.ProviderFactoryAdapter(concreteFactory);
-                });
+            serviceCollection.AddSingleton<Ashlar.Infrastructure.Execution.IProviderFactory>(
+                sp => sp.GetRequiredService<Ashlar.Infrastructure.Execution.ProviderFactory>());
         }
 
         if (self)

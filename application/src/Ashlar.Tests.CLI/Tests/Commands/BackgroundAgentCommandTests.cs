@@ -7,7 +7,7 @@ using Ashlar.BackgroundAgents.DataSensitivity;
 using Ashlar.BackgroundAgents.Registry;
 using Ashlar.Core.Application.Testing.Abstractions;
 using Ashlar.Core.Application.Testing.Models;
-using Ashlar.Core.Application.Orchestration.Ports;
+using Ashlar.Orchestration.Agents;
 
 namespace Ashlar.Tests.CLI.Tests.Commands;
 
@@ -95,14 +95,16 @@ public class BackgroundAgentCommandTests : UnitTestBase
         var registry = new Mock<IBackgroundAgentRegistry>();
         registry.Setup(r => r.GetAll()).Returns(Array.Empty<BackgroundAgentInstance>().ToList());
         var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
-        var agentCreator = new Mock<IAgentCreator>();
+        var loggerFactory = new Mock<ILogger<AgentFactory>>();
+        var serviceProvider = new Mock<IServiceProvider>();
+        var agentFactory = new AgentFactory(loggerFactory.Object, serviceProvider.Object);
         var logger = new Mock<ILogger<BackgroundAgentCommand>>();
 
         var command = new BackgroundAgentCommand(
             configLoader,
             registry.Object,
             specBuilder,
-            agentCreator.Object,
+            agentFactory,
             logger.Object);
 
         var exitCode = await command.ListAsync(false, null, null, null);
@@ -118,14 +120,16 @@ public class BackgroundAgentCommandTests : UnitTestBase
         var registry = new Mock<IBackgroundAgentRegistry>();
         registry.Setup(r => r.GetAll()).Returns(Array.Empty<BackgroundAgentInstance>().ToList());
         var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
-        var agentCreator = new Mock<IAgentCreator>();
+        var loggerFactory = new Mock<ILogger<AgentFactory>>();
+        var serviceProvider = new Mock<IServiceProvider>();
+        var agentFactory = new AgentFactory(loggerFactory.Object, serviceProvider.Object);
         var logger = new Mock<ILogger<BackgroundAgentCommand>>();
 
         var command = new BackgroundAgentCommand(
             configLoader,
             registry.Object,
             specBuilder,
-            agentCreator.Object,
+            agentFactory,
             logger.Object);
 
         var exitCode = await command.ListAsync(true, null, null, null);
@@ -166,9 +170,11 @@ public class BackgroundAgentCommandTests : UnitTestBase
         registry.Setup(r => r.StopAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
-        var agentCreator = new Mock<IAgentCreator>();
+        var loggerFactory = new Mock<ILogger<AgentFactory>>();
+        var serviceProvider = new Mock<IServiceProvider>();
+        var agentFactory = new AgentFactory(loggerFactory.Object, serviceProvider.Object);
         var logger = new Mock<ILogger<BackgroundAgentCommand>>();
-        var command = new BackgroundAgentCommand(configLoader, registry.Object, specBuilder, agentCreator.Object, logger.Object);
+        var command = new BackgroundAgentCommand(configLoader, registry.Object, specBuilder, agentFactory, logger.Object);
 
         var exitCode = await command.AutoScaleAsync(
             role: "extender",
@@ -209,9 +215,11 @@ public class BackgroundAgentCommandTests : UnitTestBase
         registry.Setup(r => r.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
-        var agentCreator = new Mock<IAgentCreator>();
+        var loggerFactory = new Mock<ILogger<AgentFactory>>();
+        var serviceProvider = new Mock<IServiceProvider>();
+        var agentFactory = new AgentFactory(loggerFactory.Object, serviceProvider.Object);
         var logger = new Mock<ILogger<BackgroundAgentCommand>>();
-        var command = new BackgroundAgentCommand(configLoader, registry.Object, specBuilder, agentCreator.Object, logger.Object);
+        var command = new BackgroundAgentCommand(configLoader, registry.Object, specBuilder, agentFactory, logger.Object);
 
         var exitCode = await command.AutoScaleAsync(
             role: "extender",
