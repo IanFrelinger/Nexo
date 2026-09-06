@@ -5,9 +5,10 @@ minute costs, and branch-noise on `cursor/**` and other integration branches. Th
 per-file trigger map lives in [`docs/CiGateInventory.md`](../../docs/CiGateInventory.md);
 the summary of the 56 files is:
 
-- **14 run on `pull_request`** — only `cert-gate`, `layer-boundary`, and `uat-gate` on every PR, the
-  rest path-filtered (kernel/application/security/coverage/docs/testing-strategy/shell-lint/
-  other path-scoped gates) plus the label-driven `release-staging-on-label`.
+- **17 run on `pull_request`** — only `cert-gate`, `layer-boundary`, `uat-gate`, `build-gate`,
+  `shell-lint`, and `docs-link-check` on every PR; the rest are path-filtered (kernel/application/
+  security/coverage/testing-strategy/other path-scoped gates) plus the label-driven
+  `release-staging-on-label`.
 - **20 run on `push` only** (path-filtered, `master`/`main`/`cursor/**`), all with
   `workflow_dispatch` as well — post-merge signals such as `mcp-a2a-gate`, `grpc-transport-gate`,
   `onboarding-docs-guard`, `container-image-publish`.
@@ -26,7 +27,28 @@ before merge if your branch protection expects a green check from that workflow.
 ## Branch protection (recommended after workflow changes)
 
 `master` currently requires exactly one status check: **`cert-gate`** (unfiltered, runs on
-every PR). Every other gate is advisory. Path-filtered workflows cannot be made required
+every PR). Every other gate is advisory.
+
+### CI Hardening (September 2026)
+
+To eliminate the cert-gate SPOF, the following **fast, unfiltered** workflows now run on every PR
+and should be added as required checks by a repository administrator:
+
+- **`build-core`** — fast compile check (~2–3 min) that catches build breakage before heavier tests run
+- **`shell-lint`** — bash syntax + shellcheck (~30s) that prevents ops breakage
+- **`lychee (README + docs)`** — doc link validation (~30s) that keeps documentation healthy
+- **`cert-gate`** — hermetic certification tests (existing required check)
+
+**Rationale:** If `cert-gate` is cancelled, flaky, or times out, the other three required checks
+still prevent merge of broken code. This adds redundancy without slowing CI (total <5 min excluding cert-gate).
+
+**Action required (repo admin only):**
+Navigate to **Settings → Branches → Branch protection rule for `master`** and add these required status checks:
+- `build-core`
+- `shell-lint`
+- `lychee (README + docs)`
+
+Path-filtered workflows cannot be made required
 without an always-report job — a required context that never reports blocks the merge.
 If you want to require more, either:
 
