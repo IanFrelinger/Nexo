@@ -406,7 +406,7 @@ public class BackgroundAgentCommand
         var config = configs.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException($"Agent '{id}' not found in configuration");
         var spec = _specBuilder.BuildSpec(config);
-        var agent = _agentFactory.CreateAgent(spec);
+        var agent = _agentCreator.CreateAgent(spec);
         await _registry.RegisterAsync(agent, config, AgentRegistrationOrigin.Authored, ct);
     }
 
