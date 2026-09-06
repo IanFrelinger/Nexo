@@ -3,7 +3,7 @@ using Ashlar.Infrastructure.Execution;
 using System.Reflection;
 using Xunit;
 
-using Ashlar.Abstractions.Exceptions;
+using Ashlar.Core.Application.Execution.Ports;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Safety;
 

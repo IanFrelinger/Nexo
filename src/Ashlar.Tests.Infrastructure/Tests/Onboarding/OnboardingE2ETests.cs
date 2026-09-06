@@ -12,7 +12,7 @@ using Ashlar.Tests.Infrastructure.Helpers;
 using System.Text.Json;
 using Xunit;
 
-using Ashlar.Abstractions.Exceptions;
+using Ashlar.Core.Application.Execution.Ports;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Onboarding;
 
