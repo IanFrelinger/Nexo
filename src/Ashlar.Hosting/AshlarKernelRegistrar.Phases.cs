@@ -785,11 +785,11 @@ internal static partial class AshlarKernelRegistrar
         services.AddSingleton<ITool, DotnetTestTool>();
         
         // CleanArtifactsTool requires IArtifactCleanupService which may not be registered
-        services.AddSingleton<ITool>(sp =>
+        // in all scenarios (e.g., minimal test hosts). Check if registered before adding.
+        if (services.Any(d => d.ServiceType == typeof(IArtifactCleanupService)))
         {
-            var cleanupService = sp.GetRequiredService<IArtifactCleanupService>();
-            return new CleanArtifactsTool(cleanupService);
-        });
+            services.AddSingleton<ITool>(sp => new CleanArtifactsTool(sp.GetRequiredService<IArtifactCleanupService>()));
+        }
 
         // ── Analysis rule engine ───────────────────────────────────────
         // Rules are collected via DI multi-registration and fed into
