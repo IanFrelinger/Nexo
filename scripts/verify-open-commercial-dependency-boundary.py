@@ -8,6 +8,12 @@ Checks:
   3. Every OPEN packable .csproj resolves PackageLicenseExpression=Apache-2.0.
   4. No core (src/) .csproj may ProjectReference an application/, applications/, or products/ .csproj.
   5. products/ashlar-cloud must not ProjectReference src/ or commercial/.
+  6. Ashlar.Orchestration must not reference Ashlar.Infrastructure (peer-adapter coupling).
+  7. Ashlar.BackgroundAgents must not reference Ashlar.Orchestration (peer coupling).
+  8. Ashlar.Infrastructure must not reference Ashlar.Tools.* (dependency cycle risk).
+
+Note: Checks 6-8 are Architecture Guardian findings currently enforced as WARNINGS.
+      They will be upgraded to ERRORS once remediation PRs (#521, #524, #525, #526) land.
 
 Optional allowlists (repo-relative paths, # comments allowed):
   scripts/dependency-boundary.open-to-commercial.allowlist.txt
@@ -294,6 +300,64 @@ def main() -> int:
                 errors.append(
                     f"open mesh primitive contains commercial concept '{match.group(1)}': {rel}"
                 )
+
+    # 5) Layer boundary: Ashlar.Orchestration must not reference Ashlar.Infrastructure (peer-adapter coupling).
+    #    Architecture Guardian finding: Orchestration is an application-layer orchestrator; Infrastructure
+    #    is a peer adapter layer. This dependency inverts the intended layering.
+    #    TODO: Enforce as ERROR once remediation PRs (#521, #524, #525, #526) land.
+    orchestration = by_rel.get("src/Ashlar.Orchestration/Ashlar.Orchestration.csproj")
+    if orchestration:
+        try:
+            refs = parse_project_references(orchestration, root)
+        except FileNotFoundError:
+            pass
+        else:
+            for ref_rel in refs:
+                if ref_rel == "src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj":
+                    msg = (
+                        f"layer violation: Ashlar.Orchestration must not reference Ashlar.Infrastructure "
+                        f"(peer-adapter coupling) — will be enforced after #521/#524/#525/#526 land"
+                    )
+                    warnings.append(msg)
+
+    # 6) Layer boundary: Ashlar.BackgroundAgents must not reference Ashlar.Orchestration (peer coupling).
+    #    Architecture Guardian finding: BackgroundAgents is a scheduling/background-task layer;
+    #    Orchestration is a peer orchestration layer. This dependency creates peer coupling.
+    #    TODO: Enforce as ERROR once remediation PRs (#521, #524, #525, #526) land.
+    background_agents = by_rel.get("src/Ashlar.BackgroundAgents/Ashlar.BackgroundAgents.csproj")
+    if background_agents:
+        try:
+            refs = parse_project_references(background_agents, root)
+        except FileNotFoundError:
+            pass
+        else:
+            for ref_rel in refs:
+                if ref_rel == "src/Ashlar.Orchestration/Ashlar.Orchestration.csproj":
+                    msg = (
+                        f"layer violation: Ashlar.BackgroundAgents must not reference Ashlar.Orchestration "
+                        f"(peer coupling) — will be enforced after #521/#524/#525/#526 land"
+                    )
+                    warnings.append(msg)
+
+    # 7) Dependency cycle: Ashlar.Infrastructure must not reference Ashlar.Tools.* (cycle risk).
+    #    Architecture Guardian finding: Infrastructure references Tools.Assembly and Tools.Dev,
+    #    but Tools projects typically depend on Infrastructure utilities, creating cycle risk.
+    #    TODO: Enforce as ERROR once remediation PRs (#521, #524, #525, #526) land.
+    infrastructure = by_rel.get("src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj")
+    if infrastructure:
+        try:
+            refs = parse_project_references(infrastructure, root)
+        except FileNotFoundError:
+            pass
+        else:
+            for ref_rel in refs:
+                if ref_rel.startswith("src/Ashlar.Tools."):
+                    msg = (
+                        f"dependency cycle risk: Ashlar.Infrastructure must not reference {ref_rel} "
+                        f"(Tools should depend on Infrastructure, not the reverse) — "
+                        f"will be enforced after #521/#524/#525/#526 land"
+                    )
+                    warnings.append(msg)
 
     open_count = sum(1 for p in projects if not p.commercial)
     commercial_count = sum(1 for p in projects if p.commercial)
