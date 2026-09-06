@@ -302,7 +302,8 @@ public sealed class TrustLoopRecordSchemaTests
         data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.CompileOptions);
         data.Inputs.Should().Contain(i => i.Kind == CertificationInputKinds.ExecutionMode);
 
-        var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey);
+        // Gate creates HMAC-only v2 records; use Legacy to test input coverage without Ed25519
+        var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey, CertificationVerifyOptions.Legacy);
         trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
 
         var tampered = data with

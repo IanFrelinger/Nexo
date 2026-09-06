@@ -25,7 +25,9 @@ public sealed class CertificationForgeAttackTests
     public void Attack_SignatureStripping_IsRejectedByDefault()
     {
         var valid = SignedV2RecordWithEd25519();
+        // Attacker strips Ed25519 fields and recomputes HMAC (since they have the committed key)
         var stripped = valid with { Ed25519Signature = null, Ed25519PublicKey = null };
+        stripped = stripped with { Signature = CertificationRecordSigning.Sign(stripped, HmacKey) };
 
         var trust = CertificationTrustVerifier.Verify(stripped, BrickSource, HmacKey);
 

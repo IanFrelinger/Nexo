@@ -394,7 +394,12 @@ public sealed class AttestedStateLogBindingTests
                 SurvivingMutants = 0,
                 KilledMutants = new[] { "m1" },
                 SurvivingMutantIds = Array.Empty<string>(),
-                Gate = "Ashlar.Tests.Infrastructure.Tests.Certification.AttestedStateLogBindingTests"
+                Gate = "Ashlar.Tests.Infrastructure.Tests.Certification.AttestedStateLogBindingTests",
+                Inputs = new[]
+                {
+                    new CertificationInput { Kind = CertificationInputKinds.GateEmittedArtifact, Hash = "sha256:artifact" },
+                    new CertificationInput { Kind = CertificationInputKinds.CertifierIdentity, Id = "test-certifier" }
+                }
             };
 
             return record with
