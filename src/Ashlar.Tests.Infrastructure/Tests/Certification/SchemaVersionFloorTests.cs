@@ -119,9 +119,12 @@ public sealed class SchemaVersionFloorTests
     }
 
     [Fact]
-    public void IsStrict_IsFalseOnlyForTodaysSemantics()
+    public void IsStrict_IsTrueForFailClosedDefault()
     {
-        CertificationVerifyOptions.Default.IsStrict.Should().BeFalse();
+        CertificationVerifyOptions.Default.IsStrict.Should().BeTrue(
+            "Default is now fail-closed with Ed25519 + v2+ schema requirements");
+        CertificationVerifyOptions.Legacy.IsStrict.Should().BeFalse(
+            "Legacy has no requirements");
         Floor.IsStrict.Should().BeTrue();
         new CertificationVerifyOptions { RequireEd25519Signature = true }.IsStrict.Should().BeTrue();
         CertificationVerifyOptions.Default.PinningEnabled.Should().BeFalse();

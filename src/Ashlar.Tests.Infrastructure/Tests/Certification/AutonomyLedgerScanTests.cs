@@ -99,6 +99,7 @@ public sealed class AutonomyLedgerScanTests
 
     private static CertificationRecord Record(string brickId, string contentHash) => new()
     {
+        SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
         Status = "PASS",
         Stage = "S0-S2",
         Admitted = true,

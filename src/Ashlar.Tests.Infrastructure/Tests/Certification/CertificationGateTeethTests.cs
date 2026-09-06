@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Ashlar.Certification.Contracts;
 using Ashlar.Core.Application.Certification.Models;
 using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Core.Domain.Bricks;
@@ -72,7 +73,7 @@ public sealed class CertificationGateTeethTests
         decision.Record.Signed.Should().BeTrue();
         decision.Record.Signature.Should().NotBeNullOrWhiteSpace();
         decision.Record.ContentHash.Should().NotBeNullOrWhiteSpace();
-        new CertificationRecordSigner().Verify(decision.Record).Should().BeTrue();
+        new CertificationRecordSigner().Verify(decision.Record, CertificationVerifyOptions.Strict).Should().BeTrue();
     }
 
     [Fact]
