@@ -592,8 +592,8 @@ GET /api/trust/dashboard
 <span class="comment"># Run locally</span>
 ashlar doctor
 
-<span class="comment"># Or embed in your app</span>
-dotnet add package Ashlar.Client
+<span class="comment"># Or reference in your app (ProjectReference or feed)</span>
+<span class="comment"># Public NuGet packages: not yet</span>
 
 <span class="comment"># Configure HTTP client</span>
 services.AddAshlarClient(
@@ -613,9 +613,10 @@ services.AddAshlarClient(
 );
 
 <span class="comment">// Execute auditable AI workflows</span>
-<span class="keyword">var</span> client = services.GetRequiredService&lt;IAshlarClient&gt;();
-<span class="keyword">var</span> result = <span class="keyword">await</span> client.SubmitTaskAsync(
-    <span class="keyword">"Analyze this dataset"</span>
+<span class="keyword">var</span> client = sp.GetRequiredService&lt;IAshlarClient&gt;();
+<span class="keyword">var</span> response = <span class="keyword">await</span> client.InvokeAsync(
+    HttpMethod.Post, <span class="keyword">"/api/copilot/task"</span>,
+    JsonContent.Create(<span class="keyword">new</span> { task = <span class="keyword">"Analyze this dataset"</span> })
 );
                         </div>
                         <div style="margin-top: 1.5rem;">
@@ -764,7 +765,7 @@ services.AddAshlarClient(
                 <p>Start with the open-source runtime today.<br>Talk to us when you need more.</p>
                 <div class="cta-buttons">
                     <a href="https://github.com/IanFrelinger/Ashlar" class="btn btn-primary">Start on GitHub</a>
-                    <a href="https://github.com/IanFrelinger/Ashlar/discussions" class="btn btn-secondary">Talk commercial</a>
+                    <a href="https://github.com/IanFrelinger/Ashlar/issues/new?template=integrator_feedback.md" class="btn btn-secondary">Talk commercial</a>
                 </div>
                 <p style="margin-top: 2rem; color: var(--olive); font-size: 0.95rem;">
                     <a href="https://github.com/IanFrelinger/Ashlar/blob/master/docs/TesterQuickstart.md" style="color: var(--olive); text-decoration: underline;">Try the quickstart</a> — clone, build, run the API, submit one task, read its audit trail. About 15 minutes, no Docker, no API keys.
@@ -795,7 +796,6 @@ services.AddAshlarClient(
             <div>
                 <h4>Community</h4>
                 <ul>
-                    <li><a href="https://github.com/IanFrelinger/Ashlar/discussions">Discussions</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/issues">Issues</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/SECURITY.md">Security</a></li>
                     <li><a href="https://github.com/IanFrelinger/Ashlar/blob/master/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
