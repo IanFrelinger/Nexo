@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Ashlar.Certification.Contracts;
+using Ashlar.Infrastructure.Certification.Composition;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.Certification;
@@ -167,7 +168,7 @@ public sealed class CertificationForgeAttackTests
         const string explicitKey = "explicit-composition-key";
         
         // Before the fix, this key was discarded. After the fix, it's used.
-        var signer = new Infrastructure.Certification.Composition.CompositionCertificationRecordSigner(
+        var signer = new CompositionCertificationRecordSigner(
             brickSigner: null,
             logger: null,
             hmacKey: explicitKey);
